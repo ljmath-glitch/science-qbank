@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>自然科段考題庫系統 · 翰林版</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
+    --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
+    --accent:#c0392b;--muted:#6b6557;
+    --shadow:0 2px 0 #e8e2d4, 0 8px 24px -12px rgba(26,34,56,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;
+    background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
+    color:var(--ink);line-height:1.7;padding:0 0 90px}
+  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative;overflow:hidden}
+  header::after{content:"自 然";position:absolute;right:24px;top:50%;transform:translateY(-50%);font-size:68px;font-weight:700;letter-spacing:8px;color:rgba(255,255,255,.05)}
+  header h1{font-size:24px;letter-spacing:3px;font-weight:700}
+  header .sub{font-size:12px;color:#b9c2d6;margin-top:4px;letter-spacing:1px;font-family:system-ui,sans-serif}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+  .toolbar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:20px 0;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+  .btn{font-family:system-ui,sans-serif;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.green{background:var(--bio);color:#fff;border-color:var(--bio)}
+  .btn.gold{background:var(--phy);color:#fff;border-color:var(--phy)}
+  .btn.sm{padding:4px 11px;font-size:12px}
+  .stat{font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);margin-left:auto}
+  .stat b{color:var(--accent);font-size:15px}
+  .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px}
+  .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:system-ui,sans-serif;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .filt{margin-bottom:11px}
+  .filt label{display:block;font-size:12px;font-family:system-ui,sans-serif;color:var(--muted);margin-bottom:4px;font-weight:600}
+  select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:system-ui,sans-serif;font-size:13px;background:#fff;color:var(--ink)}
+  textarea{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
+  .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
+  .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
+  .card.flag{background:#fffdf2}
+  .card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;font-family:system-ui,sans-serif}
+  .tag{font-size:11px;padding:2px 8px;border-radius:18px;font-weight:600;letter-spacing:.3px}
+  .tag.book{background:#eef3ff;color:#3454b4}
+  .tag.unit{background:#fdeeee;color:var(--accent)}
+  .tag.sub{background:#eef7f3;color:var(--bio)}
+  .tag.kp{background:#fff6e0;color:var(--phy)}
+  .tag.type{background:#ece9f7;color:#5b4b9e}
+  .tag.meta{background:#f0ece2;color:var(--muted)}
+  .tag.d1{background:#e8f5e9;color:#2e7d32}
+  .tag.d2{background:#fff8e1;color:#f57f17}
+  .tag.d3{background:#fff0e0;color:#e8740c}
+  .tag.d4{background:#ffebee;color:#c62828}
+  .tag.flagtag{background:#fde7c9;color:#a5600a}
+  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif}
+  .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
+  .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
+  .summary{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+  .pickbox{position:absolute;top:14px;right:14px}
+  .pickbox input{width:19px;height:19px;cursor:pointer;accent-color:var(--accent)}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:system-ui,sans-serif}
+  .empty .big{font-size:46px;margin-bottom:10px;opacity:.4}
+  dialog{border:none;border-radius:14px;padding:0;max-width:760px;width:95%;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+  dialog::backdrop{background:rgba(19,36,31,.55)}
+  .dlg-head{background:var(--ink);color:#f4f1ea;padding:15px 20px;font-size:15px;letter-spacing:2px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .dlg-body{padding:20px;max-height:74vh;overflow:auto}
+  .dlg-body p{font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);margin-bottom:11px;line-height:1.6}
+  .field{margin-bottom:11px}
+  .field label{display:block;font-size:12px;font-family:system-ui,sans-serif;font-weight:600;color:var(--muted);margin-bottom:3px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
+  .sectionhead{font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--accent);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);letter-spacing:1px}
+  .dlg-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:#faf8f3;flex-wrap:wrap}
+  .x{cursor:pointer;font-size:20px;line-height:1;background:none;border:none;color:#f4f1ea}
+  .diffbox{background:#f7f4ec;border:1px solid var(--line);border-radius:8px;padding:11px;font-family:system-ui,sans-serif}
+  .diffbox .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
+  .diffbox .row span:first-child{flex:1}
+  .diffbox .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  .diffbox .seg button{border:none;background:#fff;padding:4px 11px;cursor:pointer;font-size:13px;font-family:inherit}
+  .diffbox .seg button.on{background:var(--phy);color:#fff;font-weight:700}
+  .diffresult{margin-top:6px;padding:7px 10px;border-radius:6px;font-weight:700;text-align:center;font-size:14px}
+  .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
+  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:50;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:system-ui,sans-serif;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
+  .float.show{transform:translateY(0)}
+  .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
+  .kbd{font-family:ui-monospace,monospace;background:#2a3550;color:#fff;padding:1px 6px;border-radius:4px;font-size:12px}
+  .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:system-ui,sans-serif;cursor:pointer}
+  .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:system-ui,sans-serif}
+  .typegrid label{font-size:12px;background:#f4f1ea;padding:4px 8px;border-radius:6px;cursor:pointer;display:flex;gap:5px;align-items:center}
+  .paperview{display:none;position:fixed;inset:0;background:#fff;z-index:200;overflow:auto}
+  .paperview.show{display:block}
+  .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
+  .pv-bar .spacer{flex:1}
+  .pv-sheet{font-family:"Songti SC","Noto Serif TC",serif;max-width:760px;margin:24px auto 60px;padding:0 26px;line-height:1.9;color:#1a2238}
+  .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
+  .pv-sheet .q{margin-bottom:18px;font-style:normal}
+  .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
+  .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
+  .pv-sheet .sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
+  .statbar{height:14px;background:var(--phy);border-radius:3px}
+  table.report{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:13px}
+  table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
+  table.report th{background:#f0ece2}
+  @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
+  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>自然科段考題庫系統</h1><div class="sub">HANLIN · 翰林版 · 六冊全科 · 17 題型 · 三維度難度 · 20 欄位</div></div></header>
+
+<div class="wrap">
+  <div class="toolbar">
+    <button class="btn primary" onclick="openImport()">＋ 匯入題目</button>
+    <button class="btn" onclick="openAdd()">手動新增</button>
+    <button class="btn" onclick="reloadCloud()">🔄 重新整理</button>
+    <button class="btn green" onclick="exportJSON()">⬇ 備份</button>
+    <button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份到雲端</button>
+    <input type="file" id="restoreFile" accept=".json" hidden onchange="restoreJSON(event)">
+    <button class="btn gold" onclick="copyPrompt()">📋 Claude 指令</button>
+    <button class="btn" onclick="openReport()">📊 知識點分析</button>
+    <button class="btn" onclick="openKpManager()">🏷 章節清單</button>
+    <span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>
+  </div>
+
+  <div class="layout">
+    <aside class="panel side">
+      <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
+      <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="render()"></div>
+      <div class="grid2">
+        <div class="filt"><label>冊數</label><select id="fBook" onchange="render()"><option value="">全部</option></select></div>
+        <div class="filt"><label>領域</label><select id="fField" onchange="render()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option></select></div>
+      </div>
+      <div class="filt"><label>大單元</label><select id="fUnit" onchange="render()"><option value="">全部</option></select></div>
+      <div class="filt"><label>子單元</label><select id="fSub" onchange="render()"><option value="">全部</option></select></div>
+      <div class="filt"><label>知識點</label><select id="fKp" onchange="render()"><option value="">全部</option></select></div>
+      <div class="grid2">
+        <div class="filt"><label>題型</label><select id="fType" onchange="render()"><option value="">全部</option></select></div>
+        <div class="filt"><label>難度</label><select id="fDiff" onchange="render()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="filt"><label>年度</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
+        <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
+      </div>
+      <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
+      <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
+    </aside>
+    <main><div id="list"></div></main>
+  </div>
+</div>
+
+<div class="float" id="floatbar">
+  <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
+  <button class="btn sm" onclick="autoMix()">⚖ 依比例自動選</button>
+  <button class="btn sm" onclick="clearPicks()">清空</button>
+  <button class="btn gold" onclick="openPaperDlg()">📄 匯出考卷</button>
+  <button class="btn green" onclick="exportPaperCSV()">選題CSV</button>
+</div>
+
+<!-- 匯入 -->
+<dialog id="importDlg">
+  <div class="dlg-head">匯入題目 (CSV)<button class="x" onclick="importDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <p>20 欄順序（建議直接用「📋 Claude 指令」產生）：<br>
+    <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
+    （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
+    <input type="file" accept=".csv,.txt" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:system-ui,sans-serif;font-size:13px">
+    <textarea id="csvArea" style="min-height:200px"></textarea>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+</dialog>
+
+<!-- 新增/編輯 -->
+<dialog id="editDlg">
+  <div class="dlg-head" id="editTitle">手動新增題目<button class="x" onclick="editDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <div class="sectionhead">A 基本識別</div>
+    <div class="grid4">
+      <div class="field"><label>年度</label><input type="text" id="eYear" placeholder="113 上"></div>
+      <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="XX 國中"></div>
+      <div class="field"><label>考試名稱</label><input type="text" id="eExam" placeholder="113上第一次段考"></div>
+      <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
+    </div>
+    <div class="field" style="max-width:160px"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
+
+    <div class="sectionhead">B 課程對應（翰林版）</div>
+    <div class="grid3">
+      <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook()"></select></div>
+      <div class="field"><label>冊名／領域</label><input type="text" id="eBookName" readonly style="background:#f0ece2"></div>
+      <div class="field"><label>大單元</label><select id="eUnit" onchange="syncBySub()"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>子單元（跨節用 ／ 隔開）</label><select id="eSub" onchange="syncKp()"></select></div>
+      <div class="field"><label>知識點（多個用、隔開）</label><input type="text" id="eKp" list="kpList" placeholder="如：並聯電路電流分配"><datalist id="kpList"></datalist></div>
+    </div>
+    <div class="field"><label>題目摘要（動詞＋對象，15字內，搜尋用）</label><input type="text" id="eSummary" placeholder="判斷並聯電路電流大小"></div>
+
+    <div class="sectionhead">C 分析標籤</div>
+    <div class="grid2">
+      <div class="field"><label>題型（A1～E3／填／計）</label><select id="eType"></select></div>
+      <div class="field"><label>圖表類型</label><input type="text" id="eChart" list="chartList" placeholder="無 / 折線圖 / v-t圖…"><datalist id="chartList"><option>無</option><option>折線圖</option><option>長條圖</option><option>表格</option><option>示意圖</option><option>電路圖</option><option>v-t圖</option><option>實驗裝置圖</option></datalist></div>
+    </div>
+    <div class="field"><label>三維度難度評分（各 1～3 分，系統自動算難度）</label>
+      <div class="diffbox">
+        <div class="row"><span>① 解題步驟數（1步/2步/3步以上）</span><span class="seg" id="segStep"></span></div>
+        <div class="row"><span>② 知識記憶層次（背誦/理解/活用）</span><span class="seg" id="segMem"></span></div>
+        <div class="row"><span>③ 概念整合數（1個/2個/3個以上）</span><span class="seg" id="segCon"></span></div>
+        <div class="diffresult" id="diffResult">—</div>
+      </div>
+    </div>
+    <div class="field"><label>判斷依據（分類有疑問時填）</label><input type="text" id="eBasis" placeholder="讀圖後需推一步結論"></div>
+    <label class="chk"><input type="checkbox" id="eFlag"> 待確認（Y）— 先標記，之後集中審查</label>
+
+    <div class="sectionhead">題目內容</div>
+    <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
+    <div class="field"><label>詳解（可留空）</label><textarea id="eSol" style="min-height:55px"></textarea></div>
+    <div class="field"><label>圖片（可貼上截圖或選檔）</label>
+      <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:system-ui,sans-serif;font-size:13px">
+      <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="editDlg.close()">取消</button><button class="btn primary" onclick="saveEdit()">儲存</button></div>
+</dialog>
+
+<!-- 章節清單管理 -->
+<dialog id="kpDlg">
+  <div class="dlg-head">章節骨架（翰林版）<button class="x" onclick="kpDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <p>受控的章節骨架，每行格式：<span class="kbd">冊數|冊名|領域|大單元|子單元</span>。可自由增刪以符合你的實際課本。</p>
+    <textarea id="kpArea" style="min-height:340px"></textarea>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="kpDlg.close()">取消</button><button class="btn" onclick="resetKpDefault()">回復預設</button><button class="btn primary" onclick="saveKp()">儲存</button></div>
+</dialog>
+
+<!-- 考卷設定 -->
+<dialog id="paperDlg">
+  <div class="dlg-head">匯出考卷設定<button class="x" onclick="paperDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
+    <div class="field"><label>答案與詳解</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
+        <label class="chk"><input type="radio" name="pAns" value="none" checked> 純考卷</label>
+        <label class="chk"><input type="radio" name="pAns" value="end"> 卷末附答案</label>
+        <label class="chk"><input type="radio" name="pAns" value="inline"> 每題後顯示答案</label>
+        <label class="chk"><input type="radio" name="pAns" value="full"> 含答案＋詳解</label>
+      </div>
+    </div>
+    <div class="field"><label>其他</label>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
+        <label class="chk"><input type="checkbox" id="pShowMeta" checked> 班級/姓名欄</label>
+        <label class="chk"><input type="checkbox" id="pShowTag"> 每題顯示章節/題型標籤</label>
+      </div>
+    </div>
+    <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+</dialog>
+
+<!-- 自動配題 -->
+<dialog id="mixDlg">
+  <div class="dlg-head">依難度比例自動選題<button class="x" onclick="mixDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <p>系統會從<b>目前篩選結果</b>中，依比例隨機抽題（建議：簡單40%、中等50%、困難10%）。</p>
+    <div class="field"><label>總題數</label><input type="number" id="mTotal" value="20" min="1"></div>
+    <div class="grid4">
+      <div class="field"><label>簡單 %</label><input type="number" id="mEasy" value="40"></div>
+      <div class="field"><label>中等 %</label><input type="number" id="mMid" value="50"></div>
+      <div class="field"><label>困難 %</label><input type="number" id="mHard" value="10"></div>
+      <div class="field"><label>極難 %</label><input type="number" id="mExtreme" value="0"></div>
+    </div>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="mixDlg.close()">取消</button><button class="btn primary" onclick="doAutoMix()">自動選題</button></div>
+</dialog>
+
+<!-- 知識點分析報表 -->
+<dialog id="reportDlg">
+  <div class="dlg-head">知識點覆蓋分析<button class="x" onclick="reportDlg.close()">×</button></div>
+  <div class="dlg-body" id="reportBody"></div>
+  <div class="dlg-foot"><button class="btn" onclick="reportDlg.close()">關閉</button></div>
+</dialog>
+
+<!-- 考卷預覽 -->
+<div id="paperView" class="paperview">
+  <div class="pv-bar noprint">
+    <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
+    <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
+    <button class="btn green" onclick="downloadPaper()">⬇ 下載 HTML</button>
+  </div>
+  <div class="pv-sheet" id="pvSheet"></div>
+</div>
+
+<script>
+const HANLIN_SYLLABUS = `B1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
+B1|七上生物|生物|C1 生命世界與科學方法|1-3 進入實驗室
+B1|七上生物|生物|C2 生物體的組成|2-1 生物體的基本單位
+B1|七上生物|生物|C2 生物體的組成|2-2 細胞的構造
+B1|七上生物|生物|C2 生物體的組成|2-3 物質進出細胞的方式
+B1|七上生物|生物|C3 生物體的營養|3-1 食物中的養分與能量
+B1|七上生物|生物|C3 生物體的營養|3-2 酵素
+B1|七上生物|生物|C3 生物體的營養|3-3 植物如何製造養分
+B1|七上生物|生物|C3 生物體的營養|3-4 人體如何獲得養分
+B1|七上生物|生物|C3 生物體的營養|3-5 生物獲得能量的方式
+B1|七上生物|生物|C4 生物體的運輸作用|4-1 植物的運輸構造
+B1|七上生物|生物|C4 生物體的運輸作用|4-2 植物體內物質的運輸
+B1|七上生物|生物|C4 生物體的運輸作用|4-3 人體心血管系統的組成
+B1|七上生物|生物|C4 生物體的運輸作用|4-4 人體的循環系統
+B1|七上生物|生物|C5 生物體的協調作用|5-2 神經系統
+B1|七上生物|生物|C5 生物體的協調作用|5-3 內分泌系統
+B1|七上生物|生物|C5 生物體的協調作用|5-4 行為與感應
+B1|七上生物|生物|C6 生物體的恆定|6-1 呼吸與氣體的恆定
+B1|七上生物|生物|C6 生物體的恆定|6-2 排泄與水分的恆定
+B1|七上生物|生物|C6 生物體的恆定|6-3 體溫的恆定與血糖的恆定
+B2|七下生物|生物|C1 生殖|1-1 細胞的分裂
+B2|七下生物|生物|C1 生殖|1-2 無性生殖
+B2|七下生物|生物|C1 生殖|1-3 有性生殖
+B2|七下生物|生物|C2 遺傳|2-1 遺傳、染色體與基因
+B2|七下生物|生物|C2 遺傳|2-2 人類的遺傳
+B2|七下生物|生物|C2 遺傳|2-3 突變與遺傳疾病
+B2|七下生物|生物|C2 遺傳|2-4 生物技術
+B2|七下生物|生物|C3 生物的演化與分類|3-1 化石與演化
+B2|七下生物|生物|C3 生物的演化與分類|3-2 生物的命名與分類
+B2|七下生物|生物|C3 生物的演化與分類|3-3 原核、原生生物及真菌界
+B2|七下生物|生物|C3 生物的演化與分類|3-4 植物界
+B2|七下生物|生物|C3 生物的演化與分類|3-5 動物界
+B2|七下生物|生物|C4 生物與環境|4-1 族群、群集與演替
+B2|七下生物|生物|C4 生物與環境|4-2 生物間的互動關係
+B2|七下生物|生物|C4 生物與環境|4-3 生態系
+B2|七下生物|生物|C4 生物與環境|4-4 生態系的類型
+B2|七下生物|生物|C5 生物多樣性與保育|5-1 生物多樣性
+B2|七下生物|生物|C5 生物多樣性與保育|5-2 生物多樣性面臨的危機
+B3|八上理化|理化|C1 基本測量|1-1 長度、質量與時間
+B3|八上理化|理化|C1 基本測量|1-3 體積與密度
+B3|八上理化|理化|C1 基本測量|跨科 尺度
+B3|八上理化|理化|C2 物質的世界|2-1 認識物質
+B3|八上理化|理化|C2 物質的世界|2-2 溶液與濃度
+B3|八上理化|理化|C2 物質的世界|2-3 混合物的分離
+B3|八上理化|理化|C2 物質的世界|2-3 空氣
+B3|八上理化|理化|C3 波動與聲音|3-1 波的傳播與特徵
+B3|八上理化|理化|C3 波動與聲音|3-3 多變的聲音
+B3|八上理化|理化|C3 波動與聲音|3-4 聲波的傳播與應用
+B3|八上理化|理化|C4 光、影像與顏色|4-1 光的傳播
+B3|八上理化|理化|C4 光、影像與顏色|4-2 光的反射與面鏡成像
+B3|八上理化|理化|C4 光、影像與顏色|4-4 透鏡成像
+B3|八上理化|理化|C4 光、影像與顏色|4-5 色散與顏色
+B3|八上理化|理化|C5 溫度與熱|5-1 溫度與溫度計
+B3|八上理化|理化|C5 溫度與熱|5-2 熱量
+B3|八上理化|理化|C5 溫度與熱|5-2 熱量與比熱
+B3|八上理化|理化|C5 溫度與熱|5-3 比熱
+B3|八上理化|理化|C5 溫度與熱|5-4 熱對物質的影響
+B3|八上理化|理化|C5 溫度與熱|5-5 熱的傳播方式
+B3|八上理化|理化|C6 物質的基本結構|6-1 元素與化合物
+B3|八上理化|理化|C6 物質的基本結構|6-2 生活中常見的元素
+B3|八上理化|理化|C6 物質的基本結構|6-3 原子結構
+B3|八上理化|理化|C6 物質的基本結構|6-4 週期表
+B3|八上理化|理化|C6 物質的基本結構|6-5 分子與化學式
+B4|八下理化|理化|C1 化學反應|1-1 質量守恆定律
+B4|八下理化|理化|C1 化學反應|1-2 反應式與化學計量
+B4|八下理化|理化|C2 氧化還原反應|2-1 氧化反應與活性
+B4|八下理化|理化|C2 氧化還原反應|2-2 氧化與還原反應
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-1 電解質
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-2 酸和鹼
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-3 酸鹼的強弱與 pH 值
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-4 酸鹼反應
+B4|八下理化|理化|C4 反應速率與平衡|4-1 反應速率
+B4|八下理化|理化|C4 反應速率與平衡|4-2 可逆反應與平衡
+B4|八下理化|理化|C5 有機化合物|5-1 有機化合物的組成
+B4|八下理化|理化|C5 有機化合物|5-2 常見的有機化合物
+B4|八下理化|理化|C5 有機化合物|5-3 聚合物與衣料纖維
+B4|八下理化|理化|C5 有機化合物|5-4 食品與清潔劑
+B4|八下理化|理化|C6 力與壓力|6-1 力與平衡
+B4|八下理化|理化|C6 力與壓力|6-2 摩擦力
+B4|八下理化|理化|C6 力與壓力|6-3 壓力
+B4|八下理化|理化|C6 力與壓力|6-4 浮力
+B5|九上理化|理化|C1 直線運動|1-1 位置、路徑長與位移
+B5|九上理化|理化|C1 直線運動|1-2 速率與速度
+B5|九上理化|理化|C1 直線運動|1-3 加速度運動
+B5|九上理化|理化|C1 直線運動|1-4 自由落體運動
+B5|九上理化|理化|C2 力與運動|2-1 慣性定律
+B5|九上理化|理化|C2 力與運動|2-2 運動定律
+B5|九上理化|理化|C2 力與運動|2-3 作用力與反作用力定律
+B5|九上理化|理化|C2 力與運動|2-4 圓周運動與萬有引力
+B5|九上理化|理化|C2 力與運動|2-5 力矩與槓桿原理
+B5|九上理化|理化|C3 功與能|3-1 功與功率
+B5|九上理化|理化|C3 功與能|3-2 動能
+B5|九上理化|理化|C3 功與能|3-3 位能、能量守恆定律與能源
+B5|九上理化|理化|C3 功與能|3-4 簡單機械
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-1 電荷與靜電現象
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-2 電流
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-4 歐姆定律與電阻
+B5|九上地科|地科|C5 地球的環境|5-1 我們的地球
+B5|九上地科|地科|C5 地球的環境|5-2 地表的改變與平衡
+B5|九上地科|地科|C5 地球的環境|5-3 岩石與礦物
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-1 地球的構造與板塊運動
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-2 板塊運動與內營力的影響
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-3 岩層的紀錄
+B5|九上地科|地科|C7 浩瀚的宇宙|7-1 宇宙與太陽系
+B5|九上地科|地科|C7 浩瀚的宇宙|7-2 晝夜與四季
+B5|九上地科|地科|C7 浩瀚的宇宙|7-3 日地月的相對運動
+B6|九下理化|理化|C1 電與生活|1-1 電流的熱效應
+B6|九下理化|理化|C1 電與生活|1-2 生活用電
+B6|九下理化|理化|C1 電與生活|1-3 電池
+B6|九下理化|理化|C1 電與生活|1-4 電流的化學效應
+B6|九下理化|理化|C2 電與磁|2-1 磁鐵與磁場
+B6|九下理化|理化|C2 電與磁|2-2 電流的磁效應
+B6|九下理化|理化|C2 電與磁|2-3 電流與磁場的交互作用
+B6|九下理化|理化|C2 電與磁|2-4 電磁感應
+B6|九下地科|地科|C3 變化莫測的天氣|3-1 地球的大氣
+B6|九下地科|地科|C3 變化莫測的天氣|3-2 天氣現象
+B6|九下地科|地科|C3 變化莫測的天氣|3-3 氣團與鋒面
+B6|九下地科|地科|C3 變化莫測的天氣|3-4 臺灣的災變天氣
+B6|九下地科|地科|C4 永續的地球|4-1 海洋與大氣的互動
+B6|九下地科|地科|C4 永續的地球|4-2 溫室效應與全球暖化
+B6|九下地科|地科|C4 永續的地球|4-3 人與自然的互動`.trim();
+const QTYPES = [
+  {code:'A1',name:'概念辨識',group:'A 觀念型'},
+  {code:'A2',name:'概念推論',group:'A 觀念型'},
+  {code:'A3',name:'概念比較',group:'A 觀念型'},
+  {code:'B1',name:'圖表判讀',group:'B 圖表型'},
+  {code:'B2',name:'圖表推論',group:'B 圖表型'},
+  {code:'B3',name:'圖表計算',group:'B 圖表型'},
+  {code:'C1',name:'實驗操作',group:'C 實驗型'},
+  {code:'C2',name:'實驗設計',group:'C 實驗型'},
+  {code:'C3',name:'實驗結果推論',group:'C 實驗型'},
+  {code:'D1',name:'單步計算',group:'D 計算型'},
+  {code:'D2',name:'多步計算',group:'D 計算型'},
+  {code:'D3',name:'估算判斷',group:'D 計算型'},
+  {code:'E1',name:'情境判斷',group:'E 素養情境型'},
+  {code:'E2',name:'情境推論',group:'E 素養情境型'},
+  {code:'E3',name:'長文閱讀',group:'E 素養情境型'},
+  {code:'填',name:'填充（非選）',group:'非選擇'},
+  {code:'計',name:'計算（非選）',group:'非選擇'}
+];
+</script>
+<script>
+/* ===== Supabase 連線設定（多人共用版） =====
+   ▼▼▼ 只要改這兩行：把你 Supabase 專案的兩個值貼進來即可 ▼▼▼
+   取得方式：Supabase 後台 → Project Settings → API
+     SUPABASE_URL      = 那個 Project URL（形如 https://xxxxx.supabase.co）
+     SUPABASE_ANON_KEY = 標示為 anon / public 的那串長金鑰
+   注意：這裡只能放 anon public key，絕對不要貼 service_role key！      */
+const SUPABASE_URL      = 'https://esfepufqyeplafzbeeag.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
+/* ▲▲▲ 改完上面兩行就完成設定，其餘都不用動 ▲▲▲ */
+const IMG_BUCKET = 'question-images';
+const CLOUD_READY = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.startsWith('YOUR_');
+const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
+
+/* ===== 狀態 ===== */
+let DB=[], PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], diff={step:0,mem:0,con:0};
+function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+/* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
+function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;r.updated_at=new Date().toISOString();return r;}
+function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;
+  it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
+
+/* ===== 雲端讀取（取代原本的 localStorage load） ===== */
+async function load(){
+  if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
+  const {data:qs,error}=await sb.from('questions').select('*');
+  if(error){console.error(error);alert('讀取雲端題目失敗：'+error.message);DB=[];}
+  else DB=(qs||[]).map(fromRow);
+  const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
+  if(e2)console.error(e2);
+  SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
+  SYL=parseSyl(SYL_RAW);
+}
+async function reloadCloud(){if(!requireCloud())return;await load();buildFilters();render();}
+
+/* ===== 圖片上傳 Storage：把 base64 換成公開 URL（舊的 data: 圖片原樣保留仍可顯示） ===== */
+function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=(h.match(/:(.*?);/)||[])[1]||'image/jpeg';
+  const bin=atob(b);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
+  return new Blob([u8],{type:mime});}
+async function uploadImgs(imgs,qid){const out=[];
+  for(let i=0;i<imgs.length;i++){const im=imgs[i];
+    if(im.src&&im.src.startsWith('data:')){
+      const path=`${qid}/${Date.now().toString(36)}_${i}_${Math.random().toString(36).slice(2,6)}.jpg`;
+      const {error}=await sb.storage.from(IMG_BUCKET).upload(path,dataURLtoBlob(im.src),{contentType:'image/jpeg',upsert:true});
+      if(error){alert('圖片上傳失敗：'+error.message+'\n（此圖暫以原格式保留）');out.push(im);continue;}
+      const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
+      out.push({src:data.publicUrl,width:im.width,align:im.align});
+    }else out.push(im); // 已是 URL 或舊 base64：原樣保留
+  }
+  return out;}
+function parseSyl(raw){return raw.split('\n').map(l=>l.split('|').map(s=>s.trim())).filter(a=>a.length>=5&&a[4]).map(a=>({book:a[0],bookName:a[1],field:a[2],unit:a[3],sub:a[4]}))}
+
+/* ===== 難度計算 ===== */
+function calcDiff(s,m,c){const t=s+m+c;if(!s||!m||!c)return{lvl:'',score:0};
+  if(t<=4)return{lvl:'簡單',score:t};if(t<=6)return{lvl:'中等',score:t};if(t<=8)return{lvl:'困難',score:t};return{lvl:'極難',score:t}}
+function diffTagClass(l){return l==='簡單'?'d1':l==='中等'?'d2':l==='困難'?'d3':l==='極難'?'d4':'meta'}
+function fieldClass(f){return f==='生物'?'bio':f==='理化'?'phy':f==='地科'?'earth':''}
+
+/* ===== CSV ===== */
+function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
+    else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}}
+  if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
+function openImport(){csvArea.value='';importDlg.showModal()}
+function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8')}
+// 欄位: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目
+async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return}
+  let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
+  for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
+    const it={id:uid(),year:g(0),school:g(1),exam:g(2),no:g(3),ans:g(4),book:g(5),bookName:g(6),field:g(7),
+      unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
+      step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
+      flag:(g(18)==='Y'||g(18)==='y'),q:g(19),sol:'',imgs:[]};
+    if(!it.q&&!it.summary)continue;adds.push(it)}
+  if(!adds.length){alert('沒有可匯入的題目');return}
+  const {error}=await sb.from('questions').upsert(adds.map(toRow));
+  if(error){alert('匯入雲端失敗：'+error.message);return}
+  importDlg.close();await load();buildFilters();render();alert('成功匯入 '+adds.length+' 題到雲端')}
+
+/* ===== 連動下拉 ===== */
+function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
+function fillBook(sel){eBook.innerHTML=optTags(SYL.map(k=>k.book),sel)}
+function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
+  eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
+function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp()}
+function syncKp(){kpList.innerHTML=[...new Set(DB.map(x=>x.kp).filter(Boolean))].map(v=>`<option>${esc(v)}</option>`).join('')}
+
+/* ===== 題型/難度 UI ===== */
+function fillTypeSelect(el){el.innerHTML='<option value="">—</option>'+QTYPES.map(t=>`<option value="${t.code}">${t.code}　${t.name}（${t.group}）</option>`).join('')}
+function buildSeg(id,key){const el=document.getElementById(id);el.innerHTML=[1,2,3].map(v=>`<button onclick="setDiff('${key}',${v})">${v}</button>`).join('');paintSeg()}
+function setDiff(key,v){diff[key]=v;paintSeg();showDiffResult()}
+function paintSeg(){[['segStep','step'],['segMem','mem'],['segCon','con']].forEach(([id,key])=>{
+  [...document.getElementById(id).children].forEach((b,i)=>b.classList.toggle('on',i+1===diff[key]))})}
+function showDiffResult(){const d=calcDiff(diff.step,diff.mem,diff.con);
+  diffResult.textContent=d.lvl?`難度：${d.lvl}（總分 ${d.score}）`:'請完成三項評分';
+  diffResult.style.background=d.lvl?({'簡單':'#e8f5e9','中等':'#fff8e1','困難':'#fff0e0','極難':'#ffebee'}[d.lvl]):'#eee';
+  diffResult.style.color=d.lvl?({'簡單':'#2e7d32','中等':'#f57f17','困難':'#e8740c','極難':'#c62828'}[d.lvl]):'#999'}
+
+/* ===== 圖片 ===== */
+function fileToDataURL(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)})}
+function compress(d,maxW){return new Promise(res=>{const img=new Image();img.onload=()=>{const sc=Math.min(1,maxW/img.width);const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);res(cv.toDataURL('image/jpeg',0.82))};img.src=d})}
+async function addImages(e){for(const f of e.target.files){const d=await fileToDataURL(f);const c=await compress(d,1000);curImgs.push({src:c,width:70,align:'center'})}renderImgPrev();e.target.value=''}
+async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,1000);curImgs.push({src:c,width:70,align:'center'});renderImgPrev();e.preventDefault()}}}
+function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
+  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
+  <div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
+    <span>寬</span><input type="range" min="20" max="100" value="${im.width}" oninput="setImg(${i},'width',this.value)" style="width:110px"><span>${im.width}%</span>
+    <select onchange="setImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
+    <button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">移除</button></div></div>`).join('')}
+function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
+
+/* ===== 新增/編輯 ===== */
+function clearForm(){['eYear','eSchool','eExam','eNo','eAns','eKp','eSummary','eChart','eBasis','eQ','eSol'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult()}
+function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
+  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();editDlg.showModal()}
+function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
+  fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
+  eYear.value=it.year;eSchool.value=it.school;eExam.value=it.exam||'';eNo.value=it.no||'';eAns.value=it.ans||'';
+  eKp.value=it.kp||'';eSummary.value=it.summary||'';eType.value=it.type||'';eChart.value=it.chart||'';eBasis.value=it.basis||'';
+  eFlag.checked=!!it.flag;eQ.value=it.q||'';eSol.value=it.sol||'';
+  diff={step:it.step||0,mem:it.mem||0,con:it.con||0};paintSeg();showDiffResult();
+  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();editDlg.showModal()}
+async function saveEdit(){
+  const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
+    book:eBook.value,bookName:(SYL.find(k=>k.book===eBook.value)||{}).bookName||'',field:(SYL.find(k=>k.book===eBook.value)||{}).field||'',
+    unit:eUnit.value,sub:eSub.value,kp:eKp.value.trim(),summary:eSummary.value.trim(),type:eType.value,
+    step:diff.step,mem:diff.mem,con:diff.con,chart:eChart.value.trim(),basis:eBasis.value.trim(),flag:eFlag.checked,
+    q:eQ.value.trim(),sol:eSol.value.trim(),imgs:curImgs};
+  if(!data.q&&!data.summary){alert('題目或摘要至少填一個');return}
+  if(!requireCloud())return;
+  const id=editingId||uid();data.id=id;
+  data.imgs=await uploadImgs(curImgs,id); // base64 → Storage URL
+  const {error}=await sb.from('questions').upsert(toRow(data));
+  if(error){alert('儲存失敗：'+error.message);return}
+  editDlg.close();await load();buildFilters();render()}
+async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
+  const {error}=await sb.from('questions').delete().eq('id',id);
+  if(error){alert('刪除失敗：'+error.message);return}
+  PICKS.delete(id);await load();buildFilters();render()}
+async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
+  it.flag=!it.flag;render();
+  const {error}=await sb.from('questions').upsert(toRow(it));
+  if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render()}}
+
+/* ===== 章節清單管理 ===== */
+function openKpManager(){kpArea.value=SYL_RAW;kpDlg.showModal()}
+async function saveKp(){if(!requireCloud())return;SYL_RAW=kpArea.value;SYL=parseSyl(SYL_RAW);
+  const {error}=await sb.from('syllabus_doc').upsert({id:1,content:SYL_RAW});
+  if(error){alert('儲存失敗：'+error.message);return}
+  kpDlg.close();buildFilters();alert('章節骨架已更新並同步雲端（共 '+SYL.length+' 個子單元）')}
+function resetKpDefault(){if(confirm('回復成預設翰林版骨架？'))kpArea.value=HANLIN_SYLLABUS}
+
+/* ===== 篩選 ===== */
+function uniq(field){return [...new Set(DB.map(x=>x[field]).filter(Boolean))].sort()}
+function allKps(){return [...new Set(DB.flatMap(x=>(x.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean)))].sort()}
+function fillSelect(el,vals,keep){const cur=el.value;el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur}
+function buildFilters(){fillSelect(fBook,uniq('book'));fillSelect(fUnit,uniq('unit'));fillSelect(fSub,uniq('sub'));
+  fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
+  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'))}
+function resetFilters(){['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fChart'].forEach(id=>document.getElementById(id).value='');fFlag.checked=false;render()}
+
+/* ===== 渲染 ===== */
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;margin:${m}">`}
+function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
+function matches(it){const s=fSearch.value.trim();
+  if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')).includes(s))return false;
+  if(fBook.value&&it.book!==fBook.value)return false;
+  if(fField.value&&it.field!==fField.value)return false;
+  if(fUnit.value&&it.unit!==fUnit.value)return false;
+  if(fSub.value&&it.sub!==fSub.value)return false;
+  if(fKp.value&&!(it.kp||'').includes(fKp.value))return false;
+  if(fType.value&&it.type!==fType.value)return false;
+  if(fDiff.value&&calcDiff(it.step,it.mem,it.con).lvl!==fDiff.value)return false;
+  if(fYear.value&&it.year!==fYear.value)return false;
+  if(fSchool.value&&it.school!==fSchool.value)return false;
+  if(fChart.value&&it.chart!==fChart.value)return false;
+  if(fFlag.checked&&!it.flag)return false;
+  return true}
+function render(){const list=document.getElementById('list');const shown=DB.filter(matches);
+  totalCount.textContent=DB.length;showCount.textContent=shown.length;
+  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
+  if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
+  list.innerHTML=shown.map(it=>{
+    const d=calcDiff(it.step,it.mem,it.con);
+    const optEsc=esc(it.q||'').replace(/\n/g,'<br>');
+    const imgs=(it.imgs||[]).map(imgHtml).join('');
+    const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
+    const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px">詳解：${esc(it.sol)}</div>`:'';
+    const kps=(it.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean).map(k=>`<span class="tag kp">${esc(k)}</span>`).join('');
+    return `<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
+      <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
+      <div class="tags">
+        ${it.book?`<span class="tag book">${esc(it.book)} ${esc(it.bookName)}</span>`:''}
+        ${it.unit?`<span class="tag unit">${esc(it.unit)}</span>`:''}
+        ${it.sub?`<span class="tag sub">${esc(it.sub)}</span>`:''}
+        ${kps}
+        ${it.type?`<span class="tag type">${esc(typeName(it.type))}</span>`:''}
+        ${d.lvl?`<span class="tag ${diffTagClass(d.lvl)}">${d.lvl}·${d.score}分</span>`:''}
+        ${it.chart&&it.chart!=='無'?`<span class="tag meta">📊${esc(it.chart)}</span>`:''}
+        ${it.year?`<span class="tag meta">${esc(it.year)}</span>`:''}
+        ${it.school?`<span class="tag meta">${esc(it.school)}</span>`:''}
+        ${it.flag?`<span class="tag flagtag">待確認</span>`:''}
+      </div>
+      <div class="qbody">${it.summary?`<b>${esc(it.summary)}</b><br>`:''}${optEsc}${imgs}${ansHtml}${solHtml}</div>
+      ${it.exam||it.no?`<div class="summary">${esc(it.exam||'')} ${it.no?'第'+esc(it.no)+'題':''}${it.basis?' · 依據：'+esc(it.basis):''}</div>`:''}
+      <div style="margin-top:9px;display:flex;gap:7px;font-family:system-ui,sans-serif">
+        <button class="btn sm" onclick="openEdit('${it.id}')">編輯</button>
+        <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
+        <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
+      </div></div>`}).join('');
+  renderMath(list);updateFloat()}
+function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}}
+
+/* ===== 選題/配題 ===== */
+function togglePick(id){PICKS.has(id)?PICKS.delete(id):PICKS.add(id);render()}
+function clearPicks(){PICKS.clear();render()}
+function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0)}
+function pickedItems(){const arr=DB.filter(x=>PICKS.has(x.id));return arr}
+function autoMix(){mixDlg.showModal()}
+function doAutoMix(){const pool=DB.filter(matches);const total=+mTotal.value||0;
+  const ratio={'簡單':+mEasy.value||0,'中等':+mMid.value||0,'困難':+mHard.value||0,'極難':+mExtreme.value||0};
+  const byLvl={'簡單':[],'中等':[],'困難':[],'極難':[]};
+  pool.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl;if(byLvl[l])byLvl[l].push(it)});
+  PICKS.clear();
+  Object.keys(ratio).forEach(l=>{let n=Math.round(total*ratio[l]/100);const src=[...byLvl[l]].sort(()=>Math.random()-.5);
+    src.slice(0,n).forEach(it=>PICKS.add(it.id))});
+  mixDlg.close();render();
+  alert('已依比例選出 '+PICKS.size+' 題（受可用題數限制，可能少於目標）')}
+
+/* ===== 考卷 ===== */
+function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚未選題');return}
+  const head=['年度','來源學校','考試名稱','題號','答案','冊數','冊名','領域','大單元','子單元','知識點','題目摘要','題型','步驟分','記憶分','概念分','難度','圖表類型','判斷依據','待確認','題目','詳解'];
+  const rows=[head].concat(items.map(it=>[it.year,it.school,it.exam,it.no,it.ans,it.book,it.bookName,it.field,it.unit,it.sub,it.kp,it.summary,it.type,it.step,it.mem,it.con,calcDiff(it.step,it.mem,it.con).lvl,it.chart,it.basis,it.flag?'Y':'',it.q,it.sol]));
+  const csv=rows.map(r=>r.map(c=>`"${(c==null?'':String(c)).replace(/"/g,'""')}"`).join(',')).join('\n');
+  download('選題_'+stamp()+'.csv','\uFEFF'+csv,'text/csv')}
+function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}paperDlg.showModal()}
+let lastPaperHTML='',lastPaperTitle='自然科測驗卷';
+function buildPaperInner(){const items=pickedItems();
+  const ansMode=document.querySelector('input[name=pAns]:checked').value;
+  const showMeta=pShowMeta.checked,showTag=pShowTag.checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;
+  const body=items.map((it,i)=>{
+    const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
+    const imgs=(it.imgs||[]).map(imgHtml).join('');
+    let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
+    if(ansMode==='full'&&it.sol)extra+=`<div class="sol">詳解：${esc(it.sol)}</div>`;
+    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(it.q||it.summary).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
+  let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
+  const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
+  return `<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
+function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
+  document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
+  lastPaperHTML=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(lastPaperTitle)}</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
+<style>body{font-family:"Songti SC","Noto Serif TC",serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
+h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
+.q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
+.ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
+@media print{.noprint{display:none}}</style></head><body>${inner}
+<button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
+<script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
+function closePaper(){document.getElementById('paperView').classList.remove('show')}
+function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
+
+/* ===== 知識點分析報表 ===== */
+function openReport(){
+  const subCount={};SYL.forEach(s=>subCount[s.book+' '+s.unit+' '+s.sub]=0);
+  DB.forEach(it=>{const key=it.book+' '+it.unit+' '+it.sub;if(key in subCount)subCount[key]++;else subCount[key]=(subCount[key]||0)+1});
+  const typeCount={};QTYPES.forEach(t=>typeCount[t.code]=0);DB.forEach(it=>{if(it.type)typeCount[it.type]=(typeCount[it.type]||0)+1});
+  const diffCount={'簡單':0,'中等':0,'困難':0,'極難':0,'未評':0};DB.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl||'未評';diffCount[l]++});
+  const zero=Object.entries(subCount).filter(([k,v])=>v===0).map(([k])=>k);
+  const max=Math.max(1,...Object.values(typeCount));
+  let html=`<p>題庫共 <b>${DB.length}</b> 題。以下統計幫你找出缺口與分布。</p>`;
+  html+=`<div class="sectionhead">難度分布</div><table class="report"><tr><th>難度</th><th>題數</th></tr>`+
+    Object.entries(diffCount).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')+`</table>`;
+  html+=`<div class="sectionhead">題型分布</div><table class="report"><tr><th>題型</th><th>題數</th><th>分布</th></tr>`+
+    QTYPES.map(t=>`<tr><td>${t.code} ${t.name}</td><td>${typeCount[t.code]||0}</td><td><div class="statbar" style="width:${(typeCount[t.code]||0)/max*100}%"></div></td></tr>`).join('')+`</table>`;
+  html+=`<div class="sectionhead">尚無題目的子單元（缺口，共 ${zero.length} 個）</div>`;
+  html+=zero.length?`<div style="font-family:system-ui,sans-serif;font-size:12px;line-height:1.9">${zero.map(z=>`<div>· ${esc(z)}</div>`).join('')}</div>`:'<p>太棒了，所有子單元都有題目！</p>';
+  reportBody.innerHTML=html;reportDlg.showModal()}
+
+/* ===== 備份/還原 ===== */
+function exportJSON(){download('自然題庫備份_'+stamp()+'.json',JSON.stringify({db:DB,syl:SYL_RAW},null,2),'application/json')}
+function restoreJSON(e){const f=e.target.files[0];if(!f)return;if(!requireCloud()){e.target.value='';return}const r=new FileReader();
+  r.onload=async ()=>{try{let data=JSON.parse(r.result);let db=Array.isArray(data)?data:data.db;if(!Array.isArray(db))throw 0;
+    if(confirm('將把備份中的 '+db.length+' 題逐筆匯入雲端\n（相同 id 會更新，不會刪除雲端既有題目），確定？')){
+      db.forEach(it=>{if(!it.id)it.id=uid();if(!it.imgs)it.imgs=[];['step','mem','con'].forEach(k=>{if(it[k]==null)it[k]=0})});
+      const {error}=await sb.from('questions').upsert(db.map(toRow));
+      if(error){alert('匯入失敗：'+error.message);e.target.value='';return}
+      if(data.syl){SYL_RAW=data.syl;await sb.from('syllabus_doc').upsert({id:1,content:SYL_RAW})}
+      await load();buildFilters();render();alert('已匯入 '+db.length+' 題到雲端')}}
+    catch(err){alert('檔案格式錯誤')}e.target.value=''};r.readAsText(f,'utf-8')}
+
+/* ===== Claude 指令 ===== */
+function buildPrompt(){const syl=SYL_RAW;
+  const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
+  return `請把附上的翰林版國中自然科段考卷，逐題整理成 CSV，供我匯入題庫系統。
+
+【這份卷子的固定資訊（請先填好）】
+- 年度：（如 113 上）
+- 來源學校：
+- 考試名稱：（如 113上第一次段考）
+
+【CSV 欄位順序，務必照此 20 欄】
+年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目
+
+【B 課程對應：冊數/冊名/領域/大單元/子單元 只能對照下面這份「翰林版骨架」填，不可自創】
+（格式：冊數|冊名|領域|大單元|子單元；跨節用 ／ 隔開）
+${syl}
+
+【C 分析標籤規則】
+- 題型：從以下 17 種挑一個代碼填（一題只填一個，複合題取主要考點）：
+  ${typeList}
+- 三維度難度評分，各填 1～3 的數字（系統會自動加總算難度，你不用填難度欄）：
+  步驟分：解題步驟 1步=1 / 2步=2 / 3步以上=3
+  記憶分：背過就能答=1 / 需理解才能用=2 / 需在陌生情境活用=3
+  概念分：用到 1 個概念=1 / 2 個=2 / 3個以上或跨章=3
+- 圖表類型：無 / 折線圖 / 長條圖 / 表格 / 示意圖 / 電路圖 / v-t圖 / 實驗裝置圖 等，沒有圖填「無」。
+- 判斷依據：分類有疑慮時簡述理由，否則留空。
+- 待確認：你沒把握的分類填 Y，否則留空。
+
+【其他欄位】
+- 答案：A/B/C/D；非選擇題留空。
+- 知識點：簡短具體，多個用、隔開（如「並聯電路電流分配、電流守恆」）。
+- 題目摘要：動詞＋對象，15 字內（如「判斷並聯電路電流大小」）。
+- 題目：完整題幹，選項放在同一格用換行分隔。化學式/數學式用 LaTeX 包在 $...$，單位與一般英文用 \\text{} 包住避免斜體（如 $25\\,\\text{g}$）。含圖題在題目後標〔含圖，需人工補〕。
+
+【輸出格式】
+- 第一列為標題列；每欄用雙引號包住，欄內雙引號用 "" 表示。
+- 只輸出 CSV，不要其他說明文字。`}
+function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
+
+/* ===== 工具 ===== */
+function stamp(){const d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
+function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+/* ===== 啟動 ===== */
+document.addEventListener('paste',pasteImage);
+buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
+(async function init(){
+  if(!CLOUD_READY){
+    SYL=parseSyl(SYL_RAW);buildFilters();
+    document.getElementById('list').innerHTML=`<div class="empty"><div class="big">☁️</div>
+      <b>尚未連線雲端</b><br>請打開本 HTML，把最上方的<br>
+      <span class="kbd">SUPABASE_URL</span> 與 <span class="kbd">SUPABASE_ANON_KEY</span> 兩行填好後存檔重開。<br>
+      <span style="font-size:12px">（取得方式：Supabase → Project Settings → API）</span></div>`;
+    return;
+  }
+  await load();buildFilters();render();
+})();
+</script>
+</body>
+</html>
