@@ -919,6 +919,13 @@ function matches(it){const s=fSearch.value.trim();
   if(fFlag.checked&&!it.flag)return false;
   return true}
 function render(){const list=document.getElementById('list');const shown=DB.filter(matches);
+  // 顯示排序：年度 → 學校 → 考試名稱 → 題號（題號依數字大小）。存檔後重抓雲端也維持此順序
+  shown.sort((a,b)=>{
+    if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
+    if((a.school||'')!==(b.school||''))return (a.school||'').localeCompare(b.school||'');
+    if((a.exam||'')!==(b.exam||''))return (a.exam||'').localeCompare(b.exam||'');
+    return (parseInt(a.no)||0)-(parseInt(b.no)||0);
+  });
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
