@@ -122,9 +122,11 @@
     <button class="btn green" onclick="exportJSON()">⬇ 備份</button>
     <button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份到雲端</button>
     <input type="file" id="restoreFile" accept=".json" hidden onchange="restoreJSON(event)">
-    <button class="btn gold" onclick="copyPrompt()">📋 Claude 指令</button>
+    <button class="btn gold" onclick="showPrompt()">📋 Claude 指令</button>
     <button class="btn" onclick="openReport()">📊 知識點分析</button>
     <button class="btn" onclick="openKpManager()">🏷 章節清單</button>
+    <button class="btn sm" style="font-size:12px" onclick="(function(){var s=document.getElementById('fSearch').value.toLowerCase();var fb=document.getElementById('fBook').value;var ff=document.getElementById('fField').value;var fu=document.getElementById('fUnit').value;var fsub=document.getElementById('fSub').value;var fk=document.getElementById('fKp').value;var ft=document.getElementById('fType').value;var fd=document.getElementById('fDiff').value;var fy=document.getElementById('fYear').value;var fsc=document.getElementById('fSchool').value;DB.forEach(function(it){if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;if(fk&&(it.kp||''). indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(s&&((it.q||'')+( it.summary||'')).toLowerCase().indexOf(s)<0)return;PICKS.add(it.id);});render();})()">☑ 全選篩選結果</button>
+    <button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>
     <span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>
   </div>
 
@@ -132,12 +134,10 @@
     <aside class="panel side">
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="render()"></div>
-      <div class="grid2">
-        <div class="filt"><label>冊數</label><select id="fBook" onchange="render()"><option value="">全部</option></select></div>
-        <div class="filt"><label>領域</label><select id="fField" onchange="render()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option></select></div>
-      </div>
-      <div class="filt"><label>大單元</label><select id="fUnit" onchange="render()"><option value="">全部</option></select></div>
-      <div class="filt"><label>子單元</label><select id="fSub" onchange="render()"><option value="">全部</option></select></div>
+      <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option></select></div>
+      <div class="filt"><label>冊數</label><select id="fBook" onchange="onFilterBook()"><option value="">全部</option></select></div>
+      <div class="filt"><label>大單元</label><select id="fUnit" onchange="onFilterUnit()"><option value="">全部</option></select></div>
+      <div class="filt"><label>子單元</label><select id="fSub" onchange="onFilterSub()"><option value="">全部</option></select></div>
       <div class="filt"><label>知識點</label><select id="fKp" onchange="render()"><option value="">全部</option></select></div>
       <div class="grid2">
         <div class="filt"><label>題型</label><select id="fType" onchange="render()"><option value="">全部</option></select></div>
@@ -158,6 +158,7 @@
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <button class="btn sm" onclick="autoMix()">⚖ 依比例自動選</button>
   <button class="btn sm" onclick="clearPicks()">清空</button>
+  <button class="btn sm" style="background:#c0392b;color:#fff" onclick="deletePickedItems()">🗑 刪除已選</button>
   <button class="btn gold" onclick="openPaperDlg()">📄 匯出考卷</button>
   <button class="btn green" onclick="exportPaperCSV()">選題CSV</button>
 </div>
@@ -196,7 +197,8 @@
     </div>
     <div class="grid2">
       <div class="field"><label>子單元（跨節用 ／ 隔開）</label><select id="eSub" onchange="syncKp()"></select></div>
-      <div class="field"><label>知識點（多個用、隔開）</label><input type="text" id="eKp" list="kpList" placeholder="如：並聯電路電流分配"><datalist id="kpList"></datalist></div>
+      <div class="field"><label>知識點（多個用、隔開）</label><input type="text" id="eKp" list="kpList" placeholder="如：Jd-Ⅳ-2 酸鹼強度與pH值"><datalist id="kpList"></datalist></div>
+      <div id="kpSuggest" style="display:none;background:#fffdf2;border:1px solid #e8d8a0;border-radius:8px;padding:8px;margin-top:-4px;margin-bottom:8px;max-height:220px;overflow-y:auto"></div>
     </div>
     <div class="field"><label>題目摘要（動詞＋對象，15字內，搜尋用）</label><input type="text" id="eSummary" placeholder="判斷並聯電路電流大小"></div>
 
@@ -295,7 +297,8 @@
 </div>
 
 <script>
-const HANLIN_SYLLABUS = `B1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
+const HANLIN_SYLLABUS = `B1|七上生物|生物|C1 生命世界與科學方法|1-1 多采多姿的生命世界
+B1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
 B1|七上生物|生物|C1 生命世界與科學方法|1-3 進入實驗室
 B1|七上生物|生物|C2 生物體的組成|2-1 生物體的基本單位
 B1|七上生物|生物|C2 生物體的組成|2-2 細胞的構造
@@ -309,6 +312,7 @@ B1|七上生物|生物|C4 生物體的運輸作用|4-1 植物的運輸構造
 B1|七上生物|生物|C4 生物體的運輸作用|4-2 植物體內物質的運輸
 B1|七上生物|生物|C4 生物體的運輸作用|4-3 人體心血管系統的組成
 B1|七上生物|生物|C4 生物體的運輸作用|4-4 人體的循環系統
+B1|七上生物|生物|C5 生物體的協調作用|5-1 刺激與反應
 B1|七上生物|生物|C5 生物體的協調作用|5-2 神經系統
 B1|七上生物|生物|C5 生物體的協調作用|5-3 內分泌系統
 B1|七上生物|生物|C5 生物體的協調作用|5-4 行為與感應
@@ -333,7 +337,9 @@ B2|七下生物|生物|C4 生物與環境|4-3 生態系
 B2|七下生物|生物|C4 生物與環境|4-4 生態系的類型
 B2|七下生物|生物|C5 生物多樣性與保育|5-1 生物多樣性
 B2|七下生物|生物|C5 生物多樣性與保育|5-2 生物多樣性面臨的危機
+B2|七下生物|生物|C5 生物多樣性與保育|5-3 保育的落實
 B3|八上理化|理化|C1 基本測量|1-1 長度、質量與時間
+B3|八上理化|理化|C1 基本測量|1-2 測量與估計
 B3|八上理化|理化|C1 基本測量|1-3 體積與密度
 B3|八上理化|理化|C1 基本測量|跨科 尺度
 B3|八上理化|理化|C2 物質的世界|2-1 認識物質
@@ -341,10 +347,12 @@ B3|八上理化|理化|C2 物質的世界|2-2 溶液與濃度
 B3|八上理化|理化|C2 物質的世界|2-3 混合物的分離
 B3|八上理化|理化|C2 物質的世界|2-3 空氣
 B3|八上理化|理化|C3 波動與聲音|3-1 波的傳播與特徵
+B3|八上理化|理化|C3 波動與聲音|3-2 聲音的形成
 B3|八上理化|理化|C3 波動與聲音|3-3 多變的聲音
 B3|八上理化|理化|C3 波動與聲音|3-4 聲波的傳播與應用
 B3|八上理化|理化|C4 光、影像與顏色|4-1 光的傳播
 B3|八上理化|理化|C4 光、影像與顏色|4-2 光的反射與面鏡成像
+B3|八上理化|理化|C4 光、影像與顏色|4-3 光的折射
 B3|八上理化|理化|C4 光、影像與顏色|4-4 透鏡成像
 B3|八上理化|理化|C4 光、影像與顏色|4-5 色散與顏色
 B3|八上理化|理化|C5 溫度與熱|5-1 溫度與溫度計
@@ -391,6 +399,7 @@ B5|九上理化|理化|C3 功與能|3-3 位能、能量守恆定律與能源
 B5|九上理化|理化|C3 功與能|3-4 簡單機械
 B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-1 電荷與靜電現象
 B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-2 電流
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-3 電壓
 B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-4 歐姆定律與電阻
 B5|九上地科|地科|C5 地球的環境|5-1 我們的地球
 B5|九上地科|地科|C5 地球的環境|5-2 地表的改變與平衡
@@ -437,12 +446,257 @@ const QTYPES = [
 ];
 </script>
 <script>
+/* ===== 儲存 ===== */
+
+/* ====================================================
+   KP_MAP: 子單元 → 108課綱知識點
+   ==================================================== */
+var KP_MAP = {
+"1-1 多采多姿的生命世界":[],
+"1-2 探究自然的科學方法":[],
+"1-3 進入實驗室":[],
+"2-1 生物體的基本單位":[{c:"Da-IV-2",n:"細胞是生物體基本單位"}],
+"2-2 細胞的構造":[{c:"Da-IV-1",n:"顯微鏡觀察細胞構造"}],
+"2-3 物質進出細胞的方式":[{c:"Fc-IV-2",n:"細胞由醣類蛋白質脂質組成"}],
+"2-4 生物體的組成層次":[{c:"Da-IV-3",n:"細胞→組織→器官→器官系統"}],
+"3-1 食物中的養分與能量":[{c:"Bc-IV-2",n:"細胞呼吸作用釋放能量"}],
+"3-2 酵素":[{c:"Bc-IV-1",n:"酵素催化新陳代謝"}],
+"3-3 植物如何製造養分":[{c:"Bc-IV-3",n:"葉綠體光合作用"},{c:"Bc-IV-4",n:"光合作用影響因素"}],
+"3-4 人體如何獲得養分":[{c:"Db-IV-1",n:"消化系統攝食消化吸收"}],
+"3-5 生物獲得能量的方式":[{c:"Bc-IV-2",n:"細胞呼吸作用釋放能量"},{c:"Ba-IV-3",n:"光合作用光能轉化學能"}],
+"4-1 植物的運輸構造":[{c:"Db-IV-6",n:"維管束具運輸功能"}],
+"4-2 植物體內物質的運輸":[{c:"Db-IV-6",n:"維管束具運輸功能"},{c:"Db-IV-8",n:"植物分布影響水流氣溫"}],
+"4-3 人體心血管系統的組成":[{c:"Db-IV-2",n:"循環系統運輸物質至各細胞"}],
+"4-4 人體的循環系統":[{c:"Db-IV-2",n:"循環系統運輸物質至各細胞"}],
+"5-1 刺激與反應":[{c:"Dc-IV-5",n:"生物覺察環境變化採取適當反應"}],
+"5-2 神經系統":[{c:"Dc-IV-1",n:"神經系統察覺環境變動"}],
+"5-3 內分泌系統":[{c:"Dc-IV-2",n:"內分泌系統調節代謝維持恆定"}],
+"5-4 行為與感應":[{c:"Dc-IV-5",n:"生物覺察環境變化採取適當反應"}],
+"6-1 呼吸與氣體的恆定":[{c:"Db-IV-3",n:"呼吸系統與外界交換氣體"},{c:"Dc-IV-4",n:"各系統協調維持體內恆定"}],
+"6-2 排泄與水分的恆定":[{c:"Dc-IV-4",n:"各系統協調維持體內恆定"}],
+"6-3 體溫的恆定與血糖的恆定":[{c:"Dc-IV-2",n:"內分泌系統調節代謝維持恆定"},{c:"Dc-IV-4",n:"各系統協調維持體內恆定"}],
+"1-1 細胞的分裂":[{c:"Da-IV-4",n:"細胞分裂染色體發生變化"}],
+"1-2 無性生殖":[{c:"Ga-IV-1",n:"有性生殖與無性生殖"}],
+"1-3 有性生殖":[{c:"Ga-IV-1",n:"有性生殖與無性生殖"},{c:"Db-IV-4",n:"生殖系統產生配子分泌激素"},{c:"Db-IV-7",n:"花的雄蕊花粉雌蕊胚珠"}],
+"2-1 遺傳、染色體與基因":[{c:"Ga-IV-6",n:"孟德爾遺傳研究科學史"}],
+"2-2 人類的遺傳":[{c:"Ga-IV-2",n:"人類性別由性染色體決定"},{c:"Ga-IV-3",n:"ABO血型是可遺傳性狀"}],
+"2-3 突變與遺傳疾病":[{c:"Ga-IV-4",n:"遺傳物質變異可遺傳後代"}],
+"2-4 生物技術":[{c:"Ga-IV-5",n:"生物技術解決農業食品醫藥問題"}],
+"3-1 化石與演化":[{c:"Gb-IV-1",n:"化石顯示地球曾存在許多生物"}],
+"3-2 生物的命名與分類":[{c:"Gc-IV-1",n:"依形態構造特徵將生物分類"}],
+"3-3 原核、原生生物及真菌界":[{c:"Gc-IV-3",n:"微生物對人體有利有害"},{c:"Gc-IV-4",n:"人類利用微生物釀酒基因轉殖"}],
+"3-4 植物界":[],
+"3-5 動物界":[{c:"Gc-IV-2",n:"生物在生態系擔任不同角色"}],
+"4-1 族群、群集與演替":[{c:"La-IV-1",n:"生態系結構隨時間改變形成演替"},{c:"Fc-IV-1",n:"個體族群群集生態系層次"}],
+"4-2 生物間的互動關係":[{c:"Lb-IV-1",n:"非生物因子影響生物分布與生存"}],
+"4-3 生態系":[{c:"Bd-IV-1",n:"太陽能量經食物鏈流轉"},{c:"Bd-IV-2",n:"碳元素在生物無生物間循環"},{c:"Bd-IV-3",n:"生產者消費者分解者物質循環"}],
+"4-4 生態系的類型":[{c:"Lb-IV-1",n:"非生物因子影響生物分布與生存"}],
+"5-1 生物多樣性":[{c:"Gc-IV-2",n:"生物多樣功能維持生態系穩定"}],
+"5-2 生物多樣性面臨的危機":[{c:"Lb-IV-2",n:"人類活動改變環境影響其他生物"}],
+"5-3 保育的落實":[{c:"Lb-IV-3",n:"人類採行動維持生物生存環境"},{c:"Lb-IV-5",n:"公民共同維護生物多樣性"}],
+"1-1 長度、質量與時間":[{c:"Ea-IV-1",n:"基本物理量與衍伸物理量"}],
+"1-2 測量與估計":[{c:"Ea-IV-2",n:"以適當尺度量測物理量"},{c:"Ea-IV-3",n:"依最小刻度估計測量值"}],
+"1-3 體積與密度":[{c:"Ea-IV-1",n:"基本物理量與衍伸物理量"}],
+"跨科 尺度":[{c:"Ea-IV-2",n:"以適當尺度量測物理量"}],
+"2-1 認識物質":[{c:"Ab-IV-3",n:"物質的物理性質與化學性質"},{c:"Ab-IV-1",n:"粒子模型與物質三態"},{c:"Ab-IV-4",n:"純物質與混合物"}],
+"2-2 溶液與濃度":[{c:"Jb-IV-4",n:"重量百分濃度P%與ppm"}],
+"2-3 混合物的分離":[{c:"Ca-IV-1",n:"結晶過濾色層分析法"}],
+"2-3 空氣":[{c:"Fa-IV-3",n:"大氣主要成分氮氣氧氣"}],
+"3-1 波的傳播與特徵":[{c:"Ka-IV-1",n:"波長頻率波速振幅"},{c:"Ka-IV-2",n:"橫波與縱波"}],
+"3-2 聲音的形成":[{c:"Ka-IV-3",n:"介質種類狀態密度溫度影響聲速"}],
+"3-3 多變的聲音":[{c:"Ka-IV-5",n:"聲音大小高低音色"}],
+"3-4 聲波的傳播與應用":[{c:"Ka-IV-3",n:"介質種類狀態密度溫度影響聲速"},{c:"Ka-IV-4",n:"聲波反射用於測量傳播"}],
+"4-1 光的傳播":[{c:"Ka-IV-6",n:"針孔成像說明光的直進性"}],
+"4-2 光的反射與面鏡成像":[{c:"Ka-IV-8",n:"光的反射與折射規律"}],
+"4-3 光的折射":[{c:"Ka-IV-8",n:"光的反射與折射規律"}],
+"4-4 透鏡成像":[{c:"Ka-IV-9",n:"透鏡面鏡眼鏡顯微鏡光學儀器"}],
+"4-5 色散與顏色":[{c:"Ka-IV-10",n:"三稜鏡分散成各種色光"},{c:"Ka-IV-11",n:"物體顏色是光選擇性反射"}],
+"5-1 溫度與溫度計":[{c:"Bb-IV-1",n:"熱由高溫傳到低溫"}],
+"5-2 熱量":[{c:"Bb-IV-2",n:"水升溫吸收熱能定義熱量單位"}],
+"5-2 熱量與比熱":[{c:"Bb-IV-2",n:"水升溫吸收熱能定義熱量單位"},{c:"Bb-IV-3",n:"比熱定量描述物質受熱溫度變化"}],
+"5-3 比熱":[{c:"Bb-IV-3",n:"比熱定量描述物質受熱溫度變化"}],
+"5-4 熱對物質的影響":[{c:"Bb-IV-5",n:"熱改變物質形態體積脹縮"}],
+"5-5 熱的傳播方式":[{c:"Bb-IV-4",n:"傳導對流輻射"}],
+"6-1 元素與化合物":[{c:"Aa-IV-3",n:"純物質包括元素與化合物"},{c:"Aa-IV-5",n:"化學符號表示法"}],
+"6-2 生活中常見的元素":[{c:"Aa-IV-4",n:"元素性質有規律性和週期性"}],
+"6-3 原子結構":[{c:"Aa-IV-1",n:"原子模型的發展"},{c:"Aa-IV-2",n:"原子量與分子量"}],
+"6-4 週期表":[{c:"Aa-IV-4",n:"元素性質有規律性和週期性"},{c:"Aa-IV-5",n:"化學符號表示法"}],
+"6-5 分子與化學式":[{c:"Cb-IV-1",n:"分子與原子"},{c:"Aa-IV-5",n:"化學符號表示法"}],
+"1-1 質量守恆定律":[{c:"Ja-IV-1",n:"質量守恆定律"},{c:"Ja-IV-2",n:"化學反應是原子重新排列"}],
+"1-2 反應式與化學計量":[{c:"Ja-IV-3",n:"化學反應伴隨沉澱氣體顏色溫度變化"},{c:"Ja-IV-4",n:"化學反應的表示法"}],
+"2-1 氧化反應與活性":[{c:"Jc-IV-1",n:"氧化還原得氧失氧"},{c:"Jc-IV-2",n:"燃燒實驗認識氧化"},{c:"Jc-IV-3",n:"金屬燃燒認識金屬活性"},{c:"Jc-IV-4",n:"生活中常見氧化還原反應"}],
+"2-2 氧化與還原反應":[{c:"Jc-IV-5",n:"鋅銅電池認識電池原理"},{c:"Jc-IV-6",n:"化學電池放電與充電"},{c:"Jc-IV-7",n:"電解水與硫酸銅電解原理"}],
+"3-1 電解質":[{c:"Jb-IV-1",n:"水溶液導電認識電解質"},{c:"Jb-IV-2",n:"電解質在水溶液中解離出離子"}],
+"3-2 酸和鹼":[{c:"Jd-IV-1",n:"酸鹼性及酸腐蝕金屬大理石"},{c:"Jd-IV-3",n:"廣用指示劑及pH計"}],
+"3-3 酸鹼的強弱與pH值":[{c:"Jd-IV-2",n:"酸鹼強度與pH值的關係"},{c:"Jd-IV-4",n:"氫離子與氫氧根離子的關係"}],
+"3-4 酸鹼反應":[{c:"Jd-IV-5",n:"酸鹼鹽生活應用與危險性"},{c:"Jd-IV-6",n:"酸鹼中和生成鹽和水並放熱"},{c:"Jb-IV-3",n:"離子在水溶液中沉澱酸鹼氧化還原"}],
+"4-1 反應速率":[{c:"Je-IV-1",n:"影響反應速率：本性溫度濃度接觸面積催化劑"}],
+"4-2 可逆反應與平衡":[{c:"Je-IV-2",n:"可逆反應"},{c:"Je-IV-3",n:"化學平衡及溫度濃度影響"}],
+"5-1 有機化合物的組成":[{c:"Jf-IV-1",n:"有機化合物與無機化合物特徵"},{c:"Cb-IV-2",n:"原子排列不同特性不同"},{c:"Cb-IV-3",n:"分子式相同排列不同形成不同物質"}],
+"5-2 常見的有機化合物":[{c:"Jf-IV-2",n:"烷類醇類有機酸酯類"}],
+"5-3 聚合物與衣料纖維":[{c:"Jf-IV-3",n:"酯化與皂化反應"},{c:"Jf-IV-4",n:"常見的塑膠"}],
+"5-4 食品與清潔劑":[{c:"Jf-IV-2",n:"烷類醇類有機酸酯類"},{c:"Jf-IV-3",n:"酯化與皂化反應"}],
+"6-1 力與平衡":[{c:"Eb-IV-1",n:"力引發物體移動或轉動"},{c:"Eb-IV-2",n:"力矩與槓桿"},{c:"Eb-IV-3",n:"平衡物體合力合力矩為零"}],
+"6-2 摩擦力":[{c:"Eb-IV-4",n:"靜摩擦力與動摩擦力"}],
+"6-3 壓力":[{c:"Eb-IV-5",n:"壓力定義與帕斯卡原理"},{c:"Ec-IV-1",n:"大氣壓力成因"}],
+"6-4 浮力":[{c:"Eb-IV-6",n:"浮力等於排開液體重量"}],
+"1-1 位置、路徑長與位移":[{c:"Eb-IV-8",n:"距離時間方向描述物體運動"}],
+"1-2 速率與速度":[{c:"Eb-IV-8",n:"距離時間方向描述物體運動"}],
+"1-3 加速度運動":[{c:"Eb-IV-11",n:"加速度運動必受力F=ma"}],
+"1-4 自由落體運動":[{c:"Eb-IV-11",n:"加速度運動必受力F=ma"}],
+"2-1 慣性定律":[{c:"Eb-IV-10",n:"不受力保持原有運動狀態"},{c:"Eb-IV-12",n:"質量決定慣性大小"}],
+"2-2 運動定律":[{c:"Eb-IV-11",n:"加速度運動必受力F=ma"}],
+"2-3 作用力與反作用力定律":[{c:"Eb-IV-13",n:"反作用力大小相等方向相反"}],
+"2-4 圓周運動與萬有引力":[{c:"Eb-IV-9",n:"圓周運動是加速度運動"},{c:"Kb-IV-1",n:"星體引力使物體具有重量"},{c:"Kb-IV-2",n:"萬有引力與質量距離的關係"}],
+"2-5 力矩與槓桿原理":[{c:"Eb-IV-2",n:"力矩與槓桿"},{c:"Eb-IV-3",n:"平衡物體合力合力矩為零"},{c:"Eb-IV-7",n:"簡單機械省力省時改向"}],
+"3-1 功與功率":[{c:"Ba-IV-6",n:"力作功改變物體能量"},{c:"Ba-IV-7",n:"功率定義"}],
+"3-2 動能":[{c:"Ba-IV-2",n:"孤立系統能量守恆"}],
+"3-3 位能、能量守恆定律與能源":[{c:"Ba-IV-1",n:"能量不同形式可互相轉換"},{c:"Ba-IV-2",n:"孤立系統能量守恆"}],
+"3-4 簡單機械":[{c:"Eb-IV-7",n:"簡單機械省力省時改向"}],
+"4-1 電荷與靜電現象":[{c:"Kc-IV-1",n:"摩擦產生靜電正負電荷"},{c:"Kc-IV-2",n:"靜電力同斥異吸"}],
+"4-2 電流":[{c:"Kc-IV-7",n:"歐姆定律電流電壓電阻"}],
+"4-3 電壓":[{c:"Kc-IV-7",n:"歐姆定律電流電壓電阻"}],
+"4-4 歐姆定律與電阻":[{c:"Kc-IV-7",n:"歐姆定律電流電壓電阻"},{c:"Kc-IV-8",n:"電阻發熱電能轉熱能"}],
+"5-1 我們的地球":[{c:"Fa-IV-1",n:"地球大氣圈水圈岩石圈"},{c:"Fa-IV-2",n:"三大類岩石特徵與成因"},{c:"Fa-IV-3",n:"大氣主要成分氮氣氧氣"}],
+"5-2 地表的改變與平衡":[{c:"Ia-IV-1",n:"外營力內營力改變地貌"},{c:"Hb-IV-1",n:"岩層化石了解地球歷史"},{c:"Hb-IV-2",n:"地層解讀地質事件先後順序"}],
+"5-3 岩石與礦物":[{c:"Fa-IV-2",n:"三大類岩石特徵與成因"}],
+"6-1 地球的構造與板塊運動":[{c:"Ia-IV-2",n:"岩石圈分為數個板塊"},{c:"Fa-IV-1",n:"地球大氣圈水圈岩石圈"}],
+"6-2 板塊運動與內營力的影響":[{c:"Ia-IV-3",n:"板塊聚合分離產生地震火山造山"},{c:"Ia-IV-4",n:"地震火山分布在特定地帶"}],
+"6-3 岩層的紀錄":[{c:"Hb-IV-1",n:"岩層化石了解地球歷史"},{c:"Hb-IV-2",n:"地層解讀地質事件先後順序"}],
+"7-1 宇宙與太陽系":[{c:"Ed-IV-1",n:"星系是宇宙基本單位"},{c:"Ed-IV-2",n:"銀河系太陽是成員之一"},{c:"Fb-IV-1",n:"太陽系行星繞太陽公轉"},{c:"Fb-IV-2",n:"類地行星環境差異極大"}],
+"7-2 晝夜與四季":[{c:"Id-IV-1",n:"夏季白天長冬季黑夜長"},{c:"Id-IV-2",n:"陽光角度影響吸收能量"},{c:"Id-IV-3",n:"四季由地球自轉軸傾斜造成"}],
+"7-3 日地月的相對運動":[{c:"Fb-IV-3",n:"月球繞地球公轉日月食"},{c:"Fb-IV-4",n:"月相變化具規律性"}],
+"1-1 電流的熱效應":[{c:"Kc-IV-8",n:"電阻發熱電能轉熱能"},{c:"Ba-IV-4",n:"化學反應吸熱或放熱"}],
+"1-2 生活用電":[{c:"Mc-IV-3",n:"電力供應與輸送方式"},{c:"Mc-IV-4",n:"用電安全避免觸電走火"},{c:"Mc-IV-5",n:"電器標示與電費計算"}],
+"1-3 電池":[{c:"Ba-IV-5",n:"電池化學能轉電能"},{c:"Jc-IV-5",n:"鋅銅電池認識電池原理"},{c:"Jc-IV-6",n:"化學電池放電與充電"}],
+"1-4 電流的化學效應":[{c:"Jc-IV-7",n:"電解水與硫酸銅電解原理"}],
+"2-1 磁鐵與磁場":[{c:"Kc-IV-3",n:"磁力線表示磁場方向強弱"}],
+"2-2 電流的磁效應":[{c:"Kc-IV-4",n:"電流產生磁場安培右手定則"}],
+"2-3 電流與磁場的交互作用":[{c:"Kc-IV-5",n:"載流導線受力電動機原理"}],
+"2-4 電磁感應":[{c:"Kc-IV-6",n:"磁場變化產生感應電流"}],
+"3-1 地球的大氣":[{c:"Fa-IV-3",n:"大氣主要成分氮氣氧氣"},{c:"Fa-IV-4",n:"大氣由溫度變化分層"}],
+"3-2 天氣現象":[{c:"Ib-IV-1",n:"氣團是均勻大型空氣團塊"},{c:"Ib-IV-2",n:"氣壓差產生風"},{c:"Ib-IV-3",n:"地球自轉造成高低氣壓旋轉"}],
+"3-3 氣團與鋒面":[{c:"Ib-IV-4",n:"鋒面是氣團交界面產生天氣變化"},{c:"Ib-IV-6",n:"東北季風與西南季風影響臺灣"}],
+"3-4 臺灣的災變天氣":[{c:"Ib-IV-5",n:"颱風梅雨寒潮乾旱"},{c:"Md-IV-1",n:"颱風七至九月發生"},{c:"Md-IV-2",n:"颱風帶來狂風豪雨暴潮"},{c:"Md-IV-3",n:"臺灣板塊交界地震頻仍"},{c:"Md-IV-4",n:"大雨後順向坡加重山崩"}],
+"4-1 海洋與大氣的互動":[{c:"Ic-IV-1",n:"波浪海流潮汐"},{c:"Ic-IV-2",n:"海流影響陸地氣候"},{c:"Ic-IV-3",n:"臺灣附近海流隨季節不同"},{c:"Ic-IV-4",n:"潮汐變化具規律性"},{c:"Fa-IV-5",n:"海水成分與特性"}],
+"4-2 溫室效應與全球暖化":[{c:"Me-IV-4",n:"溫室氣體與全球暖化"},{c:"Nb-IV-1",n:"全球暖化對生物的影響"},{c:"Nb-IV-2",n:"氣候變遷海平面上升異常降水"}],
+"4-3 人與自然的互動":[{c:"Lb-IV-2",n:"人類活動改變環境影響生物"},{c:"Na-IV-4",n:"5R減量拒絕重複使用回收再生"},{c:"Na-IV-7",n:"減量回收再利用綠能永續"},{c:"Nc-IV-3",n:"化石燃料形成與特性"},{c:"Nc-IV-4",n:"風能太陽能核融合燃料電池"},{c:"Nb-IV-3",n:"氣候變遷減緩與調適"}],
+"跨科 氣候變遷與調適":[{c:"Nb-IV-3",n:"氣候變遷減緩與調適"},{c:"Na-IV-4",n:"5R減量拒絕重複使用回收再生"},{c:"Na-IV-7",n:"減量回收再利用綠能永續"}]
+};
+
+/* ====================================================
+   篩選聯動：領域 > 冊數 > 大單元 > 子單元
+   ==================================================== */
+function getSylVals(field, fi) {
+  var fi = fi || {};
+  var seen = {};
+  var res = [];
+  SYL.forEach(function(s) {
+    if (fi.field && s.field !== fi.field) return;
+    if (fi.book  && s.book  !== fi.book)  return;
+    if (fi.unit  && s.unit  !== fi.unit)  return;
+    var v = s[field];
+    if (v && !seen[v]) { seen[v] = 1; res.push(v); }
+  });
+  DB.forEach(function(it) {
+    if (fi.field && it.field !== fi.field) return;
+    if (fi.book  && it.book  !== fi.book)  return;
+    if (fi.unit  && it.unit  !== fi.unit)  return;
+    var v = it[field];
+    if (v && !seen[v]) { seen[v] = 1; res.push(v); }
+  });
+  return res.sort();
+}
+function setOpts(el, vals) {
+  var cur = el.value;
+  el.innerHTML = '<option value="">全部</option>';
+  vals.forEach(function(v) {
+    var o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    if (v === cur) o.selected = true;
+    el.appendChild(o);
+  });
+}
+function onFilterField() {
+  var f = fField.value;
+  var fi = f ? {field:f} : {};
+  setOpts(fBook, getSylVals('book', fi));
+  setOpts(fUnit, getSylVals('unit', fi));
+  setOpts(fSub,  getSylVals('sub',  fi));
+  updateKpFilter(); render();
+}
+function onFilterBook() {
+  var f = fField.value, b = fBook.value;
+  var fi = {}; if(f) fi.field=f; if(b) fi.book=b;
+  setOpts(fUnit, getSylVals('unit', fi));
+  setOpts(fSub,  getSylVals('sub',  fi));
+  updateKpFilter(); render();
+}
+function onFilterUnit() {
+  var f = fField.value, b = fBook.value, u = fUnit.value;
+  var fi = {}; if(f) fi.field=f; if(b) fi.book=b; if(u) fi.unit=u;
+  setOpts(fSub, getSylVals('sub', fi));
+  updateKpFilter(); render();
+}
+function onFilterSub() { updateKpFilter(); render(); }
+function updateKpFilter() {
+  var f=fField.value, b=fBook.value, u=fUnit.value, s=fSub.value;
+  var seen={}, kps=[];
+  DB.forEach(function(it) {
+    if(f && it.field!==f) return;
+    if(b && it.book !==b) return;
+    if(u && it.unit !==u) return;
+    if(s && it.sub  !==s) return;
+    (it.kp||'').split(/[、,，]/).forEach(function(k) {
+      k=k.trim(); if(k && !seen[k]){seen[k]=1; kps.push(k);}
+    });
+  });
+  setOpts(fKp, kps.sort());
+}
+
+/* ====================================================
+   知識點建議（選子單元後自動顯示）
+   ==================================================== */
+function showKpSuggest(sub) {
+  var kps = KP_MAP[sub] || [];
+  var box = document.getElementById('kpSuggest');
+  if (!box) return;
+  while (box.firstChild) box.removeChild(box.firstChild);
+  if (!kps.length) { box.style.display='none'; return; }
+  box.style.display = 'block';
+  var hdr = document.createElement('div');
+  hdr.style.cssText = 'font-size:11px;font-weight:700;color:#6b6557;margin-bottom:5px';
+  hdr.textContent = '108課綱對應知識點（點選填入）';
+  box.appendChild(hdr);
+  kps.forEach(function(k) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;padding:4px 8px;margin-bottom:3px;'
+      +'border:1px solid #e8d8a0;border-radius:6px;background:#fffdf2;cursor:pointer';
+    row.addEventListener('mouseover', function(){this.style.background='#fff3c0';});
+    row.addEventListener('mouseout',  function(){this.style.background='#fffdf2';});
+    var kc=k.c, kn=k.n;
+    row.addEventListener('click', function() {
+      var el=document.getElementById('eKp');
+      var cur=el.value.trim();
+      var full=kc+' '+kn;
+      if(cur.indexOf(kc)>=0) return;
+      el.value = cur ? cur+'、'+full : full;
+    });
+    var s1=document.createElement('span');
+    s1.style.cssText='font-size:10px;font-weight:700;color:#b8860b;font-family:monospace;white-space:nowrap;min-width:68px';
+    s1.textContent=kc;
+    var s2=document.createElement('span');
+    s2.style.cssText='font-size:12px;color:#3a3020;line-height:1.5';
+    s2.textContent=kn;
+    row.appendChild(s1); row.appendChild(s2);
+    box.appendChild(row);
+  });
+}
+
 /* ===== Supabase 連線設定（多人共用版） =====
    ▼▼▼ 只要改這兩行：把你 Supabase 專案的兩個值貼進來即可 ▼▼▼
    取得方式：Supabase 後台 → Project Settings → API
-     SUPABASE_URL      = 那個 Project URL（形如 https://xxxxx.supabase.co）
-     SUPABASE_ANON_KEY = 標示為 anon / public 的那串長金鑰
-   注意：這裡只能放 anon public key，絕對不要貼 service_role key！      */
+   注意：這裡只能放 anon / publishable 公開金鑰，絕對不要貼 service_role key！ */
 const SUPABASE_URL      = 'https://esfepufqyeplafzbeeag.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 /* ▲▲▲ 改完上面兩行就完成設定，其餘都不用動 ▲▲▲ */
@@ -451,7 +705,6 @@ const CLOUD_READY = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.star
 const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
 
-/* ===== 狀態 ===== */
 let DB=[], PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], diff={step:0,mem:0,con:0};
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
@@ -471,9 +724,9 @@ async function load(){
   SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
   SYL=parseSyl(SYL_RAW);
 }
-async function reloadCloud(){if(!requireCloud())return;await load();buildFilters();render();}
+async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
 
-/* ===== 圖片上傳 Storage：把 base64 換成公開 URL（舊的 data: 圖片原樣保留仍可顯示） ===== */
+/* ===== 圖片上傳 Storage：base64 換成公開 URL（舊 data: 圖片原樣保留仍可顯示） ===== */
 function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=(h.match(/:(.*?);/)||[])[1]||'image/jpeg';
   const bin=atob(b);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
   return new Blob([u8],{type:mime});}
@@ -523,7 +776,7 @@ function optTags(arr,sel){return ['<option value="">—</option>'].concat([...ne
 function fillBook(sel){eBook.innerHTML=optTags(SYL.map(k=>k.book),sel)}
 function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
   eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
-function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp()}
+function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp();showKpSuggest(eSub.value);}
 function syncKp(){kpList.innerHTML=[...new Set(DB.map(x=>x.kp).filter(Boolean))].map(v=>`<option>${esc(v)}</option>`).join('')}
 
 /* ===== 題型/難度 UI ===== */
@@ -539,8 +792,37 @@ function showDiffResult(){const d=calcDiff(diff.step,diff.mem,diff.con);
 
 /* ===== 圖片 ===== */
 function fileToDataURL(f){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(f)})}
-function compress(d,maxW){return new Promise(res=>{const img=new Image();img.onload=()=>{const sc=Math.min(1,maxW/img.width);const cv=document.createElement('canvas');cv.width=img.width*sc;cv.height=img.height*sc;cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);res(cv.toDataURL('image/jpeg',0.82))};img.src=d})}
-async function addImages(e){for(const f of e.target.files){const d=await fileToDataURL(f);const c=await compress(d,1000);curImgs.push({src:c,width:70,align:'center'})}renderImgPrev();e.target.value=''}
+function compress(d,maxW){
+  return new Promise(function(res,rej){
+    var img=new Image();
+    img.onload=function(){
+      var sc=Math.min(1,maxW/img.width);
+      var cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*sc);
+      cv.height=Math.round(img.height*sc);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      var result=cv.toDataURL('image/jpeg',0.72);  // 降低品質節省空間
+      res(result);
+    };
+    img.onerror=function(){rej(new Error('圖片載入失敗'));}
+    img.src=d;
+  });
+}
+async function addImages(e){
+  var files=e.target.files;
+  if(!files.length)return;
+  for(var i=0;i<files.length;i++){
+    try{
+      var d=await fileToDataURL(files[i]);
+      var c=await compress(d,800);  // 最大800px
+      curImgs.push({src:c,width:70,align:'center'});
+    }catch(err){
+      alert('圖片 '+(i+1)+' 載入失敗：'+err.message);
+    }
+  }
+  renderImgPrev();
+  e.target.value='';
+}
 async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,1000);curImgs.push({src:c,width:70,align:'center'});renderImgPrev();e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
@@ -573,11 +855,12 @@ async function saveEdit(){
   data.imgs=await uploadImgs(curImgs,id); // base64 → Storage URL
   const {error}=await sb.from('questions').upsert(toRow(data));
   if(error){alert('儲存失敗：'+error.message);return}
-  editDlg.close();await load();buildFilters();render()}
+  editDlg.close();await load();buildFiltersKeep();render()}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
   if(error){alert('刪除失敗：'+error.message);return}
-  PICKS.delete(id);await load();buildFilters();render()}
+  PICKS.delete(id);await load();buildFiltersKeep();render()}
+/* deletePickedItems & selectFiltered moved to separate script */
 async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
   it.flag=!it.flag;render();
   const {error}=await sb.from('questions').upsert(toRow(it));
@@ -594,11 +877,28 @@ function resetKpDefault(){if(confirm('回復成預設翰林版骨架？'))kpArea
 /* ===== 篩選 ===== */
 function uniq(field){return [...new Set(DB.map(x=>x[field]).filter(Boolean))].sort()}
 function allKps(){return [...new Set(DB.flatMap(x=>(x.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean)))].sort()}
-function fillSelect(el,vals,keep){const cur=el.value;el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur}
-function buildFilters(){fillSelect(fBook,uniq('book'));fillSelect(fUnit,uniq('unit'));fillSelect(fSub,uniq('sub'));
+function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur;else el.value='';}
+function buildFilters(){
+  setOpts(fBook,getSylVals('book'));setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
-  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'))}
-function resetFilters(){['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fChart'].forEach(id=>document.getElementById(id).value='');fFlag.checked=false;render()}
+  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'));}
+function buildFiltersKeep(){
+  // 記住目前篩選值
+  var cur={
+    book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
+    kp:fKp.value,type:fType.value,diff:fDiff.value,year:fYear.value,
+    school:fSchool.value,chart:fChart.value
+  };
+  buildFilters();
+  // 還原篩選值
+  Object.keys(cur).forEach(function(k){
+    var el=document.getElementById('f'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(el&&cur[k])el.value=cur[k];
+  });
+}
+function resetFilters(){
+  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fChart'].forEach(id=>document.getElementById(id).value='');
+  fFlag.checked=false;buildFilters();render();}
 
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
@@ -624,7 +924,8 @@ function render(){const list=document.getElementById('list');const shown=DB.filt
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
   list.innerHTML=shown.map(it=>{
     const d=calcDiff(it.step,it.mem,it.con);
-    const optEsc=esc(it.q||'').replace(/\n/g,'<br>');
+    const cleanQ=fixLatex(it.q||'');
+    const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px">詳解：${esc(it.sol)}</div>`:'';
@@ -651,6 +952,26 @@ function render(){const list=document.getElementById('list');const shown=DB.filt
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
   renderMath(list);updateFloat()}
+function fixLatex(text){
+  return text.replace(/\$([^$]+)\$/g,function(match,inner){
+    var fixed=inner;
+    // 移除 $...$ 內的換行
+    fixed=fixed.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim();
+    // 修正常見 AI 錯誤：少了反斜線的指令
+    fixed=fixed.replace(/(?<!\\)times/g,'\\times');      // times → \times
+    fixed=fixed.replace(/(?<!\\)cdot/g,'\\cdot');        // cdot → \cdot
+    fixed=fixed.replace(/(?<!\\)rightarrow/g,'\\rightarrow'); // rightarrow → \rightarrow
+    fixed=fixed.replace(/(?<!\\)leftarrow/g,'\\leftarrow');
+    fixed=fixed.replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons');
+    fixed=fixed.replace(/(?<!\\)alpha/g,'\\alpha');
+    fixed=fixed.replace(/(?<!\\)beta/g,'\\beta');
+    fixed=fixed.replace(/(?<!\\)Delta/g,'\\Delta');
+    fixed=fixed.replace(/(?<!\\)degree/g,'\\degree');
+    // 修正 \ext{} → \text{}
+    fixed=fixed.replace(/\\ext\{/g,'\\text{');
+    return '$'+fixed+'$';
+  });
+}
 function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}}
 
 /* ===== 選題/配題 ===== */
@@ -685,7 +1006,7 @@ function buildPaperInner(){const items=pickedItems();
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol">詳解：${esc(it.sol)}</div>`;
-    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(it.q||it.summary).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
+    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
   return `<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
@@ -723,16 +1044,48 @@ function openReport(){
   reportBody.innerHTML=html;reportDlg.showModal()}
 
 /* ===== 備份/還原 ===== */
-function exportJSON(){download('自然題庫備份_'+stamp()+'.json',JSON.stringify({db:DB,syl:SYL_RAW},null,2),'application/json')}
-function restoreJSON(e){const f=e.target.files[0];if(!f)return;if(!requireCloud()){e.target.value='';return}const r=new FileReader();
-  r.onload=async ()=>{try{let data=JSON.parse(r.result);let db=Array.isArray(data)?data:data.db;if(!Array.isArray(db))throw 0;
-    if(confirm('將把備份中的 '+db.length+' 題逐筆匯入雲端\n（相同 id 會更新，不會刪除雲端既有題目），確定？')){
-      db.forEach(it=>{if(!it.id)it.id=uid();if(!it.imgs)it.imgs=[];['step','mem','con'].forEach(k=>{if(it[k]==null)it[k]=0})});
-      const {error}=await sb.from('questions').upsert(db.map(toRow));
-      if(error){alert('匯入失敗：'+error.message);e.target.value='';return}
-      if(data.syl){SYL_RAW=data.syl;await sb.from('syllabus_doc').upsert({id:1,content:SYL_RAW})}
-      await load();buildFilters();render();alert('已匯入 '+db.length+' 題到雲端')}}
-    catch(err){alert('檔案格式錯誤')}e.target.value=''};r.readAsText(f,'utf-8')}
+function exportJSON(){
+  var content=JSON.stringify({db:DB,syl:SYL_RAW},null,2);
+  var blob=new Blob([content],{type:'application/json'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='自然題庫備份_'+stamp()+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){URL.revokeObjectURL(url);},2000);
+}
+/* 匯入備份到雲端：逐筆 upsert（相同 id 會更新，不刪除雲端既有題目） */
+function restoreJSON(e){
+  var f=e.target.files[0];if(!f)return;
+  if(!requireCloud()){e.target.value='';return;}
+  var r=new FileReader();
+  r.onload=async function(){
+    try{
+      var data=JSON.parse(r.result);
+      var db=Array.isArray(data)?data:data.db;
+      if(!Array.isArray(db))throw new Error('格式錯誤');
+      if(!confirm('將把備份中的 '+db.length+' 題逐筆匯入雲端\n（相同 id 會更新，不會刪除雲端既有題目），確定？')){e.target.value='';return;}
+      db.forEach(function(it){
+        if(!it.id)it.id=uid();
+        if(!it.imgs)it.imgs=[];
+        ['step','mem','con'].forEach(function(k){if(it[k]==null)it[k]=0;});
+      });
+      var resp=await sb.from('questions').upsert(db.map(toRow));
+      if(resp.error){alert('匯入失敗：'+resp.error.message);e.target.value='';return;}
+      if(data.syl){SYL_RAW=data.syl;await sb.from('syllabus_doc').upsert({id:1,content:SYL_RAW});}
+      await load();
+      buildFilters();
+      render();
+      alert('已匯入 '+db.length+' 題到雲端！');
+    }catch(err){
+      alert('匯入失敗：檔案格式錯誤\n'+err.message);
+    }
+    e.target.value='';
+  };
+  r.readAsText(f,'utf-8');
+}
 
 /* ===== Claude 指令 ===== */
 function buildPrompt(){const syl=SYL_RAW;
@@ -764,13 +1117,270 @@ ${syl}
 
 【其他欄位】
 - 答案：A/B/C/D；非選擇題留空。
-- 知識點：簡短具體，多個用、隔開（如「並聯電路電流分配、電流守恆」）。
+- 知識點：使用108課綱編碼+原文，多個用「、」隔開。
+  格式範例：Jd-Ⅳ-2 酸鹼強度與pH值的關係、Bb-Ⅳ-3 比熱定量描述
+  請從以下108課綱第四學習階段完整知識點清單中挑選（共208條）：
+  Aa-Ⅳ-1 原子模型的發展。
+  Aa-Ⅳ-2 原子量與分子量是原子、分子之間的相對質量。
+  Aa-Ⅳ-3 純物質包括元素與化合物。
+  Aa-Ⅳ-4 元素的性質有規律性和週期性。
+  Aa-Ⅳ-5 元素與化合物有特定的化學符號表示法。
+  Ab-Ⅳ-1 物質的粒子模型與物質三態。
+  Ab-Ⅳ-2 溫度會影響物質的狀態。
+  Ab-Ⅳ-3 物質的物理性質與化學性質。
+  Ab-Ⅳ-4 物質依是否可用物理方法分離，可分為純物質和混合物。
+  Ba-Ⅳ-1 能量有不同形式，例如：動能、熱能、光能、電能、化學能等，而且彼此之間可以轉換。
+  Ba-Ⅳ-2 孤立系統的總能量會維持定值。
+  Ba-Ⅳ-3 光合作用是將光能轉換成化學能；呼吸作用是將化學能轉換成熱能。
+  Ba-Ⅳ-4 化學反應中的能量改變，常以吸熱或放熱的形式發生。
+  Ba-Ⅳ-5 電池是化學能轉變成電能的裝置。
+  Ba-Ⅳ-6 力可以作功，作功可以改變物體的能量。
+  Ba-Ⅳ-7 每單位時間對物體所做的功稱為功率。
+  Bb-Ⅳ-1 熱具有從高溫處傳到低溫處的趨勢。
+  Bb-Ⅳ-2 透過水升高溫度所吸收的熱能定義熱量單位。
+  Bb-Ⅳ-3 不同物質受熱後，其溫度的變化可能不同，比熱就是此特性的定量化描述。
+  Bb-Ⅳ-4 熱的傳播方式包含傳導、對流與輻射。
+  Bb-Ⅳ-5 熱會改變物質形態，例如：狀態產生變化、體積發生脹縮。
+  Bc-Ⅳ-1 生物經由酵素的催化進行新陳代謝，並以實驗活動探討影響酵素作用速率的因素。
+  Bc-Ⅳ-2 細胞利用養分進行呼吸作用釋放能量，供生物生存所需。
+  Bc-Ⅳ-3 植物利用葉綠體進行光合作用，將二氧化碳和水轉變成醣類養分，並釋出氧氣。
+  Bc-Ⅳ-4 日光、二氧化碳和水分等因素會影響光合作用的進行，這些因素的影響可經由探究實驗來證實。
+  Bd-Ⅳ-1 生態系中的能量來源是太陽，能量會經由食物鏈在不同生物間流轉。
+  Bd-Ⅳ-2 在生態系中，碳元素會出現在不同的物質中，在生物與無生物間循環使用。
+  Bd-Ⅳ-3 生態系中，生產者、消費者和分解者共同促成能量的流轉和物質的循環。
+  Ca-Ⅳ-1 實驗分離混合物，例如：結晶法、過濾法及簡易濾紙色層分析法。
+  Ca-Ⅳ-2 化合物可利用化學性質來鑑定。
+  Cb-Ⅳ-1 分子與原子。
+  Cb-Ⅳ-2 元素會因原子排列方式不同而有不同的特性。
+  Cb-Ⅳ-3 分子式相同會因原子排列方式不同而形成不同的物質。
+  Da-Ⅳ-1 使用適當的儀器可觀察到細胞的形態及細胞膜、細胞質、細胞核、細胞壁等基本構造。
+  Da-Ⅳ-2 細胞是組成生物體的基本單位。
+  Da-Ⅳ-3 多細胞個體具有細胞、組織、器官、器官系統等組成層次。
+  Da-Ⅳ-4 細胞會進行細胞分裂，染色體在分裂過程中會發生變化。
+  Db-Ⅳ-1 動物體（以人體為例）經由攝食、消化、吸收獲得所需的養分。
+  Db-Ⅳ-2 動物體（以人體為例）的循環系統能將體內的物質運輸至各細胞處，並進行物質交換。
+  Db-Ⅳ-3 動物體（以人體為例）藉由呼吸系統與外界交換氣體。
+  Db-Ⅳ-4 生殖系統（以人體為例）能產生配子進行有性生殖，並且有分泌激素的功能。
+  Db-Ⅳ-5 動植物體適應環境的構造常成為人類發展各種精密儀器的參考。
+  Db-Ⅳ-6 植物體根、莖、葉、花、果實內的維管束具有運輸功能。
+  Db-Ⅳ-7 花的構造中，雄蕊的花藥可產生花粉粒，花粉粒內有精細胞；雌蕊的子房內有胚珠，胚珠內有卵細胞。
+  Db-Ⅳ-8 植物體的分布會影響水在地表的流動，也會影響氣溫和空氣品質。
+  Dc-Ⅳ-1 人體的神經系統能察覺環境的變動並產生反應。
+  Dc-Ⅳ-2 人體的內分泌系統能調節代謝作用，維持體內物質的恆定。
+  Dc-Ⅳ-3 皮膚是人體的第一道防禦系統，能阻止外來物的侵入；而淋巴系統則可進一步產生免疫作用。
+  Dc-Ⅳ-4 人體會藉由各系統的協調，使體內所含的物質以及各種狀態能維持在一定範圍內。
+  Dc-Ⅳ-5 生物體能覺察外界環境變化、採取適當的反應以使體內環境維持恆定。
+  Ea-Ⅳ-1 時間、長度、質量等為基本物理量，經由計算可得到密度、體積等衍伸物理量。
+  Ea-Ⅳ-2 以適當的尺度量測或推估物理量，例如：奈米到光年、毫克到公噸等。
+  Ea-Ⅳ-3 測量時可依工具的最小刻度進行估計。
+  Eb-Ⅳ-1 力能引發物體的移動或轉動。
+  Eb-Ⅳ-2 力矩會改變物體的轉動，槓桿是力矩的作用。
+  Eb-Ⅳ-3 平衡的物體所受合力為零且合力矩為零。
+  Eb-Ⅳ-4 摩擦力可分靜摩擦力與動摩擦力。
+  Eb-Ⅳ-5 壓力的定義與帕斯卡原理。
+  Eb-Ⅳ-6 物體在靜止液體中所受浮力，等於排開液體的重量。
+  Eb-Ⅳ-7 簡單機械，例如：槓桿、滑輪、輪軸、齒輪、斜面，通常具有省時、省力，或者是改變作用力方向等功能。
+  Eb-Ⅳ-8 距離、時間及方向等概念可用來描述物體的運動。
+  Eb-Ⅳ-9 圓周運動是一種加速度運動。
+  Eb-Ⅳ-10 物體不受力時，會保持原有的運動狀態。
+  Eb-Ⅳ-11 物體做加速度運動時，必受力。以相同的力量作用相同的時間，則質量愈小的物體其受力後造成的速度改變愈大。
+  Eb-Ⅳ-12 物體的質量決定其慣性大小。
+  Eb-Ⅳ-13 對於每一作用力都有一個大小相等、方向相反的反作用力。
+  Ec-Ⅳ-1 大氣壓力是因為大氣層中空氣的重量所造成。
+  Ec-Ⅳ-2 定溫下，定量氣體在密閉容器內，其壓力與體積的定性關係。
+  Ed-Ⅳ-1 星系是組成宇宙的基本單位。
+  Ed-Ⅳ-2 我們所在的星系，稱為銀河系，主要是由恆星所組成；太陽是銀河系的成員之一。
+  Fa-Ⅳ-1 地球具有大氣圈、水圈和岩石圈。
+  Fa-Ⅳ-2 三大類岩石有不同的特徵和成因。
+  Fa-Ⅳ-3 大氣的主要成分為氮氣和氧氣，並含有水氣、二氧化碳等變動氣體。
+  Fa-Ⅳ-4 大氣可由溫度變化分層。
+  Fa-Ⅳ-5 海水具有不同的成分及特性。
+  Fb-Ⅳ-1 太陽系由太陽和行星組成，行星均繞太陽公轉。
+  Fb-Ⅳ-2 類地行星的環境差異極大。
+  Fb-Ⅳ-3 月球繞地球公轉；日、月、地在同一直線上會發生日月食。
+  Fb-Ⅳ-4 月相變化具有規律性。
+  Fc-Ⅳ-1 生物圈內含有不同的生態系。生態系的生物因子，其組成層次由低到高為個體、族群、群集。
+  Fc-Ⅳ-2 組成生物體的基本層次是細胞，而細胞則由醣類、蛋白質及脂質等分子所組成。
+  Ga-Ⅳ-1 生物的生殖可分為有性生殖與無性生殖，有性生殖產生的子代其性狀和親代差異較大。
+  Ga-Ⅳ-2 人類的性別主要由性染色體決定。
+  Ga-Ⅳ-3 人類的ABO血型是可遺傳的性狀。
+  Ga-Ⅳ-4 遺傳物質會發生變異，其變異可能造成性狀的改變，若變異發生在生殖細胞可遺傳到後代。
+  Ga-Ⅳ-5 生物技術的進步，有助於解決農業、食品、能源、醫藥，以及環境相關的問題，但也可能帶來新問題。
+  Ga-Ⅳ-6 孟德爾遺傳研究的科學史。
+  Gb-Ⅳ-1 從地層中發現的化石，可以知道地球上曾經存在許多的生物，但有些生物已經消失了。
+  Gc-Ⅳ-1 依據生物形態與構造的特徵，可以將生物分類。
+  Gc-Ⅳ-2 地球上有形形色色的生物，在生態系中擔任不同的角色，發揮不同的功能，有助於維持生態系的穩定。
+  Gc-Ⅳ-3 人的體表和體內有許多微生物，有些微生物對人體有利，有些則有害。
+  Gc-Ⅳ-4 人類文明發展中有許多利用微生物的例子，例如：早期的釀酒、近期的基因轉殖等。
+  Hb-Ⅳ-1 研究岩層岩性與化石可幫助了解地球的歷史。
+  Hb-Ⅳ-2 解讀地層、地質事件，可幫助了解當地的地層發展先後順序。
+  Ia-Ⅳ-1 外營力及內營力的作用會改變地貌。
+  Ia-Ⅳ-2 岩石圈可分為數個板塊。
+  Ia-Ⅳ-3 板塊之間會相互分離或聚合，產生地震、火山和造山運動。
+  Ia-Ⅳ-4 全球地震、火山分布在特定的地帶，且兩者相當吻合。
+  Ib-Ⅳ-1 氣團是性質均勻的大型空氣團塊，性質各有不同。
+  Ib-Ⅳ-2 氣壓差會造成空氣的流動而產生風。
+  Ib-Ⅳ-3 由於地球自轉的關係會造成高、低氣壓空氣的旋轉。
+  Ib-Ⅳ-4 鋒面是性質不同的氣團之交界面，會產生各種天氣變化。
+  Ib-Ⅳ-5 臺灣的災變天氣包括颱風、梅雨、寒潮、乾旱等現象。
+  Ib-Ⅳ-6 臺灣秋冬季受東北季風影響，夏季受西南季風影響，造成各地氣溫、風向和降水的季節性差異。
+  Ic-Ⅳ-1 海水運動包含波浪、海流和潮汐，各有不同的運動方式。
+  Ic-Ⅳ-2 海流對陸地的氣候會產生影響。
+  Ic-Ⅳ-3 臺灣附近的海流隨季節有所不同。
+  Ic-Ⅳ-4 潮汐變化具有規律性。
+  Id-Ⅳ-1 夏季白天較長，冬季黑夜較長。
+  Id-Ⅳ-2 陽光照射角度之變化，會造成地表單位面積土地吸收太陽能量的不同。
+  Id-Ⅳ-3 地球的四季主要是因為地球自轉軸傾斜於地球公轉軌道面而造成。
+  Ja-Ⅳ-1 化學反應中的質量守恆定律。
+  Ja-Ⅳ-2 化學反應是原子重新排列。
+  Ja-Ⅳ-3 化學反應中常伴隨沉澱、氣體、顏色及溫度變化等現象。
+  Ja-Ⅳ-4 化學反應的表示法。
+  Jb-Ⅳ-1 由水溶液導電的實驗認識電解質與非電解質。
+  Jb-Ⅳ-2 電解質在水溶液中會解離出陰離子和陽離子而導電。
+  Jb-Ⅳ-3 不同的離子在水溶液中可能會發生沉澱、酸鹼中和及氧化還原等反應。
+  Jb-Ⅳ-4 溶液的概念及重量百分濃度（P%）、百萬分點的表示法（ppm）。
+  Jc-Ⅳ-1 氧化與還原的狹義定義為：物質得到氧稱為氧化反應；失去氧稱為還原反應。
+  Jc-Ⅳ-2 物質燃燒實驗認識氧化。
+  Jc-Ⅳ-3 不同金屬元素燃燒實驗認識元素對氧氣的活性。
+  Jc-Ⅳ-4 生活中常見的氧化還原反應與應用。
+  Jc-Ⅳ-5 鋅銅電池實驗認識電池原理。
+  Jc-Ⅳ-6 化學電池的放電與充電。
+  Jc-Ⅳ-7 電解水與硫酸銅水溶液實驗認識電解原理。
+  Jd-Ⅳ-1 金屬與非金屬氧化物在水溶液中的酸鹼性，及酸性溶液對金屬與大理石的反應。
+  Jd-Ⅳ-2 酸鹼強度與pH值的關係。
+  Jd-Ⅳ-3 實驗認識廣用指示劑及pH計。
+  Jd-Ⅳ-4 水溶液中氫離子與氫氧根離子的關係。
+  Jd-Ⅳ-5 酸、鹼、鹽類在日常生活中的應用與危險性。
+  Jd-Ⅳ-6 實驗認識酸與鹼中和生成鹽和水，並可放出熱量而使溫度變化。
+  Je-Ⅳ-1 實驗認識化學反應速率及影響反應速率的因素，例如：本性、溫度、濃度、接觸面積及催化劑。
+  Je-Ⅳ-2 可逆反應。
+  Je-Ⅳ-3 化學平衡及溫度、濃度如何影響化學平衡的因素。
+  Jf-Ⅳ-1 有機化合物與無機化合物的重要特徵。
+  Jf-Ⅳ-2 生活中常見的烷類、醇類、有機酸及酯類。
+  Jf-Ⅳ-3 酯化與皂化反應。
+  Jf-Ⅳ-4 常見的塑膠。
+  Ka-Ⅳ-1 波的特徵，例如：波峰、波谷、波長、頻率、波速、振幅。
+  Ka-Ⅳ-2 波傳播的類型，例如：橫波和縱波。
+  Ka-Ⅳ-3 介質的種類、狀態、密度及溫度等因素會影響聲音傳播的速率。
+  Ka-Ⅳ-4 聲波會反射，可以做為測量、傳播等用途。
+  Ka-Ⅳ-5 耳朵可以分辨不同的聲音，例如：大小、高低及音色，但人耳聽不到超聲波。
+  Ka-Ⅳ-6 由針孔成像、影子實驗驗證與說明光的直進性。
+  Ka-Ⅳ-7 光速的大小和影響光速的因素。
+  Ka-Ⅳ-8 透過實驗探討光的反射與折射規律。
+  Ka-Ⅳ-9 生活中有許多運用光學原理的實例或儀器，例如：透鏡、面鏡、眼睛、眼鏡及顯微鏡等。
+  Ka-Ⅳ-10 陽光經過三稜鏡可以分散成各種色光。
+  Ka-Ⅳ-11 物體的顏色是光選擇性反射的結果。
+  Kb-Ⅳ-1 物體在地球或月球等星體上因為星體的引力作用而具有重量；物體之質量與其重量是不同的物理量。
+  Kb-Ⅳ-2 帶質量的兩物體之間有重力，此力大小與兩物體各自的質量成正比、與物體間距離的平方成反比。
+  Kc-Ⅳ-1 摩擦可以產生靜電，電荷有正負之別。
+  Kc-Ⅳ-2 靜止帶電物體之間有靜電力，同號電荷會相斥，異號電荷則會相吸。
+  Kc-Ⅳ-3 磁場可以用磁力線表示，磁力線方向即為磁場方向，磁力線越密處磁場越大。
+  Kc-Ⅳ-4 電流會產生磁場，其方向分布可以由安培右手定則求得。
+  Kc-Ⅳ-5 載流導線在磁場會受力，並簡介電動機的運作原理。
+  Kc-Ⅳ-6 環形導線內磁場變化，會產生感應電流。
+  Kc-Ⅳ-7 電池連接導體形成通路時，多數導體通過的電流與其兩端電壓差成正比，其比值即為電阻。
+  Kc-Ⅳ-8 電流通過帶有電阻物體時，能量會以發熱的形式逸散。
+  La-Ⅳ-1 隨著生物間、生物與環境間的交互作用，生態系中的結構會隨時間改變，形成演替現象。
+  Lb-Ⅳ-1 生態系中的非生物因子會影響生物的分布與生存，環境調查時常需檢測非生物因子的變化。
+  Lb-Ⅳ-2 人類活動會改變環境，也可能影響其他生物的生存。
+  Lb-Ⅳ-3 人類可採取行動來維持生物的生存環境，使生物能在自然環境中生長、繁殖、交互作用，以維持生態平衡。
+  Lb-Ⅳ-4 生命科學的進步，有助於解決社會中發生的農業、食品、能源、醫藥，以及環境相關的問題。
+  Lb-Ⅳ-5 保育工作不是只有科學家能夠處理，所有的公民都有權利及義務，共同研究、監控及維護生物多樣性。
+  Ma-Ⅳ-1 不同的材料對生活及社會的影響。
+  Ma-Ⅳ-2 各種發電方式與新興的能源科技對社會、經濟、環境及生態的影響。
+  Ma-Ⅳ-3 各種本土科學知能（含原住民族科學與世界觀）對社會、經濟環境及生態保護之啟示。
+  Ma-Ⅳ-4 生物技術的發展是為了因應人類需求，運用跨領域技術來改造生物。
+  Ma-Ⅳ-5 科學史上重要發現的過程，以及不同性別、背景、族群者於其中的貢獻。
+  Mb-Ⅳ-1 生物生長條件與機制在處理環境汙染物質的應用。
+  Mb-Ⅳ-2 運用生物體的構造與功能，可改善人類生活。
+  Mc-Ⅳ-1 生活中對各種材料進行加工與運用。
+  Mc-Ⅳ-2 常見人造材料的特性、簡單的製造過程及在生活上的應用。
+  Mc-Ⅳ-3 電力供應與輸送方式的概要。
+  Mc-Ⅳ-4 用電安全常識，避免觸電和電線走火。
+  Mc-Ⅳ-5 電器標示和電費計算。
+  Mc-Ⅳ-6 生物保育知識與技能在防治天然災害的應用。
+  Mc-Ⅳ-7 颱風主要發生在七至九月，並容易造成生命財產的損失。
+  Md-Ⅳ-1 颱風主要發生在七至九月，並容易造成生命財產的損失。
+  Md-Ⅳ-2 颱風會帶來狂風、豪雨及暴潮等災害。
+  Md-Ⅳ-3 臺灣位處於板塊交界，因此地震頻仍，常造成災害。
+  Md-Ⅳ-4 大雨過後和順向坡會加重山崩的威脅。
+  Md-Ⅳ-5 環境汙染物對生物生長的影響及應用。
+  Me-Ⅳ-1 環境汙染物對生物生長的影響及應用。
+  Me-Ⅳ-2 家庭廢水的影響與再利用。
+  Me-Ⅳ-3 空氣品質與空氣汙染的種類、來源及一般防治方法。
+  Me-Ⅳ-4 溫室氣體與全球暖化。
+  Me-Ⅳ-5 重金屬汙染的影響。
+  Me-Ⅳ-6 環境汙染物與生物放大的關係。
+  Me-Ⅳ-7 對聲音的特性做深入的研究可以幫助我們更確實防範噪音的汙染。
+  Na-Ⅳ-1 利用生物資源會影響生物間相互依存的關係。
+  Na-Ⅳ-2 生活中節約能源的方法。
+  Na-Ⅳ-3 環境品質繫於資源的永續利用與維持生態平衡。
+  Na-Ⅳ-4 資源使用的5R：減量、拒絕、重複使用、回收及再生。
+  Na-Ⅳ-5 各種廢棄物對環境的影響，環境的承載能力與處理方法。
+  Na-Ⅳ-6 人類社會的發展必須建立在保護地球自然環境的基礎上。
+  Na-Ⅳ-7 為使地球永續發展，可以從減量、回收、再利用、綠能等做起。
+  Nb-Ⅳ-1 全球暖化對生物的影響。
+  Nb-Ⅳ-2 氣候變遷產生的衝擊有海平面上升、全球暖化、異常降水等現象。
+  Nb-Ⅳ-3 因應氣候變遷的方法有減緩與調適。
+  Nc-Ⅳ-1 生質能源的發展現況。
+  Nc-Ⅳ-2 開發任何一種能源都有風險，應依據證據來評估與決策。
+  Nc-Ⅳ-3 化石燃料的形成與特性。
+  Nc-Ⅳ-4 新興能源的開發，例如：風能、太陽能、核融合發電、汽電共生、生質能、燃料電池等。
+  Nc-Ⅳ-5 新興能源的科技，例如：油電混合動力車、太陽能飛機等。
+  Nc-Ⅳ-6 臺灣能源的利用現況與未來展望。
 - 題目摘要：動詞＋對象，15 字內（如「判斷並聯電路電流大小」）。
-- 題目：完整題幹，選項放在同一格用換行分隔。化學式/數學式用 LaTeX 包在 $...$，單位與一般英文用 \\text{} 包住避免斜體（如 $25\\,\\text{g}$）。含圖題在題目後標〔含圖，需人工補〕。
+- 題目：完整題幹，選項放在同一格用換行分隔。
+  數學/化學式放入 $...$；單位與一般英文必須用 \\text{} 包住避免斜體。
+  【LaTeX 單位寫法——請嚴格遵守，指令是 \\text 不是 \\ext】
+  正確範例：
+    $60\\,\\text{s}$　← 60秒
+    $20\\,\\text{m/s}$　← 20公尺/秒
+    $9.8\\,\\text{m/s}^2$　← 加速度
+    $25\\,\\text{g}$　← 25克
+    $1.5\\,\\text{gw/cm}^2$　← 壓力單位
+    $v$-$t$ 圖　← 變數用斜體，說明文字不放入 $
+  常見錯誤（禁止）：
+    \\ext{s} ✗　→　正確是 \\text{s}
+    $60s$ ✗　→　正確是 $60\\,\\text{s}$
+    $m/s$ ✗　→　正確是 $\\text{m/s}$
+  含圖題在題目後標〔含圖，需人工補〕。
+  【化學方程式寫法——必須整條放在同一個 $...$ 內，不可換行截斷】
+  正確範例：
+    $C_2H_5OH + 3O_2 \\rightarrow 2CO_2 + 3H_2O$
+    $ZC_2H_5OH + YO_2 \\rightarrow XCO_2 + WH_2O$
+    $2H_2 + O_2 \\rightarrow 2H_2O$
+  常見錯誤（禁止）：
+    箭號寫成 \\ightarrow 或 ightarrow ✗ → 正確是 \\rightarrow
+    可逆反應用 \\rightleftharpoons ✓
+    整條方程式必須在同一個 $$ 內，不可在句子中間截斷換行
+    係數變數緊接化學式：$ZC_2H_5OH$ ✓，$Z C_2H_5OH$ ✗（中間不要有空格）
+  【數學符號——必須加反斜線，不可省略】
+  正確：$6\\times10^{23}$ ✓　錯誤：$6times10^{23}$ ✗
+  正確：$A\\rightarrow B$ ✓　錯誤：$Arightarrow B$ ✗
+  正確：$a\\cdot b$ ✓　　　錯誤：$acdot b$ ✗
+  口訣：所有 LaTeX 指令都必須以反斜線 \\ 開頭
 
 【輸出格式】
 - 第一列為標題列；每欄用雙引號包住，欄內雙引號用 "" 表示。
 - 只輸出 CSV，不要其他說明文字。`}
+function openPromptWindow(){
+  var p = buildPrompt();
+  var w = window.open('', '_blank', 'width=700,height=600');
+  if(!w){ alert('請允許彈出視窗，或改用下方「複製指令」按鈕'); return; }
+  w.document.write('<html><head><meta charset="UTF-8"><title>AI指令</title>'
+    +'<meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<style>body{font-family:monospace;font-size:12px;padding:10px;background:#f4f1ea}'
+    +'textarea{width:100%;height:80vh;font-family:monospace;font-size:11px;padding:8px}'
+    +'button{margin:6px 4px;padding:8px 16px;font-size:14px;cursor:pointer}'
+    +'</style></head><body>'
+    +'<button onclick="document.getElementById(\'t\').select();document.execCommand(\'copy\');this.textContent=\'已複製!\'">'
+    +'全選並複製</button>'
+    +'<button onclick="window.close()">關閉</button><br>'
+    +'<textarea id="t" readonly>'+p.replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</textarea>'
+    +'<script>document.getElementById("t").select();<\/script>'
+    +'</body></html>');
+  w.document.close();
+}
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
 
 /* ===== 工具 ===== */
@@ -791,6 +1401,77 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
   }
   await load();buildFilters();render();
 })();
+</script>
+
+<!-- 指令顯示區（隱藏） -->
+<div id="promptBox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;padding:20px;box-sizing:border-box">
+  <div style="background:#fff;border-radius:12px;height:100%;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:#1a2238;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+      <span style="font-size:14px;font-weight:700">📋 AI 指令（Claude / ChatGPT / Gemini）</span>
+      <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div style="padding:10px;flex-shrink:0;font-size:12px;color:#555;font-family:system-ui">
+      ① 點「全選複製」② 開新 AI 對話 ③ 上傳段考卷 ④ 貼上指令並填年度學校考試名稱 ⑤ 把 CSV 用「匯入題目」貼回來
+    </div>
+    <textarea id="promptTA" readonly style="flex:1;margin:0 10px 10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none"></textarea>
+    <div style="padding:0 10px 12px;display:flex;gap:8px;flex-shrink:0">
+      <button onclick="var t=document.getElementById('promptTA');t.focus();t.select();t.setSelectionRange(0,99999);var ok=false;try{ok=document.execCommand('copy');}catch(e){}this.textContent=ok?'✓ 已複製！':'✓ 已全選，請按複製';" style="flex:1;padding:10px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
+      <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function deletePickedItems(){
+  if(!PICKS.size){alert('尚未勾選任何題目');return;}
+  if(typeof requireCloud==='function'&&!requireCloud())return;
+  if(!confirm('確定要刪除已勾選的 '+PICKS.size+' 題？\n此操作無法復原。'))return;
+  var ids=Array.from(PICKS);
+  var resp=await sb.from('questions').delete().in('id',ids);
+  if(resp.error){alert('刪除失敗：'+resp.error.message);return;}
+  PICKS.clear();
+  await load();buildFilters();render();
+}
+function selectFiltered(){
+  var s=document.getElementById('fSearch').value.toLowerCase();
+  var fb=document.getElementById('fBook').value;
+  var ff=document.getElementById('fField').value;
+  var fu=document.getElementById('fUnit').value;
+  var fsub=document.getElementById('fSub').value;
+  var fk=document.getElementById('fKp').value;
+  var ft=document.getElementById('fType').value;
+  var fd=document.getElementById('fDiff').value;
+  var fy=document.getElementById('fYear').value;
+  var fsc=document.getElementById('fSchool').value;
+  var fc=document.getElementById('fChart').value;
+  var flag=document.getElementById('fFlag').checked;
+  DB.forEach(function(it){
+    if(fb&&it.book!==fb)return;
+    if(ff&&it.field!==ff)return;
+    if(fu&&it.unit!==fu)return;
+    if(fsub&&it.sub!==fsub)return;
+    if(fk&&(it.kp||'').indexOf(fk)<0)return;
+    if(ft&&it.type!==ft)return;
+    if(fd&&it.diff!==fd)return;
+    if(fy&&it.year!==fy)return;
+    if(fsc&&it.school!==fsc)return;
+    if(fc&&it.chart!==fc)return;
+    if(flag&&!it.flag)return;
+    if(s&&((it.q||'')+(it.summary||'')+(it.kp||'')).toLowerCase().indexOf(s)<0)return;
+    PICKS.add(it.id);
+  });
+  render();
+}
+</script>
+<script>
+function showPrompt(){
+  var p=buildPrompt();
+  var ta=document.getElementById('promptTA');
+  ta.value=p;
+  document.getElementById('promptBox').style.display='block';
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},200);
+}
 </script>
 </body>
 </html>
