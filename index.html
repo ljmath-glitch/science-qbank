@@ -187,7 +187,10 @@
       <div class="field"><label>考試名稱</label><input type="text" id="eExam" placeholder="113上第一次段考"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
-    <div class="field" style="max-width:160px"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
+    <div class="grid2">
+      <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
+      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 G1"></div>
+    </div>
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
     <div class="grid3">
@@ -291,7 +294,8 @@
   <div class="pv-bar noprint">
     <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
     <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
-    <button class="btn green" onclick="downloadPaper()">⬇ 下載 HTML</button>
+    <button class="btn green" onclick="downloadWordDoc()">⬇ 下載 Word</button>
+    <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
   </div>
   <div class="pv-sheet" id="pvSheet"></div>
 </div>
@@ -706,16 +710,20 @@ const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
 function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
 
 let DB=[], PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], diff={step:0,mem:0,con:0};
+let GROUP_COL_OK=false; // 偵測 Supabase questions 表是否已加 group_id 欄位；沒加前不送該欄，避免寫入失敗
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
-function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;r.updated_at=new Date().toISOString();return r;}
-function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;
+function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
+  if(GROUP_COL_OK)r.group_id=it.groupId||'';delete r.groupId; // group_id 欄位存在才送
+  r.updated_at=new Date().toISOString();return r;}
+function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
 
 /* ===== 雲端讀取（取代原本的 localStorage load） ===== */
 async function load(){
   if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
+  const probe=await sb.from('questions').select('group_id').limit(1);GROUP_COL_OK=!probe.error; // 偵測 group_id 欄位是否已加
   const {data:qs,error}=await sb.from('questions').select('*');
   if(error){console.error(error);alert('讀取雲端題目失敗：'+error.message);DB=[];}
   else DB=(qs||[]).map(fromRow);
@@ -764,7 +772,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const it={id:uid(),year:g(0),school:g(1),exam:g(2),no:g(3),ans:g(4),book:g(5),bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
-      flag:(g(18)==='Y'||g(18)==='y'),q:g(19),sol:'',imgs:[]};
+      flag:(g(18)==='Y'||g(18)==='y'),q:g(19),groupId:g(20)||'',sol:'',imgs:[]};
     if(!it.q&&!it.summary)continue;adds.push(it)}
   if(!adds.length){alert('沒有可匯入的題目');return}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
@@ -833,13 +841,14 @@ function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="bor
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 
 /* ===== 新增/編輯 ===== */
-function clearForm(){['eYear','eSchool','eExam','eNo','eAns','eKp','eSummary','eChart','eBasis','eQ','eSol'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult()}
+function clearForm(){['eYear','eSchool','eExam','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult()}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
   fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
   fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
   eYear.value=it.year;eSchool.value=it.school;eExam.value=it.exam||'';eNo.value=it.no||'';eAns.value=it.ans||'';
   eKp.value=it.kp||'';eSummary.value=it.summary||'';eType.value=it.type||'';eChart.value=it.chart||'';eBasis.value=it.basis||'';
+  eGroupId.value=it.groupId||'';
   eFlag.checked=!!it.flag;eQ.value=it.q||'';eSol.value=it.sol||'';
   diff={step:it.step||0,mem:it.mem||0,con:it.con||0};paintSeg();showDiffResult();
   curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();editDlg.showModal()}
@@ -848,6 +857,7 @@ async function saveEdit(){
     book:eBook.value,bookName:(SYL.find(k=>k.book===eBook.value)||{}).bookName||'',field:(SYL.find(k=>k.book===eBook.value)||{}).field||'',
     unit:eUnit.value,sub:eSub.value,kp:eKp.value.trim(),summary:eSummary.value.trim(),type:eType.value,
     step:diff.step,mem:diff.mem,con:diff.con,chart:eChart.value.trim(),basis:eBasis.value.trim(),flag:eFlag.checked,
+    groupId:eGroupId.value.trim(),
     q:eQ.value.trim(),sol:eSol.value.trim(),imgs:curImgs};
   if(!data.q&&!data.summary){alert('題目或摘要至少填一個');return}
   if(!requireCloud())return;
@@ -918,7 +928,10 @@ function matches(it){const s=fSearch.value.trim();
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   return true}
-function render(){const list=document.getElementById('list');const shown=DB.filter(matches);
+function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
+  // 題組自動展開：符合條件的題若屬於某題組，把同題組的其他小題也一起帶出來（即使它們本身不符篩選）
+  const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
+  if(_gids.size)shown=DB.filter(it=>matches(it)||(it.groupId&&_gids.has(it.groupId)));
   // 顯示排序：年度 → 學校 → 考試名稱 → 題號（題號依數字大小）。存檔後重抓雲端也維持此順序
   shown.sort((a,b)=>{
     if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
@@ -943,6 +956,7 @@ function render(){const list=document.getElementById('list');const shown=DB.filt
         ${it.book?`<span class="tag book">${esc(it.book)} ${esc(it.bookName)}</span>`:''}
         ${it.unit?`<span class="tag unit">${esc(it.unit)}</span>`:''}
         ${it.sub?`<span class="tag sub">${esc(it.sub)}</span>`:''}
+        ${it.groupId?`<span class="tag meta" style="background:#e7eef7;color:#3454b4">🔗題組 ${esc(it.groupId)}</span>`:''}
         ${kps}
         ${it.type?`<span class="tag type">${esc(typeName(it.type))}</span>`:''}
         ${d.lvl?`<span class="tag ${diffTagClass(d.lvl)}">${d.lvl}·${d.score}分</span>`:''}
@@ -982,7 +996,10 @@ function fixLatex(text){
 function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}}
 
 /* ===== 選題/配題 ===== */
-function togglePick(id){PICKS.has(id)?PICKS.delete(id):PICKS.add(id);render()}
+function togglePick(id){const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
+  const ids=gid?DB.filter(x=>x.groupId===gid).map(x=>x.id):[id];
+  const willPick=!PICKS.has(id);
+  ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));render()}
 function clearPicks(){PICKS.clear();render()}
 function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0)}
 function pickedItems(){const arr=DB.filter(x=>PICKS.has(x.id));return arr}
@@ -1004,10 +1021,10 @@ function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚
   const csv=rows.map(r=>r.map(c=>`"${(c==null?'':String(c)).replace(/"/g,'""')}"`).join(',')).join('\n');
   download('選題_'+stamp()+'.csv','\uFEFF'+csv,'text/csv')}
 function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}paperDlg.showModal()}
-let lastPaperHTML='',lastPaperTitle='自然科測驗卷';
+let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
-  const showMeta=pShowMeta.checked,showTag=pShowTag.checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;
+  const showMeta=pShowMeta.checked,showTag=pShowTag.checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   const body=items.map((it,i)=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const imgs=(it.imgs||[]).map(imgHtml).join('');
@@ -1104,8 +1121,8 @@ function buildPrompt(){const syl=SYL_RAW;
 - 來源學校：
 - 考試名稱：（如 113上第一次段考）
 
-【CSV 欄位順序，務必照此 20 欄】
-年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目
+【CSV 欄位順序，務必照此 21 欄】
+年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,題組
 
 【B 課程對應：冊數/冊名/領域/大單元/子單元 只能對照下面這份「翰林版骨架」填，不可自創】
 （格式：冊數|冊名|領域|大單元|子單元；跨節用 ／ 隔開）
@@ -1336,6 +1353,7 @@ ${syl}
   Nc-Ⅳ-5 新興能源的科技，例如：油電混合動力車、太陽能飛機等。
   Nc-Ⅳ-6 臺灣能源的利用現況與未來展望。
 - 題目摘要：動詞＋對象，15 字內（如「判斷並聯電路電流大小」）。
+- 題組：屬於同一個大題（共用題幹／同一情境的連續小題，如題組閱讀、實驗組題）的各小題，填**相同**代碼（如 G1、G2…，同一份卷子內不重複）；不屬於任何題組的單題**留空**。
 - 題目：完整題幹，選項放在同一格用換行分隔。
   數學/化學式放入 $...$；單位與一般英文必須用 \\text{} 包住避免斜體。
   【LaTeX 單位寫法——請嚴格遵守，指令是 \\text 不是 \\ext】
@@ -1478,6 +1496,69 @@ function showPrompt(){
   document.getElementById('promptBox').style.display='block';
   document.body.style.overflow='hidden';
   setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},200);
+}
+</script>
+<script>
+/* ===== RTF / Word 匯出（從零實作；放獨立 script 以利 Safari 相容） ===== */
+function latexToPlain(t){
+  if(!t)return '';
+  var s=String(t);
+  var sup={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','n':'ⁿ','x':'ˣ'};
+  var sub={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋'};
+  s=s.replace(/\\rightleftharpoons/g,'⇌').replace(/\\Rightarrow/g,'⇒').replace(/\\rightarrow/g,'→').replace(/\\to/g,'→')
+     .replace(/\\leftarrow/g,'←').replace(/\\times/g,'×').replace(/\\cdot/g,'·').replace(/\\div/g,'÷')
+     .replace(/\\pm/g,'±').replace(/\\leq/g,'≤').replace(/\\geq/g,'≥').replace(/\\neq/g,'≠').replace(/\\approx/g,'≈')
+     .replace(/\\degree/g,'°').replace(/\\circ/g,'°').replace(/\\alpha/g,'α').replace(/\\beta/g,'β').replace(/\\gamma/g,'γ')
+     .replace(/\\theta/g,'θ').replace(/\\lambda/g,'λ').replace(/\\Delta/g,'Δ').replace(/\\delta/g,'δ')
+     .replace(/\\pi/g,'π').replace(/\\mu/g,'µ').replace(/\\Omega/g,'Ω').replace(/\\infty/g,'∞');
+  s=s.replace(/\\text\{([^}]*)\}/g,'$1').replace(/\\mathrm\{([^}]*)\}/g,'$1');
+  s=s.replace(/\\frac\{([^}]*)\}\{([^}]*)\}/g,'($1)/($2)');
+  s=s.replace(/\^\{([^}]*)\}/g,function(m,g){return g.replace(/[\s\S]/g,function(c){return sup[c]||c});});
+  s=s.replace(/\^(\S)/g,function(m,c){return sup[c]||('^'+c);});
+  s=s.replace(/_\{([^}]*)\}/g,function(m,g){return g.replace(/[\s\S]/g,function(c){return sub[c]||c});});
+  s=s.replace(/_(\S)/g,function(m,c){return sub[c]||('_'+c);});
+  s=s.replace(/\\,/g,' ').replace(/\\;/g,' ').replace(/\\!/g,'').replace(/\\ /g,' ');
+  s=s.replace(/[$]/g,'');            // 去掉 $ 界定符
+  s=s.replace(/\\[a-zA-Z]+/g,'');    // 去掉剩餘未知 LaTeX 指令
+  s=s.replace(/[{}]/g,'');           // 去掉剩餘大括號
+  return s;
+}
+function rtfEsc(s){
+  var out='';s=String(s);
+  for(var i=0;i<s.length;i++){
+    var ch=s[i],c=s.charCodeAt(i);
+    if(ch==='\\'||ch==='{'||ch==='}')out+='\\'+ch;
+    else if(ch==='\n')out+='\\par ';
+    else if(c>127)out+='\\u'+c+'?';
+    else out+=ch;
+  }
+  return out;
+}
+function buildRtf(){
+  var items=(typeof pickedItems==='function')?pickedItems():[];
+  var title=lastPaperTitle||'自然科測驗卷';
+  var ansMode=lastAnsMode||'none';
+  var out='{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\froman\\fcharset136 PMingLiU;}}\\f0\\fs28\\sl360\\slmult1 ';
+  out+='{\\qc\\b\\fs40 '+rtfEsc(title)+'}\\par ';
+  out+='{\\qr\\fs20 '+rtfEsc('共 '+items.length+' 題　班級：______　座號：____　姓名：__________')+'}\\par\\par ';
+  items.forEach(function(it,i){
+    var q=latexToPlain(it.q||it.summary||'');
+    out+='{\\b '+(i+1)+'.}  '+rtfEsc(q)+'\\par ';
+    if((it.imgs||[]).length)out+='{\\i '+rtfEsc('〔此題含圖，請見系統〕')+'}\\par ';
+    if((ansMode==='inline'||ansMode==='full')&&it.ans)out+=rtfEsc('　答案：'+it.ans)+'\\par ';
+    if(ansMode==='full'&&it.sol)out+=rtfEsc('　詳解：'+latexToPlain(it.sol))+'\\par ';
+    out+='\\par ';
+  });
+  if(ansMode==='end'){
+    var a=items.map(function(it,i){return it.ans?(i+1)+'.'+it.ans:'';}).filter(Boolean).join('　');
+    out+='\\par {\\b '+rtfEsc('【參考答案】')+'}'+rtfEsc(a)+'\\par ';
+  }
+  out+='}';
+  return out;
+}
+function downloadWordDoc(){
+  if(!PICKS.size){alert('尚未選題');return;}
+  download((lastPaperTitle||'自然科測驗卷')+'_'+stamp()+'.doc',buildRtf(),'application/msword');
 }
 </script>
 </body>
