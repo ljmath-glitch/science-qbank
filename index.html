@@ -1637,8 +1637,8 @@ function latexToWordHtml(latex){
   t=t.replace(/\\(?:text|mathrm|mbox|mathbf|mathit|mathsf|mathbb|operatorname)\{([^}]*)\}/g,'$1');
   // \ce{...} chemistry — keep content, let subscript rules handle the rest
   t=t.replace(/\\ce\{([^}]*)\}/g,'$1');
-  // \frac{a}{b} → ᵃ/ᵦ style using sup/sub
-  t=t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'<sup>$1</sup>⁄<sub>$2</sub>');
+  // \frac{a}{b} → inline table fraction (stacked)
+  t=t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'<table style="display:inline-table;vertical-align:middle;border-collapse:collapse;margin:0 2px"><tbody><tr><td style="border-bottom:1px solid black;text-align:center;padding:0 4px;font-size:90%;line-height:1.2">$1</td></tr><tr><td style="text-align:center;padding:0 4px;font-size:90%;line-height:1.2">$2</td></tr></tbody></table>');
   // \sqrt{x} → √x
   t=t.replace(/\\sqrt\{([^}]+)\}/g,'√$1');
   t=t.replace(/\\sqrt\b/g,'√');
