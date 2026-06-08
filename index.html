@@ -711,12 +711,11 @@ const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) 
 function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
 
 let DB=[], PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], diff={step:0,mem:0,con:0};
-let GROUP_COL_OK=false; // 偵測 Supabase questions 表是否已加 group_id 欄位；沒加前不送該欄，避免寫入失敗
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
 function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
-  if(GROUP_COL_OK)r.group_id=it.groupId||'';delete r.groupId; // group_id 欄位存在才送
+  r.group_id=it.groupId||'';delete r.groupId;
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
@@ -726,7 +725,7 @@ async function load(){
   if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
   const {data:qs,error}=await sb.from('questions').select('*');
   if(error){console.error(error);alert('讀取雲端題目失敗：'+error.message);DB=[];}
-  else{DB=(qs||[]).map(fromRow);GROUP_COL_OK=!qs.length||('group_id' in qs[0]);console.log('[group_id] GROUP_COL_OK=',GROUP_COL_OK,'第一筆keys:',qs[0]&&Object.keys(qs[0]));}
+  else DB=(qs||[]).map(fromRow);
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
   if(e2)console.error(e2);
   SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
