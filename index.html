@@ -264,7 +264,7 @@
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -295,6 +295,7 @@
   <div class="pv-bar noprint">
     <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
     <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
+    <button class="btn green" onclick="exportPaperCSV()">⬇ 下載 CSV</button>
     <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
     <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
   </div>
@@ -1015,8 +1016,8 @@ function doAutoMix(){const pool=DB.filter(matches);const total=+mTotal.value||0;
 
 /* ===== 考卷 ===== */
 function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚未選題');return}
-  const head=['年度','來源學校','考試名稱','題號','答案','冊數','冊名','領域','大單元','子單元','知識點','題目摘要','題型','步驟分','記憶分','概念分','難度','圖表類型','判斷依據','待確認','題目','詳解'];
-  const rows=[head].concat(items.map(it=>[it.year,it.school,it.exam,it.no,it.ans,it.book,it.bookName,it.field,it.unit,it.sub,it.kp,it.summary,it.type,it.step,it.mem,it.con,calcDiff(it.step,it.mem,it.con).lvl,it.chart,it.basis,it.flag?'Y':'',it.q,it.sol]));
+  const head=['年度','來源學校','考試名稱','題號','答案','冊數','冊名','領域','大單元','子單元','知識點','題目摘要','題型','步驟分','記憶分','概念分','難度','圖表類型','判斷依據','待確認','題目','詳解','題組ID'];
+  const rows=[head].concat(items.map(it=>[it.year,it.school,it.exam,it.no,it.ans,it.book,it.bookName,it.field,it.unit,it.sub,it.kp,it.summary,it.type,it.step,it.mem,it.con,calcDiff(it.step,it.mem,it.con).lvl,it.chart,it.basis,it.flag?'Y':'',it.q,it.sol,it.groupId||'']));
   const csv=rows.map(r=>r.map(c=>`"${(c==null?'':String(c)).replace(/"/g,'""')}"`).join(',')).join('\n');
   download('選題_'+stamp()+'.csv','\uFEFF'+csv,'text/csv')}
 function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}paperDlg.showModal()}
