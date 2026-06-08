@@ -1712,7 +1712,13 @@ function renderTextWithMath(text){
   if(lastIdx<text.length)segments.push({t:'txt',v:text.slice(lastIdx)});
   return segments.map(function(s){
     if(s.t==='math')return latexToWordHtml(s.v);
-    return esc(s.v).replace(/\n/g,'<br>');
+    // plain text: escape HTML, then also handle bare _x ^x (e.g. F_甲 outside $)
+    var r=esc(s.v).replace(/\n/g,'<br>');
+    r=r.replace(/_\{([^}]*)\}/g,'<sub>$1</sub>');
+    r=r.replace(/_([^\s\\{}<>&;])/g,'<sub>$1</sub>');
+    r=r.replace(/\^\{([^}]*)\}/g,'<sup>$1</sup>');
+    r=r.replace(/\^([^\s\\{}<>&;])/g,'<sup>$1</sup>');
+    return r;
   }).join('');
 }
 function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
