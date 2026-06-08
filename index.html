@@ -1613,24 +1613,97 @@ function getSource(it){
   else if(exam.indexOf('模擬')>=0||exam.indexOf('模考')>=0)short='模考';
   return year+school+short;
 }
+function latexToWordHtml(latex){
+  var t=latex;
+  // strip \text{}, \mathrm{}, \mbox{} etc — keep inner text
+  t=t.replace(/\\(?:text|mathrm|mbox|mathbf|mathit|mathsf|operatorname)\{([^}]*)\}/g,'$1');
+  // \frac{a}{b} → (a)/(b)
+  t=t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'($1)/($2)');
+  // \sqrt{x} → √x
+  t=t.replace(/\\sqrt\{([^}]+)\}/g,'√$1');
+  t=t.replace(/\\sqrt\b/g,'√');
+  // arrows & relations
+  t=t.replace(/\\rightleftharpoons/g,'⇌');
+  t=t.replace(/\\leftrightarrow/g,'↔');
+  t=t.replace(/\\rightarrow/g,'→');
+  t=t.replace(/\\leftarrow/g,'←');
+  t=t.replace(/\\Rightarrow/g,'⇒');
+  t=t.replace(/\\Leftarrow/g,'⇐');
+  t=t.replace(/\\uparrow/g,'↑');
+  t=t.replace(/\\downarrow/g,'↓');
+  t=t.replace(/\\to\b/g,'→');
+  t=t.replace(/\\approx/g,'≈');
+  t=t.replace(/\\neq/g,'≠');
+  t=t.replace(/\\leq/g,'≤');
+  t=t.replace(/\\geq/g,'≥');
+  t=t.replace(/\\ll\b/g,'≪');
+  t=t.replace(/\\gg\b/g,'≫');
+  t=t.replace(/\\propto/g,'∝');
+  // operators
+  t=t.replace(/\\times/g,'×');
+  t=t.replace(/\\cdot/g,'·');
+  t=t.replace(/\\div/g,'÷');
+  t=t.replace(/\\pm/g,'±');
+  t=t.replace(/\\infty/g,'∞');
+  t=t.replace(/\\circ/g,'°');
+  // Greek (capital)
+  t=t.replace(/\\Delta/g,'Δ');
+  t=t.replace(/\\Gamma/g,'Γ');
+  t=t.replace(/\\Theta/g,'Θ');
+  t=t.replace(/\\Lambda/g,'Λ');
+  t=t.replace(/\\Pi\b/g,'Π');
+  t=t.replace(/\\Sigma/g,'Σ');
+  t=t.replace(/\\Phi/g,'Φ');
+  t=t.replace(/\\Psi/g,'Ψ');
+  t=t.replace(/\\Omega/g,'Ω');
+  // Greek (lowercase)
+  t=t.replace(/\\alpha/g,'α');
+  t=t.replace(/\\beta/g,'β');
+  t=t.replace(/\\gamma/g,'γ');
+  t=t.replace(/\\delta/g,'δ');
+  t=t.replace(/\\epsilon/g,'ε');
+  t=t.replace(/\\zeta/g,'ζ');
+  t=t.replace(/\\eta/g,'η');
+  t=t.replace(/\\theta/g,'θ');
+  t=t.replace(/\\kappa/g,'κ');
+  t=t.replace(/\\lambda/g,'λ');
+  t=t.replace(/\\mu/g,'μ');
+  t=t.replace(/\\nu/g,'ν');
+  t=t.replace(/\\xi/g,'ξ');
+  t=t.replace(/\\pi\b/g,'π');
+  t=t.replace(/\\rho/g,'ρ');
+  t=t.replace(/\\sigma/g,'σ');
+  t=t.replace(/\\tau/g,'τ');
+  t=t.replace(/\\phi/g,'φ');
+  t=t.replace(/\\chi/g,'χ');
+  t=t.replace(/\\psi/g,'ψ');
+  t=t.replace(/\\omega/g,'ω');
+  // superscripts ^{...} and ^x → <sup>
+  t=t.replace(/\^\{([^}]*)\}/g,function(_,s){return '<sup>'+s+'</sup>';});
+  t=t.replace(/\^([0-9A-Za-z+\-])/g,'<sup>$1</sup>');
+  // subscripts _{...} and _x → <sub>
+  t=t.replace(/_\{([^}]*)\}/g,function(_,s){return '<sub>'+s+'</sub>';});
+  t=t.replace(/_([0-9A-Za-z+\-])/g,'<sub>$1</sub>');
+  // remove remaining LaTeX commands (keep brace content)
+  t=t.replace(/\\[a-zA-Z]+\{([^}]*)\}/g,'$1');
+  t=t.replace(/\\[a-zA-Z@]+/g,'');
+  t=t.replace(/[{}]/g,'');
+  return t;
+}
 function renderTextWithMath(text){
   if(!text)return '';
   text=fixLatex(text);
-  if(typeof katex==='undefined')return esc(text).replace(/\n/g,'<br>');
   var segments=[];
   var re=/\$\$([^$]+?)\$\$|\$([^$\n]+?)\$/g;
   var lastIdx=0,m;
   while((m=re.exec(text))!==null){
     if(m.index>lastIdx)segments.push({t:'txt',v:text.slice(lastIdx,m.index)});
-    segments.push({t:'math',v:(m[1]||m[2]).trim(),d:!!m[1]});
+    segments.push({t:'math',v:(m[1]||m[2]).trim()});
     lastIdx=m.index+m[0].length;
   }
   if(lastIdx<text.length)segments.push({t:'txt',v:text.slice(lastIdx)});
   return segments.map(function(s){
-    if(s.t==='math'){
-      try{return katex.renderToString(s.v,{output:'mathml',throwOnError:false,displayMode:s.d});}
-      catch(e){return esc('$'+s.v+'$');}
-    }
+    if(s.t==='math')return latexToWordHtml(s.v);
     return esc(s.v).replace(/\n/g,'<br>');
   }).join('');
 }
@@ -1682,7 +1755,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
   if(ansMode==='end'&&answers.length){
     body+='<div class="answers"><b>【參考答案】</b>　'+answers.join('　')+'</div>';
   }
-  return '<!DOCTYPE html><html xmlns:m="http://www.w3.org/1998/Math/MathML"><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
 }
 function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource){
   try{
