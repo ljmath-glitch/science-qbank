@@ -1607,7 +1607,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
     '.ans{color:#c0392b;font-size:10pt;margin-top:2pt}'+
     '.sol{color:#1f6f5c;font-size:10pt;margin-top:2pt}'+
     '.img-wrap{margin:6pt 0}'+
-    '.img-wrap img{max-width:85%;display:block}'+
+    '.img-wrap img{max-width:85%;height:auto;display:block}'+
     '.answers{border-top:1pt solid #999;margin-top:24pt;padding-top:8pt;color:#c0392b;font-size:10pt}'+
     '</style>';
   var body='<h1>'+title+'</h1>';
@@ -1624,8 +1624,9 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
     body+='<div class="qtext"><b>'+(i+1)+'.</b> '+esc(q).replace(/\n/g,'<br>')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
-        var w=img.width?'width="'+img.width+'"':'';
-        body+='<div class="img-wrap"><img src="'+img.src+'" '+w+'></div>';
+        var style='max-width:85%;height:auto;display:block;';
+        if(img.width)style+='width:'+img.width+'px;';
+        body+='<div class="img-wrap"><img src="'+img.src+'" style="'+style+'"></div>';
       }
     });
     if((ansMode==='inline'||ansMode==='full')&&it.ans){
