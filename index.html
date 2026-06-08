@@ -263,7 +263,7 @@
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 RTF</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -294,7 +294,7 @@
   <div class="pv-bar noprint">
     <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
     <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
-    <button class="btn green" onclick="downloadWordDoc()">⬇ 下載 Word</button>
+    <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 RTF (Word可開啟)</button>
     <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
   </div>
   <div class="pv-sheet" id="pvSheet"></div>
@@ -1352,7 +1352,6 @@ ${syl}
   Nc-Ⅳ-5 新興能源的科技，例如：油電混合動力車、太陽能飛機等。
   Nc-Ⅳ-6 臺灣能源的利用現況與未來展望。
 - 題目摘要：動詞＋對象，15 字內（如「判斷並聯電路電流大小」）。
-- 題組：屬於同一個大題（共用題幹／同一情境的連續小題，如題組閱讀、實驗組題）的各小題，填**相同**代碼（如 會考-115-48、陽明國中-9-114-1-1-42，同一份卷子內不重複）；不屬於任何題組的單題**留空**。
 - 題目：完整題幹，選項放在同一格用換行分隔。
   數學/化學式放入 $...$；單位與一般英文必須用 \\text{} 包住避免斜體。
   【LaTeX 單位寫法——請嚴格遵守，指令是 \\text 不是 \\ext】
@@ -1386,6 +1385,24 @@ ${syl}
 
 【輸出格式】
 - 第一列為標題列；每欄用雙引號包住，欄內雙引號用 "" 表示。
+- CSV 共 21 欄，最後一欄為題組ID。
+
+【第 21 欄：題組ID 規則】
+- 若這題屬於題組（多題共用一段閱讀文字），此欄填入題組代號。
+- 同一題組的所有題目，此欄必須填入完全相同的代號。
+- 閱讀材料完整放在題組第一題的題目欄（T欄），後續題目只填題幹與選項，不重複閱讀材料。
+- 非題組的獨立題目，此欄留空（空字串）。
+
+【題組ID 格式規則】
+▸ 會考題：會考-年份-起始題號
+  例：會考-114-42（114 年會考，第 42 題開始的題組）
+
+▸ 段考題：學校名-年級-年份-學期-第幾次段考-起始題號
+  年級從冊數推算：B1/B2 → 7、B3/B4 → 8、B5/B6 → 9
+  學校名從「來源學校」欄位取得（如 陽明國中、石牌國中）
+  年份、學期、第幾次段考從「年度」和「考試名稱」欄位推算
+  例：陽明國中-9-114-1-1-42（陽明國中九年級、114學年上學期第一次段考、第42題起的題組）
+  例：石牌國中-8-112-2-3-15（石牌國中八年級、112學年下學期第三次段考、第15題起的題組）
 - 只輸出 CSV，不要其他說明文字。`}
 function openPromptWindow(){
   var p = buildPrompt();
@@ -1522,42 +1539,92 @@ function latexToPlain(t){
   s=s.replace(/[{}]/g,'');           // 去掉剩餘大括號
   return s;
 }
-function rtfEsc(s){
-  var out='';s=String(s);
+function escRtf(s){
+  if(!s)return '';
+  var out='';
   for(var i=0;i<s.length;i++){
-    var ch=s[i],c=s.charCodeAt(i);
-    if(ch==='\\'||ch==='{'||ch==='}')out+='\\'+ch;
-    else if(ch==='\n')out+='\\par ';
+    var c=s.charCodeAt(i);
+    if(c===92)out+='\\\\';
+    else if(c===123)out+='\\{';
+    else if(c===125)out+='\\}';
     else if(c>127)out+='\\u'+c+'?';
-    else out+=ch;
+    else out+=s[i];
   }
   return out;
 }
-function buildRtf(){
-  var items=(typeof pickedItems==='function')?pickedItems():[];
-  var title=lastPaperTitle||'自然科測驗卷';
-  var ansMode=lastAnsMode||'none';
-  var out='{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0\\froman\\fcharset136 PMingLiU;}}\\f0\\fs28\\sl360\\slmult1 ';
-  out+='{\\qc\\b\\fs40 '+rtfEsc(title)+'}\\par ';
-  out+='{\\qr\\fs20 '+rtfEsc('共 '+items.length+' 題　班級：______　座號：____　姓名：__________')+'}\\par\\par ';
-  items.forEach(function(it,i){
-    var q=latexToPlain(it.q||it.summary||'');
-    out+='{\\b '+(i+1)+'.}  '+rtfEsc(q)+'\\par ';
-    if((it.imgs||[]).length)out+='{\\i '+rtfEsc('〔此題含圖，請見系統〕')+'}\\par ';
-    if((ansMode==='inline'||ansMode==='full')&&it.ans)out+=rtfEsc('　答案：'+it.ans)+'\\par ';
-    if(ansMode==='full'&&it.sol)out+=rtfEsc('　詳解：'+latexToPlain(it.sol))+'\\par ';
-    out+='\\par ';
-  });
-  if(ansMode==='end'){
-    var a=items.map(function(it,i){return it.ans?(i+1)+'.'+it.ans:'';}).filter(Boolean).join('　');
-    out+='\\par {\\b '+rtfEsc('【參考答案】')+'}'+rtfEsc(a)+'\\par ';
+function buildRtf(title,items,ansMode,showMeta,showTag){
+  var lines=[];
+  lines.push('{\\rtf1\\ansi\\ansicpg950\\deff0');
+  lines.push('{\\fonttbl{\\f0\\froman\\fcharset136 標楷體;}{\\f1\\froman Times New Roman;}}');
+  lines.push('{\\colortbl;\\red192\\green57\\blue43;\\red31\\green111\\blue92;\\red136\\green136\\blue136;}');
+  lines.push('\\widowctrl\\hyphauto');
+  lines.push('\\margl1800\\margr1800\\margt1440\\margb1440');
+  lines.push('\\pard\\qc\\sb200\\sa200{\\f0\\fs36\\b '+escRtf(title)+'}\\par');
+  if(showMeta){
+    lines.push('\\pard\\qr\\sb100\\sa200{\\f0\\fs20\\cf3 '+
+      escRtf('共 '+items.length+' 題  班級：______  座號：____  姓名：________')+'}\\par');
   }
-  out+='}';
-  return out;
+  var answers=[];
+  items.forEach(function(it,i){
+    var num=(i+1)+'.';
+    var qRaw=latexToPlain(fixLatex(it.q||it.summary||''));
+    var lines2=qRaw.split('\n').filter(function(l){return l.trim();});
+    if(showTag&&(it.unit||it.sub)){
+      lines.push('\\pard\\sb80\\sa40{\\f0\\fs18\\i\\cf3 '+
+        escRtf((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'}\\par');
+    }
+    lines2.forEach(function(line,li){
+      var prefix=li===0?num+' ':'    ';
+      lines.push('\\pard\\sb'+(li===0?160:20)+'\\sa20{\\f0\\fs22 '+escRtf(prefix+line)+'}\\par');
+    });
+    if((it.imgs||[]).length){
+      lines.push('\\pard\\sb20\\sa20{\\f0\\fs20\\i\\cf3 '+escRtf('〔此題含圖，請見系統〕')+'}\\par');
+    }
+    if((ansMode==='inline'||ansMode==='full')&&it.ans){
+      lines.push('\\pard\\sb20\\sa40{\\f0\\fs20\\cf1 '+escRtf('答案：'+it.ans)+'}\\par');
+    }
+    if(ansMode==='full'&&it.sol){
+      lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+escRtf('詳解：'+latexToPlain(it.sol||''))+'}\\par');
+    }
+    if(it.ans)answers.push((i+1)+'.'+it.ans);
+  });
+  if(ansMode==='end'&&answers.length){
+    lines.push('\\pard\\sb400\\sa100\\brdrb\\brdrs\\brdrw6{\\f0\\fs20\\cf1 '+
+      escRtf('【參考答案】'+answers.join('  '))+'}\\par');
+  }
+  lines.push('}');
+  return lines.join('\n');
+}
+function generateAndDownloadWord(title,items,ansMode,showMeta,showTag){
+  try{
+    var rtf=buildRtf(title,items,ansMode,showMeta,showTag);
+    var blob=new Blob([rtf],{type:'application/rtf'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url;a.download=title+'_'+stamp()+'.rtf';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+  }catch(e){alert('RTF 生成失敗：'+e.message);}
+}
+function downloadWordFromDlg(){
+  if(!PICKS.size){alert('尚未選題');return;}
+  var items=pickedItems();
+  var ansMode=document.querySelector('input[name=pAns]:checked').value;
+  var showMeta=document.getElementById('pShowMeta').checked;
+  var showTag=document.getElementById('pShowTag').checked;
+  var title=document.getElementById('pTitle').value||'自然科測驗卷';
+  if(typeof paperDlg!=='undefined')paperDlg.close();
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag);
 }
 function downloadWordDoc(){
   if(!PICKS.size){alert('尚未選題');return;}
-  download((lastPaperTitle||'自然科測驗卷')+'_'+stamp()+'.doc',buildRtf(),'application/msword');
+  var items=pickedItems();
+  var ansMode=document.querySelector('input[name=pAns]:checked').value;
+  var showMeta=document.getElementById('pShowMeta').checked;
+  var showTag=document.getElementById('pShowTag').checked;
+  var title=lastPaperTitle||'自然科測驗卷';
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag);
 }
 </script>
 </body>
