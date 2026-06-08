@@ -1031,7 +1031,7 @@ function buildPaperInner(){const items=pickedItems();
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol">詳解：${esc(it.sol)}</div>`;
-    return `<div class="q">${tag}<b>${i+1}.</b>${src} ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
+    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
   return `<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
@@ -1734,8 +1734,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
     }
-    var srcHtml=showSource&&getSource(it)?'<span class="src">['+esc(getSource(it))+']</span> ':'';
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+srcHtml+renderTextWithMath(it.q||it.summary||'')+'</div>';
+    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
@@ -1748,6 +1747,9 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
     }
     if(ansMode==='full'&&it.sol){
       body+='<div class="sol">詳解：'+renderTextWithMath(it.sol||'')+'</div>';
+    }
+    if(showSource&&getSource(it)){
+      body+='<div class="src" style="text-align:right">['+esc(getSource(it))+']</div>';
     }
     body+='</div>';
     if(it.ans)answers.push((i+1)+'.'+it.ans);
