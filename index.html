@@ -1615,10 +1615,17 @@ function getSource(it){
 }
 function latexToWordHtml(latex){
   var t=latex;
-  // strip \text{}, \mathrm{}, \mbox{} etc — keep inner text
-  t=t.replace(/\\(?:text|mathrm|mbox|mathbf|mathit|mathsf|operatorname)\{([^}]*)\}/g,'$1');
-  // \frac{a}{b} → (a)/(b)
-  t=t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'($1)/($2)');
+  // spacing commands → space or empty
+  t=t.replace(/\\(?:quad|qquad)\b/g,' ');
+  t=t.replace(/\\[,;:!]/g,'');
+  t=t.replace(/\\\\/g,' ');
+  t=t.replace(/\\ /g,' ');
+  // strip text wrappers — keep inner content
+  t=t.replace(/\\(?:text|mathrm|mbox|mathbf|mathit|mathsf|mathbb|operatorname)\{([^}]*)\}/g,'$1');
+  // \ce{...} chemistry — keep content, let subscript rules handle the rest
+  t=t.replace(/\\ce\{([^}]*)\}/g,'$1');
+  // \frac{a}{b} → a/b  (no extra parens for simple units like m/s²)
+  t=t.replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g,'$1/$2');
   // \sqrt{x} → √x
   t=t.replace(/\\sqrt\{([^}]+)\}/g,'√$1');
   t=t.replace(/\\sqrt\b/g,'√');
@@ -1646,6 +1653,7 @@ function latexToWordHtml(latex){
   t=t.replace(/\\pm/g,'±');
   t=t.replace(/\\infty/g,'∞');
   t=t.replace(/\\circ/g,'°');
+  t=t.replace(/\\%/g,'%');
   // Greek (capital)
   t=t.replace(/\\Delta/g,'Δ');
   t=t.replace(/\\Gamma/g,'Γ');
@@ -1678,14 +1686,14 @@ function latexToWordHtml(latex){
   t=t.replace(/\\chi/g,'χ');
   t=t.replace(/\\psi/g,'ψ');
   t=t.replace(/\\omega/g,'ω');
-  // superscripts ^{...} and ^x → <sup>
-  t=t.replace(/\^\{([^}]*)\}/g,function(_,s){return '<sup>'+s+'</sup>';});
-  t=t.replace(/\^([0-9A-Za-z+\-])/g,'<sup>$1</sup>');
-  // subscripts _{...} and _x → <sub>
-  t=t.replace(/_\{([^}]*)\}/g,function(_,s){return '<sub>'+s+'</sub>';});
-  t=t.replace(/_([0-9A-Za-z+\-])/g,'<sub>$1</sub>');
+  // superscripts: ^{...} then single char (including Chinese & other Unicode)
+  t=t.replace(/\^\{([^}]*)\}/g,'<sup>$1</sup>');
+  t=t.replace(/\^([^\s\\{}<>])/g,'<sup>$1</sup>');
+  // subscripts: _{...} then single char (including Chinese & other Unicode)
+  t=t.replace(/_\{([^}]*)\}/g,'<sub>$1</sub>');
+  t=t.replace(/_([^\s\\{}<>])/g,'<sub>$1</sub>');
   // remove remaining LaTeX commands (keep brace content)
-  t=t.replace(/\\[a-zA-Z]+\{([^}]*)\}/g,'$1');
+  t=t.replace(/\\[a-zA-Z@]+\{([^}]*)\}/g,'$1');
   t=t.replace(/\\[a-zA-Z@]+/g,'');
   t=t.replace(/[{}]/g,'');
   return t;
