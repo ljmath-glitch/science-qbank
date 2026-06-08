@@ -1020,7 +1020,20 @@ function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚
   const rows=[head].concat(items.map(it=>[it.year,it.school,it.exam,it.no,it.ans,it.book,it.bookName,it.field,it.unit,it.sub,it.kp,it.summary,it.type,it.step,it.mem,it.con,calcDiff(it.step,it.mem,it.con).lvl,it.chart,it.basis,it.flag?'Y':'',it.q,it.sol,it.groupId||'']));
   const csv=rows.map(r=>r.map(c=>`"${(c==null?'':String(c)).replace(/"/g,'""')}"`).join(',')).join('\n');
   download('選題_'+stamp()+'.csv','\uFEFF'+csv,'text/csv')}
-function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}paperDlg.showModal()}
+function buildAutoTitle(){
+  var items=pickedItems();
+  if(!items.length)return '自然科測驗卷';
+  var gradeOf={B1:'國七',B2:'國七',B3:'國八',B4:'國八',B5:'國九',B6:'國九'};
+  var bookLabel={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
+  var books=[...new Set(items.map(function(it){return it.book;}).filter(Boolean))];
+  var fields=[...new Set(items.map(function(it){return it.field;}).filter(Boolean))];
+  var grades=[...new Set(books.map(function(b){return gradeOf[b];}).filter(Boolean))];
+  var grade=grades.length===1?grades[0]:grades.length===2?grades.join('')+' ':grades.length>2?'國中':'';
+  var field=fields.length===1?fields[0]:'自然科';
+  var bookPart=books.length===1&&bookLabel[books[0]]?' '+bookLabel[books[0]]:'';
+  return (grade+field+bookPart)||'自然科測驗卷';
+}
+function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}pTitle.value=buildAutoTitle();paperDlg.showModal()}
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
