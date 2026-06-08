@@ -723,11 +723,9 @@ function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;
 /* ===== 雲端讀取（取代原本的 localStorage load） ===== */
 async function load(){
   if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
-  const probe=await sb.from('questions').select('group_id').limit(1);
-  GROUP_COL_OK=!probe.error||!(probe.error.message||'').toLowerCase().includes('group_id'); // 只有「欄位不存在」的錯誤才設 false，其他錯誤（網路/RLS）維持 true
   const {data:qs,error}=await sb.from('questions').select('*');
   if(error){console.error(error);alert('讀取雲端題目失敗：'+error.message);DB=[];}
-  else DB=(qs||[]).map(fromRow);
+  else{DB=(qs||[]).map(fromRow);GROUP_COL_OK=!qs.length||('group_id' in qs[0]);console.log('[group_id] GROUP_COL_OK=',GROUP_COL_OK,'第一筆keys:',qs[0]&&Object.keys(qs[0]));}
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
   if(e2)console.error(e2);
   SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
