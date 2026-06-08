@@ -1595,6 +1595,27 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
   lines.push('}');
   return lines.join('\n');
 }
+function renderTextWithMath(text){
+  if(!text)return '';
+  text=fixLatex(text);
+  if(typeof katex==='undefined')return esc(text).replace(/\n/g,'<br>');
+  var segments=[];
+  var re=/\$\$([^$]+?)\$\$|\$([^$\n]+?)\$/g;
+  var lastIdx=0,m;
+  while((m=re.exec(text))!==null){
+    if(m.index>lastIdx)segments.push({t:'txt',v:text.slice(lastIdx,m.index)});
+    segments.push({t:'math',v:(m[1]||m[2]).trim(),d:!!m[1]});
+    lastIdx=m.index+m[0].length;
+  }
+  if(lastIdx<text.length)segments.push({t:'txt',v:text.slice(lastIdx)});
+  return segments.map(function(s){
+    if(s.t==='math'){
+      try{return katex.renderToString(s.v,{output:'mathml',throwOnError:false,displayMode:s.d});}
+      catch(e){return esc('$'+s.v+'$');}
+    }
+    return esc(s.v).replace(/\n/g,'<br>');
+  }).join('');
+}
 function buildWordHtml(title,items,ansMode,showMeta,showTag){
   var css='<style>'+
     '@page{margin:2.54cm}'+
@@ -1609,6 +1630,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
     '.img-wrap{margin:6pt 0}'+
     '.img-wrap img{max-width:85%;height:auto;display:block}'+
     '.answers{border-top:1pt solid #999;margin-top:24pt;padding-top:8pt;color:#c0392b;font-size:10pt}'+
+    'math{font-size:12pt}'+
     '</style>';
   var body='<h1>'+title+'</h1>';
   if(showMeta){
@@ -1616,12 +1638,11 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
   }
   var answers=[];
   items.forEach(function(it,i){
-    var q=latexToPlain(fixLatex(it.q||it.summary||''));
     body+='<div class="q">';
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
     }
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+esc(q).replace(/\n/g,'<br>')+'</div>';
+    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
@@ -1633,7 +1654,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
       body+='<div class="ans">答案：'+esc(it.ans)+'</div>';
     }
     if(ansMode==='full'&&it.sol){
-      body+='<div class="sol">詳解：'+esc(latexToPlain(it.sol||'')).replace(/\n/g,'<br>')+'</div>';
+      body+='<div class="sol">詳解：'+renderTextWithMath(it.sol||'')+'</div>';
     }
     body+='</div>';
     if(it.ans)answers.push((i+1)+'.'+it.ans);
@@ -1641,7 +1662,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
   if(ansMode==='end'&&answers.length){
     body+='<div class="answers"><b>【參考答案】</b>　'+answers.join('　')+'</div>';
   }
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
+  return '<!DOCTYPE html><html xmlns:m="http://www.w3.org/1998/Math/MathML"><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
 }
 function generateAndDownloadWord(title,items,ansMode,showMeta,showTag){
   try{
