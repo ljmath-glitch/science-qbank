@@ -259,6 +259,7 @@
       <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
         <label class="chk"><input type="checkbox" id="pShowMeta" checked> 班級/姓名欄</label>
         <label class="chk"><input type="checkbox" id="pShowTag"> 每題顯示章節/題型標籤</label>
+        <label class="chk"><input type="checkbox" id="pShowSource"> 每題顯示出處（如 113百齡二段）</label>
       </div>
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
@@ -1023,13 +1024,14 @@ function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}paperDlg.sh
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
-  const showMeta=pShowMeta.checked,showTag=pShowTag.checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
+  const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   const body=items.map((it,i)=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
+    const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol">詳解：${esc(it.sol)}</div>`;
-    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
+    return `<div class="q">${tag}<b>${i+1}.</b>${src} ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
   return `<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
@@ -1595,6 +1597,22 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
   lines.push('}');
   return lines.join('\n');
 }
+function getSource(it){
+  var year=it.year||'';
+  var school=it.school||'';
+  var exam=it.exam||'';
+  if(!year&&!school)return '';
+  if(school==='會考'||school.indexOf('會考')>=0||exam.indexOf('會考')>=0)return year+'會考';
+  var short='';
+  if(exam.indexOf('第一次')>=0)short='一段';
+  else if(exam.indexOf('第二次')>=0)short='二段';
+  else if(exam.indexOf('第三次')>=0)short='三段';
+  else if(exam.indexOf('第四次')>=0)short='四段';
+  else if(exam.indexOf('期中')>=0)short='期中';
+  else if(exam.indexOf('期末')>=0)short='期末';
+  else if(exam.indexOf('模擬')>=0||exam.indexOf('模考')>=0)short='模考';
+  return year+school+short;
+}
 function renderTextWithMath(text){
   if(!text)return '';
   text=fixLatex(text);
@@ -1616,13 +1634,14 @@ function renderTextWithMath(text){
     return esc(s.v).replace(/\n/g,'<br>');
   }).join('');
 }
-function buildWordHtml(title,items,ansMode,showMeta,showTag){
+function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
   var css='<style>'+
     '@page{margin:2.54cm}'+
     'body{font-family:標楷體,DFKai-SB,serif;font-size:12pt;line-height:1.8;margin:0}'+
     'h1{text-align:center;font-size:18pt;margin-bottom:6pt}'+
     '.meta{text-align:right;color:#888;font-size:10pt;margin-bottom:24pt}'+
     '.tag{color:#999;font-size:9pt;font-style:italic;margin-bottom:2pt}'+
+    '.src{font-size:9pt;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;font-family:sans-serif}'+
     '.q{margin-bottom:14pt}'+
     '.qtext{font-size:12pt}'+
     '.ans{color:#c0392b;font-size:10pt;margin-top:2pt}'+
@@ -1642,7 +1661,8 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
     }
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
+    var srcHtml=showSource&&getSource(it)?'<span class="src">['+esc(getSource(it))+']</span> ':'';
+    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+srcHtml+renderTextWithMath(it.q||it.summary||'')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
@@ -1664,9 +1684,9 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag){
   }
   return '<!DOCTYPE html><html xmlns:m="http://www.w3.org/1998/Math/MathML"><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
 }
-function generateAndDownloadWord(title,items,ansMode,showMeta,showTag){
+function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource){
   try{
-    var html=buildWordHtml(title,items,ansMode,showMeta,showTag);
+    var html=buildWordHtml(title,items,ansMode,showMeta,showTag,showSource);
     var blob=new Blob(['﻿'+html],{type:'application/msword'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
@@ -1682,9 +1702,10 @@ function downloadWordFromDlg(){
   var ansMode=document.querySelector('input[name=pAns]:checked').value;
   var showMeta=document.getElementById('pShowMeta').checked;
   var showTag=document.getElementById('pShowTag').checked;
+  var showSource=document.getElementById('pShowSource').checked;
   var title=document.getElementById('pTitle').value||'自然科測驗卷';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag);
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource);
 }
 function downloadWordDoc(){
   if(!PICKS.size){alert('尚未選題');return;}
@@ -1692,8 +1713,9 @@ function downloadWordDoc(){
   var ansMode=document.querySelector('input[name=pAns]:checked').value;
   var showMeta=document.getElementById('pShowMeta').checked;
   var showTag=document.getElementById('pShowTag').checked;
+  var showSource=document.getElementById('pShowSource').checked;
   var title=lastPaperTitle||'自然科測驗卷';
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag);
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource);
 }
 </script>
 </body>
