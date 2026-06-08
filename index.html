@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js" crossorigin="anonymous"></script>
 <style>
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
@@ -1643,27 +1643,17 @@ function buildWordDoc(title,items,ansMode,showMeta,showTag){
   }]});
 }
 function generateAndDownloadWord(title,items,ansMode,showMeta,showTag){
+  if(typeof docx==='undefined'){alert('Word 函式庫尚未載入，請重新整頁後再試。');return;}
   try{
-    if(typeof docx!=='undefined'){
-      var doc=buildWordDoc(title,items,ansMode,showMeta,showTag);
-      docx.Packer.toBlob(doc).then(function(blob){
-        var url=URL.createObjectURL(blob);
-        var a=document.createElement('a');
-        a.href=url;a.download=title+'_'+stamp()+'.docx';
-        document.body.appendChild(a);a.click();
-        document.body.removeChild(a);
-        setTimeout(function(){URL.revokeObjectURL(url);},2000);
-      });
-    }else{
-      var rtf=buildRtf(title,items,ansMode,showMeta,showTag);
-      var blob=new Blob([rtf],{type:'application/rtf'});
+    var doc=buildWordDoc(title,items,ansMode,showMeta,showTag);
+    docx.Packer.toBlob(doc).then(function(blob){
       var url=URL.createObjectURL(blob);
       var a=document.createElement('a');
-      a.href=url;a.download=title+'_'+stamp()+'.rtf';
+      a.href=url;a.download=title+'_'+stamp()+'.docx';
       document.body.appendChild(a);a.click();
       document.body.removeChild(a);
       setTimeout(function(){URL.revokeObjectURL(url);},2000);
-    }
+    });
   }catch(e){alert('Word 生成失敗：'+e.message);}
 }
 function downloadWordFromDlg(){
