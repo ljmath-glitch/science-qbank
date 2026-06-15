@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>茲茲文教題庫系統 · 使用說明書</title>
+<style>
+  :root{--ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;--accent:#c0392b;--bio:#1f6f5c;--phy:#b8860b;--blue:#2e75b6;--muted:#6b6557}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;background:var(--paper);color:var(--ink);line-height:1.8;padding-bottom:60px}
+  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:32px 40px;border-bottom:4px solid var(--phy)}
+  header h1{font-size:26px;letter-spacing:3px;font-weight:700}
+  header .sub{font-size:13px;color:#b9c2d6;margin-top:6px;font-family:system-ui,sans-serif}
+  .wrap{max-width:900px;margin:0 auto;padding:0 28px}
+  nav{background:var(--card);border-bottom:1px solid var(--line);padding:12px 28px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.08);display:flex;align-items:center;gap:12px}
+  nav .back-btn{font-family:system-ui,sans-serif;font-size:13px;font-weight:700;padding:6px 14px;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;flex-shrink:0;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+  nav .back-btn:hover{opacity:.85}
+  nav .divider{width:1px;height:20px;background:var(--line);flex-shrink:0}
+  nav .nav-links{display:flex;flex-wrap:wrap;gap:0}
+  nav .nav-links a{font-family:system-ui,sans-serif;font-size:13px;color:var(--blue);text-decoration:none;margin-right:18px}
+  nav .nav-links a:hover{text-decoration:underline}
+  h2{font-size:20px;letter-spacing:2px;color:var(--ink);margin:40px 0 14px;padding:10px 16px;background:linear-gradient(90deg,rgba(184,134,11,.12),transparent);border-left:4px solid var(--phy);font-weight:700}
+  h3{font-size:15px;letter-spacing:1px;color:var(--blue);margin:24px 0 10px;font-family:system-ui,sans-serif;font-weight:700}
+  h4{font-size:13px;color:var(--muted);margin:16px 0 8px;font-family:system-ui,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+  p{margin-bottom:10px;font-size:15px}
+  ul,ol{margin:8px 0 12px 22px;font-size:15px}
+  li{margin-bottom:6px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin-bottom:16px;box-shadow:0 2px 8px -4px rgba(0,0,0,.12)}
+  .card.tip{border-left:4px solid var(--bio);background:#f0faf6}
+  .card.warn{border-left:4px solid var(--accent);background:#fff5f5}
+  .card.info{border-left:4px solid var(--blue);background:#f0f4fc}
+  .badge{display:inline-block;font-family:system-ui,sans-serif;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;margin-right:4px}
+  .badge.green{background:#e0f2ea;color:var(--bio)}
+  .badge.gold{background:#fef3cd;color:#a07800}
+  .badge.blue{background:#e0eaf7;color:var(--blue)}
+  .badge.red{background:#fde8e8;color:var(--accent)}
+  .badge.gray{background:#f0ece2;color:var(--muted)}
+  .step{display:flex;gap:14px;margin-bottom:14px;align-items:flex-start}
+  .step-num{flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--phy);color:#fff;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;font-size:13px;font-weight:700;margin-top:2px}
+  .step-body{flex:1}
+  .kbd{font-family:ui-monospace,Menlo,monospace;background:#2a3550;color:#fff;padding:2px 7px;border-radius:4px;font-size:12px}
+  table{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:13px;margin:10px 0 18px}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left}
+  th{background:#f0ece2;font-weight:700}
+  tr:nth-child(even){background:#faf8f3}
+  .section-divider{height:1px;background:var(--line);margin:40px 0}
+  .highlight{background:#fff3cd;border-radius:3px;padding:1px 4px}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#f0ece2;padding:1px 5px;border-radius:3px}
+  .flow{display:flex;gap:0;align-items:center;flex-wrap:wrap;margin:10px 0}
+  .flow-item{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-family:system-ui,sans-serif;font-size:13px;font-weight:600}
+  .flow-arrow{color:var(--phy);font-size:18px;margin:0 8px;font-weight:700}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 24px;margin:24px 0;font-family:system-ui,sans-serif}
+  .toc h3{margin:0 0 12px;color:var(--ink);font-size:14px;letter-spacing:1px}
+  .toc ol{margin:0 0 0 18px}
+  .toc li{margin-bottom:4px;font-size:13px}
+  .toc a{color:var(--blue);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  @media(max-width:600px){h2{font-size:17px}.wrap{padding:0 16px}nav .nav-links a{font-size:12px;margin-right:10px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>茲茲文教自然科題庫系統</h1>
+    <div class="sub">TZUTZU · 使用說明書 · 2026年6月版</div>
+  </div>
+</header>
+
+<nav>
+  <a class="back-btn" href="index.html">← 返回題庫系統</a>
+  <div class="divider"></div>
+  <div class="nav-links">
+    <a href="#intro">系統簡介</a>
+    <a href="#import">匯入題目</a>
+    <a href="#edit">新增/編輯</a>
+    <a href="#filter">篩選搜尋</a>
+    <a href="#pick">選題</a>
+    <a href="#export">匯出考卷</a>
+    <a href="#backup">備份還原</a>
+    <a href="#faq">常見問題</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<div class="toc">
+  <h3>目錄</h3>
+  <ol>
+    <li><a href="#intro">系統簡介</a></li>
+    <li><a href="#interface">介面說明</a></li>
+    <li><a href="#import">匯入題目（AI 指令流程）</a></li>
+    <li><a href="#edit">手動新增與編輯題目</a></li>
+    <li><a href="#filter">篩選與搜尋</a></li>
+    <li><a href="#pick">選題功能</a></li>
+    <li><a href="#export">匯出考卷</a></li>
+    <li><a href="#report">知識點分析報表</a></li>
+    <li><a href="#backup">備份與還原</a></li>
+    <li><a href="#chapter">章節清單管理</a></li>
+    <li><a href="#faq">常見問題 FAQ</a></li>
+  </ol>
+</div>
+
+<!-- ===== 系統簡介 ===== -->
+<h2 id="intro">一、系統簡介</h2>
+
+<p>本系統是茲茲文教專用的自然科段考題庫管理平台，可以把紙本段考卷的題目數位化，統一儲存在雲端，讓主管與老師共用同一份題庫。</p>
+
+<div class="card info">
+  <b>網站位置</b>：<code>https://science-qbank.vercel.app</code><br>
+  <b>資料儲存</b>：Supabase 雲端資料庫（多人共用，即時同步）<br>
+  <b>適用科目</b>：國中生物、理化、地科（翰林版 B1～B6）
+</div>
+
+<h3>系統主要功能</h3>
+<ul>
+  <li>用 AI（Claude）快速把段考卷轉成結構化資料，一次匯入數十題</li>
+  <li>21 個欄位完整記錄每題資訊（出處、課程對應、難度、知識點等）</li>
+  <li>四層篩選快速找題（領域 → 冊數 → 大單元 → 子單元）</li>
+  <li>勾選題目後一鍵匯出 Word 考卷或 CSV</li>
+  <li>自動偵測題組，勾選一題自動帶出同組所有小題</li>
+  <li>知識點覆蓋分析，找出題庫缺口</li>
+</ul>
+
+<!-- ===== 介面說明 ===== -->
+<h2 id="interface">二、介面說明</h2>
+
+<h3>頁面結構</h3>
+
+<table>
+  <tr><th>區域</th><th>位置</th><th>說明</th></tr>
+  <tr><td>工具列</td><td>頁面上方</td><td>匯入、備份、AI 指令、分析報表等主要功能按鈕</td></tr>
+  <tr><td>篩選面板</td><td>左側欄</td><td>依領域、冊數、單元、難度等條件縮小顯示範圍</td></tr>
+  <tr><td>題目列表</td><td>右側主區</td><td>顯示符合篩選條件的題目卡片</td></tr>
+  <tr><td>浮動列</td><td>畫面底部</td><td>顯示已選題數，提供匯出入口</td></tr>
+</table>
+
+<h3>工具列按鈕說明</h3>
+<table>
+  <tr><th>按鈕</th><th>功能</th></tr>
+  <tr><td><span class="badge red">＋ 匯入題目</span></td><td>貼上 AI 產生的 CSV，批次匯入題目</td></tr>
+  <tr><td><span class="badge gray">手動新增</span></td><td>逐欄填寫，新增單一題目</td></tr>
+  <tr><td><span class="badge gray">🔄 重新整理</span></td><td>重新從雲端載入最新題目</td></tr>
+  <tr><td><span class="badge green">⬇ 備份</span></td><td>下載完整題庫為 JSON 檔</td></tr>
+  <tr><td><span class="badge gray">⬆ 匯入備份到雲端</span></td><td>把 JSON 備份還原到雲端</td></tr>
+  <tr><td><span class="badge gold">📋 Claude 指令</span></td><td>顯示給 AI 的完整指令，用來把段考卷轉成 CSV</td></tr>
+  <tr><td><span class="badge gray">📊 知識點分析</span></td><td>查看題庫難度分布、題型分布、缺口子單元</td></tr>
+  <tr><td><span class="badge gray">🏷 章節清單</span></td><td>編輯翰林版課程骨架</td></tr>
+</table>
+
+<!-- ===== 匯入題目 ===== -->
+<h2 id="import">三、匯入題目（AI 指令流程）</h2>
+
+<p>最快的匯入方式是把段考卷給 AI（Claude）處理，AI 會產生 CSV，再貼回系統匯入。</p>
+
+<h3>完整流程</h3>
+
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  <b>取得 AI 指令</b><br>
+  點工具列的 <span class="badge gold">📋 Claude 指令</span>，在彈出視窗中點「全選並複製」，把指令複製起來。
+</div></div>
+
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  <b>開新的 Claude 對話</b><br>
+  到 claude.ai 或 ChatGPT 開新對話，上傳段考卷（PDF 或照片）。
+</div></div>
+
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  <b>貼上指令並填寫基本資訊</b><br>
+  把複製的指令貼到對話框，在指令最上方填好：
+  <ul>
+    <li>年度（如：<code>113</code>）</li>
+    <li>來源學校（如：<code>百齡國中</code>）</li>
+    <li>考試名稱（如：<code>113上第一次段考</code>）</li>
+  </ul>
+</div></div>
+
+<div class="step"><div class="step-num">4</div><div class="step-body">
+  <b>取得 CSV</b><br>
+  AI 會回傳一份 21 欄的 CSV。全選複製 AI 回傳的 CSV 內容。
+</div></div>
+
+<div class="step"><div class="step-num">5</div><div class="step-body">
+  <b>匯入系統</b><br>
+  回到題庫系統，點 <span class="badge red">＋ 匯入題目</span>，把 CSV 貼到文字框，點「匯入」。
+</div></div>
+
+<div class="card tip">
+  <b>小提示</b>：匯入前建議先確認 CSV 的「冊數」欄是否正確（B1～B6），「領域」是否是「生物」「理化」或「地科」，這兩欄會影響篩選功能。
+</div>
+
+<h3>CSV 欄位說明（共 21 欄）</h3>
+<table>
+  <tr><th>#</th><th>欄位名稱</th><th>說明</th></tr>
+  <tr><td>1</td><td>年度</td><td>如 113、114</td></tr>
+  <tr><td>2</td><td>來源學校</td><td>如 百齡國中、會考</td></tr>
+  <tr><td>3</td><td>考試名稱</td><td>如 113上第一次段考</td></tr>
+  <tr><td>4</td><td>題號</td><td>數字，如 23</td></tr>
+  <tr><td>5</td><td>答案</td><td>A/B/C/D，非選擇題留空</td></tr>
+  <tr><td>6</td><td>冊數</td><td>B1～B6（七上到九下）</td></tr>
+  <tr><td>7</td><td>冊名</td><td>如 七上生物、九上理化</td></tr>
+  <tr><td>8</td><td>領域</td><td>生物 / 理化 / 地科</td></tr>
+  <tr><td>9</td><td>大單元</td><td>如 C3 波動與聲音</td></tr>
+  <tr><td>10</td><td>子單元</td><td>如 3-2 聲音的形成</td></tr>
+  <tr><td>11</td><td>知識點</td><td>108課綱代碼，如 Ka-Ⅳ-3</td></tr>
+  <tr><td>12</td><td>題目摘要</td><td>15字內，動詞＋對象</td></tr>
+  <tr><td>13</td><td>題型</td><td>A1～E3、填、計，共17種</td></tr>
+  <tr><td>14</td><td>步驟分</td><td>1～3，解題步驟數</td></tr>
+  <tr><td>15</td><td>記憶分</td><td>1～3，知識層次</td></tr>
+  <tr><td>16</td><td>概念分</td><td>1～3，概念整合數</td></tr>
+  <tr><td>17</td><td>圖表類型</td><td>無 / 折線圖 / 電路圖 等</td></tr>
+  <tr><td>18</td><td>判斷依據</td><td>分類有疑問時填</td></tr>
+  <tr><td>19</td><td>待確認</td><td>有疑問填 Y，否則留空</td></tr>
+  <tr><td>20</td><td>題目</td><td>完整題幹，選項換行分隔</td></tr>
+  <tr><td>21</td><td>題組ID</td><td>同一大題的小題填相同代號</td></tr>
+</table>
+
+<!-- ===== 新增/編輯 ===== -->
+<h2 id="edit">四、手動新增與編輯題目</h2>
+
+<h3>新增題目</h3>
+<p>點工具列的「手動新增」，填寫表單後點「儲存」。</p>
+
+<h3>編輯題目</h3>
+<p>在題目卡片下方點「編輯」按鈕，修改後點「儲存」。</p>
+
+<h3>表單各區說明</h3>
+
+<h4>A 基本識別</h4>
+<table>
+  <tr><th>欄位</th><th>說明</th></tr>
+  <tr><td>年度</td><td>如 113</td></tr>
+  <tr><td>來源學校</td><td>如 百齡國中；會考題填「會考」</td></tr>
+  <tr><td>考試名稱</td><td>如 113上第一次段考</td></tr>
+  <tr><td>題號</td><td>原卷題號</td></tr>
+  <tr><td>答案</td><td>A～D 或留空</td></tr>
+  <tr><td>題組 ID</td><td>見下方說明</td></tr>
+</table>
+
+<h4>題組 ID 格式</h4>
+<div class="card info">
+  <b>什麼是題組？</b>多題共用一段閱讀材料或情境，稱為題組。<br><br>
+  <b>會考題格式</b>：<code>會考-年份-起始題號</code><br>
+  範例：<code>會考-114-42</code>（114年會考，第42題開始的題組）<br><br>
+  <b>段考題格式</b>：<code>學校名-G年級-學年-學期-段考次-起始題號</code><br>
+  年級由冊數推算：B1/B2→G7、B3/B4→G8、B5/B6→G9<br>
+  範例：<code>百齡-G9-114-1-1-29</code>（百齡國中九年級、114學年上學期第一次段考、第29題起）<br><br>
+  <b>非題組題目留空即可。</b>
+</div>
+
+<h4>B 課程對應</h4>
+<p>先選「冊數」，系統會自動填入冊名與領域，再選大單元、子單元，會出現 108 課綱知識點建議。</p>
+<ul>
+  <li>B1：七上生物　B2：七下生物</li>
+  <li>B3：八上理化　B4：八下理化</li>
+  <li>B5：九上理化＋地科　B6：九下理化＋地科</li>
+</ul>
+
+<h4>C 分析標籤</h4>
+<table>
+  <tr><th>維度</th><th>1分</th><th>2分</th><th>3分</th></tr>
+  <tr><td>步驟分（解題步驟）</td><td>1步解決</td><td>2步推論</td><td>3步以上</td></tr>
+  <tr><td>記憶分（知識層次）</td><td>背過就能答</td><td>需理解才能用</td><td>陌生情境活用</td></tr>
+  <tr><td>概念分（概念整合）</td><td>1個概念</td><td>2個概念</td><td>3個以上/跨章</td></tr>
+</table>
+<p>三項加總：3～4分＝簡單，5～6分＝中等，7～8分＝困難，9分＝極難。</p>
+
+<h4>題型代碼</h4>
+<table>
+  <tr><th>代碼</th><th>名稱</th><th>說明</th></tr>
+  <tr><td>A1</td><td>概念辨識</td><td>直接判斷概念對錯</td></tr>
+  <tr><td>A2</td><td>概念推論</td><td>從概念推導結論</td></tr>
+  <tr><td>A3</td><td>概念比較</td><td>比較兩概念異同</td></tr>
+  <tr><td>B1</td><td>圖表判讀</td><td>從圖表讀取數值</td></tr>
+  <tr><td>B2</td><td>圖表推論</td><td>從圖表推導結論</td></tr>
+  <tr><td>B3</td><td>圖表計算</td><td>圖表數值計算</td></tr>
+  <tr><td>C1</td><td>實驗操作</td><td>判斷操作步驟</td></tr>
+  <tr><td>C2</td><td>實驗設計</td><td>設計對照實驗</td></tr>
+  <tr><td>C3</td><td>實驗結果推論</td><td>從實驗結果推論</td></tr>
+  <tr><td>D1</td><td>單步計算</td><td>一個公式計算</td></tr>
+  <tr><td>D2</td><td>多步計算</td><td>多個公式串聯計算</td></tr>
+  <tr><td>D3</td><td>估算判斷</td><td>數量級估算</td></tr>
+  <tr><td>E1</td><td>情境判斷</td><td>生活情境概念應用</td></tr>
+  <tr><td>E2</td><td>情境推論</td><td>生活情境推導</td></tr>
+  <tr><td>E3</td><td>長文閱讀</td><td>閱讀材料理解應用</td></tr>
+  <tr><td>填</td><td>填充（非選）</td><td></td></tr>
+  <tr><td>計</td><td>計算（非選）</td><td></td></tr>
+</table>
+
+<h4>題目格式（LaTeX）</h4>
+<div class="card info">
+  數學和化學公式用 <code>$...$</code> 包住：<br><br>
+  · 上標（如平方）：<code>$v^2$</code> → v²<br>
+  · 下標（如下標2）：<code>$H_2O$</code> → H₂O<br>
+  · 中文下標：<code>$F_{\text{甲}}$</code> → F甲（下標）<br>
+  · 箭頭：<code>$A \rightarrow B$</code> → A→B<br>
+  · 可逆箭頭：<code>$\rightleftharpoons$</code> → ⇌<br>
+  · 乘號：<code>$3 \times 10^8$</code> → 3×10⁸<br>
+  · Delta：<code>$\Delta T$</code> → ΔT<br>
+  · 單位：<code>$60\,\text{m/s}$</code> → 60 m/s（單位要用 \text{}）
+</div>
+
+<!-- ===== 篩選搜尋 ===== -->
+<h2 id="filter">五、篩選與搜尋</h2>
+
+<h3>四層聯動篩選</h3>
+<div class="flow">
+  <div class="flow-item">領域</div><div class="flow-arrow">→</div>
+  <div class="flow-item">冊數</div><div class="flow-arrow">→</div>
+  <div class="flow-item">大單元</div><div class="flow-arrow">→</div>
+  <div class="flow-item">子單元</div>
+</div>
+<p>選了上層後，下層選單會自動縮小範圍。例如選「理化」後，冊數只會出現 B3～B6。</p>
+
+<h3>其他篩選條件</h3>
+<table>
+  <tr><th>篩選項目</th><th>說明</th></tr>
+  <tr><td>關鍵字搜尋</td><td>搜尋題目文字、摘要、知識點，輸入後即時篩選</td></tr>
+  <tr><td>知識點</td><td>選特定 108 課綱知識點代碼</td></tr>
+  <tr><td>題型</td><td>選 A1～E3 等題型</td></tr>
+  <tr><td>難度</td><td>簡單 / 中等 / 困難 / 極難</td></tr>
+  <tr><td>年度</td><td>選特定年度的題目</td></tr>
+  <tr><td>來源學校</td><td>選特定學校的題目</td></tr>
+  <tr><td>圖表類型</td><td>選含特定圖表的題目</td></tr>
+  <tr><td>只看待確認</td><td>勾選後只顯示標記「待確認」的題目</td></tr>
+</table>
+
+<p>點「清除」可重設所有篩選條件。</p>
+
+<!-- ===== 選題 ===== -->
+<h2 id="pick">六、選題功能</h2>
+
+<h3>手動勾選</h3>
+<p>在每張題目卡片右上角點勾選框，即可選取/取消選取。已選題目的卡片邊框會變紅色。</p>
+
+<div class="card tip">
+  <b>題組自動連帶選取</b>：若勾選有「題組 ID」的題目，系統會自動把同一題組的所有小題一起勾選。
+</div>
+
+<h3>批次選取</h3>
+<table>
+  <tr><th>按鈕</th><th>說明</th></tr>
+  <tr><td>☑ 全選篩選結果</td><td>只選目前篩選出來的題目（在工具列）</td></tr>
+  <tr><td>☑ 全選全部</td><td>選取題庫裡的所有題目（在工具列）</td></tr>
+</table>
+
+<h3>依比例自動選題</h3>
+<p>點浮動列的「⚖ 依比例自動選」，可以設定：</p>
+<ul>
+  <li>總題數</li>
+  <li>各難度比例（如：簡單40%、中等50%、困難10%）</li>
+</ul>
+<p>系統會從<b>目前篩選結果</b>中隨機抽題。</p>
+
+<h3>浮動列功能</h3>
+<p>勾選至少一題後，畫面底部會出現浮動列：</p>
+<table>
+  <tr><th>按鈕</th><th>功能</th></tr>
+  <tr><td>清空</td><td>取消所有勾選</td></tr>
+  <tr><td>🗑 刪除已選</td><td>永久刪除已勾選的題目（不可復原）</td></tr>
+  <tr><td>📄 匯出考卷</td><td>開啟考卷設定視窗</td></tr>
+  <tr><td>選題CSV</td><td>直接下載已選題目的 CSV</td></tr>
+</table>
+
+<!-- ===== 匯出考卷 ===== -->
+<h2 id="export">七、匯出考卷</h2>
+
+<h3>考卷設定視窗</h3>
+<p>點「📄 匯出考卷」開啟設定視窗，有以下選項：</p>
+
+<h4>考卷標題</h4>
+<p>系統會根據已選題目的冊數和領域自動產生標題（如「國七生物 第一冊」），你也可以手動修改。</p>
+
+<h4>答案與詳解模式</h4>
+<table>
+  <tr><th>選項</th><th>說明</th></tr>
+  <tr><td>純考卷</td><td>只有題目，不含任何答案</td></tr>
+  <tr><td>卷末附答案</td><td>題目後面附上參考答案列表</td></tr>
+  <tr><td>每題後顯示答案</td><td>每題下方顯示答案</td></tr>
+  <tr><td>含答案＋詳解</td><td>每題下方顯示答案與詳解</td></tr>
+</table>
+
+<h4>其他選項</h4>
+<table>
+  <tr><th>選項</th><th>說明</th></tr>
+  <tr><td>班級/姓名欄</td><td>在考卷頂部加入班級、座號、姓名填寫欄</td></tr>
+  <tr><td>每題顯示章節/題型標籤</td><td>在每題上方顯示小字的章節與題型（適合教師版）</td></tr>
+  <tr><td>每題顯示出處</td><td>在每題末尾顯示出處（如 113百齡二段、111會考）</td></tr>
+</table>
+
+<h3>出處自動格式</h3>
+<div class="card info">
+  系統根據「年度」「來源學校」「考試名稱」自動產生出處標籤：<br><br>
+  <table>
+    <tr><th>資料</th><th>顯示出處</th></tr>
+    <tr><td>年度113、學校=百齡、第二次段考</td><td>[113百齡二段]</td></tr>
+    <tr><td>年度111、學校=會考</td><td>[111會考]</td></tr>
+    <tr><td>年度114、學校=石牌、期末考</td><td>[114石牌期末]</td></tr>
+  </table>
+</div>
+
+<h3>三個匯出按鈕</h3>
+<table>
+  <tr><th>按鈕</th><th>說明</th></tr>
+  <tr><td><span class="badge green">⬇ 下載 CSV</span></td><td>下載選題資料（含所有21欄資訊），可用 Excel 開啟</td></tr>
+  <tr><td><span class="badge blue">📝 下載 Word</span></td><td>下載 .doc 格式考卷，可用 Word 開啟編輯</td></tr>
+  <tr><td><span class="badge gold">📄 預覽考卷</span></td><td>在瀏覽器中預覽排版，可直接列印或存成 PDF</td></tr>
+</table>
+
+<div class="card tip">
+  <b>Word 檔公式說明</b>：下載的 Word 檔中，上下標（如 H₂O、CO₂、10⁸）會正確顯示。分數會以 1/2 格式呈現，若需要正式的分數格式，在 Word 中手動用方程式編輯器修改即可。
+</div>
+
+<h3>列印考卷</h3>
+<p>點「預覽考卷」後，在預覽畫面點「🖨 列印 / 存 PDF」，可以：</p>
+<ul>
+  <li>直接送印表機列印</li>
+  <li>在「目標印表機」選「儲存成 PDF」，存成 PDF 檔</li>
+</ul>
+
+<!-- ===== 知識點分析 ===== -->
+<h2 id="report">八、知識點分析報表</h2>
+
+<p>點工具列的「📊 知識點分析」，可以看到：</p>
+<ul>
+  <li><b>難度分布</b>：簡單/中等/困難/極難各有幾題</li>
+  <li><b>題型分布</b>：A1～E3 等 17 種題型各有幾題，含橫條圖</li>
+  <li><b>缺口子單元</b>：列出目前尚無題目的子單元，方便知道哪裡還需要補題</li>
+</ul>
+
+<!-- ===== 備份還原 ===== -->
+<h2 id="backup">九、備份與還原</h2>
+
+<h3>備份</h3>
+<p>點工具列的「⬇ 備份」，下載一個 JSON 檔。這個檔案包含所有題目資料，建議定期備份。</p>
+
+<h3>還原</h3>
+<p>點「⬆ 匯入備份到雲端」，選擇之前下載的 JSON 備份檔。</p>
+<div class="card warn">
+  <b>注意</b>：還原時，備份中的題目會逐筆匯入雲端。相同 ID 的題目會更新，但<b>不會刪除</b>雲端上其他題目。若想完全還原，需要先到 Supabase 後台手動清空題庫。
+</div>
+
+<!-- ===== 章節清單 ===== -->
+<h2 id="chapter">十、章節清單管理</h2>
+
+<p>點「🏷 章節清單」可以查看和編輯翰林版課程骨架（大單元、子單元列表）。</p>
+
+<div class="card info">
+  <b>格式</b>：每行一個子單元，五個欄位用 <code>|</code> 隔開：<br>
+  <code>冊數|冊名|領域|大單元|子單元</code><br><br>
+  範例：<code>B3|八上理化|理化|C3 波動與聲音|3-2 聲音的形成</code><br><br>
+  點「回復預設」可恢復成翰林版原始骨架。修改後點「儲存」會同步到雲端，主管和老師都會看到更新後的章節。
+</div>
+
+<!-- ===== FAQ ===== -->
+<h2 id="faq">十一、常見問題 FAQ</h2>
+
+<h3>Q：題目儲存後，重新整理就消失了？</h3>
+<p>請確認 Supabase 連線設定正確（SUPABASE_URL 和 SUPABASE_ANON_KEY 已填好）。若顯示「尚未連線雲端」表示設定有問題。</p>
+
+<h3>Q：篩選選了條件但沒有題目顯示？</h3>
+<p>可能是該條件下確實沒有題目，或是多個篩選條件交集後沒有結果。點「清除」重設條件，再逐項縮小範圍。</p>
+
+<h3>Q：AI 產生的 CSV 匯入後，冊數或領域顯示空白？</h3>
+<p>確認 CSV 第 6 欄（冊數）是 B1～B6，第 8 欄（領域）是「生物」「理化」或「地科」，大小寫需完全一致。</p>
+
+<h3>Q：題組功能怎麼用？</h3>
+<p>同一題組的所有小題，在「題組 ID」欄填入相同的代號（例如都填 <code>百齡-G9-114-1-1-29</code>）。之後勾選其中一題，其餘小題會自動被勾選；篩選出其中一題，整組題目也會一起出現。</p>
+
+<h3>Q：Word 檔裡的公式看起來怪怪的？</h3>
+<p>Word 支援 <code>&lt;sup&gt;</code> 和 <code>&lt;sub&gt;</code> 標籤，上下標應該正確顯示。若有問題，請確認用的是 Word 2016 以上版本。分數目前以 1/2 格式呈現，需要正式分數格式請在 Word 中手動修改。</p>
+
+<h3>Q：網站更新後，我的變更沒有出現？</h3>
+<p>網站部署透過 GitHub → Vercel 自動進行，每次 push 後約 30 秒～1 分鐘生效。若超過 5 分鐘還沒更新，請到 Vercel 後台確認部署狀態。</p>
+
+<h3>Q：「待確認」標記有什麼用？</h3>
+<p>對分類或答案有疑問的題目可以標記「待確認（Y）」。之後在篩選面板勾選「只看待確認」，可以集中審查這些題目。</p>
+
+<h3>Q：知識點要怎麼填？</h3>
+<p>選完子單元後，表單會出現該子單元對應的 108 課綱知識點建議（黃色區塊），點選即可填入。多個知識點用「、」隔開。</p>
+
+<div class="section-divider"></div>
+
+<div class="card" style="margin-top:30px;text-align:center;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted)">
+  茲茲文教自然科題庫系統 · 使用說明書<br>
+  版本：v2.2 · 2026年6月 · 僅供內部使用
+</div>
+
+</div><!-- /wrap -->
+</body>
+</html>
