@@ -154,7 +154,7 @@
         <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       </div>
       <div class="filt"><label>段考次</label><select id="fExam" onchange="render()"><option value="">全部</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option></select></div>
-      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>國一</option><option>國二</option><option>國三</option></select></div>
+      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
     </aside>
@@ -190,9 +190,9 @@
   <div class="dlg-body">
     <div class="sectionhead">A 基本識別</div>
     <div class="grid4">
-      <div class="field"><label>年度</label><input type="text" id="eYear" placeholder="113 上"></div>
-      <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="XX 國中"></div>
-      <div class="field"><label>考試名稱</label><input type="text" id="eExam" placeholder="113上第一次段考"></div>
+      <div class="field"><label>年度（學期）</label><input type="text" id="eYear" placeholder="114上" onblur="composeExam()"></div>
+      <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="士林" onblur="composeExam()"></div>
+      <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林-九年級-114上-第一次段考"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
     <div class="grid2">
@@ -205,7 +205,7 @@
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
     <div class="grid4">
-      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 全年級 —</option><option>國一</option><option>國二</option><option>國三</option></select></div>
+      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
       <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook()"></select></div>
       <div class="field"><label>冊名／領域</label><input type="text" id="eBookName" readonly style="background:#f0ece2"></div>
       <div class="field"><label>大單元</label><select id="eUnit" onchange="syncBySub()"></select></div>
@@ -804,15 +804,15 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
 function fillBook(sel,grade){
-  const gradeBooks={'國一':['B1','B2'],'國二':['B3','B4'],'國三':['B5','B6']};
+  const gradeBooks={'七年級':['B1','B2'],'八年級':['B3','B4'],'九年級':['B5','B6']};
   const allowed=grade?gradeBooks[grade]:null;
   const books=SYL.map(k=>k.book).filter(b=>!allowed||allowed.includes(b));
   eBook.innerHTML=optTags(books,sel);}
-function onEditGrade(){fillBook(eBook.value,eGrade.value);syncByBook();}
-function onEditExamRound(){
-  const round=eExamRound.value;if(!round)return;
-  const cur=eExam.value;
-  eExam.value=cur.match(/第[一二三]次段考/)?cur.replace(/第[一二三]次段考/,round):(cur||'')+round;}
+function onEditGrade(){fillBook(eBook.value,eGrade.value);syncByBook();composeExam();}
+function onEditExamRound(){composeExam();}
+function composeExam(){
+  const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),eExamRound.value].filter(Boolean);
+  if(parts.length) eExam.value=parts.join('-');}
 function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
   eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
 function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp();showKpSuggest(eSub.value);}
@@ -941,7 +941,7 @@ function resetFilters(){
   ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fExam','fGrade','fChart'].forEach(id=>document.getElementById(id).value='');
   fFlag.checked=false;buildFilters();render();}
 
-function bookToGrade(book){return book==='B1'||book==='B2'?'國一':book==='B3'||book==='B4'?'國二':book==='B5'||book==='B6'?'國三':'';}
+function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function examRound(exam){if(!exam)return '';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
@@ -1163,15 +1163,19 @@ function restoreJSON(e){
 /* ===== Claude 指令 ===== */
 function buildPrompt(){const syl=SYL_RAW;
   const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
-  const yr=fYear.value||'（請填，如 113上）';
-  const sc=fSchool.value||'（請填學校名稱）';
-  const ex=fExam.value?(yr.includes('請填')?'':yr)+fExam.value:'（請填，如 113上第一次段考）';
+  const yr=fYear.value||'';
+  const sc=fSchool.value||'';
+  const gr=fGrade.value||'';
+  const rnd=fExam.value||'';
+  const exParts=[sc,gr,yr,rnd].filter(Boolean);
+  const ex=exParts.length?exParts.join('-'):'（如：士林-九年級-114上-第一次段考）';
   return `請把附上的翰林版國中自然科段考卷，逐題整理成 CSV，供我匯入題庫系統。
 
 【這份卷子的固定資訊】
-- 年度：${yr}
-- 來源學校：${sc}
-- 考試名稱：${ex}
+- 來源學校：${sc||'（請填學校簡稱，如 士林）'}
+- 年級：${gr||'（如 七年級／八年級／九年級）'}
+- 年度（學期）：${yr||'（如 114上）'}
+- 考試名稱（格式：學校-年級-學期-段考次）：${ex}
 
 【CSV 欄位順序，務必照此 21 欄】
 年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,題組
