@@ -130,7 +130,7 @@
     <button class="btn" onclick="openReport()">📊 知識點分析</button>
     <button class="btn" onclick="openKpManager()">🏷 章節清單</button>
     <a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>
-    <button class="btn sm" style="font-size:12px" onclick="(function(){var s=document.getElementById('fSearch').value.toLowerCase();var fb=document.getElementById('fBook').value;var ff=document.getElementById('fField').value;var fu=document.getElementById('fUnit').value;var fsub=document.getElementById('fSub').value;var fk=document.getElementById('fKp').value;var ft=document.getElementById('fType').value;var fd=document.getElementById('fDiff').value;var fy=document.getElementById('fYear').value;var fsc=document.getElementById('fSchool').value;var fex=document.getElementById('fExam').value;var fgr=document.getElementById('fGrade').value;DB.forEach(function(it){if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;if(fk&&(it.kp||''). indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(fex&&it.exam!==fex)return;if(fgr&&bookToGrade(it.book)!==fgr)return;if(s&&((it.q||'')+( it.summary||'')).toLowerCase().indexOf(s)<0)return;PICKS.add(it.id);});render();})()">☑ 全選篩選結果</button>
+    <button class="btn sm" style="font-size:12px" onclick="(function(){var s=document.getElementById('fSearch').value.toLowerCase();var fb=document.getElementById('fBook').value;var ff=document.getElementById('fField').value;var fu=document.getElementById('fUnit').value;var fsub=document.getElementById('fSub').value;var fk=document.getElementById('fKp').value;var ft=document.getElementById('fType').value;var fd=document.getElementById('fDiff').value;var fy=document.getElementById('fYear').value;var fsc=document.getElementById('fSchool').value;var fex=document.getElementById('fExam').value;var fgr=document.getElementById('fGrade').value;DB.forEach(function(it){if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;if(fk&&(it.kp||''). indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(fex&&examRound(it.exam)!==fex)return;if(fgr&&bookToGrade(it.book)!==fgr)return;if(s&&((it.q||'')+( it.summary||'')).toLowerCase().indexOf(s)<0)return;PICKS.add(it.id);});render();})()">☑ 全選篩選結果</button>
     <button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>
     <span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>
   </div>
@@ -152,7 +152,7 @@
         <div class="filt"><label>年度</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       </div>
-      <div class="filt"><label>考試名稱</label><select id="fExam" onchange="render()"><option value="">全部</option></select></div>
+      <div class="filt"><label>段考次</label><select id="fExam" onchange="render()"><option value="">全部</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option></select></div>
       <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>國一</option><option>國二</option><option>國三</option></select></div>
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
@@ -908,7 +908,7 @@ function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<opti
 function buildFilters(){
   setOpts(fBook,getSylVals('book'));setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
-  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fExam,uniq('exam'));fillSelect(fChart,uniq('chart'));}
+  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'));}
 function buildFiltersKeep(){
   // 記住目前篩選值
   var cur={
@@ -928,6 +928,7 @@ function resetFilters(){
   fFlag.checked=false;buildFilters();render();}
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'國一':book==='B3'||book==='B4'?'國二':book==='B5'||book==='B6'?'國三':'';}
+function examRound(exam){if(!exam)return '';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;margin:${m}">`}
@@ -943,7 +944,7 @@ function matches(it){const s=fSearch.value.trim();
   if(fDiff.value&&calcDiff(it.step,it.mem,it.con).lvl!==fDiff.value)return false;
   if(fYear.value&&it.year!==fYear.value)return false;
   if(fSchool.value&&it.school!==fSchool.value)return false;
-  if(fExam.value&&it.exam!==fExam.value)return false;
+  if(fExam.value&&examRound(it.exam)!==fExam.value)return false;
   if(fGrade.value&&bookToGrade(it.book)!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
