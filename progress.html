@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>共編進度表 — 茲茲文教</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#faf7f0;--card:#fff;--line:#e5ddd0;--text:#2a2016;--muted:#7a6e60;--primary:#4a6fa5;--green:#2d9060;--red:#c0392b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+header{background:#2a2016;color:#fff;padding:11px 0}
+.wrap{max-width:1280px;margin:0 auto;padding:0 20px}
+header .wrap{display:flex;align-items:center;gap:10px}
+header h1{font-size:17px;font-weight:700;flex:1}
+.hbtn{padding:6px 13px;border:none;border-radius:7px;font-size:13px;cursor:pointer;background:rgba(255,255,255,.15);color:#fff;font-family:inherit;text-decoration:none;display:inline-block}
+.hbtn:hover{background:rgba(255,255,255,.25)}
+.toolbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 0;position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.toolbar .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar label{font-size:13px;font-weight:600;white-space:nowrap}
+.name-inp{padding:5px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:inherit;width:140px}
+.stat{font-size:12px;color:var(--muted);margin-left:auto}
+.main{padding:24px 0 60px}
+.tbl-wrap{overflow-x:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+table{width:100%;border-collapse:collapse;background:var(--card);min-width:860px}
+thead th{background:#f0ece2;font-size:12px;font-weight:700;padding:10px 12px;text-align:center;border-bottom:2px solid var(--line);white-space:nowrap;color:var(--muted)}
+thead th.left{text-align:left}
+tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#fdfaf5}
+.center{text-align:center}
+.count-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:12px;font-weight:700;background:#e8f0fe;color:#2a5db0}
+.chk-cell{text-align:center}
+input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
+.note-inp{width:100%;padding:4px 8px;border:1px solid transparent;border-radius:5px;font-size:12px;font-family:inherit;background:transparent;color:var(--text)}
+.note-inp:focus{outline:none;border-color:var(--line);background:#fff}
+.ts-cell{font-size:11px;color:var(--muted);text-align:center;line-height:1.5;white-space:nowrap}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:15px}
+.loading{text-align:center;padding:50px;color:var(--muted)}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.pill-done{background:#d4f5e3;color:#1a6e45}
+.pill-none{background:#f0ece2;color:#7a6e60}
+.saving-indicator{font-size:12px;color:var(--muted);display:none}
+.saving-indicator.show{display:inline}
+th.sort-header{cursor:pointer;user-select:none}
+th.sort-header:hover{background:#e5ddd0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>📋 共編進度表</h1>
+    <a class="hbtn" href="index.html">← 回題庫</a>
+    <button class="hbtn" onclick="loadAll()">🔄 重新整理</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="wrap">
+    <label>更新者姓名：</label>
+    <input class="name-inp" id="userName" placeholder="請填您的姓名" oninput="saveName()">
+    <span class="saving-indicator" id="savingInd">儲存中…</span>
+    <div class="stat" id="statLine"></div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="wrap">
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="left sort-header" onclick="sortBy('year')">年度 ↕</th>
+            <th class="left sort-header" onclick="sortBy('school')">來源學校 ↕</th>
+            <th class="left sort-header" onclick="sortBy('exam')">考試名稱 ↕</th>
+            <th>題數</th>
+            <th>已新增圖</th>
+            <th>題目與答案確認</th>
+            <th>篩選欄位確認</th>
+            <th style="min-width:160px">備註</th>
+            <th>最後更新</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="9" class="loading">載入中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="emptyMsg" class="empty" style="display:none">題庫中尚無題目，請先到題庫匯入資料。</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://esfepufqyeplafzbeeag.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PROGRESS_ROW_ID = 2; // 存在 syllabus_doc 表的 id=2
+
+let exams = [];       // [{year, school, exam, count}]
+let progressMap = {}; // { id: {has_images, verified_questions, verified_filters, notes, updated_by, updated_at} }
+let sortKey = 'year';
+let sortAsc = false;
+
+// ── 姓名 ──────────────────────────────────────────
+function saveName(){ localStorage.setItem('pgUserName', document.getElementById('userName').value); }
+function loadName(){ document.getElementById('userName').value = localStorage.getItem('pgUserName') || ''; }
+
+// ── 進度資料讀寫（存在 syllabus_doc id=2 的 content 欄） ──
+async function loadProgress(){
+  const {data, error} = await sb.from('syllabus_doc').select('content').eq('id', PROGRESS_ROW_ID).maybeSingle();
+  if(error || !data) return {};
+  try { return JSON.parse(data.content || '{}'); } catch(e){ return {}; }
+}
+
+async function saveProgress(){
+  const {error} = await sb.from('syllabus_doc').upsert({id: PROGRESS_ROW_ID, content: JSON.stringify(progressMap)});
+  if(error) alert('儲存失敗：' + error.message);
+}
+
+function showSaving(show){
+  document.getElementById('savingInd').classList.toggle('show', show);
+}
+
+// ── 載入所有題目清單 ──────────────────────────────
+async function loadAll(){
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="loading">載入中…</td></tr>';
+  document.getElementById('emptyMsg').style.display = 'none';
+
+  let allQs = [], from = 0;
+  while(true){
+    const {data, error} = await sb.from('questions').select('year,school,exam').range(from, from + 999);
+    if(error || !data || !data.length) break;
+    allQs = allQs.concat(data);
+    if(data.length < 1000) break;
+    from += 1000;
+  }
+
+  // 依 year+school+exam 分組計數
+  const grouped = {};
+  allQs.forEach(q => {
+    const key = makeId(q.year, q.school, q.exam);
+    if(!grouped[key]) grouped[key] = {year: q.year||'', school: q.school||'', exam: q.exam||'', count: 0};
+    grouped[key].count++;
+  });
+  exams = Object.values(grouped);
+
+  progressMap = await loadProgress();
+  sortAndRender();
+}
+
+// ── 排序 ────────────────────────────────────────────
+function sortBy(key){
+  if(sortKey === key) sortAsc = !sortAsc;
+  else { sortKey = key; sortAsc = true; }
+  sortAndRender();
+}
+
+function sortAndRender(){
+  exams.sort((a, b) => {
+    const av = a[sortKey] || '', bv = b[sortKey] || '';
+    return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+  render();
+}
+
+// ── 渲染 ────────────────────────────────────────────
+function makeId(year, school, exam){ return [year||'', school||'', exam||''].join('|||'); }
+
+function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function fmtTime(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('zh-TW', {month:'2-digit', day:'2-digit'})
+       + ' ' + d.toLocaleTimeString('zh-TW', {hour:'2-digit', minute:'2-digit'});
+}
+
+function render(){
+  const tbody = document.getElementById('tbody');
+  document.getElementById('statLine').textContent = '共 ' + exams.length + ' 份考卷';
+
+  if(!exams.length){
+    tbody.innerHTML = '';
+    document.getElementById('emptyMsg').style.display = 'block';
+    return;
+  }
+
+  const doneCount = exams.filter(ex => {
+    const p = progressMap[makeId(ex.year, ex.school, ex.exam)] || {};
+    return p.has_images && p.verified_questions && p.verified_filters;
+  }).length;
+  document.getElementById('statLine').textContent =
+    '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
+
+  tbody.innerHTML = exams.map(ex => {
+    const id  = makeId(ex.year, ex.school, ex.exam);
+    const p   = progressMap[id] || {};
+    const allDone = p.has_images && p.verified_questions && p.verified_filters;
+    const rowStyle = allDone ? 'background:#f0fbf5' : '';
+    return `<tr style="${rowStyle}">
+      <td class="center">${esc(ex.year)}</td>
+      <td>${esc(ex.school)}</td>
+      <td>${esc(ex.exam)}</td>
+      <td class="center"><span class="count-badge">${ex.count}</span></td>
+      <td class="chk-cell"><input type="checkbox" title="已新增圖" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="題目與答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="篩選欄位確認" ${p.verified_filters?'checked':''} onchange="toggle('${esc(id)}','verified_filters',this.checked)"></td>
+      <td><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
+      <td class="ts-cell">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── 勾選 ────────────────────────────────────────────
+async function toggle(id, field, val){
+  showSaving(true);
+  const p = progressMap[id] || {};
+  progressMap[id] = {
+    ...p,
+    [field]: val,
+    updated_by: document.getElementById('userName').value.trim() || '未填姓名',
+    updated_at: new Date().toISOString()
+  };
+  render();
+  await saveProgress();
+  showSaving(false);
+}
+
+// ── 備註 ────────────────────────────────────────────
+async function updateNote(id, val){
+  if((progressMap[id]||{}).notes === val) return;
+  showSaving(true);
+  const p = progressMap[id] || {};
+  progressMap[id] = {
+    ...p,
+    notes: val,
+    updated_by: document.getElementById('userName').value.trim() || '未填姓名',
+    updated_at: new Date().toISOString()
+  };
+  await saveProgress();
+  showSaving(false);
+}
+
+loadName();
+loadAll();
+</script>
+</body>
+</html>
