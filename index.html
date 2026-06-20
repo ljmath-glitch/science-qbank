@@ -113,13 +113,15 @@
   .pv-bar .spacer{flex:1}
   .pv-sheet{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;margin:24px auto 60px;padding:0 26px;line-height:1.9;color:#1a2238}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
-  .exam-hdr{border:3px solid #252525;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid}
-  .exam-hdr-logo{padding:10px 14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
-  .exam-hdr-logo img{height:68px;width:auto}
-  .exam-hdr-sep{width:3px;background:#252525;flex-shrink:0}
-  .exam-hdr-info{padding:12px 18px;flex:1;display:flex;flex-direction:column;justify-content:center}
-  .exam-hdr-title{font-size:22pt;font-weight:bold;color:#252525;letter-spacing:2px;line-height:1.2}
-  .exam-hdr-sub{font-size:14pt;color:#252525;margin-top:6px;letter-spacing:1px}
+  .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
+  .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
+  .exam-hdr-logo img{height:56px;width:auto}
+  .exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
+  .exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:#fff}
+  .exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
+  .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
+  .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:linear-gradient(to right,#f0f0f0,#d4d4d4)}
+  .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
   .pv-sheet .q{margin-bottom:18px;font-style:normal}
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
@@ -1127,7 +1129,9 @@ function buildExamHeader(){
   const sc=document.getElementById('pScope').value.trim();
   const en=document.getElementById('pExamName').value.trim();
   if(!g&&!s&&!sc&&!en)return '';
-  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"></div><div class="exam-hdr-sep"></div><div class="exam-hdr-info"><div class="exam-hdr-title">${esc(g)}${esc(s)}</div><div class="exam-hdr-sub">${[sc,en].filter(Boolean).map(esc).join('　　')}</div></div></div>`;
+  const leftText=[g+s,sc].filter(Boolean).join('　');
+  const rightHtml=en?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(en)}</span></div>`:'';
+  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div>`;
 }
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
@@ -1142,7 +1146,7 @@ function buildPaperInner(){const items=pickedItems();
     return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
-  return `${hdr}<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
+  return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
 function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
   document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
   lastPaperHTML=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(lastPaperTitle)}</title>
@@ -1154,13 +1158,15 @@ body{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;mar
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
 .q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
 .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
-.exam-hdr{border:3px solid #252525;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid}
-.exam-hdr-logo{padding:10px 14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.exam-hdr-logo img{height:68px;width:auto}
-.exam-hdr-sep{width:3px;background:#252525;flex-shrink:0}
-.exam-hdr-info{padding:12px 18px;flex:1;display:flex;flex-direction:column;justify-content:center}
-.exam-hdr-title{font-size:22pt;font-weight:bold;color:#252525;letter-spacing:2px;line-height:1.2}
-.exam-hdr-sub{font-size:14pt;color:#252525;margin-top:6px;letter-spacing:1px}
+.exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
+.exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
+.exam-hdr-logo img{height:56px;width:auto}
+.exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
+.exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:#fff}
+.exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
+.exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
+.exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:linear-gradient(to right,#f0f0f0,#d4d4d4)}
+.exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
 @media print{.noprint{display:none}}</style></head><body>${inner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
