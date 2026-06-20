@@ -130,7 +130,7 @@
     <button class="btn" onclick="openReport()">📊 知識點分析</button>
     <button class="btn" onclick="openKpManager()">🏷 章節清單</button>
     <a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>
-    <button class="btn sm" style="font-size:12px" onclick="(function(){var s=document.getElementById('fSearch').value.toLowerCase();var fb=document.getElementById('fBook').value;var ff=document.getElementById('fField').value;var fu=document.getElementById('fUnit').value;var fsub=document.getElementById('fSub').value;var fk=document.getElementById('fKp').value;var ft=document.getElementById('fType').value;var fd=document.getElementById('fDiff').value;var fy=document.getElementById('fYear').value;var fsc=document.getElementById('fSchool').value;DB.forEach(function(it){if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;if(fk&&(it.kp||''). indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(s&&((it.q||'')+( it.summary||'')).toLowerCase().indexOf(s)<0)return;PICKS.add(it.id);});render();})()">☑ 全選篩選結果</button>
+    <button class="btn sm" style="font-size:12px" onclick="(function(){var s=document.getElementById('fSearch').value.toLowerCase();var fb=document.getElementById('fBook').value;var ff=document.getElementById('fField').value;var fu=document.getElementById('fUnit').value;var fsub=document.getElementById('fSub').value;var fk=document.getElementById('fKp').value;var ft=document.getElementById('fType').value;var fd=document.getElementById('fDiff').value;var fy=document.getElementById('fYear').value;var fsc=document.getElementById('fSchool').value;var fex=document.getElementById('fExam').value;DB.forEach(function(it){if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;if(fk&&(it.kp||''). indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(fex&&it.exam!==fex)return;if(s&&((it.q||'')+( it.summary||'')).toLowerCase().indexOf(s)<0)return;PICKS.add(it.id);});render();})()">☑ 全選篩選結果</button>
     <button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>
     <span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>
   </div>
@@ -152,6 +152,7 @@
         <div class="filt"><label>年度</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       </div>
+      <div class="filt"><label>考試名稱</label><select id="fExam" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
     </aside>
@@ -906,13 +907,13 @@ function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<opti
 function buildFilters(){
   setOpts(fBook,getSylVals('book'));setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
-  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'));}
+  fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fExam,uniq('exam'));fillSelect(fChart,uniq('chart'));}
 function buildFiltersKeep(){
   // 記住目前篩選值
   var cur={
     book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
     kp:fKp.value,type:fType.value,diff:fDiff.value,year:fYear.value,
-    school:fSchool.value,chart:fChart.value
+    school:fSchool.value,exam:fExam.value,chart:fChart.value
   };
   buildFilters();
   // 還原篩選值
@@ -922,7 +923,7 @@ function buildFiltersKeep(){
   });
 }
 function resetFilters(){
-  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fChart'].forEach(id=>document.getElementById(id).value='');
+  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fExam','fChart'].forEach(id=>document.getElementById(id).value='');
   fFlag.checked=false;buildFilters();render();}
 
 /* ===== 渲染 ===== */
@@ -940,6 +941,7 @@ function matches(it){const s=fSearch.value.trim();
   if(fDiff.value&&calcDiff(it.step,it.mem,it.con).lvl!==fDiff.value)return false;
   if(fYear.value&&it.year!==fYear.value)return false;
   if(fSchool.value&&it.school!==fSchool.value)return false;
+  if(fExam.value&&it.exam!==fExam.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   return true}
