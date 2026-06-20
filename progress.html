@@ -102,7 +102,10 @@ let sortAsc = false;
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
-function composeDisplayName(school,grade,year,round){return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';}
+function composeDisplayName(school,grade,year,round){
+  if(round==='會考') return (year||'')+'會考';
+  return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';
+}
 
 // ── 姓名 ──────────────────────────────────────────
 function saveName(){ localStorage.setItem('pgUserName', document.getElementById('userName').value); }
@@ -172,7 +175,10 @@ function sortAndRender(){
 }
 
 // ── 渲染 ────────────────────────────────────────────
-function makeId(school, grade, year, round){ return [school||'', grade||'', year||'', round||''].join('|||'); }
+function makeId(school, grade, year, round){
+  if(round==='會考') return '會考|||'+(year||'');
+  return [school||'', grade||'', year||'', round||''].join('|||');
+}
 
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
