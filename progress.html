@@ -109,6 +109,14 @@ let sortKey = 'year';
 let sortAsc = false;
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
+function gradeFromExam(exam,book){
+  if(exam){
+    if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
+    if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
+    if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+  }
+  return bookToGrade(book);
+}
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
 function composeDisplayName(school,grade,year,round){
   if(round==='會考') return (year||'')+'會考';
@@ -153,7 +161,7 @@ async function loadAll(){
   const grouped = {};
   allQs.forEach(q => {
     const school = (q.school||'').trim();
-    const grade  = bookToGrade(q.book||'');
+    const grade  = gradeFromExam(q.exam||'', q.book||'');
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
     const key    = makeId(school, grade, year, round);
