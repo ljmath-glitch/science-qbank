@@ -2008,37 +2008,6 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
   return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
 }
 
-  var answers=[];
-  items.forEach(function(it,i){
-    body+='<div class="q">';
-    if(showTag&&(it.unit||it.sub)){
-      body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
-    }
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
-    (it.imgs||[]).forEach(function(img){
-      if(img.src){
-        var style='max-width:85%;height:auto;display:block;';
-        if(img.width)style+='width:'+img.width+'px;';
-        body+='<div class="img-wrap"><img src="'+img.src+'" style="'+style+'"></div>';
-      }
-    });
-    if((ansMode==='inline'||ansMode==='full')&&it.ans){
-      body+='<div class="ans">答案：'+esc(it.ans)+'</div>';
-    }
-    if(ansMode==='full'&&it.sol){
-      body+='<div class="sol">詳解：'+renderTextWithMath(it.sol||'')+'</div>';
-    }
-    if(showSource&&getSource(it)){
-      body+='<div class="src" style="text-align:right">['+esc(getSource(it))+']</div>';
-    }
-    body+='</div>';
-    if(it.ans)answers.push((i+1)+'.'+it.ans);
-  });
-  if(ansMode==='end'&&answers.length){
-    body+='<div class="answers"><b>【參考答案】</b>　'+answers.join('　')+'</div>';
-  }
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
-}
 function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr){
   try{
     var html=buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr);
