@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
+  @font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
     --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
@@ -101,8 +102,15 @@
   .paperview.show{display:block}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
-  .pv-sheet{font-family:"Songti SC","Noto Serif TC",serif;max-width:760px;margin:24px auto 60px;padding:0 26px;line-height:1.9;color:#1a2238}
+  .pv-sheet{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;margin:24px auto 60px;padding:0 26px;line-height:1.9;color:#1a2238}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
+  .exam-hdr{border:3px solid #252525;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid}
+  .exam-hdr-logo{padding:10px 14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#fff}
+  .exam-hdr-logo img{height:68px;width:auto}
+  .exam-hdr-sep{width:3px;background:#252525;flex-shrink:0}
+  .exam-hdr-info{padding:12px 18px;flex:1;display:flex;flex-direction:column;justify-content:center}
+  .exam-hdr-title{font-size:22pt;font-weight:bold;color:#252525;letter-spacing:2px;line-height:1.2}
+  .exam-hdr-sub{font-size:14pt;color:#252525;margin-top:6px;letter-spacing:1px}
   .pv-sheet .q{margin-bottom:18px;font-style:normal}
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
@@ -259,6 +267,15 @@
   <div class="dlg-head">匯出考卷設定<button class="x" onclick="paperDlg.close()">×</button></div>
   <div class="dlg-body">
     <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
+    <div style="background:#f7f4ec;border:1px solid #d8d2c4;border-radius:8px;padding:12px 14px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:#6b6557;margin-bottom:8px;letter-spacing:1px">茲茲標頭（選填，留空則不顯示）</div>
+      <div class="grid4">
+        <div class="field"><label>年級</label><input type="text" id="pGrade" placeholder="國七/國八/國九"></div>
+        <div class="field"><label>科目</label><input type="text" id="pSubject" placeholder="理化/生物/地科"></div>
+        <div class="field"><label>範圍</label><input type="text" id="pScope" placeholder="第三冊"></div>
+        <div class="field"><label>考卷名稱</label><input type="text" id="pExamName" placeholder="112.百齡國中(二段)"></div>
+      </div>
+    </div>
     <div class="field"><label>答案與詳解</label>
       <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
         <label class="chk"><input type="radio" name="pAns" value="none" checked> 純考卷</label>
@@ -1077,11 +1094,32 @@ function buildAutoTitle(){
   var bookPart=books.length===1&&bookLabel[books[0]]?' '+bookLabel[books[0]]:'';
   return (grade+field+bookPart)||'自然科測驗卷';
 }
-function openPaperDlg(){if(!PICKS.size){alert('尚未選題');return}pTitle.value=buildAutoTitle();paperDlg.showModal()}
+const TZULOGO='iVBORw0KGgoAAAANSUhEUgAAAOEAAAEOCAMAAABICICrAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAJtUExURQAAAK2aaa6ba66aaq2baq2aarGdYrCaaq6aaQAAAK2Za66aaqyXaK2barGJYquaaqyZZ62aaq6aa6qZZq2Za6yZaqqqVa2aaq6aaq6aaK2aaqqVVa6baq6baK2cbKqVYK2Zaq2baa+PYK2aaq6ba6qAVZyOY62baq6Zaa2ca6eVaqeeaq2aaqyaaaydbJKSSa6aaq+ZaK6aaq6aaqqVZayZaqaQZK2XaK6ZaqqZa66ZaK6aaq+YarCTZrCbaa2aaa2aaq2aa7CaaZmZZpmZM62aaK2baq6Zaq+ZZq2Zaq2aa66aaa2aaq6aZayaa62aaa6aarmiXa2ZZquba6yba6qOVa+abK2baq2aaqaMZoYAA4AAAK6aaIYAAq2ZaoUAAq2aa6SbZIYAAoYAAKybaq2baYAAAIAAAIQAAoMAAq6aaq6ZaKyYZ20AAGAAAIUAAoMAAauaaa2baa2Za4QAAq2YZ5mATYUAAIUAAq6aaYUAAoAAAK6XaIUAAIUAAIQAAIQAAqqVaoUAAa6aa4UAA6yYaYUAAqqqcYYAAqyZaoUAALCaaoUAAYQAAKyaaYAAAKybaoUAAoAAAK2Zaa+fYK2aaq6ZaokAAIUAAqqKYIUAAoUAAa2ba6qaZ4UAAoAAAIUAAYUAAqycbIQAAIUAAoUAArGcaq2YaK6baq2aaq+Ya5+fYJ+AYKyXaK2barSWaa2aa62baq2Zaq+bZ4CAAK6ba4UAAq6aaqycaoMAAIEAAIIAAIUAAIUAA6aMWa2aaqyYZ4AAAIQAAIQAAoQAAbaSbYUAA4IAAXkAAIIAAGYAAIQAAoUAAoUAAoYAAsszYt0AAADPdFJOUwCD/4v97w060AHnWzH4DbSZ/vkPmdMG+2Vb+AzXpjsY6NkQapQGEvW3gx0d6Nw0B5B/dNEw8hdz2MG89lktPf3u4XcFBcWCeyP0XeDXJmL2zQsZkooJU/DkFP8EZfeyn/kc0hWXliQO0JDx40oHCPzAd+z5fD4KS+2/4QIWWpc8iwy2/PyzcQmqeGRqsJq2LuP3EEsQ6+gaaxjlzcFv6xKt5po+l9Ykn8f3QwgIh+sRUfvdWQJPzb5sZUUxXO4U2jQIG566B8msEysK54jk5B6PxxIAAAAJcEhZcwAAIdUAACHVAQSctJ0AAAeFSURBVHhe7dz1lxtlGMXxMBRoKVbcKS3u7l7cXVLcvbgWd3cv7u7uboW/iSTzTXYmmczenWX6vA+8n192Jnlv5t6Fc+jJ4bQRRVEURVEURVEURfPAfMmYkPKE5qL5SXlCdREhT2gumkDKE6qLCHmyANVFpDyhuWhBUo4sRHURKU9oLppIypFJVBeR8oTmKlKe0FxEyJOFqS4i5QnNRZNJObII1UWkPKG5aFFSnlBdRMgTmqtIeUJz0WKkHFmc6iJSntBctAQpT6guIuQJzUVTSHlCdREhT5akuoiUJzQXLUXKkaWpLiLlCc1Fy5ByZFmqi0h5QnMVKU9oLiLkyXJUF5HyhOai5Uk5sgLVRaQ8obloRVKeUF1EyBOaq0h5QnPRSqQcWZnqIlKe0Fy0CilHVqW6iJQnNBfFby8CRHMVKU9oLlqNlCNTqS4i5QnNRauTcmQa1UWkPKG5ipQnNBcR8oTmKlKe0Fw0nZQja1BdRMoTmosc/pF0TaqLSHlCcxUpT2guWouUI2tTXUTKE5qL1iHlyLpUF5HyhOYqUp7QXETIE5qrSHlCc9F6aWh9bkVpyEi1/32GO9EGpGxQQrRhpRQhGxtRQkSKOxUpG3RQVUptTMoGJUSENuFWRMoGHVSVUpuSskEJ0WaVUoRsbE4JESnuVKRs0EFVKUXIxhaUEJHaklsRKRt0UFVKETJCCdFWaWhrbkVpyAgdVJVS25CyQQnRtpVShGxsRwkRKe5UpGzQQVUpRcgIJUSEtudWRMoGHVSVUjuQskEJ0Y5paCduRWnIyM6UEJHiTrQLKRuUEO1aKUXIxm6UEJHiTkXKBh1UlVIzSJnYnRIiUntwKyJlgw6qSqk9SdmghGivNLQ3t6I0ZGQfStSKZ9mgQ614lI39KVErnmWDDrXiUUYoUSseZYMOtdqPZ9mgRK14lI39KVErnmWDDrU6jGfZoESteJQNOtSLZ9mgQ614lI3DKVErnmWDDrU6gmfZOLKKo6gu4lGe0Fx0NClHjqG6iJQnNFeR8oTmIkKe0FxFqqfZnMlVsGguOpZUT7PZPI7LQB1PdRGpESe0Jja5DhPNRSeSymgvDHniSVQXkcrqLDyZmwDRXEUqq7OweQp34aG5qOhv3E0XBvvvKc1VpHJYGOpEmotOJZXDwEAXnkZ1Eak8BgY6keYqUjnMa+GFsNBcRCjndOa18VJIaK4ilXUG4zp4LSQ0F00jlXEm21Jn8Wo4zqa6iFQGy3p4ORw0F51DqodZGbwRjHOpLiLVdR6rss7nvVDQXEUKsxiVcwFvhoLmIkJgUj/eDQTNVaRSDBrA24GguehCUh3sGcT7YbiI6iJSHcwpwIEw0Fx0Mak21hS4hBNBuJTqIlJtrCnCiTDQXEWqhTGFOBIGmosuI9VoXM6YIhwJA81VpFoYU+AKTgSC5qKRv5ydNQU4EIorqS4i1cKcQbwfDJqrSI36j/Cqqzs/AjCb5iJSLcwZdA3vdk4FgOYqUo3GtemcAte13m3/vD49aI7mohtIlf1LemP3TU4au4nqIlIt6YhCYS2kuWgqqZZ0RKHGzfwMwS1UF5FqS0eU4qQtmqtItdzKijIcNXUbzUWk2m5nRRmOmqK5ilTbf3PhHaTa7mRFGY5aormKVIoVZThpieaiCaRSrCjDSUN3UV1ECqwow0lDNFeRAitK3M1JQzQXzSaFe9gxHAcN0VxFqocdw3HOEM1F95LqYcdQ93HOzv1UF5HKYMkwnDJEcxWpjAeYUuxBTtl5iOYiUjlsKcYZQzRXkcpjTBFOWKK56GFSeTOZM4gDlmiuIjWAQf141xTNRY+QGsSkPN4z9SjVRaSKPMaqDN6xRXMVqWKPMwy8auwJmotIDfck65pP8YI5mqtIeTJnTJ4mFUVRFEVRFEVRFEVRFEVRFEVRZKHR+AeICBtZlgIQxwAAAABJRU5ErkJggg==';
+function openPaperDlg(){
+  if(!PICKS.size){alert('尚未選題');return}
+  pTitle.value=buildAutoTitle();
+  const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value,yr=fYear.value,ex=fExam.value;
+  document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':'';
+  document.getElementById('pSubject').value=fd||'';
+  const scopeMap={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
+  document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:'';
+  const shortRnd=ex.includes('第一')?'一段':ex.includes('第二')?'二段':ex.includes('第三')?'三段':ex.includes('會考')?'會考':'';
+  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+'.':''),(sc?sc+'國中':''),shortRnd?'('+shortRnd+')':''].join(''):'';
+  paperDlg.showModal();
+}
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
+function buildExamHeader(){
+  const g=document.getElementById('pGrade').value.trim();
+  const s=document.getElementById('pSubject').value.trim();
+  const sc=document.getElementById('pScope').value.trim();
+  const en=document.getElementById('pExamName').value.trim();
+  if(!g&&!s&&!sc&&!en)return '';
+  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"></div><div class="exam-hdr-sep"></div><div class="exam-hdr-info"><div class="exam-hdr-title">${esc(g)}${esc(s)}</div><div class="exam-hdr-sub">${[sc,en].filter(Boolean).map(esc).join('　　')}</div></div></div>`;
+}
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
+  const hdr=buildExamHeader();
   const body=items.map((it,i)=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
@@ -1091,17 +1129,25 @@ function buildPaperInner(){const items=pickedItems();
     return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
-  return `<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
+  return `${hdr}<h1>${esc(title)}</h1>${meta}${body}${ansBlock}`}
 function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
   document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
   lastPaperHTML=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(lastPaperTitle)}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
-<style>body{font-family:"Songti SC","Noto Serif TC",serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
+<style>@font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('https://science-qbank.vercel.app/fonts/HuaKang.ttc') format('truetype');}
+body{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
 .q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
 .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
+.exam-hdr{border:3px solid #252525;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid}
+.exam-hdr-logo{padding:10px 14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.exam-hdr-logo img{height:68px;width:auto}
+.exam-hdr-sep{width:3px;background:#252525;flex-shrink:0}
+.exam-hdr-info{padding:12px 18px;flex:1;display:flex;flex-direction:column;justify-content:center}
+.exam-hdr-title{font-size:22pt;font-weight:bold;color:#252525;letter-spacing:2px;line-height:1.2}
+.exam-hdr-sub{font-size:14pt;color:#252525;margin-top:6px;letter-spacing:1px}
 @media print{.noprint{display:none}}</style></head><body>${inner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
