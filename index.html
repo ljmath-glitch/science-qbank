@@ -1930,7 +1930,17 @@ function renderTextWithMath(text){
     return r;
   }).join('');
 }
-function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
+function readHdrFields(){
+  return {
+    g:  (document.getElementById('pGrade')   ?document.getElementById('pGrade').value.trim()   :''),
+    s:  (document.getElementById('pSubject') ?document.getElementById('pSubject').value.trim() :''),
+    sc: (document.getElementById('pScope')   ?document.getElementById('pScope').value.trim()   :''),
+    en: (document.getElementById('pExamName')?document.getElementById('pExamName').value.trim():''),
+  };
+}
+function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
+  var g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
+  var hasHdr=g||s||sc||en;
   var css='<style>'+
     '@page{margin:2.54cm}'+
     'body{font-family:標楷體,DFKai-SB,serif;font-size:12pt;line-height:1.8;margin:0}'+
@@ -1947,44 +1957,29 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource){
     '.answers{border-top:1pt solid #999;margin-top:24pt;padding-top:8pt;color:#c0392b;font-size:10pt}'+
     'math{font-size:12pt}'+
     '</style>';
-  var body='<h1>'+title+'</h1>';
+  var body='';
+  if(hasHdr){
+    var leftText=[g+s,sc].filter(Boolean).join('　');
+    body+='<table width="100%" border="1" bordercolor="#bbbbbb" cellspacing="0" cellpadding="0" style="margin-bottom:18pt;border-collapse:collapse"><tr>';
+    body+='<td align="center" valign="middle" bgcolor="#ffffff" width="70" style="padding:8pt 10pt;border-right:1pt solid #cccccc">';
+    body+='<img src="data:image/png;base64,'+TZULOGO+'" width="52" height="52" style="height:52pt;width:auto"><br>';
+    body+='<span style="font-size:7pt;letter-spacing:2pt;color:#999999;font-family:Arial,sans-serif">TZU TZU</span></td>';
+    body+='<td valign="middle" bgcolor="#f2f2f2" style="padding:10pt 16pt;font-size:20pt;font-weight:bold;letter-spacing:3pt">'+esc(leftText)+'</td>';
+    if(en){
+      body+='<td bgcolor="#999999" width="3" style="padding:0;width:3pt"></td>';
+      body+='<td valign="middle" bgcolor="#d4d4d4" style="padding:10pt 20pt;font-size:17pt;letter-spacing:2pt">'+esc(en)+'</td>';
+    }
+    body+='</tr></table>';
+  }else{
+    body+='<h1>'+title+'</h1>';
+  }
   if(showMeta){
     body+='<div class="meta">共 '+items.length+' 題　班級：______　座號：____　姓名：________</div>';
   }
-  var answers=[];
-  items.forEach(function(it,i){
-    body+='<div class="q">';
-    if(showTag&&(it.unit||it.sub)){
-      body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
-    }
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
-    (it.imgs||[]).forEach(function(img){
-      if(img.src){
-        var style='max-width:85%;height:auto;display:block;';
-        if(img.width)style+='width:'+img.width+'px;';
-        body+='<div class="img-wrap"><img src="'+img.src+'" style="'+style+'"></div>';
-      }
-    });
-    if((ansMode==='inline'||ansMode==='full')&&it.ans){
-      body+='<div class="ans">答案：'+esc(it.ans)+'</div>';
-    }
-    if(ansMode==='full'&&it.sol){
-      body+='<div class="sol">詳解：'+renderTextWithMath(it.sol||'')+'</div>';
-    }
-    if(showSource&&getSource(it)){
-      body+='<div class="src" style="text-align:right">['+esc(getSource(it))+']</div>';
-    }
-    body+='</div>';
-    if(it.ans)answers.push((i+1)+'.'+it.ans);
-  });
-  if(ansMode==='end'&&answers.length){
-    body+='<div class="answers"><b>【參考答案】</b>　'+answers.join('　')+'</div>';
-  }
-  return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
-}
-function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource){
+
+function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr){
   try{
-    var html=buildWordHtml(title,items,ansMode,showMeta,showTag,showSource);
+    var html=buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr);
     var blob=new Blob(['﻿'+html],{type:'application/msword'});
     var url=URL.createObjectURL(blob);
     var a=document.createElement('a');
@@ -1994,6 +1989,14 @@ function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource
     setTimeout(function(){URL.revokeObjectURL(url);},2000);
   }catch(e){alert('Word 匯出失敗：'+e.message);}
 }
+function readHdrFields(){
+  return {
+    g:  (document.getElementById('pGrade')   ?document.getElementById('pGrade').value.trim()   :''),
+    s:  (document.getElementById('pSubject') ?document.getElementById('pSubject').value.trim() :''),
+    sc: (document.getElementById('pScope')   ?document.getElementById('pScope').value.trim()   :''),
+    en: (document.getElementById('pExamName')?document.getElementById('pExamName').value.trim():''),
+  };
+}
 function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
   var items=pickedItems();
@@ -2002,8 +2005,9 @@ function downloadWordFromDlg(){
   var showTag=document.getElementById('pShowTag').checked;
   var showSource=document.getElementById('pShowSource').checked;
   var title=document.getElementById('pTitle').value||'自然科測驗卷';
+  var hdr=readHdrFields();
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource);
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr);
 }
 function downloadWordDoc(){
   if(!PICKS.size){alert('尚未選題');return;}
@@ -2013,7 +2017,7 @@ function downloadWordDoc(){
   var showTag=document.getElementById('pShowTag').checked;
   var showSource=document.getElementById('pShowSource').checked;
   var title=lastPaperTitle||'自然科測驗卷';
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource);
+  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,readHdrFields());
 }
 </script>
 </body>
