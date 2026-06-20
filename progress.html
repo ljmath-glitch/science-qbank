@@ -71,9 +71,7 @@ th.sort-header:hover{background:#e5ddd0}
       <table>
         <thead>
           <tr>
-            <th class="left sort-header" onclick="sortBy('year')">年度 ↕</th>
-            <th class="left sort-header" onclick="sortBy('school')">來源學校 ↕</th>
-            <th class="left sort-header" onclick="sortBy('exam')">考試名稱 ↕</th>
+            <th class="left sort-header" onclick="sortBy('displayName')">考卷名稱 ↕</th>
             <th>題數</th>
             <th>已新增圖</th>
             <th>題目與答案確認</th>
@@ -97,10 +95,14 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const PROGRESS_ROW_ID = 2; // 存在 syllabus_doc 表的 id=2
 
-let exams = [];       // [{year, school, exam, count}]
-let progressMap = {}; // { id: {has_images, verified_questions, verified_filters, notes, updated_by, updated_at} }
+let exams = [];       // [{school, grade, year, round, displayName, count}]
+let progressMap = {}; // { id: {...} }
 let sortKey = 'year';
 let sortAsc = false;
+
+function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function composeDisplayName(school,grade,year,round){return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';}
 
 // ── 姓名 ──────────────────────────────────────────
 function saveName(){ localStorage.setItem('pgUserName', document.getElementById('userName').value); }
@@ -129,18 +131,22 @@ async function loadAll(){
 
   let allQs = [], from = 0;
   while(true){
-    const {data, error} = await sb.from('questions').select('year,school,exam').range(from, from + 999);
+    const {data, error} = await sb.from('questions').select('year,school,exam,book').range(from, from + 999);
     if(error || !data || !data.length) break;
     allQs = allQs.concat(data);
     if(data.length < 1000) break;
     from += 1000;
   }
 
-  // 依 year+school+exam 分組計數
+  // 依語意 key 分組：school + grade + year + examRound
   const grouped = {};
   allQs.forEach(q => {
-    const key = makeId(q.year, q.school, q.exam);
-    if(!grouped[key]) grouped[key] = {year: q.year||'', school: q.school||'', exam: q.exam||'', count: 0};
+    const school = (q.school||'').trim();
+    const grade  = bookToGrade(q.book||'');
+    const year   = (q.year||'').trim();
+    const round  = examRound(q.exam||'');
+    const key    = makeId(school, grade, year, round);
+    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0};
     grouped[key].count++;
   });
   exams = Object.values(grouped);
@@ -158,14 +164,15 @@ function sortBy(key){
 
 function sortAndRender(){
   exams.sort((a, b) => {
-    const av = a[sortKey] || '', bv = b[sortKey] || '';
+    const av = sortKey==='displayName' ? a.displayName : (a[sortKey]||a.displayName||'');
+    const bv = sortKey==='displayName' ? b.displayName : (b[sortKey]||b.displayName||'');
     return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
   render();
 }
 
 // ── 渲染 ────────────────────────────────────────────
-function makeId(year, school, exam){ return [year||'', school||'', exam||''].join('|||'); }
+function makeId(school, grade, year, round){ return [school||'', grade||'', year||'', round||''].join('|||'); }
 
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -187,21 +194,19 @@ function render(){
   }
 
   const doneCount = exams.filter(ex => {
-    const p = progressMap[makeId(ex.year, ex.school, ex.exam)] || {};
+    const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round)] || {};
     return p.has_images && p.verified_questions && p.verified_filters;
   }).length;
   document.getElementById('statLine').textContent =
     '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
 
   tbody.innerHTML = exams.map(ex => {
-    const id  = makeId(ex.year, ex.school, ex.exam);
+    const id  = makeId(ex.school, ex.grade, ex.year, ex.round);
     const p   = progressMap[id] || {};
     const allDone = p.has_images && p.verified_questions && p.verified_filters;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
     return `<tr style="${rowStyle}">
-      <td class="center">${esc(ex.year)}</td>
-      <td>${esc(ex.school)}</td>
-      <td>${esc(ex.exam)}</td>
+      <td>${esc(ex.displayName)}</td>
       <td class="center"><span class="count-badge">${ex.count}</span></td>
       <td class="chk-cell"><input type="checkbox" title="已新增圖" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="題目與答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
