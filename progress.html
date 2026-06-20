@@ -44,6 +44,13 @@ input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--gr
 .saving-indicator.show{display:inline}
 th.sort-header{cursor:pointer;user-select:none}
 th.sort-header:hover{background:#e5ddd0}
+.name-inp-cell{width:100%;padding:4px 8px;border:1px solid transparent;border-radius:5px;font-size:13px;font-family:inherit;background:transparent;color:var(--text);min-width:200px}
+.name-inp-cell:hover{border-color:var(--line)}
+.name-inp-cell:focus{outline:none;border-color:var(--primary);background:#fff}
+.add-btn{margin-top:12px;padding:8px 16px;border:2px dashed var(--line);border-radius:8px;background:transparent;color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;width:100%;text-align:left}
+.add-btn:hover{border-color:var(--primary);color:var(--primary);background:#f0f4ff}
+.del-btn{padding:2px 6px;border:none;border-radius:4px;background:transparent;color:#ccc;cursor:pointer;font-size:14px;line-height:1}
+.del-btn:hover{background:#fee;color:var(--red)}
 </style>
 </head>
 <body>
@@ -85,6 +92,7 @@ th.sort-header:hover{background:#e5ddd0}
         </tbody>
       </table>
     </div>
+    <button class="add-btn" onclick="addManualExam()">＋ 手動新增考卷</button>
     <div id="emptyMsg" class="empty" style="display:none">題庫中尚無題目，請先到題庫匯入資料。</div>
   </div>
 </div>
@@ -155,6 +163,13 @@ async function loadAll(){
   exams = Object.values(grouped);
 
   progressMap = await loadProgress();
+  // 合併手動新增的考卷
+  const manuals = progressMap['__manuals__'] || [];
+  manuals.forEach(name => {
+    const key = 'manual|||' + name;
+    if(!exams.find(e => makeId(e.school,e.grade,e.year,e.round)===key))
+      exams.push({school:'',grade:'',year:'',round:'',displayName:name,count:null,isManual:true});
+  });
   sortAndRender();
 }
 
@@ -177,8 +192,10 @@ function sortAndRender(){
 // ── 渲染 ────────────────────────────────────────────
 function makeId(school, grade, year, round){
   if(round==='會考') return '會考|||'+(year||'');
+  if(school==='__manual__') return 'manual|||'+(grade||'');
   return [school||'', grade||'', year||'', round||''].join('|||');
 }
+function manualKey(name){ return makeId('__manual__', name, '', ''); }
 
 function esc(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -207,13 +224,16 @@ function render(){
     '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
 
   tbody.innerHTML = exams.map(ex => {
-    const id  = makeId(ex.school, ex.grade, ex.year, ex.round);
+    const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);
     const p   = progressMap[id] || {};
+    const shownName = p.customName !== undefined ? p.customName : ex.displayName;
     const allDone = p.has_images && p.verified_questions && p.verified_filters;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
+    const delBtn = ex.isManual ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>` : '';
+    const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">
-      <td>${esc(ex.displayName)}</td>
-      <td class="center"><span class="count-badge">${ex.count}</span></td>
+      <td style="display:flex;align-items:center;gap:4px">${delBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
+      <td class="center">${countCell}</td>
       <td class="chk-cell"><input type="checkbox" title="已新增圖" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="題目與答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="篩選欄位確認" ${p.verified_filters?'checked':''} onchange="toggle('${esc(id)}','verified_filters',this.checked)"></td>
@@ -250,6 +270,44 @@ async function updateNote(id, val){
     updated_at: new Date().toISOString()
   };
   await saveProgress();
+  showSaving(false);
+}
+
+// ── 考卷名稱手動編輯 ────────────────────────────────
+async function updateName(id, val){
+  if((progressMap[id]||{}).customName === val) return;
+  showSaving(true);
+  progressMap[id] = {...(progressMap[id]||{}), customName: val,
+    updated_by: document.getElementById('userName').value.trim()||'未填姓名',
+    updated_at: new Date().toISOString()};
+  await saveProgress();
+  showSaving(false);
+}
+
+// ── 手動新增考卷 ──────────────────────────────────────
+async function addManualExam(){
+  const name = prompt('請輸入考卷名稱：\n（格式建議：士林-九年級-114上-第一次段考）');
+  if(!name || !name.trim()) return;
+  const trimmed = name.trim();
+  const manuals = progressMap['__manuals__'] || [];
+  if(manuals.includes(trimmed)){ alert('此名稱已存在'); return; }
+  showSaving(true);
+  progressMap['__manuals__'] = [...manuals, trimmed];
+  await saveProgress();
+  exams.push({school:'',grade:'',year:'',round:'',displayName:trimmed,count:null,isManual:true});
+  render();
+  showSaving(false);
+}
+
+// ── 刪除手動列 ────────────────────────────────────────
+async function deleteManual(name){
+  if(!confirm('確定要刪除「'+name+'」這一列嗎？')) return;
+  showSaving(true);
+  progressMap['__manuals__'] = (progressMap['__manuals__']||[]).filter(n=>n!==name);
+  delete progressMap[manualKey(name)];
+  await saveProgress();
+  exams = exams.filter(e=>!(e.isManual && e.displayName===name));
+  render();
   showSaving(false);
 }
 
