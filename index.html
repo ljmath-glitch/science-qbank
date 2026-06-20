@@ -117,10 +117,11 @@
   .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
   .exam-hdr-logo img{height:56px;width:auto}
   .exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
-  .exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:#fff}
+  .exam-hdr-body{flex:1;display:flex;align-items:stretch;background:linear-gradient(to right,#fff,#d4d4d4)}
+  .exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:transparent}
   .exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
   .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
-  .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:linear-gradient(to right,#f0f0f0,#d4d4d4)}
+  .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
   .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
   .pv-sheet .q{margin-bottom:18px;font-style:normal}
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
@@ -1131,7 +1132,7 @@ function buildExamHeader(){
   if(!g&&!s&&!sc&&!en)return '';
   const leftText=[g+s,sc].filter(Boolean).join('　');
   const rightHtml=en?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(en)}</span></div>`:'';
-  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div>`;
+  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
 function buildPaperInner(){const items=pickedItems();
   const ansMode=document.querySelector('input[name=pAns]:checked').value;
@@ -1162,10 +1163,11 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
 .exam-hdr-logo img{height:56px;width:auto}
 .exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
-.exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:#fff}
+.exam-hdr-body{flex:1;display:flex;align-items:stretch;background:linear-gradient(to right,#fff,#d4d4d4)}
+.exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:transparent}
 .exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
 .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
-.exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:linear-gradient(to right,#f0f0f0,#d4d4d4)}
+.exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
 .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
 @media print{.noprint{display:none}}</style></head><body>${inner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
