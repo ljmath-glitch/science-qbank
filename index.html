@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
@@ -169,12 +170,12 @@
 
 <!-- 匯入 -->
 <dialog id="importDlg">
-  <div class="dlg-head">匯入題目 (CSV)<button class="x" onclick="importDlg.close()">×</button></div>
+  <div class="dlg-head">匯入題目 (CSV / Excel)<button class="x" onclick="importDlg.close()">×</button></div>
   <div class="dlg-body">
     <p>20 欄順序（建議直接用「📋 Claude 指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
-    <input type="file" accept=".csv,.txt" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:system-ui,sans-serif;font-size:13px">
+    <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:system-ui,sans-serif;font-size:13px">
     <textarea id="csvArea" style="min-height:200px"></textarea>
   </div>
   <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
@@ -775,7 +776,10 @@ function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.repla
     else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}}
   if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
 function openImport(){csvArea.value='';importDlg.showModal()}
-function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8')}
+function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
+  if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws);};r.readAsArrayBuffer(f);
+  }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目
 async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return}
   let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
