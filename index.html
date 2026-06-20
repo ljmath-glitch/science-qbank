@@ -1149,12 +1149,15 @@ function restoreJSON(e){
 /* ===== Claude 指令 ===== */
 function buildPrompt(){const syl=SYL_RAW;
   const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
+  const yr=fYear.value||'（請填，如 113上）';
+  const sc=fSchool.value||'（請填學校名稱）';
+  const ex=fExam.value?(yr.includes('請填')?'':yr)+fExam.value:'（請填，如 113上第一次段考）';
   return `請把附上的翰林版國中自然科段考卷，逐題整理成 CSV，供我匯入題庫系統。
 
-【這份卷子的固定資訊（請先填好）】
-- 年度：（如 113 上）
-- 來源學校：
-- 考試名稱：（如 113上第一次段考）
+【這份卷子的固定資訊】
+- 年度：${yr}
+- 來源學校：${sc}
+- 考試名稱：${ex}
 
 【CSV 欄位順序，務必照此 21 欄】
 年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,題組
