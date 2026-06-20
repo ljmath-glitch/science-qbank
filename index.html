@@ -153,7 +153,7 @@
         <div class="filt"><label>年度</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       </div>
-      <div class="filt"><label>段考次</label><select id="fExam" onchange="render()"><option value="">全部</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option></select></div>
+      <div class="filt"><label>段考次</label><select id="fExam" onchange="render()"><option value="">全部</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option></select></div>
       <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
@@ -196,7 +196,7 @@
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option></select></div>
+      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option></select></div>
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
@@ -811,8 +811,14 @@ function fillBook(sel,grade){
 function onEditGrade(){fillBook(eBook.value,eGrade.value);syncByBook();composeExam();}
 function onEditExamRound(){composeExam();}
 function composeExam(){
-  const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),eExamRound.value].filter(Boolean);
-  if(parts.length) eExam.value=parts.join('-');}
+  const round=eExamRound.value;
+  if(round==='會考'){
+    eExam.value=(eYear.value.trim()||'')+'會考';
+  } else {
+    const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),round].filter(Boolean);
+    if(parts.length) eExam.value=parts.join('-');
+  }
+}
 function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
   eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
 function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp();showKpSuggest(eSub.value);}
@@ -942,7 +948,7 @@ function resetFilters(){
   fFlag.checked=false;buildFilters();render();}
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
-function examRound(exam){if(!exam)return '';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;margin:${m}">`}
