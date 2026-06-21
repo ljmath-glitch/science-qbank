@@ -248,7 +248,7 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></label><textarea id="eSol" style="min-height:55px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:55px"></textarea></div>
     <div class="field"><label>圖片（可貼上截圖或選檔）</label>
       <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:system-ui,sans-serif;font-size:13px">
       <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
@@ -916,7 +916,7 @@ function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 /* ===== 新增/編輯 ===== */
 function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult()}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
-  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();editDlg.showModal()}
+  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
   fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
   eYear.value=it.year;eSchool.value=it.school;eExam.value=it.exam||'';eExamRound.value=examRound(it.exam||'');eNo.value=it.no||'';eAns.value=it.ans||'';eGrade.value=gradeFromExam(it.exam,it.book);
@@ -924,7 +924,7 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   eGroupId.value=it.groupId||'';
   eFlag.checked=!!it.flag;eQ.value=it.q||'';eSol.value=it.sol||'';
   diff={step:it.step||0,mem:it.mem||0,con:it.con||0};paintSeg();showDiffResult();
-  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();editDlg.showModal()}
+  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
   const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
     book:eBook.value,bookName:(SYL.find(k=>k.book===eBook.value)||{}).bookName||'',field:(SYL.find(k=>k.book===eBook.value)||{}).field||'',
@@ -1572,16 +1572,35 @@ function openPromptWindow(){
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
 
 /* ===== AI 生成詳解 ===== */
-function getAnthropicKey(){
-  let k=localStorage.getItem('anthropicApiKey')||'';
+function saveAIProvider(){localStorage.setItem('aiProvider',document.getElementById('aiProvider').value);}
+function loadAIProvider(){const v=localStorage.getItem('aiProvider')||'claude';const el=document.getElementById('aiProvider');if(el)el.value=v;}
+function getAIKey(provider){
+  const sk='aiKey_'+provider;let k=localStorage.getItem(sk)||'';
   if(!k){
-    k=prompt('請輸入 Anthropic API Key（儲存於本機，不會上傳）：\n前往 console.anthropic.com/settings/api-keys 取得');
-    if(k&&k.trim())localStorage.setItem('anthropicApiKey',k.trim());
+    const lbl={claude:'Anthropic\nconsole.anthropic.com/settings/api-keys',gemini:'Google AI Studio\naistudio.google.com/apikey',openai:'OpenAI\nplatform.openai.com/api-keys'};
+    k=prompt('請輸入 '+provider+' 的 API Key（儲存於本機，不會上傳）\n取得網址：\n'+(lbl[provider]||provider));
+    if(k&&k.trim())localStorage.setItem(sk,k.trim());
   }
   return k?k.trim():'';
 }
+async function callClaude(sys,msg,key){
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:sys,messages:[{role:'user',content:msg}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  return (await r.json()).content[0].text.trim();
+}
+async function callGemini(sys,msg,key){
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  return (await r.json()).candidates[0].content.parts[0].text.trim();
+}
+async function callOpenAI(sys,msg,key){
+  const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',max_tokens:1024,messages:[{role:'system',content:sys},{role:'user',content:msg}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  return (await r.json()).choices[0].message.content.trim();
+}
 async function generateSol(){
-  const key=getAnthropicKey();if(!key)return;
+  const provider=document.getElementById('aiProvider')?.value||localStorage.getItem('aiProvider')||'claude';
+  const key=getAIKey(provider);if(!key)return;
   const q=document.getElementById('eQ').value.trim();
   if(!q){alert('請先填入題目內容');return;}
   const btn=document.getElementById('genSolBtn');
@@ -1596,7 +1615,6 @@ async function generateSol(){
     const field=bookName.includes('/')?bookName.split('/')[1].trim():bookName;
     const typeEl=document.getElementById('eType');
     const typeTxt=typeEl.options[typeEl.selectedIndex]?.text||'';
-    // 題組：納入同組所有題目作為情境
     let groupCtx='';
     if(gid){
       const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));
@@ -1604,30 +1622,16 @@ async function generateSol(){
         groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
     }
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-    const userPrompt=`請為以下國中自然科題目撰寫詳解。
-${meta}${groupCtx}
-【題目】
-${q}
-
-【詳解規則】
-- 繁體中文，語氣適合國中生
-- 選擇題：說明正確答案（${ans||'?'}）理由，再逐項說明其他選項錯在哪
-- 非選擇題：列出公式與計算步驟
-- 最後一行補充一個重點觀念句
-- 簡潔，不超過300字`;
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,
-        system:'你是國中自然科（理化、生物、地球科學）專業老師，撰寫精確的詳解。',
-        messages:[{role:'user',content:userPrompt}]})
-    });
-    if(!resp.ok){const err=await resp.json().catch(()=>({error:{message:resp.statusText}}));throw new Error(err.error?.message||resp.statusText);}
-    const data=await resp.json();
-    document.getElementById('eSol').value=data.content[0].text.trim();
+    const sys='你是國中自然科（理化、生物、地球科學）專業老師，撰寫精確的詳解。';
+    const msg='請為以下國中自然科題目撰寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【詳解規則】\n- 繁體中文，語氣適合國中生\n- 選擇題：說明正確答案（'+(ans||'?')+'）理由，再逐項說明其他選項錯在哪\n- 非選擇題：列出公式與計算步驟\n- 最後一行補充一個重點觀念句\n- 簡潔，不超過300字';
+    let result;
+    if(provider==='claude')result=await callClaude(sys,msg,key);
+    else if(provider==='gemini')result=await callGemini(sys,msg,key);
+    else result=await callOpenAI(sys,msg,key);
+    document.getElementById('eSol').value=result;
   }catch(e){
     alert('生成失敗：'+e.message);
-    if(e.message.includes('401')||e.message.includes('authentication')){localStorage.removeItem('anthropicApiKey');alert('API Key 無效，已清除，請重試時重新輸入。');}
+    if(e.message.includes('401')||e.message.includes('authentication')||e.message.includes('API_KEY_INVALID')){localStorage.removeItem('aiKey_'+provider);alert('API Key 無效，已清除，請重試時重新輸入。');}
   }finally{btn.textContent='✨ AI 生成詳解';btn.disabled=false;}
 }
 
