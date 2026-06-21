@@ -248,7 +248,7 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label>詳解（可留空）</label><textarea id="eSol" style="min-height:55px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></label><textarea id="eSol" style="min-height:55px"></textarea></div>
     <div class="field"><label>圖片（可貼上截圖或選檔）</label>
       <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:system-ui,sans-serif;font-size:13px">
       <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
@@ -1570,6 +1570,66 @@ function openPromptWindow(){
   w.document.close();
 }
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
+
+/* ===== AI 生成詳解 ===== */
+function getAnthropicKey(){
+  let k=localStorage.getItem('anthropicApiKey')||'';
+  if(!k){
+    k=prompt('請輸入 Anthropic API Key（儲存於本機，不會上傳）：\n前往 console.anthropic.com/settings/api-keys 取得');
+    if(k&&k.trim())localStorage.setItem('anthropicApiKey',k.trim());
+  }
+  return k?k.trim():'';
+}
+async function generateSol(){
+  const key=getAnthropicKey();if(!key)return;
+  const q=document.getElementById('eQ').value.trim();
+  if(!q){alert('請先填入題目內容');return;}
+  const btn=document.getElementById('genSolBtn');
+  btn.textContent='生成中…';btn.disabled=true;
+  try{
+    const ans=document.getElementById('eAns').value.trim();
+    const unit=document.getElementById('eUnit').value||'';
+    const sub=document.getElementById('eSub').value||'';
+    const kp=document.getElementById('eKp').value.trim()||'';
+    const gid=document.getElementById('eGroupId').value.trim();
+    const bookName=document.getElementById('eBookName').value||'';
+    const field=bookName.includes('/')?bookName.split('/')[1].trim():bookName;
+    const typeEl=document.getElementById('eType');
+    const typeTxt=typeEl.options[typeEl.selectedIndex]?.text||'';
+    // 題組：納入同組所有題目作為情境
+    let groupCtx='';
+    if(gid){
+      const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));
+      if(siblings.length>1)
+        groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
+    }
+    const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
+    const userPrompt=`請為以下國中自然科題目撰寫詳解。
+${meta}${groupCtx}
+【題目】
+${q}
+
+【詳解規則】
+- 繁體中文，語氣適合國中生
+- 選擇題：說明正確答案（${ans||'?'}）理由，再逐項說明其他選項錯在哪
+- 非選擇題：列出公式與計算步驟
+- 最後一行補充一個重點觀念句
+- 簡潔，不超過300字`;
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,
+        system:'你是國中自然科（理化、生物、地球科學）專業老師，撰寫精確的詳解。',
+        messages:[{role:'user',content:userPrompt}]})
+    });
+    if(!resp.ok){const err=await resp.json().catch(()=>({error:{message:resp.statusText}}));throw new Error(err.error?.message||resp.statusText);}
+    const data=await resp.json();
+    document.getElementById('eSol').value=data.content[0].text.trim();
+  }catch(e){
+    alert('生成失敗：'+e.message);
+    if(e.message.includes('401')||e.message.includes('authentication')){localStorage.removeItem('anthropicApiKey');alert('API Key 無效，已清除，請重試時重新輸入。');}
+  }finally{btn.textContent='✨ AI 生成詳解';btn.disabled=false;}
+}
 
 /* ===== 工具 ===== */
 function stamp(){const d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
