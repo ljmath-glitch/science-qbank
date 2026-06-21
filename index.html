@@ -812,8 +812,15 @@ function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name
 // 欄位: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目
 async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return}
   let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
+  const examKeys=new Map();
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
-    const it={id:uid(),year:g(0),school:g(1),exam:g(2),no:g(3),ans:g(4),book:g(5),bookName:g(6),field:g(7),
+    const rawExam=g(2),school=g(1),year=g(0),book=g(5);
+    const grade=gradeFromExam(rawExam,book);
+    const round=examRound(rawExam);
+    const fmtExam=round==='會考'?(year||'')+'會考':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
+    const key=round==='會考'?'會考|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
+    if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round});
+    const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
       flag:(g(18)==='Y'||g(18)==='y'),q:g(19),groupId:g(20)||'',sol:'',imgs:[]};
@@ -821,6 +828,13 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(!adds.length){alert('沒有可匯入的題目');return}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
   if(error){alert('匯入雲端失敗：'+error.message);return}
+  try{
+    const {data:pgData}=await sb.from('syllabus_doc').select('content').eq('id',2).maybeSingle();
+    const pgMap=pgData?JSON.parse(pgData.content||'{}'):{};
+    let changed=false;
+    examKeys.forEach((v,key)=>{if(!pgMap[key]){pgMap[key]={updated_at:new Date().toISOString()};changed=true;}});
+    if(changed)await sb.from('syllabus_doc').upsert({id:2,content:JSON.stringify(pgMap)});
+  }catch(e){}
   importDlg.close();await load();buildFilters();render();alert('成功匯入 '+adds.length+' 題到雲端')}
 
 /* ===== 連動下拉 ===== */
