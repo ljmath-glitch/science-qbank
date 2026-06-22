@@ -2561,7 +2561,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         if(img.x!==undefined){hPos={relative:HorizontalPositionRelativeFrom.COLUMN,offset:Math.round(img.x/100*CONTENT_EMU)};}
         else{const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;hPos={relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign};}
         const vOffset=Math.round((img.y||0)*PX_TO_EMU);
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.SQUARE,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
