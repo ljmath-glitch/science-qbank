@@ -2332,14 +2332,20 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       });
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
+        const parsed=_parseImgSrc(img.src);
+        if(!parsed){continue;}
         try{
           const {w:nw,h:nh}=await _imgSize(img.src);
           const pct=(img.width||65)/100;
-          const dw=Math.round(PAGE_W_PX*pct),dh=Math.round(dw*nh/nw);
-          const type=img.src.startsWith('data:image/png')?'png':'jpg';
+          const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
+          const mime=parsed.mimeType;
+          const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
           const align=img.align==='right'?AlignmentType.RIGHT:img.align==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
-          children.push(new Paragraph({children:[new ImageRun({data:_imgBytes(img.src),transformation:{width:dw,height:dh},type})],alignment:align,spacing:{before:80,after:80}}));
-        }catch(e){children.push(new Paragraph({children:[tr({text:'〔圖片〕',italics:true,color:'888888',size:20})]}))}
+          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type})],alignment:align,spacing:{before:80,after:80}}));
+        }catch(e){
+          console.warn('DOCX 圖片嵌入失敗：',e);
+          children.push(new Paragraph({children:[tr({text:'〔圖片載入失敗：'+e.message+'〕',italics:true,color:'CC0000',size:18})]}));
+        }
       }
       if((ansMode==='inline'||ansMode==='full')&&it.ans){
         children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
