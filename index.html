@@ -2301,7 +2301,10 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
   try{
     await _ensureDocxLib();
     const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType,
-           Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle}=window.docx;
+           Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle,
+           TextWrappingType,TextWrappingSide,
+           HorizontalPositionRelativeFrom,HorizontalPositionAlign,
+           VerticalPositionRelativeFrom}=window.docx;
     const FONT='華康中圓體';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
     const PAGE_W_PX=570;
@@ -2345,9 +2348,10 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       if(showTag&&(it.unit||it.sub)){
         children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
       }
-      latexToPlain(it.q||it.summary||'').split('\n').forEach((line,li)=>{
-        children.push(new Paragraph({children:[tr({text:(li===0?`${i+1}.  `:'\t')+line,size:24})],spacing:{before:li===0?180:0,after:0}}));
-      });
+      {const qLines=latexToPlain(it.q||it.summary||'').split('\n');
+      const qRuns=[];
+      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:(li===0?`${i+1}.  `:'\t')+line,size:24}));});
+      children.push(new Paragraph({children:qRuns,spacing:{before:180,after:0}}));}
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
         const parsed=await _imgToBase64(img);
@@ -2358,8 +2362,8 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
           const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
           const mime=parsed.mimeType;
           const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
-          const align=img.align==='right'?AlignmentType.RIGHT:img.align==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
-          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type})],alignment:align,spacing:{before:80,after:80}}));
+          const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
+          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TOP_AND_BOTTOM,side:TextWrappingSide.BOTH_SIDES},margins:{top:36000,bottom:36000}}})],spacing:{before:80,after:80}}));
         }catch(e){
           console.warn('DOCX 圖片嵌入失敗：',e);
           children.push(new Paragraph({children:[tr({text:'〔圖片載入失敗：'+e.message+'〕',italics:true,color:'CC0000',size:18})]}));
