@@ -1572,14 +1572,35 @@ function openPromptWindow(){
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
 
 /* ===== AI 生成詳解 ===== */
-function saveAIProvider(){localStorage.setItem('aiProvider',document.getElementById('aiProvider').value);}
-function loadAIProvider(){const v=localStorage.getItem('aiProvider')||'claude';const el=document.getElementById('aiProvider');if(el)el.value=v;}
+let AI_CFG={};
+const AI_CFG_ID=3;
+async function loadAIConfig(){
+  if(!CLOUD_READY)return;
+  try{
+    const {data}=await sb.from('syllabus_doc').select('content').eq('id',AI_CFG_ID).maybeSingle();
+    if(data)AI_CFG=JSON.parse(data.content||'{}');
+  }catch(e){}
+}
+async function saveAIConfig(){
+  if(!CLOUD_READY)return;
+  try{await sb.from('syllabus_doc').upsert({id:AI_CFG_ID,content:JSON.stringify(AI_CFG)});}catch(e){}
+}
+function saveAIProvider(){
+  const v=document.getElementById('aiProvider').value;
+  localStorage.setItem('aiProvider',v);
+  AI_CFG.provider=v;saveAIConfig();
+}
+function loadAIProvider(){
+  const v=AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
+  const el=document.getElementById('aiProvider');if(el)el.value=v;
+}
 function getAIKey(provider){
+  if(AI_CFG[provider])return AI_CFG[provider];
   const sk='aiKey_'+provider;let k=localStorage.getItem(sk)||'';
   if(!k){
     const lbl={claude:'Anthropic\nconsole.anthropic.com/settings/api-keys',gemini:'Google AI Studio\naistudio.google.com/apikey',openai:'OpenAI\nplatform.openai.com/api-keys'};
-    k=prompt('請輸入 '+provider+' 的 API Key（儲存於本機，不會上傳）\n取得網址：\n'+(lbl[provider]||provider));
-    if(k&&k.trim())localStorage.setItem(sk,k.trim());
+    k=prompt('請輸入 '+provider+' 的 API Key（輸入後自動存至雲端，之後不用再輸入）\n取得網址：\n'+(lbl[provider]||provider));
+    if(k&&k.trim()){k=k.trim();localStorage.setItem(sk,k);AI_CFG[provider]=k;saveAIConfig();}
   }
   return k?k.trim():'';
 }
@@ -1737,7 +1758,7 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
       <span style="font-size:12px">（取得方式：Supabase → Project Settings → API）</span></div>`;
     return;
   }
-  await load();buildFilters();render();
+  await loadAIConfig();await load();buildFilters();render();
 })();
 </script>
 
