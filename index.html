@@ -259,7 +259,9 @@
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
     <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
-    <div class="field"><label>圖片（可貼上截圖或選檔）</label>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
+      <span id="imgTargetWrap" style="display:none;font-family:system-ui,sans-serif;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
+    </label>
       <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:system-ui,sans-serif;font-size:13px">
       <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
     </div>
@@ -915,22 +917,25 @@ function compress(d,maxW){
     img.src=d;
   });
 }
+function _imgTargetIsPassage(){const el=document.getElementById('imgTarget');return el&&el.value==='p';}
 async function addImages(e){
   var files=e.target.files;
   if(!files.length)return;
+  const toPassage=_imgTargetIsPassage();
   for(var i=0;i<files.length;i++){
     try{
       var d=await fileToDataURL(files[i]);
       var c=await compress(d,IMG_MAXW);
-      curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});
+      if(toPassage){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}
+      else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}
     }catch(err){
       alert('圖片 '+(i+1)+' 載入失敗：'+err.message);
     }
   }
-  renderImgPrev();
+  if(_imgTargetIsPassage())renderPassageImgPrev();else renderImgPrev();
   e.target.value='';
 }
-async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();e.preventDefault()}}}
+async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);if(_imgTargetIsPassage()){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
   <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
@@ -961,17 +966,18 @@ function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPass
 function onGroupIdChange(){
   const gid=document.getElementById('eGroupId').value.trim();
   const sec=document.getElementById('passageSection');
+  const wrap=document.getElementById('imgTargetWrap');
   if(gid){
-    sec.style.display='';
+    sec.style.display='';wrap.style.display='';
     const ps=PASSAGES[gid];
     document.getElementById('ePassage').value=ps?ps.q||'':'';
     curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];
     renderPassageImgPrev();
-  }else{sec.style.display='none';}
+  }else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';}
 }
 
 /* ===== 新增/編輯 ===== */
-function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';}
+function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';document.getElementById('imgTargetWrap').style.display='none';document.getElementById('imgTarget').value='q';}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
   fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
@@ -985,8 +991,9 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   // passage
   const gid=it.groupId||'';
   const sec=document.getElementById('passageSection');
-  if(gid){sec.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
-  else{sec.style.display='none';document.getElementById('ePassage').value='';curPassageImgs=[];}
+  const wrap=document.getElementById('imgTargetWrap');
+  if(gid){sec.style.display='';wrap.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
+  else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';document.getElementById('ePassage').value='';curPassageImgs=[];}
   renderPassageImgPrev();
   loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
