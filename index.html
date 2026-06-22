@@ -131,6 +131,7 @@
   table.report{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:13px}
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
+  @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'HuaKang',"Songti SC",serif}}
   @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
   @media(max-width:860px){.layout{grid-template-columns:1fr}}
 </style>
@@ -1194,6 +1195,7 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
 .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
 .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
+@page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555}}
 @media print{.noprint{display:none}}</style></head><body>${inner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
@@ -2307,7 +2309,8 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle,
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
-           VerticalPositionRelativeFrom,LevelFormat}=window.docx;
+           VerticalPositionRelativeFrom,LevelFormat,
+           Footer,PageNumber}=window.docx;
     const FONT='DFPYuanMedium-B5';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
     const PAGE_W_PX=570;
@@ -2396,7 +2399,9 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     const doc=new Document({
       numbering:{config:[{reference:'q-list',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]}]},
       styles:{default:{document:{run:{font:{name:FONT}}}}},
-      sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},children}]
+      sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},
+        footers:{default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})},
+        children}]
     });
     const blob=await Packer.toBlob(doc);
     const url=URL.createObjectURL(blob);
