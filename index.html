@@ -1714,6 +1714,7 @@ async function generateSol(){
     const unit=document.getElementById('eUnit').value||'';
     const sub=document.getElementById('eSub').value||'';
     const kp=document.getElementById('eKp').value.trim()||'';
+    const summary=document.getElementById('eSummary').value.trim()||'';
     const gid=document.getElementById('eGroupId').value.trim();
     const bookName=document.getElementById('eBookName').value||'';
     const field=bookName.includes('/')?bookName.split('/')[1].trim():bookName;
@@ -1725,7 +1726,7 @@ async function generateSol(){
       if(siblings.length>1)
         groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
     }
-    const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
+    const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
     const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
     let result;
     const qImgs=[...(curImgs||[]),..._getGroupImgs(gid,curImgs)];
@@ -1774,14 +1775,14 @@ async function batchGenerateSol(){
   for(const it of targets){
     try{
       const q=it.q||it.summary||'';if(!q){failed++;updProg();continue;}
-      const ans=it.ans||'',unit=it.unit||'',sub=it.sub||'',kp=it.kp||'';
+      const ans=it.ans||'',unit=it.unit||'',sub=it.sub||'',kp=it.kp||'',summary=it.summary||'';
       const bookName=it.bookName||it.book||'';
       const field=bookName.includes('/')?bookName.split('/')[1].trim():bookName;
       const typeTxt=(QTYPES.find(x=>x.code===it.type)||{}).name||'';
       const gid=it.groupId||'';
       let groupCtx='';
       if(gid){const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
-      const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
+      const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
       const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
       let result;
       const itImgs=[...(it.imgs||[]),..._getGroupImgs(it.groupId||'',it.imgs)];
