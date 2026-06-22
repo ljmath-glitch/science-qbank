@@ -330,7 +330,7 @@
     <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
     <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
     <button class="btn green" onclick="exportPaperCSV()">⬇ 下載 CSV</button>
-    <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.doc)</button>
+    <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
     <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
   </div>
   <div class="pv-sheet" id="pvSheet"></div>
@@ -2215,17 +2215,92 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
   return '<!DOCTYPE html><html><head><meta charset="UTF-8">'+css+'</head><body>'+body+'</body></html>';
 }
 
-function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr){
+function _ensureDocxLib(){
+  if(window.docx)return Promise.resolve();
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/docx@8.5.0/build/index.js';
+    s.onload=res;s.onerror=()=>rej(new Error('無法載入 docx 函式庫，請確認網路連線'));
+    document.head.appendChild(s);
+  });
+}
+function _imgBytes(src){
+  const bin=atob(src.split(',')[1]);const b=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return b;
+}
+function _imgSize(src){
+  return new Promise(res=>{const i=new Image();i.onload=()=>res({w:i.naturalWidth,h:i.naturalHeight});i.onerror=()=>res({w:400,h:300});i.src=src;});
+}
+async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr){
+  const prog=document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999';
+  prog.textContent='📝 正在產生 .docx 檔案…';document.body.appendChild(prog);
   try{
-    var html=buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr);
-    var blob=new Blob(['﻿'+html],{type:'application/msword'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url;a.download=title+'_'+stamp()+'.doc';
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);
-    setTimeout(function(){URL.revokeObjectURL(url);},2000);
+    await _ensureDocxLib();
+    const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType}=window.docx;
+    const PAGE_W_PX=570; // ~15cm @ 96dpi（含邊距後可用寬）
+    const children=[];
+    // ── 標題 ──
+    const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
+    if(g||s||sc||en){
+      const left=[g+s,sc].filter(Boolean).join('　');
+      if(left)children.push(new Paragraph({children:[new TextRun({text:left,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:60}}));
+      if(en)children.push(new Paragraph({children:[new TextRun({text:en,size:26})],alignment:AlignmentType.CENTER,spacing:{after:160}}));
+    }else{
+      children.push(new Paragraph({children:[new TextRun({text:title,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+    }
+    if(showMeta){
+      children.push(new Paragraph({children:[new TextRun({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
+    }
+    // ── 題目 ──
+    const answers=[];
+    for(let i=0;i<items.length;i++){
+      const it=items[i];
+      if(showTag&&(it.unit||it.sub)){
+        children.push(new Paragraph({children:[new TextRun({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
+      }
+      latexToPlain(it.q||it.summary||'').split('\n').forEach((line,li)=>{
+        children.push(new Paragraph({children:[new TextRun({text:(li===0?`${i+1}.  `:'\t')+line,size:24})],spacing:{before:li===0?180:0,after:0}}));
+      });
+      for(const img of (it.imgs||[])){
+        if(!img.src)continue;
+        try{
+          const {w:nw,h:nh}=await _imgSize(img.src);
+          const pct=(img.width||70)/100;
+          const dw=Math.round(PAGE_W_PX*pct),dh=Math.round(dw*nh/nw);
+          const type=img.src.startsWith('data:image/png')?'png':'jpg';
+          const align=img.align==='right'?AlignmentType.RIGHT:img.align==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
+          children.push(new Paragraph({children:[new ImageRun({data:_imgBytes(img.src),transformation:{width:dw,height:dh},type})],alignment:align,spacing:{before:80,after:80}}));
+        }catch(e){children.push(new Paragraph({children:[new TextRun({text:'〔圖片〕',italics:true,color:'888888',size:20})]}))}
+      }
+      if((ansMode==='inline'||ansMode==='full')&&it.ans){
+        children.push(new Paragraph({children:[new TextRun({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
+      }
+      if(ansMode==='full'&&it.sol){
+        latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{
+          const isH=line.startsWith('## ');
+          const isBullet=line.startsWith('- ');
+          const txt=(li===0?'詳解　':'')+(isH?line.replace(/^##\s*/,''):line);
+          children.push(new Paragraph({children:[new TextRun({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0},indent:isBullet?{left:360}:undefined}));
+        });
+      }
+      if(showSource&&getSource(it)){
+        children.push(new Paragraph({children:[new TextRun({text:'['+getSource(it)+']',size:18,color:'2E75B6'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:0}}));
+      }
+      children.push(new Paragraph({text:'',spacing:{after:220}}));
+      if(it.ans)answers.push(`${i+1}.${it.ans}`);
+    }
+    if(ansMode==='end'&&answers.length){
+      children.push(new Paragraph({children:[new TextRun({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
+    }
+    const doc=new Document({sections:[{properties:{page:{margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+    const blob=await Packer.toBlob(doc);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=title+'_'+stamp()+'.docx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
   }catch(e){alert('Word 匯出失敗：'+e.message);}
+  finally{prog.remove();}
 }
 function readHdrFields(){
   return {
