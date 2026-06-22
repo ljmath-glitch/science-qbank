@@ -109,13 +109,22 @@
   .typegrid label{font-size:12px;background:#f4f1ea;padding:4px 8px;border-radius:6px;cursor:pointer;display:flex;gap:5px;align-items:center}
   .paperview{display:none;position:fixed;inset:0;background:#c8c8c8;z-index:200;overflow:auto}
   .paperview.show{display:block}
-  .pvimg-wrap{margin:7px 0;}
-  .pvimg-ctrl{margin-top:3px;display:flex;gap:3px;align-items:center;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:11px;background:#f0f0f0;padding:3px 7px;border-radius:4px;border:1px solid #ddd;}
+  .pvimg-wrap{margin:10px 0;line-height:0;}
+  .pvimg-draggable{display:inline-block;position:relative;cursor:move;user-select:none;}
+  .pvimg-draggable img{display:block;width:100%;}
+  .pvimg-corner{position:absolute;width:12px;height:12px;background:#2e75b6;border:2px solid #fff;border-radius:2px;opacity:0;transition:opacity .15s;z-index:10;}
+  .pvimg-draggable:hover .pvimg-corner,.pvimg-draggable.pv-active .pvimg-corner{opacity:1;}
+  .pvimg-nw{top:-6px;left:-6px;cursor:nw-resize;}
+  .pvimg-ne{top:-6px;right:-6px;cursor:ne-resize;}
+  .pvimg-sw{bottom:-6px;left:-6px;cursor:sw-resize;}
+  .pvimg-se{bottom:-6px;right:-6px;cursor:se-resize;}
+  .pvimg-ctrl{margin-top:4px;display:flex;gap:3px;align-items:center;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:11px;background:#f0f0f0;padding:3px 7px;border-radius:4px;border:1px solid #ddd;line-height:1.4;}
   .pvimg-ctrl span{color:#666;margin:0 3px;}
   .pvimg-btn{font-size:11px;padding:1px 7px;border:1px solid #ccc;border-radius:3px;cursor:pointer;background:#fff;line-height:1.6;}
   .pvimg-btn:hover{background:#e8f0fb;border-color:#2e75b6;}
   .pvimg-btn.act{background:#2e75b6;color:#fff;border-color:#1a5fa8;}
-  @media print{.pvimg-ctrl{display:none!important}}
+  .pvimg-input{width:44px;font-size:11px;padding:1px 4px;border:1px solid #ccc;border-radius:3px;text-align:center;}
+  @media print{.pvimg-ctrl{display:none!important}.pvimg-corner{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
   .pv-sheet{font-family:'DFPYuanMedium-B5','HuaKang',"Songti SC","Noto Serif TC",serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
@@ -1078,24 +1087,106 @@ function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '�
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
+// ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
+let _pvDrag=null,_pvResize=null;
+function _pvContentW(){const s=document.getElementById('pvSheet');return s?s.clientWidth-96:698;}
+function _getPreviewImg(type,id,idx){
+  if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.imgs[idx]||null):null;}
+  const ps=PASSAGES[id];return ps?(ps.imgs[idx]||null):null;
+}
+async function _pvSave(type,id){
+  if(!requireCloud())return;
+  if(type==='q'){const it=DB.find(x=>x.id===id);if(it)await sb.from('questions').upsert(toRow(it));}
+  else{const ps=PASSAGES[id];if(ps)await sb.from('questions').upsert(toRow(ps));}
+  const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
+  pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
+  if(pv)pv.scrollTop=sy;
+}
+function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
 function imgHtmlPreview(im,type,id,idx){
-  const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
-  const wb=(w)=>`<button class="pvimg-btn${im.width==w?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${w})">${w}%</button>`;
-  const ab=(a,lbl)=>`<button class="pvimg-btn${im.align===a?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'align','${a}')">${lbl}</button>`;
-  return `<div class="pvimg-wrap"><img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}"><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
+  const w=im.width||65;
+  const x=_pvImgX(im);
+  const wb=(v)=>`<button class="pvimg-btn${w==v?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${v})">${v}%</button>`;
+  const ab=(a,lbl)=>`<button class="pvimg-btn${(im.align===a&&im.x===undefined)?' act':''}" onclick="pvSetAlign('${type}','${id}',${idx},'${a}')">${lbl}</button>`;
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
 }
 async function pvSetImg(type,id,idx,key,val){
   if(!requireCloud())return;
-  if(type==='q'){
-    const it=DB.find(x=>x.id===id);if(!it)return;
-    it.imgs[idx][key]=key==='width'?+val:val;
-    await sb.from('questions').upsert(toRow(it));
-  }else{
-    const ps=PASSAGES[id];if(!ps)return;
-    ps.imgs[idx][key]=key==='width'?+val:val;
-    await sb.from('questions').upsert(toRow(ps));
-  }
-  pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  im[key]=(key==='width'||key==='x')?+val:val;
+  if(key==='width'&&im.x!==undefined)im.x=Math.max(0,Math.min(100-im.width,im.x));
+  await _pvSave(type,id);
+}
+async function pvSetAlign(type,id,idx,align){
+  if(!requireCloud())return;
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  im.align=align;delete im.x;
+  await _pvSave(type,id);
+}
+// drag to reposition
+function pvDragStart(e,type,id,idx){
+  if(e.target.classList.contains('pvimg-corner'))return;
+  e.preventDefault();
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  const el=e.currentTarget;
+  el.classList.add('pv-active');
+  _pvDrag={type,id,idx,startX:e.clientX,startXPct:_pvImgX(im),el,contentW:_pvContentW()};
+  document.addEventListener('mousemove',_pvDragMove);
+  document.addEventListener('mouseup',_pvDragEnd);
+}
+function _pvDragMove(e){
+  if(!_pvDrag)return;
+  const dx=(e.clientX-_pvDrag.startX)/_pvDrag.contentW*100;
+  const im=_getPreviewImg(_pvDrag.type,_pvDrag.id,_pvDrag.idx);
+  const w=im?im.width||65:65;
+  const newX=Math.max(0,Math.min(100-w,_pvDrag.startXPct+dx));
+  _pvDrag.el.style.marginLeft=newX+'%';
+}
+async function _pvDragEnd(){
+  if(!_pvDrag)return;
+  const {type,id,idx,el}=_pvDrag;
+  const newX=Math.round(parseFloat(el.style.marginLeft||'0')*10)/10;
+  el.classList.remove('pv-active');
+  _pvDrag=null;
+  document.removeEventListener('mousemove',_pvDragMove);
+  document.removeEventListener('mouseup',_pvDragEnd);
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  im.x=newX;
+  await _pvSave(type,id);
+}
+// corner drag to resize proportionally
+function pvResizeStart(e,type,id,idx,corner){
+  e.preventDefault();e.stopPropagation();
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  const w=im.width||65;const x=_pvImgX(im);
+  const el=e.currentTarget.parentElement;
+  el.classList.add('pv-active');
+  _pvResize={type,id,idx,corner,startMouseX:e.clientX,startW:w,startImgX:x,el,contentW:_pvContentW()};
+  document.addEventListener('mousemove',_pvResizeMove);
+  document.addEventListener('mouseup',_pvResizeEnd);
+}
+function _pvResizeMove(e){
+  if(!_pvResize)return;
+  const {corner,startMouseX,startW,startImgX,el,contentW}=_pvResize;
+  const dx=(e.clientX-startMouseX)/contentW*100;
+  let newW,newX;
+  if(corner==='se'||corner==='ne'){newW=Math.max(5,Math.min(150,startW+dx));newX=startImgX;}
+  else{newW=Math.max(5,Math.min(150,startW-dx));newX=Math.max(0,startImgX+dx);}
+  el.style.width=newW+'%';
+  el.style.marginLeft=newX+'%';
+}
+async function _pvResizeEnd(){
+  if(!_pvResize)return;
+  const {type,id,idx,el}=_pvResize;
+  const newW=Math.round(parseFloat(el.style.width)||65);
+  const newX=Math.round((parseFloat(el.style.marginLeft||'0'))*10)/10;
+  el.classList.remove('pv-active');
+  _pvResize=null;
+  document.removeEventListener('mousemove',_pvResizeMove);
+  document.removeEventListener('mouseup',_pvResizeEnd);
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  im.width=newW;im.x=newX;
+  await _pvSave(type,id);
 }
 function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
 function matches(it){const s=fSearch.value.trim();
@@ -2479,9 +2570,11 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         const pct=(img.width||65)/100;
         const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
         const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
-        const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
-        const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+        const CONTENT_EMU=6858000; // Narrow margin content width (10800 DXA × 635 EMU/DXA)
+        let hPos;
+        if(img.x!==undefined){hPos={relative:HorizontalPositionRelativeFrom.COLUMN,offset:Math.round(img.x/100*CONTENT_EMU)};}
+        else{const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;hPos={relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign};}
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
