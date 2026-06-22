@@ -29,7 +29,7 @@
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
-  .toolbar-outer{margin:20px 0;padding:10px 14px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:relative}
+  .toolbar-outer{margin:20px 0;padding:10px 14px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100}
   .tb-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
@@ -48,6 +48,7 @@
   .stat{font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);margin-left:auto}
   .stat b{color:var(--accent);font-size:15px}
   .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  .side{position:sticky;top:var(--tb-h,90px);max-height:calc(100vh - var(--tb-h,90px) - 16px);overflow-y:auto;}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px}
   .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:system-ui,sans-serif;font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .filt{margin-bottom:11px}
@@ -1828,7 +1829,7 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd" onclick="batchGenerateSol()">✨ 批次生成詳解</button></span>`,
+  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button></span>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_DEFAULT=[
@@ -1855,6 +1856,10 @@ function renderToolbar(){
   setupTbDrag();
   const bp=document.getElementById('batchProvider');
   if(bp)bp.value=localStorage.getItem('batchProvider')||AI_CFG.provider||'gemini';
+  requestAnimationFrame(()=>{
+    const h=document.getElementById('tbOuter').offsetHeight;
+    document.documentElement.style.setProperty('--tb-h',(h+8)+'px');
+  });
 }
 function setupTbDrag(){
   document.querySelectorAll('.tb-item').forEach(item=>{
