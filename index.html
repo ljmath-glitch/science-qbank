@@ -1099,7 +1099,17 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
+  const _shownPs=new Set();
   list.innerHTML=shown.map(it=>{
+    let passageHtml='';
+    const _gid=it.groupId||'';
+    if(_gid&&PASSAGES[_gid]&&!_shownPs.has(_gid)){
+      _shownPs.add(_gid);
+      const _ps=PASSAGES[_gid];
+      const _pImgs=(_ps.imgs||[]).map(imgHtml).join('');
+      const _pText=esc(fixLatex(_ps.q||'')).replace(/\n/g,'<br>');
+      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'Songti SC','STSong','Noto Serif TC',Georgia,serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
+    }
     const d=calcDiff(it.step,it.mem,it.con);
     const cleanQ=fixLatex(it.q||'');
     const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
@@ -1107,7 +1117,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=(it.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean).map(k=>`<span class="tag kp">${esc(k)}</span>`).join('');
-    return `<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
+    return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
       <div class="tags">
         ${it.book?`<span class="tag book">${esc(it.book)} ${esc(it.bookName)}</span>`:''}
