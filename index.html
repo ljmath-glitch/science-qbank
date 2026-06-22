@@ -1004,17 +1004,7 @@ function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B
 function gradeFromExam(exam,book){
   if(exam){if(exam.includes('九年級')||exam.includes('國三'))return '九年級';if(exam.includes('八年級')||exam.includes('國二'))return '八年級';if(exam.includes('七年級')||exam.includes('國一'))return '七年級';}
   return bookToGrade(book);}
-function selectFiltered(){
-  var s=fSearch.value.toLowerCase(),fb=fBook.value,ff=fField.value,fu=fUnit.value,fsub=fSub.value,fk=fKp.value;
-  var ft=fType.value,fd=fDiff.value,fy=fYear.value,fsc=fSchool.value,fex=fExam.value,fgr=fGrade.value;
-  DB.forEach(function(it){
-    if(fb&&it.book!==fb)return;if(ff&&it.field!==ff)return;if(fu&&it.unit!==fu)return;if(fsub&&it.sub!==fsub)return;
-    if(fk&&(it.kp||'').indexOf(fk)<0)return;if(ft&&it.type!==ft)return;if(fd&&it.diff!==fd)return;
-    if(fy&&it.year!==fy)return;if(fsc&&it.school!==fsc)return;if(fex&&examRound(it.exam)!==fex)return;
-    if(fgr&&gradeFromExam(it.exam,it.book)!==fgr)return;
-    if(s&&((it.q||'')+(it.summary||'')).toLowerCase().indexOf(s)<0)return;
-    PICKS.add(it.id);
-  });render();}
+/* selectFiltered 統一用 matches()，見下方 script */
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
@@ -1945,33 +1935,12 @@ async function deletePickedItems(){
   await load();buildFilters();render();
 }
 function selectFiltered(){
-  var s=document.getElementById('fSearch').value.toLowerCase();
-  var fb=document.getElementById('fBook').value;
-  var ff=document.getElementById('fField').value;
-  var fu=document.getElementById('fUnit').value;
-  var fsub=document.getElementById('fSub').value;
-  var fk=document.getElementById('fKp').value;
-  var ft=document.getElementById('fType').value;
-  var fd=document.getElementById('fDiff').value;
-  var fy=document.getElementById('fYear').value;
-  var fsc=document.getElementById('fSchool').value;
-  var fc=document.getElementById('fChart').value;
-  var flag=document.getElementById('fFlag').checked;
-  DB.forEach(function(it){
-    if(fb&&it.book!==fb)return;
-    if(ff&&it.field!==ff)return;
-    if(fu&&it.unit!==fu)return;
-    if(fsub&&it.sub!==fsub)return;
-    if(fk&&(it.kp||'').indexOf(fk)<0)return;
-    if(ft&&it.type!==ft)return;
-    if(fd&&it.diff!==fd)return;
-    if(fy&&it.year!==fy)return;
-    if(fsc&&it.school!==fsc)return;
-    if(fc&&it.chart!==fc)return;
-    if(flag&&!it.flag)return;
-    if(s&&((it.q||'')+(it.summary||'')+(it.kp||'')).toLowerCase().indexOf(s)<0)return;
-    PICKS.add(it.id);
-  });
+  /* 直接複用 matches()，確保與畫面篩選結果完全一致（含所有欄位） */
+  let shown=DB.filter(matches);
+  /* 題組自動展開：與 render() 邏輯一致，把同題組的其他小題一併選取 */
+  const gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
+  if(gids.size)shown=DB.filter(it=>matches(it)||(it.groupId&&gids.has(it.groupId)));
+  shown.forEach(it=>PICKS.add(it.id));
   render();
 }
 </script>
