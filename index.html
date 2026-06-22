@@ -107,11 +107,18 @@
   .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:system-ui,sans-serif;cursor:pointer}
   .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:system-ui,sans-serif}
   .typegrid label{font-size:12px;background:#f4f1ea;padding:4px 8px;border-radius:6px;cursor:pointer;display:flex;gap:5px;align-items:center}
-  .paperview{display:none;position:fixed;inset:0;background:#fff;z-index:200;overflow:auto}
+  .paperview{display:none;position:fixed;inset:0;background:#c8c8c8;z-index:200;overflow:auto}
   .paperview.show{display:block}
+  .pvimg-wrap{margin:7px 0;}
+  .pvimg-ctrl{margin-top:3px;display:flex;gap:3px;align-items:center;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:11px;background:#f0f0f0;padding:3px 7px;border-radius:4px;border:1px solid #ddd;}
+  .pvimg-ctrl span{color:#666;margin:0 3px;}
+  .pvimg-btn{font-size:11px;padding:1px 7px;border:1px solid #ccc;border-radius:3px;cursor:pointer;background:#fff;line-height:1.6;}
+  .pvimg-btn:hover{background:#e8f0fb;border-color:#2e75b6;}
+  .pvimg-btn.act{background:#2e75b6;color:#fff;border-color:#1a5fa8;}
+  @media print{.pvimg-ctrl{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
-  .pv-sheet{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;margin:24px auto 60px;padding:0 26px;line-height:1.9;color:#1a2238}
+  .pv-sheet{font-family:'DFPYuanMedium-B5','HuaKang',"Songti SC","Noto Serif TC",serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
   .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
   .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
@@ -1070,7 +1077,26 @@ function gradeFromExam(exam,book){
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;margin:${m}">`}
+function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
+function imgHtmlPreview(im,type,id,idx){
+  const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
+  const wb=(w)=>`<button class="pvimg-btn${im.width==w?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${w})">${w}%</button>`;
+  const ab=(a,lbl)=>`<button class="pvimg-btn${im.align===a?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'align','${a}')">${lbl}</button>`;
+  return `<div class="pvimg-wrap"><img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}"><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
+}
+async function pvSetImg(type,id,idx,key,val){
+  if(!requireCloud())return;
+  if(type==='q'){
+    const it=DB.find(x=>x.id===id);if(!it)return;
+    it.imgs[idx][key]=key==='width'?+val:val;
+    await sb.from('questions').upsert(toRow(it));
+  }else{
+    const ps=PASSAGES[id];if(!ps)return;
+    ps.imgs[idx][key]=key==='width'?+val:val;
+    await sb.from('questions').upsert(toRow(ps));
+  }
+  pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
+}
 function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
 function matches(it){const s=fSearch.value.trim();
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')).includes(s))return false;
@@ -1227,7 +1253,7 @@ function buildExamHeader(){
   const rightHtml=en?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(en)}</span></div>`:'';
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
-function buildPaperInner(forcedMode){const items=pickedItems();
+function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
   let ansMode=forcedMode||document.querySelector('input[name=pAns]:checked').value;
   // both/both_full 預覽時只顯示題目卷
@@ -1241,14 +1267,14 @@ function buildPaperInner(forcedMode){const items=pickedItems();
   const bodyParts=sorted.map(it=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
-    const imgs=(it.imgs||[]).map(imgHtml).join('');
+    const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
     if(gid&&!shownPassages.has(gid)){
       shownPassages.add(gid);
       const ps=PASSAGES[gid];
       if(ps){
-        const pImgs=(ps.imgs||[]).map(imgHtml).join('');
+        const pImgs=(ps.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
         passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
       }
     }
@@ -1262,8 +1288,10 @@ function buildPaperInner(forcedMode){const items=pickedItems();
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`;
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
-function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
+function showPaperPreview(){if(!PICKS.size)return;
+  pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
   document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
+  const downloadInner=buildPaperInner();
   lastPaperHTML=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(lastPaperTitle)}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
@@ -1284,7 +1312,7 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
 .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
 @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555}}
-@media print{.noprint{display:none}}</style></head><body>${inner}
+@media print{.noprint{display:none}}</style></head><body>${downloadInner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function closePaper(){document.getElementById('paperView').classList.remove('show')}
@@ -2452,7 +2480,8 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
         const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
         const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:HorizontalPositionAlign.RIGHT},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+        const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
