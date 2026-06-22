@@ -281,12 +281,17 @@
         <div class="field"><label>考卷名稱</label><input type="text" id="pExamName" placeholder="112.百齡國中(二段)"></div>
       </div>
     </div>
-    <div class="field"><label>答案與詳解</label>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
-        <label class="chk"><input type="radio" name="pAns" value="none" checked> 純考卷</label>
-        <label class="chk"><input type="radio" name="pAns" value="end"> 卷末附答案</label>
-        <label class="chk"><input type="radio" name="pAns" value="inline"> 每題後顯示答案</label>
-        <label class="chk"><input type="radio" name="pAns" value="full"> 含答案＋詳解</label>
+    <div class="field"><label>輸出格式</label>
+      <div style="display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;font-size:13px">
+        <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:2px">📄 題目卷</div>
+        <label class="chk"><input type="radio" name="pAns" value="none" checked> 純題目（不附答案）</label>
+        <label class="chk"><input type="radio" name="pAns" value="end"> 純題目＋卷末附答案</label>
+        <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:6px">📋 答案卷</div>
+        <label class="chk"><input type="radio" name="pAns" value="inline"> 答案卷（每題附答案，無詳解）</label>
+        <label class="chk"><input type="radio" name="pAns" value="full"> 答案卷（每題附答案＋詳解）</label>
+        <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:6px">📄＋📋 同時輸出兩份</div>
+        <label class="chk"><input type="radio" name="pAns" value="both"> 題目卷＋答案卷（無詳解）同時下載</label>
+        <label class="chk"><input type="radio" name="pAns" value="both_full"> 題目卷＋答案卷（含詳解）同時下載</label>
       </div>
     </div>
     <div class="field"><label>其他</label>
@@ -1160,9 +1165,12 @@ function buildExamHeader(){
   const rightHtml=en?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(en)}</span></div>`:'';
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
-function buildPaperInner(){const items=pickedItems();
-  const ansMode=document.querySelector('input[name=pAns]:checked').value;
+function buildPaperInner(forcedMode){const items=pickedItems();
+  let ansMode=forcedMode||document.querySelector('input[name=pAns]:checked').value;
+  // both/both_full 預覽時只顯示題目卷
+  const previewMode=(ansMode==='both'||ansMode==='both_full')?'none':ansMode;
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
+  ansMode=previewMode;
   const hdr=buildExamHeader();
   const body=items.map((it,i)=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
@@ -2372,27 +2380,40 @@ function readHdrFields(){
     en: (document.getElementById('pExamName')?document.getElementById('pExamName').value.trim():''),
   };
 }
-function downloadWordFromDlg(){
+async function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
-  var items=pickedItems();
-  var ansMode=document.querySelector('input[name=pAns]:checked').value;
-  var showMeta=document.getElementById('pShowMeta').checked;
-  var showTag=document.getElementById('pShowTag').checked;
-  var showSource=document.getElementById('pShowSource').checked;
-  var title=document.getElementById('pTitle').value||'自然科測驗卷';
-  var hdr=readHdrFields();
+  const items=pickedItems();
+  const ansMode=document.querySelector('input[name=pAns]:checked').value;
+  const showMeta=document.getElementById('pShowMeta').checked;
+  const showTag=document.getElementById('pShowTag').checked;
+  const showSource=document.getElementById('pShowSource').checked;
+  const title=document.getElementById('pTitle').value||'自然科測驗卷';
+  const hdr=readHdrFields();
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr);
+  if(ansMode==='both'||ansMode==='both_full'){
+    const solMode=ansMode==='both_full'?'full':'inline';
+    await generateAndDownloadWord(title+'（題目卷）',items,'none',showMeta,showTag,showSource,hdr);
+    await generateAndDownloadWord(title+'（答案卷）',items,solMode,false,showTag,showSource,hdr);
+  }else{
+    await generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr);
+  }
 }
-function downloadWordDoc(){
+async function downloadWordDoc(){
   if(!PICKS.size){alert('尚未選題');return;}
-  var items=pickedItems();
-  var ansMode=document.querySelector('input[name=pAns]:checked').value;
-  var showMeta=document.getElementById('pShowMeta').checked;
-  var showTag=document.getElementById('pShowTag').checked;
-  var showSource=document.getElementById('pShowSource').checked;
-  var title=lastPaperTitle||'自然科測驗卷';
-  generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,readHdrFields());
+  const items=pickedItems();
+  const ansMode=document.querySelector('input[name=pAns]:checked').value;
+  const showMeta=document.getElementById('pShowMeta').checked;
+  const showTag=document.getElementById('pShowTag').checked;
+  const showSource=document.getElementById('pShowSource').checked;
+  const title=lastPaperTitle||'自然科測驗卷';
+  const hdr=readHdrFields();
+  if(ansMode==='both'||ansMode==='both_full'){
+    const solMode=ansMode==='both_full'?'full':'inline';
+    await generateAndDownloadWord(title+'（題目卷）',items,'none',showMeta,showTag,showSource,hdr);
+    await generateAndDownloadWord(title+'（答案卷）',items,solMode,false,showTag,showSource,hdr);
+  }else{
+    await generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr);
+  }
 }
 </script>
 </body>
