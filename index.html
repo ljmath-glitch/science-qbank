@@ -2366,7 +2366,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
           const mime=parsed.mimeType;
           const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
           const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
-          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TOP_AND_BOTTOM,side:TextWrappingSide.BOTH_SIDES},margins:{top:36000,bottom:36000}}})],spacing:{before:80,after:80}}));
+          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true}})],spacing:{before:80,after:80}}));
         }catch(e){
           console.warn('DOCX 圖片嵌入失敗：',e);
           children.push(new Paragraph({children:[tr({text:'〔圖片載入失敗：'+e.message+'〕',italics:true,color:'CC0000',size:18})]}));
