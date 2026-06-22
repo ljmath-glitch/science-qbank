@@ -1080,6 +1080,7 @@ function gradeFromExam(exam,book){
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function hlKw(s){return s.replace(/正確|錯誤/g,'<span style="text-decoration:underline double">$&</span>');}
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
 // ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
 let _pvDrag=null,_pvResize=null;
@@ -1364,7 +1365,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
-    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`;
+    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))}${imgs}${extra}${src}</div>`;
   });
   const body=bodyParts.join('');
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
@@ -2509,7 +2510,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle,
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
-           VerticalPositionRelativeFrom,LevelFormat,
+           VerticalPositionRelativeFrom,LevelFormat,UnderlineType,
            Footer,PageNumber}=window.docx;
     const FONT='DFPYuanMedium-B5';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
@@ -2599,7 +2600,14 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       }
       {const qLines=latexToPlain(it.q||it.summary||'').split('\n');
       const qRuns=[];
-      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:line,size:24}));});
+      qLines.forEach((line,li)=>{
+        if(li>0)qRuns.push(new TextRun({break:1}));
+        line.split(/(正確|錯誤)/).forEach(seg=>{
+          if(!seg)return;
+          const isKw=seg==='正確'||seg==='錯誤';
+          qRuns.push(tr({text:seg,size:24,...(isKw?{underline:{type:UnderlineType.DOUBLE}}:{})}));
+        });
+      });
       children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:qRuns,spacing:{before:180,after:0}}));}
       for(const img of (it.imgs||[])){await addImgToList(children,img);}
       if((ansMode==='inline'||ansMode==='full')&&it.ans){
