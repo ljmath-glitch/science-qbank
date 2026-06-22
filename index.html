@@ -1677,8 +1677,8 @@ async function callOpenAI(sys,msg,key){
 }
 function makeSolPrompt(q,ans,meta,groupCtx){
   const sys='你是一位臺灣自然科教師，為國中會考題目撰寫詳解。使用繁體中文與臺灣高中課綱術語。數學式與化學式以 $…$ 包住（例如 $v=\\frac{d}{t}$、$Cu^{2+}$）。';
-  const example='【格式範例一：選擇題（氧化還原）】\n## 解題關鍵\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n## 詳解\n(A) Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) $Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) $Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) Cu 為還原後的產物，非氧化劑。\n\n## 觀念補充\n氧化劑自身被還原，還原劑自身被氧化。\n\n【格式範例二：計算題（速度）】\n## 解題關鍵\n代入速度公式 $v=\\frac{d}{t}$ 即可求解。\n\n## 詳解\n$v=\\frac{120\\text{ m}}{4\\text{ s}}=30\\text{ m/s}$\n【範例結束】';
-  const rules='【撰寫規則】\n1. ## 解題關鍵：一句話點出核心觀念或切入點。\n2. ## 詳解：\n   - 選擇題：每個選項各一句，說明對或錯的理由，格式為 (A)/(B)/(C)/(D) 開頭。\n   - 計算題：只保留關鍵代入與計算步驟，不加多餘說明。\n   - 每句話盡量簡短，不寫冗長段落。\n3. ## 觀念補充：有教學價值時寫1～2句；無必要則連標題都省略。\n4. 不重複題號、答案、出題範圍；不寫「本題答案為」「故選(A)」等語句。';
+  const example='【格式範例一：選擇題（氧化還原）】\n【解題關鍵】\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n【詳解】\n(A) Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) $Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) $Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) Cu 為還原後的產物，非氧化劑。\n\n【觀念補充】\n氧化劑自身被還原，還原劑自身被氧化。\n\n【格式範例二：計算題（速度）】\n【解題關鍵】\n代入速度公式 $v=\\frac{d}{t}$ 即可求解。\n\n【詳解】\n$v=\\frac{120\\text{ m}}{4\\text{ s}}=30\\text{ m/s}$\n【範例結束】';
+  const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項各一句（(A)(B)(C)(D) 開頭）；計算題只保留關鍵代入步驟；每句話簡短。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、答案、出題範圍；不寫「本題答案為」「故選(A)」等語句。';
   const msg='正確答案是'+(ans||'?')+'。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n'+example+'\n\n'+rules;
   return {sys,msg};
 }
@@ -1711,7 +1711,7 @@ async function generateSol(){
     if(provider==='claude')result=await callClaude(sys,msg,key);
     else if(provider==='gemini')result=await callGemini(sys,msg,key);
     else result=await callOpenAI(sys,msg,key);
-    result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1');
+    result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
     document.getElementById('eSol').value=result;
   }catch(e){
     alert('生成失敗：'+e.message);
@@ -1760,7 +1760,7 @@ async function batchGenerateSol(){
       if(provider==='claude')result=await callClaude(s2,m2,key);
       else if(provider==='gemini')result=await callGemini(s2,m2,key);
       else result=await callOpenAI(s2,m2,key);
-      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1');
+      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
       it.sol=result;it.updatedAt=new Date().toISOString();
       if(CLOUD_READY)await sb.from('questions').update({sol:result,updatedAt:it.updatedAt}).eq('id',it.id);
       done++;updProg();
