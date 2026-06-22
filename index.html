@@ -2308,7 +2308,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
            VerticalPositionRelativeFrom,LevelFormat}=window.docx;
-    const FONT='華康中圓體';
+    const FONT='DFPYuanMedium-B5';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
     const PAGE_W_PX=570;
     const children=[];
@@ -2396,7 +2396,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     const doc=new Document({
       numbering:{config:[{reference:'q-list',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]}]},
       styles:{default:{document:{run:{font:{name:FONT}}}}},
-      sections:[{properties:{page:{margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]
+      sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},children}]
     });
     const blob=await Packer.toBlob(doc);
     const url=URL.createObjectURL(blob);
