@@ -1741,7 +1741,7 @@ async function generateSol(){
 }
 
 async function batchGenerateSol(){
-  const provider=document.getElementById('aiProvider')?.value||AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
+  const provider=document.getElementById('batchProvider')?.value||document.getElementById('aiProvider')?.value||AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
   const key=getAIKey(provider);if(!key)return;
   let targets;
   if(PICKS.size>0){
@@ -1816,7 +1816,7 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchSol:()=>`<button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd" onclick="batchGenerateSol()">✨ 批次生成詳解</button>`,
+  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd" onclick="batchGenerateSol()">✨ 批次生成詳解</button></span>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_DEFAULT=[
@@ -1841,6 +1841,8 @@ function renderToolbar(){
     });
   });
   setupTbDrag();
+  const bp=document.getElementById('batchProvider');
+  if(bp)bp.value=localStorage.getItem('batchProvider')||AI_CFG.provider||'gemini';
 }
 function setupTbDrag(){
   document.querySelectorAll('.tb-item').forEach(item=>{
