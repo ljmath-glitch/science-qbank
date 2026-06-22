@@ -164,6 +164,15 @@
     <aside class="panel side">
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="render()"></div>
+      <div class="grid2">
+        <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
+        <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
+      </div>
+      <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option></select></div>
+      <div id="fSemesterWrap" class="filt" style="display:none"><label>學期（段考）</label><select id="fSemester" onchange="render()"><option value="">全部</option><option>上學期</option><option>下學期</option></select></div>
+      <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
+      <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
+      <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
       <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option></select></div>
       <div class="filt"><label>冊數</label><select id="fBook" onchange="onFilterBook()"><option value="">全部</option></select></div>
       <div class="filt"><label>大單元</label><select id="fUnit" onchange="onFilterUnit()"><option value="">全部</option></select></div>
@@ -173,12 +182,6 @@
         <div class="filt"><label>題型</label><select id="fType" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>難度</label><select id="fDiff" onchange="render()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select></div>
       </div>
-      <div class="grid2">
-        <div class="filt"><label>年度</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
-        <div class="filt"><label>來源學校</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
-      </div>
-      <div class="filt"><label>段考次</label><select id="fExam" onchange="render()"><option value="">全部</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option></select></div>
-      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
     </aside>
@@ -1055,47 +1058,56 @@ function buildFilters(){
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
   fillSelect(fYear,uniq('year'));fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'));}
 function buildFiltersKeep(){
-  // 記住目前篩選值
   var cur={
     book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
     kp:fKp.value,type:fType.value,diff:fDiff.value,year:fYear.value,
-    school:fSchool.value,exam:fExam.value,grade:fGrade.value,chart:fChart.value
+    school:fSchool.value,grade:fGrade.value,chart:fChart.value,
+    examType:fExamType.value,semester:fSemester.value,round:fRound.value
   };
   buildFilters();
-  // 還原篩選值
   Object.keys(cur).forEach(function(k){
     var el=document.getElementById('f'+k.charAt(0).toUpperCase()+k.slice(1));
     if(el&&cur[k])el.value=cur[k];
   });
 }
 function resetFilters(){
-  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fExam','fGrade','fChart'].forEach(id=>document.getElementById(id).value='');
+  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSchool','fGrade','fChart','fExamType','fSemester','fRound'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fSemesterWrap').style.display='none';
+  document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function gradeFromExam(exam,book){
   if(exam){if(exam.includes('九年級')||exam.includes('國三'))return '九年級';if(exam.includes('八年級')||exam.includes('國二'))return '八年級';if(exam.includes('七年級')||exam.includes('國一'))return '七年級';}
   return bookToGrade(book);}
+function examType(exam){
+  if(!exam)return '';
+  if(exam.includes('段考'))return '段考';
+  if(exam.includes('模擬')||exam.includes('北模')||exam.includes('全模'))return '模擬考';
+  if(exam.includes('會考'))return '會考';
+  return '';}
+function examSemester(exam){
+  if(!exam)return '';
+  if(exam.includes('上學期'))return '上學期';
+  if(exam.includes('下學期'))return '下學期';
+  return '';}
+function examRoundNum(exam){
+  if(!exam)return '';
+  const m=exam.match(/第([一二三四五六七八九十]+)次/);
+  return m?m[0]:'';}
+function onFilterExamType(){
+  const v=fExamType.value;
+  document.getElementById('fSemesterWrap').style.display=(v==='段考')?'':'none';
+  document.getElementById('fRoundWrap').style.display=(v==='段考'||v==='模擬考')?'':'none';
+  if(v!=='段考'){fSemester.value='';}
+  if(v==='會考'||v===''){fRound.value='';}
+  render();}
 /* selectFiltered 統一用 matches()，見下方 script */
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function hlKw(s){return s.replace(/正確|錯誤/g,'<span style="text-decoration:underline double">$&</span>');}
+function hlKw(s){return s.replace(/正確|錯誤/g,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');}
 // ── 人名／國家名偵測 ──
-const _NAME_STOP=new Set(['科學','物理','化學','生物','天文','自然','人類','地球','太陽',
-  '動物','植物','細胞','原子','分子','電子','能量','溫度','壓力','速度','密度','質量',
-  '重力','電流','電壓','電阻','磁場','光速','聲波','熱量','濃度','溶液','酸鹼','基因',
-  '蛋白','細菌','病毒','氧氣','水分','金屬','有機','無機','進化','遺傳','繁殖','光合',
-  '呼吸','消化','循環','神經','血液','心臟','大腦','我們','他們','它們','可能','學者',
-  '因此','所以','因為','但是','雖然','然而','然後','正確','錯誤','研究','科技','環境',
-  '以下','下列','如果','表示','認定','判斷','測量','數據','結果','觀念','概念','方法',
-  '學生','老師','實驗','問題','原理','法則','規律','理論','假設','預測','定律','定理',
-  '材料','現象','原因','效果','影響','條件','過程','步驟','原則','目的','目標','意義',
-  '重要','特別','特徵','性質','作用','功能','結構','形狀','大小','位置','方向','距離',
-  '電磁','運動','變化','反應','合成','分解','燃燒','氧化','還原','沉澱','中和','溶解',
-  '最後','最終','接著','首先','其次','此外','這樣','那樣','可以','需要','應該','必須',
-  '實驗者','研究者','觀察者','使用者','結果是','以上','以此','到此','此時','此後',
-  '溶液','試管','燒杯','藥品','試紙','樣本','樣品','試劑','溶劑','溶質','混合']);
 const _COUNTRIES=new RegExp(
   '(古希臘|古羅馬|古埃及|古代中國|古巴比倫|'+
   '美國|英國|法國|德國|義大利|西班牙|葡萄牙|荷蘭|比利時|瑞典|瑞士|丹麥|挪威|奧地利|'+
@@ -1104,37 +1116,11 @@ const _COUNTRIES=new RegExp(
   '埃及|南非|肯亞|奈及利亞|衣索比亞|摩洛哥|'+
   '美洲|巴西|阿根廷|墨西哥|加拿大|智利|秘魯|哥倫比亞|'+
   '澳洲|紐西蘭|以色列|伊朗|土耳其|沙烏地|巴基斯坦|孟加拉)','g');
-const _VERBS='發現|提出|認為|指出|觀察到|建立|完成|設計|解釋|計算|測量|驗證|證明|定義|'+
-  '命名|分類|探索|分析|利用|進行|提倡|發展|創立|確立|發表|推導|歸納|推測|發明|展示|'+
-  '比較|描述|記錄|整理|確定|提議|論述|主張|宣稱|強調|說明|推算|求出|導出|製造|製作|'+
-  '配置|整合|探討|討論|假設|預測|引入|引進|修正|修改|改良|改進|奠定|奠基|貢獻|啟發|'+
-  '指引|將|泡|加入|查看|用(?!來|以|途|量|水|品|具|法|意|途|心)';
-function _nameRanges(text){
-  const ranges=[],seen=new Set();
-  const add=(start,name)=>{
-    if(name.length<2||_NAME_STOP.has(name))return;
-    const k=start+':'+name.length;
-    if(!seen.has(k)){seen.add(k);ranges.push({start,end:start+name.length});}
-  };
-  let m;
-  // 國家名（直接比對）
-  _COUNTRIES.lastIndex=0;
-  while((m=_COUNTRIES.exec(text))!==null)add(m.index,m[1]);
-  // [name]的定律/定理/理論/學說/實驗/方程式
-  const p1=/([^\s，。？！（）「」【】、\d]{2,4})(?=的(?:定律|定理|理論|學說|實驗|方程式?))/g;
-  while((m=p1.exec(text))!==null)add(m.index,m[1]);
-  // 科學家/物理學家/etc.[name]
-  const p2=/(科學家|物理學家|化學家|生物學家|天文學家|醫學家|數學家)([^\s，。？！（）「」【】、\d]{2,4})/g;
-  while((m=p2.exec(text))!==null)add(m.index+m[1].length,m[2]);
-  // [name] + 動詞
-  const p3=new RegExp(`([^\\s，。？！（）「」【】、\\d]{2,4})(?=(?:${_VERBS}))`,'g');
-  while((m=p3.exec(text))!==null)add(m.index,m[1]);
-  return ranges.sort((a,b)=>a.start-b.start);
-}
 function _textSegs(text){
   const markers=[];
   text.replace(/正確|錯誤/g,(m,off)=>markers.push({start:off,end:off+m.length,s:'d'}));
-  _nameRanges(text).forEach(r=>markers.push({start:r.start,end:r.end,s:'s'}));
+  _COUNTRIES.lastIndex=0;let m;
+  while((m=_COUNTRIES.exec(text))!==null)markers.push({start:m.index,end:m.index+m[1].length,s:'s'});
   markers.sort((a,b)=>a.start-b.start);
   const deduped=[];let lastEnd=0;
   for(const mk of markers)if(mk.start>=lastEnd){deduped.push(mk);lastEnd=mk.end;}
@@ -1149,19 +1135,7 @@ function _textSegs(text){
 }
 function hlNames(s){
   const wrap=n=>`<span style="text-decoration:underline">${n}</span>`;
-  let r=s;
-  // 國家名
-  r=r.replace(new RegExp(_COUNTRIES.source,'g'),(_,n)=>wrap(n));
-  // [name]的定律/定理/...
-  r=r.replace(/([^\s，。？！（）「」【】、\d<>]{2,4})(?=的(?:定律|定理|理論|學說|實驗|方程式?))/g,
-    (m,n)=>_NAME_STOP.has(n)?m:wrap(n));
-  // 科學家 + [name]
-  r=r.replace(/(科學家|物理學家|化學家|生物學家|天文學家|醫學家|數學家)([^\s，。？！（）「」【】、\d<>]{2,4})/g,
-    (_,title,name)=>title+wrap(name));
-  // [name] + 動詞
-  r=r.replace(new RegExp(`([^\\s，。？！（）「」【】、\\d<>]{2,4})(?=(?:${_VERBS}))`,'g'),
-    (m,n)=>_NAME_STOP.has(n)?m:wrap(n));
-  return r;
+  return s.replace(new RegExp(_COUNTRIES.source,'g'),(_,n)=>wrap(n));
 }
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
 // ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
@@ -1268,7 +1242,9 @@ function matches(it){const s=fSearch.value.trim();
   if(fDiff.value&&calcDiff(it.step,it.mem,it.con).lvl!==fDiff.value)return false;
   if(fYear.value&&it.year!==fYear.value)return false;
   if(fSchool.value&&it.school!==fSchool.value)return false;
-  if(fExam.value&&examRound(it.exam)!==fExam.value)return false;
+  if(fExamType.value&&examType(it.exam)!==fExamType.value)return false;
+  if(fSemester.value&&examSemester(it.exam)!==fSemester.value)return false;
+  if(fRound.value&&examRoundNum(it.exam)!==fRound.value)return false;
   if(fGrade.value&&gradeFromExam(it.exam,it.book)!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
@@ -1392,13 +1368,15 @@ const TZULOGO='iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAXNSR0IArs4c6QAAA
 function openPaperDlg(){
   if(!PICKS.size){alert('尚未選題');return}
   pTitle.value=buildAutoTitle();
-  const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value,yr=fYear.value,ex=fExam.value;
+  const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value,yr=fYear.value;
+  const et=fExamType.value,sem=fSemester.value,rnd=fRound.value;
   document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':'';
   document.getElementById('pSubject').value=fd||'';
   const scopeMap={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
   document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:'';
-  const shortRnd=ex.includes('第一')?'一段':ex.includes('第二')?'二段':ex.includes('第三')?'三段':ex.includes('會考')?'會考':'';
-  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+'.':''),(sc?sc+'國中':''),shortRnd?'('+shortRnd+')':''].join(''):'';
+  const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
+  const semStr=sem==='上學期'?'上':sem==='下學期'?'下':'';
+  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),(sc?sc+(et==='段考'||et===''?'國中':''):''),shortRnd?'('+shortRnd+')':''].join(''):'';
   paperDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
@@ -1550,8 +1528,11 @@ function buildPrompt(){const syl=SYL_RAW;
   const yr=fYear.value||'';
   const sc=fSchool.value||'';
   const gr=fGrade.value||'';
-  const rnd=fExam.value||'';
-  const exParts=[sc,gr,yr,rnd].filter(Boolean);
+  const et=fExamType.value||'';
+  const sem=fSemester.value||'';
+  const rnd=fRound.value||'';
+  const examDesc=[et,sem,rnd].filter(Boolean).join('');
+  const exParts=[sc,gr,yr,examDesc].filter(Boolean);
   const ex=exParts.length?exParts.join('-'):'（如：士林-九年級-114上-第一次段考）';
   return `請把附上的翰林版國中自然科段考卷，逐題整理成 CSV，供我匯入題庫系統。
 
@@ -2145,7 +2126,7 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button></span>`,
+  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_DEFAULT=[
@@ -2258,6 +2239,19 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
   </div>
 </div>
 
+<div id="solPromptOverlay" onclick="closeSolPrompt()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998"></div>
+<div id="solPromptBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.35);z-index:9999;width:min(92vw,680px);max-height:82vh;flex-direction:column;overflow:hidden">
+  <div style="background:#1a2238;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+    <span style="font-size:14px;font-weight:700">📋 AI 詳解生成 Prompt</span>
+    <button onclick="closeSolPrompt()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
+  </div>
+  <textarea id="solPromptTA" readonly style="flex:1;margin:10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none;min-height:360px"></textarea>
+  <div style="padding:0 10px 12px;display:flex;gap:8px;flex-shrink:0">
+    <button onclick="var t=document.getElementById('solPromptTA');t.select();t.setSelectionRange(0,99999);try{document.execCommand('copy');this.textContent='✓ 已複製！';}catch(e){}" style="flex:1;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
+    <button onclick="closeSolPrompt()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer">關閉</button>
+  </div>
+</div>
+
 <script>
 async function deletePickedItems(){
   if(!PICKS.size){alert('尚未勾選任何題目');return;}
@@ -2287,6 +2281,27 @@ function showPrompt(){
   document.getElementById('promptBox').style.display='block';
   document.body.style.overflow='hidden';
   setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},200);
+}
+function showSolPrompt(){
+  var ex=makeSolPrompt(
+    '（題目文字）',
+    '（正確答案，例如 B）',
+    '領域：理化　單元：（單元名稱）　知識點：（知識點）　題型：選擇題',
+    ''
+  );
+  var text='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(60)+'\n\n【使用者訊息 user（以下 () 內容為實際題目資料）】\n'+ex.msg;
+  var ta=document.getElementById('solPromptTA');
+  ta.value=text;
+  var box=document.getElementById('solPromptBox');
+  box.style.display='flex';
+  document.getElementById('solPromptOverlay').style.display='block';
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},150);
+}
+function closeSolPrompt(){
+  document.getElementById('solPromptBox').style.display='none';
+  document.getElementById('solPromptOverlay').style.display='none';
+  document.body.style.overflow='';
 }
 </script>
 <script>
