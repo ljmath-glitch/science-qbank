@@ -895,7 +895,7 @@ async function addImages(e){
   for(var i=0;i<files.length;i++){
     try{
       var d=await fileToDataURL(files[i]);
-      var c=await compress(d,800);  // 最大800px
+      var c=await compress(d,900);  // 最大900px
       curImgs.push({src:c,width:70,align:'center'});
     }catch(err){
       alert('圖片 '+(i+1)+' 載入失敗：'+err.message);
@@ -904,7 +904,7 @@ async function addImages(e){
   renderImgPrev();
   e.target.value='';
 }
-async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,1000);curImgs.push({src:c,width:70,align:'center'});renderImgPrev();e.preventDefault()}}}
+async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,900);curImgs.push({src:c,width:70,align:'center'});renderImgPrev();e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
   <div style="display:flex;gap:8px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
@@ -1701,6 +1701,64 @@ async function generateSol(){
   }finally{btn.textContent='✨ AI 生成詳解';btn.disabled=false;}
 }
 
+async function batchGenerateSol(){
+  const provider=document.getElementById('aiProvider')?.value||AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
+  const key=getAIKey(provider);if(!key)return;
+  const sys='你是國三自然科補習班老師，用簡短直白的語言幫學生快速看懂題目。只能輸出純文字，禁止使用任何 Markdown 語法。';
+  let targets;
+  if(PICKS.size>0){
+    const withSol=DB.filter(it=>PICKS.has(it.id)&&it.sol);
+    const noSol=DB.filter(it=>PICKS.has(it.id)&&!it.sol);
+    if(withSol.length>0){
+      const overwrite=confirm(`已選 ${PICKS.size} 題，其中 ${withSol.length} 題已有詳解。\n\n確定要覆蓋全部嗎？\n（取消 = 只生成沒有詳解的 ${noSol.length} 題）`);
+      targets=overwrite?DB.filter(it=>PICKS.has(it.id)):noSol;
+    }else{targets=noSol;}
+  }else{
+    const shown=DB.filter(matches).filter(it=>!it.sol);
+    if(!shown.length){alert('目前篩選結果中所有題目都已有詳解。');return;}
+    if(!confirm(`未選取題目，將對目前篩選結果中 ${shown.length} 題（無詳解）批次生成，繼續？`))return;
+    targets=shown;
+  }
+  if(!targets.length){alert('沒有需要生成詳解的題目。');return;}
+  if(!confirm(`即將為 ${targets.length} 題批次生成詳解（${provider}），可能需要一段時間，繼續？`))return;
+  const prog=document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  document.body.appendChild(prog);
+  let done=0,failed=0;
+  const updProg=()=>{prog.textContent=`✨ 批次生成中：${done+failed}/${targets.length} 題（失敗 ${failed}）`;};
+  updProg();
+  for(const it of targets){
+    try{
+      const q=it.q||it.summary||'';if(!q){failed++;updProg();continue;}
+      const ans=it.ans||'',unit=it.unit||'',sub=it.sub||'',kp=it.kp||'';
+      const bookName=it.bookName||it.book||'';
+      const field=bookName.includes('/')?bookName.split('/')[1].trim():bookName;
+      const typeTxt=(QTYPES.find(x=>x.code===it.type)||{}).name||'';
+      const gid=it.groupId||'';
+      let groupCtx='';
+      if(gid){const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
+      const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
+      const msg='這是一道國三自然科題目，答案是'+(ans||'?')+'，請寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【格式規定】\n- 全程條列式，每點一行，不要寫成一大段文章\n- 選擇題：第一點說明選'+(ans||'?')+'的理由，之後每個錯誤選項各一點\n- 非選擇題：每個步驟一點，標清楚算式\n- 最後一點寫「重點：○○○」\n- 每點不超過30字，全文不超過150字\n- 禁止使用 **、*、#、__ 等 Markdown 符號，只寫一般文字';
+      let result;
+      if(provider==='claude')result=await callClaude(sys,msg,key);
+      else if(provider==='gemini')result=await callGemini(sys,msg,key);
+      else result=await callOpenAI(sys,msg,key);
+      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/\*([^*]*)\*/g,'$1').replace(/^#+\s*/gm,'').replace(/__([^_]*)__/g,'$1');
+      it.sol=result;it.updatedAt=new Date().toISOString();
+      if(CLOUD_READY)await sb.from('questions').update({sol:result,updatedAt:it.updatedAt}).eq('id',it.id);
+      done++;updProg();
+      await new Promise(r=>setTimeout(r,300));
+    }catch(e){
+      failed++;updProg();console.error('批次生成失敗',it.id,e);
+      if(e.message&&(e.message.includes('401')||e.message.includes('API_KEY_INVALID'))){prog.remove();alert('API Key 無效，批次生成已停止。');return;}
+      await new Promise(r=>setTimeout(r,1000));
+    }
+  }
+  setTimeout(()=>prog.remove(),4000);
+  render();
+  alert(`批次生成完成！成功 ${done} 題，失敗 ${failed} 題。`);
+}
+
 /* ===== 工具 ===== */
 function stamp(){const d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
 function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
@@ -1719,12 +1777,13 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
+  batchSol:()=>`<button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd" onclick="batchGenerateSol()">✨ 批次生成詳解</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','report','kp','progress','guide'],
-  ['selFilt','selAll','stat'],
+  ['selFilt','selAll','batchSol','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
 function renderToolbar(){
@@ -2130,7 +2189,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
-        if(img.width)style+='width:'+img.width+'px;';
+        if(img.width)style+='width:'+img.width+'%;';
         body+='<div class="img-wrap"><img src="'+img.src+'" style="'+style+'"></div>';
       }
     });
