@@ -220,10 +220,6 @@
       <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:system-ui,sans-serif;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
       <div class="field"><textarea id="ePassage" rows="5" placeholder="輸入共用閱讀材料…" style="font-family:inherit"></textarea></div>
       <div class="imgprev" id="ePassageImgPrev"></div>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:4px;font-family:system-ui,sans-serif;font-size:12px">
-        <input type="file" id="passageImgFile" accept="image/*" multiple style="display:none" onchange="addPassageImages(event)">
-        <button class="btn sm" onclick="document.getElementById('passageImgFile').click()">＋ 加圖</button>
-      </div>
     </div>
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
@@ -926,16 +922,16 @@ async function addImages(e){
     try{
       var d=await fileToDataURL(files[i]);
       var c=await compress(d,IMG_MAXW);
-      if(toPassage){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}
-      else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}
+      if(toPassage)curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});
+      else curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});
     }catch(err){
       alert('圖片 '+(i+1)+' 載入失敗：'+err.message);
     }
   }
-  if(_imgTargetIsPassage())renderPassageImgPrev();else renderImgPrev();
+  if(toPassage)renderPassageImgPrev();else renderImgPrev();
   e.target.value='';
 }
-async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);if(_imgTargetIsPassage()){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
+async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
   <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
@@ -961,7 +957,7 @@ function renderPassageImgPrev(){
     <button class="btn sm" onclick="setPassageImg(${i},'width',100)">滿版</button>
     <select onchange="setPassageImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
     <button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">移除</button></div></div>`).join('')}
-async function addPassageImages(e){for(const f of Array.from(e.target.files)){const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}renderPassageImgPrev();e.target.value='';}
+
 function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPassageImgPrev()}
 function onGroupIdChange(){
   const gid=document.getElementById('eGroupId').value.trim();
