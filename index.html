@@ -1337,6 +1337,9 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const hdr=buildExamHeader();
+  // ── 預算每題組的題號範圍 ──
+  const groupRanges={};
+  {let n=0;sorted.forEach(it=>{n++;const g=it.groupId||'';if(g){if(!groupRanges[g])groupRanges[g]={min:n,max:n};else groupRanges[g].max=n;}});}
   const shownPassages=new Set();
   let qNum=0;
   const answers=[];
@@ -1351,7 +1354,10 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
       const ps=PASSAGES[gid];
       if(ps){
         const pImgs=(ps.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
-        passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
+        const r=groupRanges[gid];
+        const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
+        const hdrLine=rangeStr?`<div style="font-weight:bold;margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
+        passageHtml=`${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
       }
     }
     qNum++;
@@ -2544,6 +2550,9 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     }
     // ── 題目 ──
     const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
+    // ── 預算每題組的題號範圍（Word 自動編號從 1 開始，與 sorted 順序一致）──
+    const groupRangesW={};
+    {let n=0;sorted.forEach(it=>{n++;const g=it.groupId||'';if(g){if(!groupRangesW[g])groupRangesW[g]={min:n,max:n};else groupRangesW[g].max=n;}});}
     const answers=[];
     const shownPassages=new Set();
     const PB={style:BorderStyle.SINGLE,size:4,color:'888888'};
@@ -2572,6 +2581,9 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         shownPassages.add(gid);
         const ps=PASSAGES[gid];
         if(ps){
+          // 題組標題
+          const rW=groupRangesW[gid];
+          if(rW){const rStr=rW.min===rW.max?`第${rW.min}題`:`${rW.min}～${rW.max}題`;children.push(new Paragraph({children:[tr({text:`閱讀下列敘述後，回答${rStr}`,bold:true,size:22})],spacing:{before:160,after:60}}));}
           const pCells=[];
           const pLines=latexToPlain(ps.q||'').split('\n');
           const pRuns=[];
