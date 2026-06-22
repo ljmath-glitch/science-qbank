@@ -1156,21 +1156,22 @@ function buildExamHeader(){
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="data:image/png;base64,${TZULOGO}" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
 function buildPaperInner(forcedMode){const items=pickedItems();
+  const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
   let ansMode=forcedMode||document.querySelector('input[name=pAns]:checked').value;
   // both/both_full 預覽時只顯示題目卷
   const previewMode=(ansMode==='both'||ansMode==='both_full')?'none':ansMode;
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const hdr=buildExamHeader();
-  const body=items.map((it,i)=>{
+  const body=sorted.map((it,i)=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
-  let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
-  const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
+  let ansBlock='';if(ansMode==='end'){const a=sorted.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
+  const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`;
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
 function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
   document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
