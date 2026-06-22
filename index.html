@@ -214,7 +214,16 @@
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
-      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡-G9-114-1-1-29"></div>
+      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡-G9-114-1-1-29" oninput="onGroupIdChange()"></div>
+    </div>
+    <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
+      <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:system-ui,sans-serif;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
+      <div class="field"><textarea id="ePassage" rows="5" placeholder="輸入共用閱讀材料…" style="font-family:inherit"></textarea></div>
+      <div class="imgprev" id="ePassageImgPrev"></div>
+      <div style="display:flex;gap:6px;align-items:center;margin-top:4px;font-family:system-ui,sans-serif;font-size:12px">
+        <input type="file" id="passageImgFile" accept="image/*" multiple style="display:none" onchange="addPassageImages(event)">
+        <button class="btn sm" onclick="document.getElementById('passageImgFile').click()">＋ 加圖</button>
+      </div>
     </div>
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
@@ -751,7 +760,7 @@ const CLOUD_READY = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.star
 const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
 
-let DB=[], PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], diff={step:0,mem:0,con:0};
+let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
@@ -772,8 +781,13 @@ async function load(){
     if(!qs||qs.length<pageSize)break;
     from+=pageSize;
   }
-  if(fetchErr){console.error(fetchErr);alert('讀取雲端題目失敗：'+fetchErr.message);DB=[];}
-  else DB=allQs.map(fromRow);
+  if(fetchErr){console.error(fetchErr);alert('讀取雲端題目失敗：'+fetchErr.message);DB=[];PASSAGES={};}
+  else{
+    const all=allQs.map(fromRow);
+    PASSAGES={};
+    all.filter(x=>x.type==='passage').forEach(x=>{if(x.groupId)PASSAGES[x.groupId]=x;});
+    DB=all.filter(x=>x.type!=='passage');
+  }
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
   if(e2)console.error(e2);
   SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
@@ -931,8 +945,33 @@ function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="bor
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 function applyImgStyleAll(i){var w=curImgs[i].width,a=curImgs[i].align;curImgs.forEach(im=>{im.width=w;im.align=a});renderImgPrev()}
 
+function renderPassageImgPrev(){
+  const el=document.getElementById('ePassageImgPrev');if(!el)return;
+  el.innerHTML=curPassageImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
+  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
+  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
+    <button class="btn sm" onclick="setPassageImg(${i},'width',45)">小</button>
+    <button class="btn sm" onclick="setPassageImg(${i},'width',65)">中</button>
+    <button class="btn sm" onclick="setPassageImg(${i},'width',85)">大</button>
+    <button class="btn sm" onclick="setPassageImg(${i},'width',100)">滿版</button>
+    <select onchange="setPassageImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
+    <button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">移除</button></div></div>`).join('')}
+async function addPassageImages(e){for(const f of Array.from(e.target.files)){const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});}renderPassageImgPrev();e.target.value='';}
+function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPassageImgPrev()}
+function onGroupIdChange(){
+  const gid=document.getElementById('eGroupId').value.trim();
+  const sec=document.getElementById('passageSection');
+  if(gid){
+    sec.style.display='';
+    const ps=PASSAGES[gid];
+    document.getElementById('ePassage').value=ps?ps.q||'':'';
+    curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];
+    renderPassageImgPrev();
+  }else{sec.style.display='none';}
+}
+
 /* ===== 新增/編輯 ===== */
-function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult()}
+function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
   fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
@@ -942,7 +981,14 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   eGroupId.value=it.groupId||'';
   eFlag.checked=!!it.flag;eQ.value=it.q||'';eSol.value=it.sol||'';
   diff={step:it.step||0,mem:it.mem||0,con:it.con||0};paintSeg();showDiffResult();
-  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();loadAIProvider();editDlg.showModal()}
+  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();
+  // passage
+  const gid=it.groupId||'';
+  const sec=document.getElementById('passageSection');
+  if(gid){sec.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
+  else{sec.style.display='none';document.getElementById('ePassage').value='';curPassageImgs=[];}
+  renderPassageImgPrev();
+  loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
   const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
     book:eBook.value,bookName:(SYL.find(k=>k.book===eBook.value)||{}).bookName||'',field:(SYL.find(k=>k.book===eBook.value)||{}).field||'',
@@ -956,6 +1002,18 @@ async function saveEdit(){
   data.imgs=await uploadImgs(curImgs,id); // base64 → Storage URL
   const {error}=await sb.from('questions').upsert(toRow(data));
   if(error){alert('儲存失敗：'+error.message);return}
+  // 儲存題組文章
+  const gid=eGroupId.value.trim();
+  if(gid){
+    const passageText=document.getElementById('ePassage').value.trim();
+    const existingPs=PASSAGES[gid];
+    const pid=existingPs?existingPs.id:uid();
+    const uploadedPImgs=await uploadImgs(curPassageImgs,pid);
+    const psRow={id:pid,group_id:gid,type:'passage',q:passageText,sol:'',ans:'',imgs:uploadedPImgs,
+      year:'',school:'',exam:'',no:'',book:'',book_name:'',field:'',unit:'',sub:'',kp:'',summary:'',
+      step:0,mem:0,con:0,chart:'',basis:'',flag:false,updated_at:new Date().toISOString()};
+    await sb.from('questions').upsert(psRow);
+  }
   editDlg.close();await load();buildFiltersKeep();render()}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
@@ -1164,14 +1222,31 @@ function buildPaperInner(forcedMode){const items=pickedItems();
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const hdr=buildExamHeader();
-  const body=sorted.map((it,i)=>{
+  const shownPassages=new Set();
+  let qNum=0;
+  const answers=[];
+  const bodyParts=sorted.map(it=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
     const imgs=(it.imgs||[]).map(imgHtml).join('');
+    let passageHtml='';
+    const gid=it.groupId||'';
+    if(gid&&!shownPassages.has(gid)){
+      shownPassages.add(gid);
+      const ps=PASSAGES[gid];
+      if(ps){
+        const pImgs=(ps.imgs||[]).map(imgHtml).join('');
+        passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
+      }
+    }
+    qNum++;
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
-    return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
-  let ansBlock='';if(ansMode==='end'){const a=sorted.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
+    if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
+    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`;
+  });
+  const body=bodyParts.join('');
+  let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`;
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
 function showPaperPreview(){if(!PICKS.size)return;const inner=buildPaperInner();pvSheet.innerHTML=inner;paperDlg.close();
@@ -1746,9 +1821,11 @@ async function generateSol(){
     const typeTxt=typeEl.options[typeEl.selectedIndex]?.text||'';
     let groupCtx='';
     if(gid){
+      const ps=PASSAGES[gid];
+      if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+ps.q+'\n';
       const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));
       if(siblings.length>1)
-        groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
+        groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
     }
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
     const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
@@ -1806,7 +1883,7 @@ async function batchGenerateSol(){
     const typeTxt=(QTYPES.find(x=>x.code===it.type)||{}).name||'';
     const gid=it.groupId||'';
     let groupCtx='';
-    if(gid){const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
+    if(gid){const ps=PASSAGES[gid];if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+ps.q+'\n';const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
     const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
     const itImgs=[...(it.imgs||[]),..._getGroupImgs(it.groupId||'',it.imgs)];
@@ -2351,8 +2428,38 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     // ── 題目 ──
     const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
     const answers=[];
+    const shownPassages=new Set();
+    const PB={style:BorderStyle.SINGLE,size:4,color:'888888'};
+    async function addImgToList(target,img){
+      if(!img.src)return;
+      const parsed=await _imgToBase64(img);if(!parsed)return;
+      try{
+        const {w:nw,h:nh}=await _imgSize(img.src);
+        const pct=(img.width||65)/100;
+        const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
+        const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
+        const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true}})],spacing:{before:80,after:80}}));
+      }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
+    }
     for(let i=0;i<sorted.length;i++){
       const it=sorted[i];
+      const gid=it.groupId||'';
+      // ── 題組文章（每組只輸出一次）──
+      if(gid&&!shownPassages.has(gid)){
+        shownPassages.add(gid);
+        const ps=PASSAGES[gid];
+        if(ps){
+          const pCells=[];
+          const pLines=latexToPlain(ps.q||'').split('\n');
+          const pRuns=[];
+          pLines.forEach((line,li)=>{if(li>0)pRuns.push(new TextRun({break:1}));pRuns.push(tr({text:line,size:22}));});
+          pCells.push(new Paragraph({children:pRuns,spacing:{before:80,after:80}}));
+          for(const img of (ps.imgs||[])){await addImgToList(pCells,img);}
+          children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[new TableCell({borders:{top:PB,bottom:PB,left:PB,right:PB},shading:{fill:'FFFFFF'},children:pCells})]})]  }));
+          children.push(new Paragraph({text:'',spacing:{after:120}}));
+        }
+      }
       if(showTag&&(it.unit||it.sub)){
         children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
       }
@@ -2360,23 +2467,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       const qRuns=[];
       qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:line,size:24}));});
       children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:qRuns,spacing:{before:180,after:0}}));}
-      for(const img of (it.imgs||[])){
-        if(!img.src)continue;
-        const parsed=await _imgToBase64(img);
-        if(!parsed){continue;}
-        try{
-          const {w:nw,h:nh}=await _imgSize(img.src);
-          const pct=(img.width||65)/100;
-          const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
-          const mime=parsed.mimeType;
-          const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
-          const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
-          children.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true}})],spacing:{before:80,after:80}}));
-        }catch(e){
-          console.warn('DOCX 圖片嵌入失敗：',e);
-          children.push(new Paragraph({children:[tr({text:'〔圖片載入失敗：'+e.message+'〕',italics:true,color:'CC0000',size:18})]}));
-        }
-      }
+      for(const img of (it.imgs||[])){await addImgToList(children,img);}
       if((ansMode==='inline'||ansMode==='full')&&it.ans){
         children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
       }
