@@ -1616,8 +1616,15 @@ function getAIKey(provider){
   }
   return k?k.trim():'';
 }
-async function callClaude(sys,msg,key){
-  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:sys,messages:[{role:'user',content:msg}]})});
+function _parseImgSrc(src){
+  const m=src&&src.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+  return m?{mimeType:m[1],b64:m[2]}:null;
+}
+async function callClaude(sys,msg,key,imgs=[]){
+  const content=[];
+  for(const im of imgs){const p=_parseImgSrc(im.src);if(p)content.push({type:'image',source:{type:'base64',media_type:p.mimeType,data:p.b64}});}
+  content.push({type:'text',text:msg});
+  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:sys,messages:[{role:'user',content}]})});
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).content[0].text.trim();
 }
@@ -1632,9 +1639,12 @@ async function getGeminiModel(key){
   AI_CFG.geminiModel=model;saveAIConfig();
   return model;
 }
-async function callGemini(sys,msg,key){
+async function callGemini(sys,msg,key,imgs=[]){
   const model=await getGeminiModel(key);
-  const doCall=async(m)=>fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}]})});
+  const parts=[];
+  for(const im of imgs){const p=_parseImgSrc(im.src);if(p)parts.push({inline_data:{mime_type:p.mimeType,data:p.b64}});}
+  parts.push({text:msg});
+  const doCall=async(m)=>fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts}]})});
   let r=await doCall(model);
   if(!r.ok){
     const e=await r.json().catch(()=>({error:{message:r.statusText}}));
@@ -1659,9 +1669,12 @@ async function getOpenAIModel(key){
   AI_CFG.openaiModel=model;saveAIConfig();
   return model;
 }
-async function callOpenAI(sys,msg,key){
+async function callOpenAI(sys,msg,key,imgs=[]){
   const model=await getOpenAIModel(key);
-  const doCall=async(m)=>fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,max_tokens:1024,messages:[{role:'system',content:sys},{role:'user',content:msg}]})});
+  const userContent=[];
+  for(const im of imgs){if(im.src)userContent.push({type:'image_url',image_url:{url:im.src}});}
+  userContent.push({type:'text',text:msg});
+  const doCall=async(m)=>fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,max_tokens:1024,messages:[{role:'system',content:sys},{role:'user',content:userContent}]})});
   let r=await doCall(model);
   if(!r.ok){
     const e=await r.json().catch(()=>({error:{message:r.statusText}}));
@@ -1708,9 +1721,10 @@ async function generateSol(){
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
     const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
     let result;
-    if(provider==='claude')result=await callClaude(sys,msg,key);
-    else if(provider==='gemini')result=await callGemini(sys,msg,key);
-    else result=await callOpenAI(sys,msg,key);
+    const qImgs=curImgs||[];
+    if(provider==='claude')result=await callClaude(sys,msg,key,qImgs);
+    else if(provider==='gemini')result=await callGemini(sys,msg,key,qImgs);
+    else result=await callOpenAI(sys,msg,key,qImgs);
     result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
     document.getElementById('eSol').value=result;
   }catch(e){
@@ -1757,9 +1771,10 @@ async function batchGenerateSol(){
       const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
       const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
       let result;
-      if(provider==='claude')result=await callClaude(s2,m2,key);
-      else if(provider==='gemini')result=await callGemini(s2,m2,key);
-      else result=await callOpenAI(s2,m2,key);
+      const itImgs=it.imgs||[];
+      if(provider==='claude')result=await callClaude(s2,m2,key,itImgs);
+      else if(provider==='gemini')result=await callGemini(s2,m2,key,itImgs);
+      else result=await callOpenAI(s2,m2,key,itImgs);
       result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
       it.sol=result;it.updatedAt=new Date().toISOString();
       if(CLOUD_READY)await sb.from('questions').update({sol:result,updatedAt:it.updatedAt}).eq('id',it.id);
