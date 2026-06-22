@@ -118,13 +118,7 @@
   .pvimg-ne{top:-6px;right:-6px;cursor:ne-resize;}
   .pvimg-sw{bottom:-6px;left:-6px;cursor:sw-resize;}
   .pvimg-se{bottom:-6px;right:-6px;cursor:se-resize;}
-  .pvimg-ctrl{margin-top:4px;display:flex;gap:3px;align-items:center;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:11px;background:#f0f0f0;padding:3px 7px;border-radius:4px;border:1px solid #ddd;line-height:1.4;}
-  .pvimg-ctrl span{color:#666;margin:0 3px;}
-  .pvimg-btn{font-size:11px;padding:1px 7px;border:1px solid #ccc;border-radius:3px;cursor:pointer;background:#fff;line-height:1.6;}
-  .pvimg-btn:hover{background:#e8f0fb;border-color:#2e75b6;}
-  .pvimg-btn.act{background:#2e75b6;color:#fff;border-color:#1a5fa8;}
-  .pvimg-input{width:44px;font-size:11px;padding:1px 4px;border:1px solid #ccc;border-radius:3px;text-align:center;}
-  @media print{.pvimg-ctrl{display:none!important}.pvimg-corner{display:none!important}}
+  @media print{.pvimg-corner{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
   .pv-sheet{font-family:'DFPYuanMedium-B5','HuaKang',"Songti SC","Noto Serif TC",serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
@@ -1107,22 +1101,7 @@ function imgHtmlPreview(im,type,id,idx){
   const w=im.width||65;
   const x=_pvImgX(im);
   const y=im.y||0;
-  const wb=(v)=>`<button class="pvimg-btn${w==v?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${v})">${v}%</button>`;
-  const ab=(a,lbl)=>`<button class="pvimg-btn${(im.align===a&&im.x===undefined)?' act':''}" onclick="pvSetAlign('${type}','${id}',${idx},'${a}')">${lbl}</button>`;
-  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
-}
-async function pvSetImg(type,id,idx,key,val){
-  if(!requireCloud())return;
-  const im=_getPreviewImg(type,id,idx);if(!im)return;
-  im[key]=(key==='width'||key==='x'||key==='y')?+val:val;
-  if(key==='width'&&im.x!==undefined)im.x=Math.max(0,Math.min(100-im.width,im.x));
-  await _pvSave(type,id);
-}
-async function pvSetAlign(type,id,idx,align){
-  if(!requireCloud())return;
-  const im=_getPreviewImg(type,id,idx);if(!im)return;
-  im.align=align;delete im.x;
-  await _pvSave(type,id);
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div></div>`;
 }
 // drag to reposition (horizontal + vertical)
 function pvDragStart(e,type,id,idx){
