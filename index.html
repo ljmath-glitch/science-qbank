@@ -1609,9 +1609,31 @@ async function callClaude(sys,msg,key){
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).content[0].text.trim();
 }
+async function getGeminiModel(key){
+  if(AI_CFG.geminiModel)return AI_CFG.geminiModel;
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key));
+  if(!r.ok)return 'gemini-1.5-flash';
+  const data=await r.json();
+  const list=(data.models||[]).filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')&&!m.name.includes('embedding')&&!m.name.includes('aqa'));
+  const pick=list.find(m=>m.name.includes('2.5-flash'))||list.find(m=>m.name.includes('flash')&&!m.name.includes('thinking'))||list[0];
+  const model=pick?pick.name.replace('models/',''):'gemini-1.5-flash';
+  AI_CFG.geminiModel=model;saveAIConfig();
+  return model;
+}
 async function callGemini(sys,msg,key){
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}]})});
-  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  const model=await getGeminiModel(key);
+  const doCall=async(m)=>fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts:[{text:msg}]}]})});
+  let r=await doCall(model);
+  if(!r.ok){
+    const e=await r.json().catch(()=>({error:{message:r.statusText}}));
+    const msg2=e.error?.message||r.statusText;
+    if(msg2.includes('no longer available')||msg2.includes('deprecated')){
+      delete AI_CFG.geminiModel;saveAIConfig();
+      const fresh=await getGeminiModel(key);
+      r=await doCall(fresh);
+      if(!r.ok){const e2=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e2.error?.message||r.statusText);}
+    }else throw new Error(msg2);
+  }
   return (await r.json()).candidates[0].content.parts[0].text.trim();
 }
 async function callOpenAI(sys,msg,key){
