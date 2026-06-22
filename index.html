@@ -2055,7 +2055,7 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
   }
   var answers=[];
   items.forEach(function(it,i){
-    var num=(it.no||i+1)+'.';
+    var num=(i+1)+'.';
     var qRaw=latexToPlain(fixLatex(it.q||it.summary||''));
     var lines2=qRaw.split('\n').filter(function(l){return l.trim();});
     if(showTag&&(it.unit||it.sub)){
@@ -2075,7 +2075,7 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
     if(ansMode==='full'&&it.sol){
       lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+latexToPlain(it.sol||'').split('\n').map((l,i)=>escRtf(i===0?'詳解：'+l:l)).join('\\line\n')+'}\\par');
     }
-    if(it.ans)answers.push((it.no||i+1)+'.'+it.ans);
+    if(it.ans)answers.push((i+1)+'.'+it.ans);
   });
   if(ansMode==='end'&&answers.length){
     lines.push('\\pard\\sb400\\sa100\\brdrb\\brdrs\\brdrw6{\\f0\\fs20\\cf1 '+
@@ -2252,7 +2252,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
     }
-    body+='<div class="qtext"><b>'+(it.no||i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
+    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
@@ -2270,7 +2270,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
       body+='<div class="src" style="text-align:right">['+esc(getSource(it))+']</div>';
     }
     body+='</div>';
-    if(it.ans)answers.push((it.no||i+1)+'.'+it.ans);
+    if(it.ans)answers.push((i+1)+'.'+it.ans);
   });
   if(ansMode==='end'&&answers.length){
     body+='<div class="answers"><b>【參考答案】</b>　'+answers.join('　')+'</div>';
@@ -2350,7 +2350,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       }
       {const qLines=latexToPlain(it.q||it.summary||'').split('\n');
       const qRuns=[];
-      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:(li===0?`${it.no||i+1}.  `:'\t')+line,size:24}));});
+      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:(li===0?`${i+1}.  `:'\t')+line,size:24}));});
       children.push(new Paragraph({children:qRuns,spacing:{before:180,after:0}}));}
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
@@ -2383,7 +2383,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         children.push(new Paragraph({children:[tr({text:'['+getSource(it)+']',size:18,color:'2E75B6'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:0}}));
       }
       children.push(new Paragraph({text:'',spacing:{after:220}}));
-      if(it.ans)answers.push(`${it.no||i+1}.${it.ans}`);
+      if(it.ans)answers.push(`${i+1}.${it.ans}`);
     }
     if(ansMode==='end'&&answers.length){
       children.push(new Paragraph({children:[tr({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
