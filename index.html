@@ -1663,6 +1663,12 @@ async function callOpenAI(sys,msg,key){
   }
   return (await r.json()).choices[0].message.content.trim();
 }
+function makeSolPrompt(q,ans,meta,groupCtx){
+  const sys='你是一位臺灣自然科教師，負責為國中教育會考題目撰寫專業詳解。使用繁體中文與臺灣高中課綱常用術語。數學式與化學式以 $…$ 包住（例如 $E=mc^2$、$H_2O$、$Cu^{2+}$）。';
+  const example='【格式範例（氧化還原題）】\n## 解題關鍵\n先判斷各物種氧化數的變化，再找出獲得電子的物質，即為氧化劑。\n\n## 詳解\n反應前：\n- Zn：氧化數為 0\n- $Cu^{2+}$：氧化數為 +2\n\n反應後：\n- $Zn^{2+}$：氧化數為 +2\n- Cu：氧化數為 0\n\n可知：\nZn：0 → +2，氧化數上升，失去電子，發生氧化。\n$Cu^{2+}$：+2 → 0，氧化數下降，獲得電子，發生還原。\n\n因此接受電子的 $Cu^{2+}$ 為氧化劑。\n\n## 觀念補充\n判斷氧化還原反應時：\n- 氧化＝失電子\n- 還原＝得電子\n- 氧化劑＝自身被還原\n- 還原劑＝自身被氧化\n【範例結束】';
+  const msg='正確答案是'+(ans||'?')+'。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n'+example+'\n\n請依上述格式為本題撰寫詳解。注意：\n- 不要重複題號、答案、出題範圍\n- 不要使用「本題答案為」等語句\n- 觀念補充若無額外教學價值，連標題都省略\n- 選擇題須逐一說明各選項正確或錯誤的理由\n- 文字簡潔、專業且具教學性';
+  return {sys,msg};
+}
 async function generateSol(){
   const provider=document.getElementById('aiProvider')?.value||localStorage.getItem('aiProvider')||'claude';
   const key=getAIKey(provider);if(!key)return;
@@ -1687,13 +1693,12 @@ async function generateSol(){
         groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
     }
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-    const sys='你是國三自然科補習班老師，用簡短直白的語言幫學生快速看懂題目。只能輸出純文字，禁止使用任何 Markdown 語法。';
-    const msg='這是一道國三自然科題目，答案是'+(ans||'?')+'，請寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【格式規定】\n- 全程條列式，每點一行，不要寫成一大段文章\n- 選擇題：第一點說明選'+(ans||'?')+'的理由，之後每個錯誤選項各一點\n- 非選擇題：每個步驟一點，標清楚算式\n- 最後一點寫「重點：○○○」\n- 每點不超過30字，全文不超過150字\n- 禁止使用 **、*、#、__ 等 Markdown 符號，只寫一般文字';
+    const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
     let result;
     if(provider==='claude')result=await callClaude(sys,msg,key);
     else if(provider==='gemini')result=await callGemini(sys,msg,key);
     else result=await callOpenAI(sys,msg,key);
-    result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/\*([^*]*)\*/g,'$1').replace(/^#+\s*/gm,'').replace(/__([^_]*)__/g,'$1');
+    result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1');
     document.getElementById('eSol').value=result;
   }catch(e){
     alert('生成失敗：'+e.message);
@@ -1704,7 +1709,6 @@ async function generateSol(){
 async function batchGenerateSol(){
   const provider=document.getElementById('aiProvider')?.value||AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
   const key=getAIKey(provider);if(!key)return;
-  const sys='你是國三自然科補習班老師，用簡短直白的語言幫學生快速看懂題目。只能輸出純文字，禁止使用任何 Markdown 語法。';
   let targets;
   if(PICKS.size>0){
     const withSol=DB.filter(it=>PICKS.has(it.id)&&it.sol);
@@ -1738,12 +1742,12 @@ async function batchGenerateSol(){
       let groupCtx='';
       if(gid){const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
       const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-      const msg='這是一道國三自然科題目，答案是'+(ans||'?')+'，請寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【格式規定】\n- 全程條列式，每點一行，不要寫成一大段文章\n- 選擇題：第一點說明選'+(ans||'?')+'的理由，之後每個錯誤選項各一點\n- 非選擇題：每個步驟一點，標清楚算式\n- 最後一點寫「重點：○○○」\n- 每點不超過30字，全文不超過150字\n- 禁止使用 **、*、#、__ 等 Markdown 符號，只寫一般文字';
+      const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
       let result;
-      if(provider==='claude')result=await callClaude(sys,msg,key);
-      else if(provider==='gemini')result=await callGemini(sys,msg,key);
-      else result=await callOpenAI(sys,msg,key);
-      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/\*([^*]*)\*/g,'$1').replace(/^#+\s*/gm,'').replace(/__([^_]*)__/g,'$1');
+      if(provider==='claude')result=await callClaude(s2,m2,key);
+      else if(provider==='gemini')result=await callGemini(s2,m2,key);
+      else result=await callOpenAI(s2,m2,key);
+      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1');
       it.sol=result;it.updatedAt=new Date().toISOString();
       if(CLOUD_READY)await sb.from('questions').update({sol:result,updatedAt:it.updatedAt}).eq('id',it.id);
       done++;updProg();
