@@ -1636,9 +1636,31 @@ async function callGemini(sys,msg,key){
   }
   return (await r.json()).candidates[0].content.parts[0].text.trim();
 }
+async function getOpenAIModel(key){
+  if(AI_CFG.openaiModel)return AI_CFG.openaiModel;
+  const r=await fetch('https://api.openai.com/v1/models',{headers:{'Authorization':'Bearer '+key}});
+  if(!r.ok)return 'gpt-4o-mini';
+  const data=await r.json();
+  const list=(data.data||[]).map(m=>m.id).filter(id=>/^gpt-4/.test(id)&&!id.includes('instruct')&&!id.includes('vision'));
+  list.sort((a,b)=>b.localeCompare(a));
+  const model=list[0]||'gpt-4o-mini';
+  AI_CFG.openaiModel=model;saveAIConfig();
+  return model;
+}
 async function callOpenAI(sys,msg,key){
-  const r=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'gpt-4o-mini',max_tokens:1024,messages:[{role:'system',content:sys},{role:'user',content:msg}]})});
-  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  const model=await getOpenAIModel(key);
+  const doCall=async(m)=>fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:m,max_tokens:1024,messages:[{role:'system',content:sys},{role:'user',content:msg}]})});
+  let r=await doCall(model);
+  if(!r.ok){
+    const e=await r.json().catch(()=>({error:{message:r.statusText}}));
+    const msg2=e.error?.message||r.statusText;
+    if(msg2.includes('deprecated')||msg2.includes('no longer available')||msg2.includes('does not exist')){
+      delete AI_CFG.openaiModel;saveAIConfig();
+      const fresh=await getOpenAIModel(key);
+      r=await doCall(fresh);
+      if(!r.ok){const e2=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e2.error?.message||r.statusText);}
+    }else throw new Error(msg2);
+  }
   return (await r.json()).choices[0].message.content.trim();
 }
 async function generateSol(){
