@@ -1783,8 +1783,13 @@ async function batchGenerateSol(){
       else if(provider==='gemini')result=await callGemini(s2,m2,key,itImgs);
       else result=await callOpenAI(s2,m2,key,itImgs);
       result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
-      it.sol=result;it.updatedAt=new Date().toISOString();
-      if(CLOUD_READY)await sb.from('questions').update({sol:result,updatedAt:it.updatedAt}).eq('id',it.id);
+      it.sol=result;
+      if(CLOUD_READY){
+        const now=new Date().toISOString();
+        it.updatedAt=now;
+        const {error:saveErr}=await sb.from('questions').update({sol:result,updated_at:now}).eq('id',it.id);
+        if(saveErr){console.error('批次儲存失敗',it.id,saveErr.message);failed++;updProg();await new Promise(r=>setTimeout(r,1000));continue;}
+      }
       done++;updProg();
       await new Promise(r=>setTimeout(r,300));
     }catch(e){
