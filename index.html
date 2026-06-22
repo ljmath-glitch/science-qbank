@@ -1687,8 +1687,8 @@ async function generateSol(){
         groupCtx='\n\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
     }
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-    const sys='你是國中自然科（理化、生物、地球科學）專業老師，撰寫精確的詳解。';
-    const msg='請為以下國中自然科題目撰寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【詳解規則】\n- 繁體中文，語氣適合國中生\n- 選擇題：說明正確答案（'+(ans||'?')+'）理由，再逐項說明其他選項錯在哪\n- 非選擇題：列出公式與計算步驟\n- 最後一行補充一個重點觀念句\n- 簡潔，不超過300字';
+    const sys='你是國三自然科補習班老師，用簡短直白的語言幫學生快速看懂題目。';
+    const msg='這是一道國三自然科題目，答案是'+(ans||'?')+'，請寫詳解。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n【格式規定】\n- 全程條列式，每點一行，不要寫成一大段文章\n- 選擇題：第一點說明選'+(ans||'?')+'的理由，之後每個錯誤選項各一點\n- 非選擇題：每個步驟一點，標清楚算式\n- 最後一點寫「重點：○○○」\n- 每點不超過30字，全文不超過150字';
     let result;
     if(provider==='claude')result=await callClaude(sys,msg,key);
     else if(provider==='gemini')result=await callGemini(sys,msg,key);
