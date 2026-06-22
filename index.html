@@ -1356,7 +1356,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
         const pImgs=(ps.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
         const r=groupRanges[gid];
         const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
-        const hdrLine=rangeStr?`<div style="font-weight:bold;margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
+        const hdrLine=rangeStr?`<div style="margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
         passageHtml=`${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
       }
     }
@@ -2583,7 +2583,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         if(ps){
           // 題組標題
           const rW=groupRangesW[gid];
-          if(rW){const rStr=rW.min===rW.max?`第${rW.min}題`:`${rW.min}～${rW.max}題`;children.push(new Paragraph({children:[tr({text:`閱讀下列敘述後，回答${rStr}`,bold:true,size:22})],spacing:{before:160,after:60}}));}
+          if(rW){const rStr=rW.min===rW.max?`第${rW.min}題`:`${rW.min}～${rW.max}題`;children.push(new Paragraph({children:[tr({text:`閱讀下列敘述後，回答${rStr}`,size:22})],spacing:{before:160,after:60}}));}
           const pCells=[];
           const pLines=latexToPlain(ps.q||'').split('\n');
           const pRuns=[];
