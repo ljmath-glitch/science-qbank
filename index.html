@@ -1109,7 +1109,7 @@ function imgHtmlPreview(im,type,id,idx){
   const y=im.y||0;
   const wb=(v)=>`<button class="pvimg-btn${w==v?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${v})">${v}%</button>`;
   const ab=(a,lbl)=>`<button class="pvimg-btn${(im.align===a&&im.x===undefined)?' act':''}" onclick="pvSetAlign('${type}','${id}',${idx},'${a}')">${lbl}</button>`;
-  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;top:${y}px" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
 }
 async function pvSetImg(type,id,idx,key,val){
   if(!requireCloud())return;
@@ -1143,14 +1143,15 @@ function _pvDragMove(e){
   const w=im?im.width||65:65;
   const newX=Math.max(0,Math.min(100-w,_pvDrag.startXPct+dx));
   const newY=_pvDrag.startYPx+dy;
+  _pvDrag.curX=newX;_pvDrag.curY=newY;
   _pvDrag.el.style.marginLeft=newX+'%';
-  _pvDrag.el.style.top=newY+'px';
+  _pvDrag.el.style.transform=`translateY(${newY}px)`;
 }
 async function _pvDragEnd(){
   if(!_pvDrag)return;
-  const {type,id,idx,el}=_pvDrag;
-  const newX=Math.round(parseFloat(el.style.marginLeft||'0')*10)/10;
-  const newY=Math.round(parseFloat(el.style.top||'0'));
+  const {type,id,idx,el,curX,curY}=_pvDrag;
+  const newX=Math.round((curX??_pvDrag.startXPct)*10)/10;
+  const newY=Math.round(curY??_pvDrag.startYPx);
   el.classList.remove('pv-active');
   _pvDrag=null;
   document.removeEventListener('mousemove',_pvDragMove);
