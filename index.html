@@ -2053,8 +2053,9 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
     lines.push('\\pard\\qr\\sb100\\sa200{\\f0\\fs20\\cf3 '+
       escRtf('共 '+items.length+' 題  班級：______  座號：____  姓名：________')+'}\\par');
   }
+  var sorted=[...items].sort(function(a,b){return(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0);});
   var answers=[];
-  items.forEach(function(it,i){
+  sorted.forEach(function(it,i){
     var num=(i+1)+'.';
     var qRaw=latexToPlain(fixLatex(it.q||it.summary||''));
     var lines2=qRaw.split('\n').filter(function(l){return l.trim();});
@@ -2246,8 +2247,9 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
   if(showMeta){
     body+='<div class="meta">共 '+items.length+' 題　班級：______　座號：____　姓名：________</div>';
   }
+  var sorted=[...items].sort(function(a,b){return(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0);});
   var answers=[];
-  items.forEach(function(it,i){
+  sorted.forEach(function(it,i){
     body+='<div class="q">';
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
@@ -2304,7 +2306,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle,
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
-           VerticalPositionRelativeFrom}=window.docx;
+           VerticalPositionRelativeFrom,LevelFormat}=window.docx;
     const FONT='華康中圓體';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
     const PAGE_W_PX=570;
@@ -2342,16 +2344,17 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       children.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
     }
     // ── 題目 ──
+    const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
     const answers=[];
-    for(let i=0;i<items.length;i++){
-      const it=items[i];
+    for(let i=0;i<sorted.length;i++){
+      const it=sorted[i];
       if(showTag&&(it.unit||it.sub)){
         children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
       }
       {const qLines=latexToPlain(it.q||it.summary||'').split('\n');
       const qRuns=[];
-      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:(li===0?`${i+1}.  `:'\t')+line,size:24}));});
-      children.push(new Paragraph({children:qRuns,spacing:{before:180,after:0}}));}
+      qLines.forEach((line,li)=>{if(li>0)qRuns.push(new TextRun({break:1}));qRuns.push(tr({text:line,size:24}));});
+      children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:qRuns,spacing:{before:180,after:0}}));}
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
         const parsed=await _imgToBase64(img);
@@ -2389,6 +2392,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       children.push(new Paragraph({children:[tr({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
     }
     const doc=new Document({
+      numbering:{config:[{reference:'q-list',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]}]},
       styles:{default:{document:{run:{font:{name:FONT}}}}},
       sections:[{properties:{page:{margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]
     });
