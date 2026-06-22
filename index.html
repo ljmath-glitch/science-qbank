@@ -1106,14 +1106,15 @@ function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align
 function imgHtmlPreview(im,type,id,idx){
   const w=im.width||65;
   const x=_pvImgX(im);
+  const y=im.y||0;
   const wb=(v)=>`<button class="pvimg-btn${w==v?' act':''}" onclick="pvSetImg('${type}','${id}',${idx},'width',${v})">${v}%</button>`;
   const ab=(a,lbl)=>`<button class="pvimg-btn${(im.align===a&&im.x===undefined)?' act':''}" onclick="pvSetAlign('${type}','${id}',${idx},'${a}')">${lbl}</button>`;
-  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;top:${y}px" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none"><div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div></div><div class="pvimg-ctrl noprint"><span>大小</span>${wb(30)}${wb(50)}${wb(70)}${wb(100)}<input type="number" class="pvimg-input" min="1" max="200" value="${w}" onchange="pvSetImg('${type}','${id}',${idx},'width',+this.value)">%　<span>對齊</span>${ab('left','靠左')}${ab('center','置中')}${ab('right','靠右')}</div></div>`;
 }
 async function pvSetImg(type,id,idx,key,val){
   if(!requireCloud())return;
   const im=_getPreviewImg(type,id,idx);if(!im)return;
-  im[key]=(key==='width'||key==='x')?+val:val;
+  im[key]=(key==='width'||key==='x'||key==='y')?+val:val;
   if(key==='width'&&im.x!==undefined)im.x=Math.max(0,Math.min(100-im.width,im.x));
   await _pvSave(type,id);
 }
@@ -1123,35 +1124,39 @@ async function pvSetAlign(type,id,idx,align){
   im.align=align;delete im.x;
   await _pvSave(type,id);
 }
-// drag to reposition
+// drag to reposition (horizontal + vertical)
 function pvDragStart(e,type,id,idx){
   if(e.target.classList.contains('pvimg-corner'))return;
   e.preventDefault();
   const im=_getPreviewImg(type,id,idx);if(!im)return;
   const el=e.currentTarget;
   el.classList.add('pv-active');
-  _pvDrag={type,id,idx,startX:e.clientX,startXPct:_pvImgX(im),el,contentW:_pvContentW()};
+  _pvDrag={type,id,idx,startX:e.clientX,startY:e.clientY,startXPct:_pvImgX(im),startYPx:im.y||0,el,contentW:_pvContentW()};
   document.addEventListener('mousemove',_pvDragMove);
   document.addEventListener('mouseup',_pvDragEnd);
 }
 function _pvDragMove(e){
   if(!_pvDrag)return;
   const dx=(e.clientX-_pvDrag.startX)/_pvDrag.contentW*100;
+  const dy=e.clientY-_pvDrag.startY;
   const im=_getPreviewImg(_pvDrag.type,_pvDrag.id,_pvDrag.idx);
   const w=im?im.width||65:65;
   const newX=Math.max(0,Math.min(100-w,_pvDrag.startXPct+dx));
+  const newY=_pvDrag.startYPx+dy;
   _pvDrag.el.style.marginLeft=newX+'%';
+  _pvDrag.el.style.top=newY+'px';
 }
 async function _pvDragEnd(){
   if(!_pvDrag)return;
   const {type,id,idx,el}=_pvDrag;
   const newX=Math.round(parseFloat(el.style.marginLeft||'0')*10)/10;
+  const newY=Math.round(parseFloat(el.style.top||'0'));
   el.classList.remove('pv-active');
   _pvDrag=null;
   document.removeEventListener('mousemove',_pvDragMove);
   document.removeEventListener('mouseup',_pvDragEnd);
   const im=_getPreviewImg(type,id,idx);if(!im)return;
-  im.x=newX;
+  im.x=newX;im.y=newY;
   await _pvSave(type,id);
 }
 // corner drag to resize proportionally
@@ -2571,10 +2576,12 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
         const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
         const CONTENT_EMU=6858000; // Narrow margin content width (10800 DXA × 635 EMU/DXA)
+        const PX_TO_EMU=9525; // 1 screen-px ≈ 9525 EMU (96dpi screen, 914400 EMU/inch)
         let hPos;
         if(img.x!==undefined){hPos={relative:HorizontalPositionRelativeFrom.COLUMN,offset:Math.round(img.x/100*CONTENT_EMU)};}
         else{const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;hPos={relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign};}
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+        const vOffset=Math.round((img.y||0)*PX_TO_EMU);
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
