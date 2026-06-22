@@ -1627,9 +1627,24 @@ function _parseImgSrc(src){
   const m=src&&src.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
   return m?{mimeType:m[1],b64:m[2]}:null;
 }
+async function _imgToBase64(im){
+  if(!im||!im.src)return null;
+  if(im.src.startsWith('data:'))return _parseImgSrc(im.src);
+  try{
+    const r=await fetch(im.src);
+    if(!r.ok)return null;
+    const blob=await r.blob();
+    return new Promise(res=>{
+      const rd=new FileReader();
+      rd.onload=()=>res(_parseImgSrc(rd.result));
+      rd.onerror=()=>res(null);
+      rd.readAsDataURL(blob);
+    });
+  }catch(e){return null;}
+}
 async function callClaude(sys,msg,key,imgs=[]){
   const content=[];
-  for(const im of imgs){const p=_parseImgSrc(im.src);if(p)content.push({type:'image',source:{type:'base64',media_type:p.mimeType,data:p.b64}});}
+  for(const im of imgs){const p=await _imgToBase64(im);if(p)content.push({type:'image',source:{type:'base64',media_type:p.mimeType,data:p.b64}});}
   content.push({type:'text',text:msg});
   const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:1024,system:sys,messages:[{role:'user',content}]})});
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
@@ -1649,7 +1664,7 @@ async function getGeminiModel(key){
 async function callGemini(sys,msg,key,imgs=[]){
   const model=await getGeminiModel(key);
   const parts=[];
-  for(const im of imgs){const p=_parseImgSrc(im.src);if(p)parts.push({inline_data:{mime_type:p.mimeType,data:p.b64}});}
+  for(const im of imgs){const p=await _imgToBase64(im);if(p)parts.push({inline_data:{mime_type:p.mimeType,data:p.b64}});}
   parts.push({text:msg});
   const doCall=async(m)=>fetch('https://generativelanguage.googleapis.com/v1beta/models/'+m+':generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:sys}]},contents:[{parts}]})});
   let r=await doCall(model);
