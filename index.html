@@ -1734,6 +1734,12 @@ async function generateSol(){
     else result=await callOpenAI(sys,msg,key,qImgs);
     result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
     document.getElementById('eSol').value=result;
+    if(CLOUD_READY&&editingId){
+      const now=new Date().toISOString();
+      const {error:saveErr}=await sb.from('questions').update({sol:result,updated_at:now}).eq('id',editingId);
+      if(saveErr){console.error('詳解自動儲存失敗：',saveErr.message);}
+      else{const it=DB.find(x=>x.id===editingId);if(it){it.sol=result;it.updatedAt=now;}render();}
+    }
   }catch(e){
     alert('生成失敗：'+e.message);
     if(e.message.includes('401')||e.message.includes('authentication')||e.message.includes('API_KEY_INVALID')){localStorage.removeItem('aiKey_'+provider);alert('API Key 無效，已清除，請重試時重新輸入。');}
