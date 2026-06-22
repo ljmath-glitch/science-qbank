@@ -886,7 +886,7 @@ function compress(d,maxW){
   return new Promise(function(res,rej){
     var img=new Image();
     img.onload=function(){
-      var sc=Math.min(1,maxW/img.width);  // 只縮不放
+      var sc=Math.min(1,maxW/img.width,maxW/img.height);  // 寬高都不超過 maxW
       var cv=document.createElement('canvas');
       cv.width=Math.round(img.width*sc);
       cv.height=Math.round(img.height*sc);
@@ -1640,7 +1640,7 @@ async function _imgToBase64(im){
       rd.onerror=()=>res(null);
       rd.readAsDataURL(blob);
     });
-  }catch(e){return null;}
+  }catch(e){console.warn('[圖片轉換失敗]',e.message,im.src?.slice(0,80));return null;}
 }
 async function callClaude(sys,msg,key,imgs=[]){
   const content=[];
@@ -1678,7 +1678,13 @@ async function callGemini(sys,msg,key,imgs=[]){
       if(!r.ok){const e2=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e2.error?.message||r.statusText);}
     }else throw new Error(msg2);
   }
-  return (await r.json()).candidates[0].content.parts[0].text.trim();
+  const gData=await r.json().catch(()=>({}));
+  const text=gData?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!text){
+    const reason=gData?.candidates?.[0]?.finishReason||gData?.promptFeedback?.blockReason||'';
+    throw new Error('Gemini 未返回有效內容'+(reason?'（'+reason+'）':'，可能圖片過大或格式不支援'));
+  }
+  return text.trim();
 }
 async function getOpenAIModel(key){
   if(AI_CFG.openaiModel)return AI_CFG.openaiModel;
