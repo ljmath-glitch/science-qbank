@@ -2250,63 +2250,88 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
   prog.textContent='📝 正在產生 .docx 檔案…';document.body.appendChild(prog);
   try{
     await _ensureDocxLib();
-    const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType}=window.docx;
-    const PAGE_W_PX=570; // ~15cm @ 96dpi（含邊距後可用寬）
+    const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType,
+           Table,TableRow,TableCell,WidthType,VerticalAlign,BorderStyle}=window.docx;
+    const FONT='華康中圓體';
+    const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
+    const PAGE_W_PX=570;
     const children=[];
-    // ── 標題 ──
+    // ── 標題表格 ──
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
     if(g||s||sc||en){
-      const left=[g+s,sc].filter(Boolean).join('　');
-      if(left)children.push(new Paragraph({children:[new TextRun({text:left,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:60}}));
-      if(en)children.push(new Paragraph({children:[new TextRun({text:en,size:26})],alignment:AlignmentType.CENTER,spacing:{after:160}}));
+      const leftText=[g+s,sc].filter(Boolean).join('　');
+      const SB={style:BorderStyle.SINGLE,size:4,color:'BBBBBB'};
+      const NB={style:BorderStyle.NIL};
+      const mkBorder=(t,b,l,r)=>({top:t,bottom:b,left:l,right:r});
+      // Logo cell
+      const logoCells=[];
+      if(typeof TZULOGO!=='undefined'&&TZULOGO){
+        try{
+          const lb=_imgBytes('data:image/png;base64,'+TZULOGO);
+          logoCells.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({data:lb,transformation:{width:52,height:52},type:'png'})],spacing:{before:80,after:20}}));
+        }catch(_){}
+      }
+      logoCells.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'TZU TZU',size:12,color:'999999',font:{name:'Arial'}})],spacing:{after:80}}));
+      const cells=[
+        new TableCell({width:{size:1100,type:WidthType.DXA},shading:{fill:'FFFFFF'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:logoCells}),
+        new TableCell({shading:{fill:'F2F2F2'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:leftText,bold:true,size:40})],spacing:{before:120,after:120},indent:{left:220}})]}),
+      ];
+      if(en){
+        cells.push(new TableCell({width:{size:55,type:WidthType.DXA},shading:{fill:'999999'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(NB,NB,NB,NB),children:[new Paragraph({text:''})]}));
+        cells.push(new TableCell({width:{size:2700,type:WidthType.DXA},shading:{fill:'D4D4D4'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:en,size:32})],spacing:{before:120,after:120},indent:{left:220}})]}));
+      }
+      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:cells})]}));
+      children.push(new Paragraph({text:'',spacing:{after:100}}));
     }else{
-      children.push(new Paragraph({children:[new TextRun({text:title,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+      children.push(new Paragraph({children:[tr({text:title,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
     }
     if(showMeta){
-      children.push(new Paragraph({children:[new TextRun({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
+      children.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
     }
     // ── 題目 ──
     const answers=[];
     for(let i=0;i<items.length;i++){
       const it=items[i];
       if(showTag&&(it.unit||it.sub)){
-        children.push(new Paragraph({children:[new TextRun({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
+        children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
       }
       latexToPlain(it.q||it.summary||'').split('\n').forEach((line,li)=>{
-        children.push(new Paragraph({children:[new TextRun({text:(li===0?`${i+1}.  `:'\t')+line,size:24})],spacing:{before:li===0?180:0,after:0}}));
+        children.push(new Paragraph({children:[tr({text:(li===0?`${i+1}.  `:'\t')+line,size:24})],spacing:{before:li===0?180:0,after:0}}));
       });
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
         try{
           const {w:nw,h:nh}=await _imgSize(img.src);
-          const pct=(img.width||70)/100;
+          const pct=(img.width||65)/100;
           const dw=Math.round(PAGE_W_PX*pct),dh=Math.round(dw*nh/nw);
           const type=img.src.startsWith('data:image/png')?'png':'jpg';
           const align=img.align==='right'?AlignmentType.RIGHT:img.align==='left'?AlignmentType.LEFT:AlignmentType.CENTER;
           children.push(new Paragraph({children:[new ImageRun({data:_imgBytes(img.src),transformation:{width:dw,height:dh},type})],alignment:align,spacing:{before:80,after:80}}));
-        }catch(e){children.push(new Paragraph({children:[new TextRun({text:'〔圖片〕',italics:true,color:'888888',size:20})]}))}
+        }catch(e){children.push(new Paragraph({children:[tr({text:'〔圖片〕',italics:true,color:'888888',size:20})]}))}
       }
       if((ansMode==='inline'||ansMode==='full')&&it.ans){
-        children.push(new Paragraph({children:[new TextRun({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
+        children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
       }
       if(ansMode==='full'&&it.sol){
         latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{
-          const isH=line.startsWith('## ');
-          const isBullet=line.startsWith('- ');
-          const txt=(li===0?'詳解　':'')+(isH?line.replace(/^##\s*/,''):line);
-          children.push(new Paragraph({children:[new TextRun({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0},indent:isBullet?{left:360}:undefined}));
+          const isH=line.startsWith('【')&&line.includes('】');
+          const txt=(li===0?'詳解　':'')+line;
+          children.push(new Paragraph({children:[tr({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));
         });
       }
       if(showSource&&getSource(it)){
-        children.push(new Paragraph({children:[new TextRun({text:'['+getSource(it)+']',size:18,color:'2E75B6'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:0}}));
+        children.push(new Paragraph({children:[tr({text:'['+getSource(it)+']',size:18,color:'2E75B6'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:0}}));
       }
       children.push(new Paragraph({text:'',spacing:{after:220}}));
       if(it.ans)answers.push(`${i+1}.${it.ans}`);
     }
     if(ansMode==='end'&&answers.length){
-      children.push(new Paragraph({children:[new TextRun({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
+      children.push(new Paragraph({children:[tr({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
     }
-    const doc=new Document({sections:[{properties:{page:{margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+    const doc=new Document({
+      styles:{default:{document:{run:{font:{name:FONT}}}}},
+      sections:[{properties:{page:{margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]
+    });
     const blob=await Packer.toBlob(doc);
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');a.href=url;a.download=title+'_'+stamp()+'.docx';
