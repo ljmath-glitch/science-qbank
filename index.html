@@ -2327,13 +2327,14 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         }catch(_){}
       }
       logoCells.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'TZU TZU',size:12,color:'999999',font:{name:'Arial'}})],spacing:{after:80}}));
+      const LOGO_W=1100,SEP_W=55,TEXT_W=3958;
       const cells=[
-        new TableCell({width:{size:1100,type:WidthType.DXA},shading:{fill:'FFFFFF'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:logoCells}),
-        new TableCell({shading:{fill:'F2F2F2'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:leftText,bold:true,size:40})],spacing:{before:120,after:120},indent:{left:220}})]}),
+        new TableCell({width:{size:LOGO_W,type:WidthType.DXA},shading:{fill:'FFFFFF'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:logoCells}),
+        new TableCell({width:{size:TEXT_W,type:WidthType.DXA},shading:{fill:'F2F2F2'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:leftText,bold:true,size:40})],spacing:{before:120,after:120},indent:{left:220}})]}),
       ];
       if(en){
-        cells.push(new TableCell({width:{size:55,type:WidthType.DXA},shading:{fill:'999999'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(NB,NB,NB,NB),children:[new Paragraph({text:''})]}));
-        cells.push(new TableCell({width:{size:2700,type:WidthType.DXA},shading:{fill:'D4D4D4'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:en,size:32})],spacing:{before:120,after:120},indent:{left:220}})]}));
+        cells.push(new TableCell({width:{size:SEP_W,type:WidthType.DXA},shading:{fill:'999999'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(NB,NB,NB,NB),children:[new Paragraph({text:''})]}));
+        cells.push(new TableCell({width:{size:TEXT_W,type:WidthType.DXA},shading:{fill:'D4D4D4'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:en,size:32})],spacing:{before:120,after:120},indent:{left:220}})]}));
       }
       children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:cells})]}));
       children.push(new Paragraph({text:'',spacing:{after:100}}));
