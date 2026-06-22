@@ -1039,7 +1039,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
     const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
-    const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px">詳解：${esc(it.sol)}</div>`:'';
+    const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=(it.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean).map(k=>`<span class="tag kp">${esc(k)}</span>`).join('');
     return `<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
@@ -1157,7 +1157,7 @@ function buildPaperInner(){const items=pickedItems();
     const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
-    if(ansMode==='full'&&it.sol)extra+=`<div class="sol">詳解：${esc(it.sol)}</div>`;
+    if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     return `<div class="q">${tag}<b>${i+1}.</b> ${esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')}${imgs}${extra}${src}</div>`}).join('');
   let ansBlock='';if(ansMode==='end'){const a=items.map((it,i)=>it.ans?`${i+1}.${esc(it.ans)}`:'').filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${items.length} 題</p>`;
@@ -1946,7 +1946,7 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
       lines.push('\\pard\\sb20\\sa40{\\f0\\fs20\\cf1 '+escRtf('答案：'+it.ans)+'}\\par');
     }
     if(ansMode==='full'&&it.sol){
-      lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+escRtf('詳解：'+latexToPlain(it.sol||''))+'}\\par');
+      lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+latexToPlain(it.sol||'').split('\n').map((l,i)=>escRtf(i===0?'詳解：'+l:l)).join('\\line\n')+'}\\par');
     }
     if(it.ans)answers.push((i+1)+'.'+it.ans);
   });
