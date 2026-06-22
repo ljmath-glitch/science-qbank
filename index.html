@@ -2452,7 +2452,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
         const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
         const hAlign=img.align==='right'?HorizontalPositionAlign.RIGHT:img.align==='left'?HorizontalPositionAlign.LEFT:HorizontalPositionAlign.CENTER;
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},behindDocument:true}})],spacing:{before:80,after:80}}));
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.COLUMN,align:HorizontalPositionAlign.RIGHT},verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:0},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
