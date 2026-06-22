@@ -2350,7 +2350,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       });
       for(const img of (it.imgs||[])){
         if(!img.src)continue;
-        const parsed=_parseImgSrc(img.src);
+        const parsed=await _imgToBase64(img);
         if(!parsed){continue;}
         try{
           const {w:nw,h:nh}=await _imgSize(img.src);
