@@ -1616,6 +1616,15 @@ function getAIKey(provider){
   }
   return k?k.trim():'';
 }
+function _getGroupImgs(gid,ownImgs){
+  // 收集同題組所有題目的圖片（排除已在 ownImgs 中的），按題號排序
+  if(!gid)return[];
+  const seen=new Set((ownImgs||[]).map(im=>im.src));
+  const imgs=[];
+  DB.filter(x=>x.groupId===gid).sort((a,b)=>(+a.no||0)-(+b.no||0))
+    .forEach(sib=>(sib.imgs||[]).forEach(im=>{if(im.src&&!seen.has(im.src)){imgs.push(im);seen.add(im.src);}}));
+  return imgs;
+}
 function _parseImgSrc(src){
   const m=src&&src.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
   return m?{mimeType:m[1],b64:m[2]}:null;
@@ -1721,7 +1730,7 @@ async function generateSol(){
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
     const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
     let result;
-    const qImgs=curImgs||[];
+    const qImgs=[...(curImgs||[]),..._getGroupImgs(gid,curImgs)];
     if(provider==='claude')result=await callClaude(sys,msg,key,qImgs);
     else if(provider==='gemini')result=await callGemini(sys,msg,key,qImgs);
     else result=await callOpenAI(sys,msg,key,qImgs);
@@ -1771,7 +1780,7 @@ async function batchGenerateSol(){
       const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
       const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
       let result;
-      const itImgs=it.imgs||[];
+      const itImgs=[...(it.imgs||[]),..._getGroupImgs(it.groupId||'',it.imgs)];
       if(provider==='claude')result=await callClaude(s2,m2,key,itImgs);
       else if(provider==='gemini')result=await callGemini(s2,m2,key,itImgs);
       else result=await callOpenAI(s2,m2,key,itImgs);
