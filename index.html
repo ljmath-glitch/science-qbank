@@ -170,7 +170,6 @@
       </div>
       <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
       <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option></select></div>
-      <div id="fSemesterWrap" class="filt" style="display:none"><label>學期（段考）</label><select id="fSemester" onchange="render()"><option value="">全部</option><option>上學期</option><option>下學期</option></select></div>
       <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
       <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
@@ -1064,7 +1063,7 @@ function buildFiltersKeep(){
     book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
     kp:fKp.value,type:fType.value,diff:fDiff.value,year:fYear.value,sem:fSem.value,
     school:fSchool.value,grade:fGrade.value,chart:fChart.value,
-    examType:fExamType.value,semester:fSemester.value,round:fRound.value
+    examType:fExamType.value,round:fRound.value
   };
   buildFilters();
   Object.keys(cur).forEach(function(k){
@@ -1073,8 +1072,7 @@ function buildFiltersKeep(){
   });
 }
 function resetFilters(){
-  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fSemester','fRound'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('fSemesterWrap').style.display='none';
+  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
 
@@ -1084,11 +1082,13 @@ function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B
 function gradeFromExam(exam,book){
   if(exam){if(exam.includes('九年級')||exam.includes('國三'))return '九年級';if(exam.includes('八年級')||exam.includes('國二'))return '八年級';if(exam.includes('七年級')||exam.includes('國一'))return '七年級';}
   return bookToGrade(book);}
-function examType(exam){
+function examType(exam,school){
   if(!exam)return '';
   if(exam.includes('段考'))return '段考';
   if(exam.includes('模擬')||exam.includes('北模')||exam.includes('全模'))return '模擬考';
   if(exam.includes('會考'))return '會考';
+  // exam 有值但無關鍵字 → 有學校名稱視為段考
+  if(school)return '段考';
   return '';}
 function examSemester(exam){
   if(!exam)return '';
@@ -1101,9 +1101,7 @@ function examRoundNum(exam){
   return m?m[0]:'';}
 function onFilterExamType(){
   const v=fExamType.value;
-  document.getElementById('fSemesterWrap').style.display=(v==='段考')?'':'none';
   document.getElementById('fRoundWrap').style.display=(v==='段考'||v==='模擬考')?'':'none';
-  if(v!=='段考'){fSemester.value='';}
   if(v==='會考'||v===''){fRound.value='';}
   render();}
 /* selectFiltered 統一用 matches()，見下方 script */
@@ -1247,8 +1245,7 @@ function matches(it){const s=fSearch.value.trim();
   if(fYear.value&&parseSylYear(it.year)!==fYear.value)return false;
   if(fSem.value&&parseSylSem(it.year)!==fSem.value)return false;
   if(fSchool.value&&it.school!==fSchool.value)return false;
-  if(fExamType.value&&examType(it.exam)!==fExamType.value)return false;
-  if(fSemester.value&&examSemester(it.exam)!==fSemester.value)return false;
+  if(fExamType.value&&examType(it.exam,it.school)!==fExamType.value)return false;
   if(fRound.value&&examRoundNum(it.exam)!==fRound.value)return false;
   if(fGrade.value&&gradeFromExam(it.exam,it.book)!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
@@ -1375,7 +1372,7 @@ function openPaperDlg(){
   pTitle.value=buildAutoTitle();
   const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value;
   const yr=fYear.value?(fYear.value+(fSem.value||'')):fSem.value;
-  const et=fExamType.value,sem=fSemester.value,rnd=fRound.value;
+  const et=fExamType.value,rnd=fRound.value;
   document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':'';
   document.getElementById('pSubject').value=fd||'';
   const scopeMap={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
@@ -1535,9 +1532,8 @@ function buildPrompt(){const syl=SYL_RAW;
   const sc=fSchool.value||'';
   const gr=fGrade.value||'';
   const et=fExamType.value||'';
-  const sem=fSemester.value||'';
   const rnd=fRound.value||'';
-  const examDesc=[et,sem,rnd].filter(Boolean).join('');
+  const examDesc=[et,rnd].filter(Boolean).join('');
   const exParts=[sc,gr,yr,examDesc].filter(Boolean);
   const ex=exParts.length?exParts.join('-'):'（如：士林-九年級-114上-第一次段考）';
   return `請把附上的翰林版國中自然科段考卷，逐題整理成 CSV，供我匯入題庫系統。
