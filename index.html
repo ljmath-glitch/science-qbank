@@ -2062,8 +2062,9 @@ async function callOpenAI(sys,msg,key,imgs=[]){
 function makeSolPrompt(q,ans,meta,groupCtx){
   const sys='你是一位臺灣自然科教師，為國中會考題目撰寫詳解。使用繁體中文與臺灣高中課綱術語。數學式與化學式以 $…$ 包住（例如 $v=\\frac{d}{t}$、$Cu^{2+}$）。';
   const example='【格式範例一：選擇題（氧化還原）】\n【解題關鍵】\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n【詳解】\n(A) 錯誤：Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) 正確：$Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) 錯誤：Cu 為還原後的產物，非氧化劑。\n\n【觀念補充】\n氧化劑自身被還原，還原劑自身被氧化。\n\n【格式範例二：計算題（速度）】\n【解題關鍵】\n代入速度公式 $v=\\frac{d}{t}$ 即可求解。\n\n【詳解】\n$v=\\frac{120\\text{ m}}{4\\text{ s}}=30\\text{ m/s}$\n【範例結束】';
-  const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項格式固定為「(X) 正確：解析」或「(X) 錯誤：解析」，先標示正誤再接一句解析；計算題只保留關鍵代入步驟。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、答案、出題範圍；不寫「本題答案為」「故選(A)」等語句。';
-  const msg='正確答案是'+(ans||'?')+'。\n'+meta+groupCtx+'\n【題目】\n'+q+'\n\n'+example+'\n\n'+rules;
+  const noAns=!ans;
+  const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項格式固定為「(X) 正確：解析」或「(X) 錯誤：解析」，先標示正誤再接一句解析；計算題只保留關鍵代入步驟。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、出題範圍；不寫「故選(A)」等語句。'+(noAns?'\n6. 答案未知：請先自行判斷正確選項，在【解題關鍵】前單獨一行寫「【AI 判斷答案】X」（X 為你認為的正確選項），再依此撰寫詳解。':'');
+  const msg=(noAns?'（答案未提供，請先自行判斷正確選項再寫詳解）\n':'正確答案是'+ans+'。\n')+meta+groupCtx+'\n【題目】\n'+q+'\n\n'+example+'\n\n'+rules;
   return {sys,msg};
 }
 async function generateSol(){
@@ -2100,12 +2101,20 @@ async function generateSol(){
     else if(provider==='gemini')result=await callGemini(sys,msg,key,qImgs);
     else result=await callOpenAI(sys,msg,key,qImgs);
     result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
+    // 若原本沒有答案，嘗試從「【AI 判斷答案】X」提取並填入
+    let aiAns='';
+    if(!ans){
+      const am=result.match(/【AI\s*判斷答案】\s*([A-Da-d])/);
+      if(am){aiAns=am[1].toUpperCase();result=result.replace(/【AI\s*判斷答案】\s*[A-Da-d]\n?/,'').trim();}
+    }
     document.getElementById('eSol').value=result;
+    if(aiAns){const eAns=document.getElementById('eAns');if(eAns)eAns.value=aiAns;}
     if(CLOUD_READY&&editingId){
       const now=new Date().toISOString();
-      const {error:saveErr}=await sb.from('questions').update({sol:result,updated_at:now}).eq('id',editingId);
+      const upd={sol:result,updated_at:now};if(aiAns)upd.ans=aiAns;
+      const {error:saveErr}=await sb.from('questions').update(upd).eq('id',editingId);
       if(saveErr){console.error('詳解自動儲存失敗：',saveErr.message);}
-      else{const it=DB.find(x=>x.id===editingId);if(it){it.sol=result;it.updatedAt=now;}render();}
+      else{const it=DB.find(x=>x.id===editingId);if(it){it.sol=result;if(aiAns)it.ans=aiAns;it.updatedAt=now;}render();}
     }
   }catch(e){
     alert('生成失敗：'+e.message);
