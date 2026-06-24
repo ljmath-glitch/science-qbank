@@ -267,7 +267,7 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash（推薦）</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
       <span id="imgTargetWrap" style="display:none;font-family:system-ui,sans-serif;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
@@ -1108,7 +1108,8 @@ function onFilterExamType(){
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function hlKw(s){return s.replace(/正確|錯誤/g,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');}
+const _NEG_KW=/錯誤|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非/g;
+function hlKw(s){return s.replace(_NEG_KW,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');}
 // ── 人名／國家名偵測 ──
 const _COUNTRIES=new RegExp(
   '(古希臘|古羅馬|古埃及|古代中國|古巴比倫|'+
@@ -1120,7 +1121,7 @@ const _COUNTRIES=new RegExp(
   '澳洲|紐西蘭|以色列|伊朗|土耳其|沙烏地|巴基斯坦|孟加拉)','g');
 function _textSegs(text){
   const markers=[];
-  text.replace(/正確|錯誤/g,(m,off)=>markers.push({start:off,end:off+m.length,s:'d'}));
+  _NEG_KW.lastIndex=0;text.replace(_NEG_KW,(m,off)=>markers.push({start:off,end:off+m.length,s:'d'}));
   _COUNTRIES.lastIndex=0;let m;
   while((m=_COUNTRIES.exec(text))!==null)markers.push({start:m.index,end:m.index+m[1].length,s:'s'});
   markers.sort((a,b)=>a.start-b.start);
@@ -1874,7 +1875,7 @@ function loadAIProvider(){
   _toggleGeminiModelSel(v,'geminiModel');
 }
 function saveGeminiModel(v){
-  if(!v)v=document.getElementById('geminiModel')?.value||'gemini-1.5-flash';
+  if(!v)v=document.getElementById('geminiModel')?.value||'gemini-2.5-flash';
   localStorage.setItem('geminiModel',v);
   AI_CFG.geminiModel=v;saveAIConfig();
   const bm=document.getElementById('batchGeminiModel');if(bm)bm.value=v;
@@ -1883,7 +1884,7 @@ function _toggleGeminiModelSel(provider,selId){
   const sel=document.getElementById(selId);if(!sel)return;
   sel.style.display=provider==='gemini'?'':'none';
   if(provider==='gemini'){
-    const saved=AI_CFG.geminiModel||localStorage.getItem('geminiModel')||'gemini-1.5-flash';
+    const saved=AI_CFG.geminiModel||localStorage.getItem('geminiModel')||'gemini-2.5-flash';
     sel.value=saved;
   }
 }
@@ -1937,7 +1938,7 @@ async function getGeminiModel(key){
   const manual=document.getElementById('geminiModel')?.value||document.getElementById('batchGeminiModel')?.value||localStorage.getItem('geminiModel');
   if(manual)return manual;
   if(AI_CFG.geminiModel)return AI_CFG.geminiModel;
-  return 'gemini-1.5-flash';
+  return 'gemini-2.5-flash';
 }
 async function callGemini(sys,msg,key,imgs=[]){
   const model=await getGeminiModel(key);
@@ -2139,7 +2140,7 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="batchGeminiModel" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash（推薦）</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
+  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="batchGeminiModel" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_DEFAULT=[
