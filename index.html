@@ -1878,14 +1878,73 @@ function saveGeminiModel(v){
   if(!v)v=document.getElementById('geminiModel')?.value||'gemini-2.5-flash';
   localStorage.setItem('geminiModel',v);
   AI_CFG.geminiModel=v;saveAIConfig();
-  const bm=document.getElementById('batchGeminiModel');if(bm)bm.value=v;
+  ['geminiModel','batchGeminiModel'].forEach(id=>{const el=document.getElementById(id);if(el&&el.value!==v)el.value=v;});
+}
+const _GEMINI_DESC={
+  'flash-lite':'⚡最省 Token・輕量',
+  '8b':'⚡最省 Token・舊版輕量',
+  'flash':'⚡速度快・省 Token',
+  'pro-exp':'🔬實驗版・強力',
+  'pro':'💪能力強・耗 Token',
+  'thinking':'🧠深度推理・耗大量 Token（不建議詳解用）',
+};
+function _geminiModelDesc(id){
+  if(id.includes('thinking'))return _GEMINI_DESC['thinking'];
+  if(id.includes('flash-lite')||id.includes('flash_lite'))return _GEMINI_DESC['flash-lite'];
+  if(id.includes('8b'))return _GEMINI_DESC['8b'];
+  if(id.includes('flash'))return _GEMINI_DESC['flash'];
+  if(id.includes('pro-exp')||id.includes('preview'))return _GEMINI_DESC['pro-exp'];
+  if(id.includes('pro'))return _GEMINI_DESC['pro'];
+  return '';
+}
+async function _loadGeminiModels(key){
+  if(!key)return;
+  const selIds=['geminiModel','batchGeminiModel'];
+  const saved=AI_CFG.geminiModel||localStorage.getItem('geminiModel')||'gemini-2.5-flash';
+  selIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.style.display!=='none')el.innerHTML='<option>載入模型中…</option>';});
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models?key='+encodeURIComponent(key));
+    if(!r.ok)throw new Error('無法取得模型清單');
+    const data=await r.json();
+    const models=(data.models||[])
+      .filter(m=>(m.supportedGenerationMethods||[]).includes('generateContent')
+        &&!m.name.includes('embedding')&&!m.name.includes('aqa'))
+      .map(m=>m.name.replace('models/',''))
+      .sort((a,b)=>{
+        const ver=s=>(s.includes('2.5')?0:s.includes('2.0')?1:s.includes('1.5')?2:3);
+        const typ=s=>(s.includes('thinking')?3:s.includes('pro')?2:s.includes('lite')||s.includes('8b')?1:0);
+        return ver(a)-ver(b)||typ(a)-typ(b)||a.localeCompare(b);
+      });
+    if(!models.length)throw new Error('無可用模型');
+    const opts=models.map(id=>{
+      const desc=_geminiModelDesc(id);
+      const star=(id==='gemini-2.5-flash')?'★ ':'';
+      const label=star+id+(desc?'　'+desc:'');
+      const sel=(id===saved||(!models.includes(saved)&&id===models[0]))?' selected':'';
+      return `<option value="${id}"${sel}>${label}</option>`;
+    }).join('');
+    selIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.style.display!=='none'){el.innerHTML=opts;if(!el.value)el.value=models[0];}});
+    const cur=document.getElementById('geminiModel')?.value||models[0];
+    saveGeminiModel(cur);
+  }catch(e){
+    const fallback='<option value="gemini-2.5-flash">★ gemini-2.5-flash　⚡速度快・省 Token</option>'
+      +'<option value="gemini-2.0-flash">gemini-2.0-flash　⚡速度快・省 Token</option>'
+      +'<option value="gemini-1.5-flash">gemini-1.5-flash　⚡速度快・省 Token</option>';
+    selIds.forEach(id=>{const el=document.getElementById(id);if(el&&el.style.display!=='none')el.innerHTML=fallback;});
+    console.warn('Gemini 模型清單載入失敗：',e.message);
+  }
 }
 function _toggleGeminiModelSel(provider,selId){
   const sel=document.getElementById(selId);if(!sel)return;
   sel.style.display=provider==='gemini'?'':'none';
   if(provider==='gemini'){
-    const saved=AI_CFG.geminiModel||localStorage.getItem('geminiModel')||'gemini-2.5-flash';
-    sel.value=saved;
+    const key=AI_CFG.gemini||localStorage.getItem('aiKey_gemini')||'';
+    if(key)_loadGeminiModels(key);
+    else{
+      const saved=AI_CFG.geminiModel||localStorage.getItem('geminiModel')||'gemini-2.5-flash';
+      if(!sel.querySelector('option[value="'+saved+'"]'))sel.value=sel.options[0]?.value||'';
+      else sel.value=saved;
+    }
   }
 }
 function getAIKey(provider){
@@ -1894,7 +1953,7 @@ function getAIKey(provider){
   if(!k){
     const lbl={claude:'Anthropic\nconsole.anthropic.com/settings/api-keys',gemini:'Google AI Studio\naistudio.google.com/apikey',openai:'OpenAI\nplatform.openai.com/api-keys'};
     k=prompt('請輸入 '+provider+' 的 API Key（輸入後自動存至雲端，之後不用再輸入）\n取得網址：\n'+(lbl[provider]||provider));
-    if(k&&k.trim()){k=k.trim();localStorage.setItem(sk,k);AI_CFG[provider]=k;saveAIConfig();}
+    if(k&&k.trim()){k=k.trim();localStorage.setItem(sk,k);AI_CFG[provider]=k;saveAIConfig();if(provider==='gemini')_loadGeminiModels(k);}
   }
   return k?k.trim():'';
 }
