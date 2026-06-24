@@ -856,7 +856,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
-      flag:(g(18)==='Y'||g(18)==='y'),q:g(19),sol:r.length>=22?g(20):'',groupId:r.length>=22?(g(21)||''):(g(20)||''),imgs:[]};
+      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19),sol:r.length>=22?g(20):'',groupId:r.length>=22?(g(21)||''):(g(20)||''),imgs:[]};
     if(!it.q&&!it.summary)continue;adds.push(it)}
   if(!adds.length){alert('沒有可匯入的題目');return}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
