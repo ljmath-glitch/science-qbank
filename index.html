@@ -859,7 +859,24 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
       flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19),sol:r.length>=22?g(20):'',groupId:r.length>=22?(g(21)||''):(g(20)||''),imgs:[]};
     if(!it.q&&!it.summary)continue;adds.push(it)}
+  // 自動從第一題分離題組文章（偵測【題幹】分隔符）
+  const SEP='【題幹】';
+  const passageAdds=[];const seenGids=new Set();
+  adds.forEach(it=>{
+    if(!it.groupId||seenGids.has(it.groupId))return;
+    seenGids.add(it.groupId);
+    const si=it.q.indexOf(SEP);
+    if(si===-1)return;
+    const pText=it.q.slice(0,si).trim();
+    it.q=it.q.slice(si+SEP.length).trim();
+    if(!pText)return;
+    passageAdds.push({id:uid(),groupId:it.groupId,type:'passage',q:pText,sol:'',ans:'',imgs:[],
+      year:it.year,school:it.school,exam:it.exam,book:it.book,bookName:it.bookName,
+      field:it.field,unit:it.unit,sub:it.sub,kp:'',summary:'',no:'',
+      step:0,mem:0,con:0,chart:'',basis:'',flag:false});
+  });
   if(!adds.length){alert('沒有可匯入的題目');return}
+  if(passageAdds.length){const {error:pe}=await sb.from('questions').upsert(passageAdds.map(toRow));if(pe)console.error('題組文章儲存失敗',pe.message);}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
   if(error){alert('匯入雲端失敗：'+error.message);return}
   try{
@@ -1821,7 +1838,8 @@ ${syl}
 【第 22 欄：題組ID 規則】
 - 若這題屬於題組（多題共用一段閱讀文字），此欄填入題組代號。
 - 同一題組的所有題目，此欄必須填入完全相同的代號。
-- 閱讀材料完整放在題組第一題的題目欄（T欄），後續題目只填題幹與選項，不重複閱讀材料。
+- 題組第一題的題目欄（T欄）格式：先完整寫閱讀材料，換行後單獨一行寫「【題幹】」，再換行後寫題幹與選項。
+- 後續題目只填題幹與選項，不重複閱讀材料。
 - 非題組的獨立題目，此欄留空（空字串）。
 
 【題組ID 格式規則】
@@ -1853,7 +1871,7 @@ function openPromptWindow(){
     +'</body></html>');
   w.document.close();
 }
-function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 Claude 指令（含翰林版骨架與20欄規則）！\n\n用法：\n1. 開新的 Claude 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
+function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 AI 指令（含翰林版骨架與22欄規則）！\n\n用法：\n1. 開新的 AI 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
 
 /* ===== AI 生成詳解 ===== */
 let AI_CFG={};
