@@ -39,6 +39,7 @@
   .tb-edit-toggle.on{background:var(--phy);color:#fff;border-color:var(--phy)}
   .editing .tb-item{cursor:grab;box-shadow:0 0 0 2px var(--phy);border-radius:7px}
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
+  .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;min-width:52px;justify-content:center}
   .btn{font-family:system-ui,sans-serif;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -2213,9 +2214,10 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="batchGeminiModel" style="font-size:12px;padding:3px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
+  batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:11px;padding:2px 4px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;max-width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
+const TB_ROW_LABELS=['資料管理','功能工具','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','report','kp','progress','guide'],
@@ -2229,6 +2231,10 @@ function renderToolbar(){
   const rows=wrap.querySelectorAll('.tb-row');
   layout.forEach((row,ri)=>{
     if(!rows[ri])return;
+    const lbl=document.createElement('span');
+    lbl.className='tb-row-label';
+    lbl.textContent=TB_ROW_LABELS[ri]||'';
+    rows[ri].appendChild(lbl);
     row.forEach(key=>{
       if(!TB_BUTTONS[key])return;
       const item=document.createElement('div');
