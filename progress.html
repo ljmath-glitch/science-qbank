@@ -80,9 +80,11 @@ th.sort-header:hover{background:#e5ddd0}
           <tr>
             <th class="left sort-header" onclick="sortBy('displayName')">考卷名稱 ↕</th>
             <th>題數</th>
-            <th>已新增圖</th>
-            <th>題目與答案確認</th>
-            <th>篩選欄位確認</th>
+            <th>確認公式</th>
+            <th>上傳圖片</th>
+            <th>製作詳解</th>
+            <th>題目答案確認</th>
+            <th>題組確認</th>
             <th style="min-width:160px">備註</th>
             <th>最後更新</th>
           </tr>
@@ -226,7 +228,7 @@ function render(){
 
   const doneCount = exams.filter(ex => {
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round)] || {};
-    return p.has_images && p.verified_questions && p.verified_filters;
+    return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups;
   }).length;
   document.getElementById('statLine').textContent =
     '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
@@ -235,16 +237,18 @@ function render(){
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);
     const p   = progressMap[id] || {};
     const shownName = p.customName !== undefined ? p.customName : ex.displayName;
-    const allDone = p.has_images && p.verified_questions && p.verified_filters;
+    const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
     const delBtn = ex.isManual ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>` : '';
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">
       <td style="display:flex;align-items:center;gap:4px">${delBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
       <td class="center">${countCell}</td>
-      <td class="chk-cell"><input type="checkbox" title="已新增圖" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="題目與答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="篩選欄位確認" ${p.verified_filters?'checked':''} onchange="toggle('${esc(id)}','verified_filters',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="題目答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="題組確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
       <td><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
       <td class="ts-cell">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
     </tr>`;
