@@ -854,7 +854,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const round=examRound(rawExam);
     const fmtExam=round==='會考'?(year||'')+'會考':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
     const key=round==='會考'?'會考|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
-    if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round});
+    if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
@@ -884,7 +884,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const {data:pgData}=await sb.from('syllabus_doc').select('content').eq('id',2).maybeSingle();
     const pgMap=pgData?JSON.parse(pgData.content||'{}'):{};
     let changed=false;
-    examKeys.forEach((v,key)=>{if(!pgMap[key]){pgMap[key]={updated_at:new Date().toISOString()};changed=true;}});
+    examKeys.forEach((v,key)=>{if(!pgMap[key]){pgMap[key]={customName:v.name,updated_at:new Date().toISOString()};changed=true;}});
     if(changed)await sb.from('syllabus_doc').upsert({id:2,content:JSON.stringify(pgMap)});
   }catch(e){}
   importDlg.close();await load();buildFilters();render();alert('成功匯入 '+adds.length+' 題到雲端')}
