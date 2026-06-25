@@ -21,9 +21,9 @@ header h1{font-size:17px;font-weight:700;flex:1}
 .name-inp{padding:5px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:inherit;width:140px}
 .stat{font-size:12px;color:var(--muted);margin-left:auto}
 .main{padding:24px 0 60px}
-.tbl-wrap{overflow-x:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07)}
+.tbl-wrap{overflow:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);max-height:calc(100vh - 130px)}
 table{width:100%;border-collapse:collapse;background:var(--card);min-width:860px}
-thead th{background:#f0ece2;font-size:12px;font-weight:700;padding:10px 12px;text-align:center;border-bottom:2px solid var(--line);white-space:nowrap;color:var(--muted)}
+thead th{background:#f0ece2;font-size:12px;font-weight:700;padding:10px 12px;text-align:center;border-bottom:2px solid var(--line);white-space:nowrap;color:var(--muted);position:sticky;top:0;z-index:2}
 thead th.left{text-align:left}
 tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
