@@ -180,6 +180,8 @@ async function loadAll(){
     if(!exams.find(e => makeId(e.school,e.grade,e.year,e.round)===key))
       exams.push({school:'',grade:'',year:'',round:'',displayName:name,count:null,isManual:true});
   });
+  const hidden = new Set(progressMap['__hidden__'] || []);
+  exams = exams.filter(ex => ex.isManual || !hidden.has(makeId(ex.school, ex.grade, ex.year, ex.round)));
   sortAndRender();
 }
 
@@ -239,7 +241,9 @@ function render(){
     const shownName = p.customName !== undefined ? p.customName : ex.displayName;
     const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
-    const delBtn = ex.isManual ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>` : '';
+    const delBtn = ex.isManual
+      ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
+      : `<button class="del-btn" title="隱藏此列（題目不會被刪）" onclick="hideEntry('${esc(id)}','${esc(shownName)}')">✕</button>`;
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">
       <td style="display:flex;align-items:center;gap:4px">${delBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
@@ -308,6 +312,18 @@ async function addManualExam(){
   await saveProgress();
   exams.push({school:'',grade:'',year:'',round:'',displayName:trimmed,count:null,isManual:true});
   render();
+  showSaving(false);
+}
+
+// ── 隱藏非手動列 ──────────────────────────────────────
+async function hideEntry(id, name){
+  if(!confirm('隱藏「'+name+'」？\n（相關題目不會被刪除，此列將不再顯示）')) return;
+  showSaving(true);
+  const hidden = progressMap['__hidden__'] || [];
+  if(!hidden.includes(id)) progressMap['__hidden__'] = [...hidden, id];
+  await saveProgress();
+  exams = exams.filter(e => makeId(e.school,e.grade,e.year,e.round) !== id && !(e.isManual));
+  await loadAll();
   showSaving(false);
 }
 
