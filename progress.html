@@ -145,6 +145,17 @@ function showSaving(show){
   document.getElementById('savingInd').classList.toggle('show', show);
 }
 
+// fetch 最新版本 → 合併本地變更 → 存回（避免覆蓋他人勾選）
+async function mergeAndSave(changeFn){
+  showSaving(true);
+  const latest = await loadProgress();
+  progressMap = {...latest};
+  changeFn();
+  render();
+  await saveProgress();
+  showSaving(false);
+}
+
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
   document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="loading">載入中…</td></tr>';
@@ -261,43 +272,43 @@ function render(){
 
 // ── 勾選 ────────────────────────────────────────────
 async function toggle(id, field, val){
-  showSaving(true);
-  const p = progressMap[id] || {};
-  progressMap[id] = {
-    ...p,
-    [field]: val,
-    updated_by: document.getElementById('userName').value.trim() || '未填姓名',
-    updated_at: new Date().toISOString()
-  };
-  render();
-  await saveProgress();
-  showSaving(false);
+  const who = document.getElementById('userName').value.trim() || '未填姓名';
+  await mergeAndSave(() => {
+    progressMap[id] = {
+      ...(progressMap[id]||{}),
+      [field]: val,
+      updated_by: who,
+      updated_at: new Date().toISOString()
+    };
+  });
 }
 
 // ── 備註 ────────────────────────────────────────────
 async function updateNote(id, val){
   if((progressMap[id]||{}).notes === val) return;
-  showSaving(true);
-  const p = progressMap[id] || {};
-  progressMap[id] = {
-    ...p,
-    notes: val,
-    updated_by: document.getElementById('userName').value.trim() || '未填姓名',
-    updated_at: new Date().toISOString()
-  };
-  await saveProgress();
-  showSaving(false);
+  const who = document.getElementById('userName').value.trim() || '未填姓名';
+  await mergeAndSave(() => {
+    progressMap[id] = {
+      ...(progressMap[id]||{}),
+      notes: val,
+      updated_by: who,
+      updated_at: new Date().toISOString()
+    };
+  });
 }
 
 // ── 考卷名稱手動編輯 ────────────────────────────────
 async function updateName(id, val){
   if((progressMap[id]||{}).customName === val) return;
-  showSaving(true);
-  progressMap[id] = {...(progressMap[id]||{}), customName: val,
-    updated_by: document.getElementById('userName').value.trim()||'未填姓名',
-    updated_at: new Date().toISOString()};
-  await saveProgress();
-  showSaving(false);
+  const who = document.getElementById('userName').value.trim() || '未填姓名';
+  await mergeAndSave(() => {
+    progressMap[id] = {
+      ...(progressMap[id]||{}),
+      customName: val,
+      updated_by: who,
+      updated_at: new Date().toISOString()
+    };
+  });
 }
 
 // ── 手動新增考卷 ──────────────────────────────────────
@@ -305,39 +316,49 @@ async function addManualExam(){
   const name = prompt('請輸入考卷名稱：\n（格式建議：士林-九年級-114上-第一次段考）');
   if(!name || !name.trim()) return;
   const trimmed = name.trim();
-  const manuals = progressMap['__manuals__'] || [];
-  if(manuals.includes(trimmed)){ alert('此名稱已存在'); return; }
-  showSaving(true);
-  progressMap['__manuals__'] = [...manuals, trimmed];
-  await saveProgress();
-  exams.push({school:'',grade:'',year:'',round:'',displayName:trimmed,count:null,isManual:true});
-  render();
-  showSaving(false);
+  await mergeAndSave(() => {
+    const manuals = progressMap['__manuals__'] || [];
+    if(manuals.includes(trimmed)){ alert('此名稱已存在'); return; }
+    progressMap['__manuals__'] = [...manuals, trimmed];
+    exams.push({school:'',grade:'',year:'',round:'',displayName:trimmed,count:null,isManual:true});
+  });
 }
 
 // ── 隱藏非手動列 ──────────────────────────────────────
 async function hideEntry(id, name){
   if(!confirm('隱藏「'+name+'」？\n（相關題目不會被刪除，此列將不再顯示）')) return;
-  showSaving(true);
-  const hidden = progressMap['__hidden__'] || [];
-  if(!hidden.includes(id)) progressMap['__hidden__'] = [...hidden, id];
-  await saveProgress();
-  exams = exams.filter(e => makeId(e.school,e.grade,e.year,e.round) !== id && !(e.isManual));
+  await mergeAndSave(() => {
+    const hidden = progressMap['__hidden__'] || [];
+    if(!hidden.includes(id)) progressMap['__hidden__'] = [...hidden, id];
+  });
   await loadAll();
-  showSaving(false);
 }
 
 // ── 刪除手動列 ────────────────────────────────────────
 async function deleteManual(name){
   if(!confirm('確定要刪除「'+name+'」這一列嗎？')) return;
-  showSaving(true);
-  progressMap['__manuals__'] = (progressMap['__manuals__']||[]).filter(n=>n!==name);
-  delete progressMap[manualKey(name)];
-  await saveProgress();
-  exams = exams.filter(e=>!(e.isManual && e.displayName===name));
-  render();
-  showSaving(false);
+  await mergeAndSave(() => {
+    progressMap['__manuals__'] = (progressMap['__manuals__']||[]).filter(n=>n!==name);
+    delete progressMap[manualKey(name)];
+    exams = exams.filter(e=>!(e.isManual && e.displayName===name));
+  });
 }
+
+// ── Realtime：即時同步他人變更 ──────────────────────────
+sb.channel('progress-sync')
+  .on('postgres_changes', {
+    event: 'UPDATE',
+    schema: 'public',
+    table: 'syllabus_doc',
+    filter: `id=eq.${PROGRESS_ROW_ID}`
+  }, payload => {
+    try {
+      const newMap = JSON.parse(payload.new.content || '{}');
+      progressMap = newMap;
+      render();
+    } catch(e){}
+  })
+  .subscribe();
 
 loadName();
 loadAll();
