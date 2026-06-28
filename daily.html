@@ -654,23 +654,23 @@ async function loadDailyQuestion(offset, sidx=0){
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
 
+    // Pin offset per question slot so refresh always returns the same question
     let qOffset;
-    if(sidx === 0){
-      // Pin today's offset so the same question always shows after refresh
-      const pinKey = 'dq_pin_' + dateStr(offset);
-      const pinned = localStorage.getItem(pinKey);
-      if(pinned !== null){
-        qOffset = parseInt(pinned, 10);
-      } else {
-        qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
-        localStorage.setItem(pinKey, String(qOffset));
-      }
+    const pinKey = 'dq_pin_' + getHistKey(offset, sidx);
+    const pinned = localStorage.getItem(pinKey);
+    if(pinned !== null){
+      qOffset = parseInt(pinned, 10);
     } else {
-      let attempts = 0;
-      do {
-        qOffset = Math.floor(Math.random() * _totalCount);
-        attempts++;
-      } while(_usedOffsets.has(qOffset) && attempts < 20);
+      if(sidx === 0){
+        qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
+      } else {
+        let attempts = 0;
+        do {
+          qOffset = Math.floor(Math.random() * _totalCount);
+          attempts++;
+        } while(_usedOffsets.has(qOffset) && attempts < 20);
+      }
+      localStorage.setItem(pinKey, String(qOffset));
     }
     _usedOffsets.add(qOffset);
 
