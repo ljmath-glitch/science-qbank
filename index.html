@@ -1056,10 +1056,17 @@ async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!r
 let _bellOpen=false;
 setInterval(()=>{ if(typeof updateBell==='function') updateBell(); }, 60000);
 async function updateBell(){
-  if(!CLOUD_READY||!sb)return;
+  if(!CLOUD_READY)return;
   try{
-    const {data}=await sb.from('questions').select('id,summary,kp,year,school,exam,no,updated_at').eq('flag',true).order('updated_at',{ascending:false});
-    const items=data||[];
+    // Use direct REST fetch instead of SDK to avoid silent SDK errors
+    const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
+    const res=await fetch(
+      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,year,school,exam,no&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
+      {headers:hdr}
+    );
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const items=Array.isArray(data)?data:[];
     const badge=document.getElementById('bellBadge');
     if(items.length){badge.textContent=items.length>99?'99+':String(items.length);badge.style.display='inline-block';}
     else{badge.style.display='none';}

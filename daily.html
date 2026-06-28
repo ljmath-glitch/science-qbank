@@ -1095,23 +1095,22 @@ async function submitReport(){
   const q=currentQuestion; if(!q) return;
   const reason=document.getElementById('reportReason').value.trim();
   closeReport();
+  let ok=false;
   try{
-    await fetch(`${SUPABASE_URL}/rest/v1/questions?id=eq.${encodeURIComponent(q.id)}`,{
-      method:'PATCH',
-      headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({flag:true})
-    });
-    // try inserting to reports table (graceful fail if table doesn't exist)
-    fetch(`${SUPABASE_URL}/rest/v1/reports`,{
+    // Use POST upsert (merge-duplicates) instead of PATCH —
+    // INSERT RLS is usually more permissive than UPDATE RLS in Supabase.
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/questions`,{
       method:'POST',
-      headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body:JSON.stringify({question_id:String(q.id),reason:reason||null,reported_at:new Date().toISOString()})
-    }).catch(()=>{});
+      headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},
+      body:JSON.stringify({id:q.id,flag:true})
+    });
+    ok=res.ok;
+    if(!ok) console.warn('flag upsert failed',res.status, await res.text().catch(()=>''));
   }catch(e){console.warn('report error',e);}
-  document.getElementById('toastEmoji').textContent='🚩';
-  document.getElementById('toastMsg').textContent='已回報！老師將會確認這道題目';
+  document.getElementById('toastEmoji').textContent=ok?'🚩':'⚠️';
+  document.getElementById('toastMsg').textContent=ok?'已回報！老師將會確認這道題目':'回報失敗，請聯絡老師';
   const t=document.getElementById('toast');t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
+  setTimeout(()=>t.classList.remove('show'),3500);
 }
 
 function openLightbox(src){
