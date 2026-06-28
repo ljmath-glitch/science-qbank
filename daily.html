@@ -1092,13 +1092,23 @@ function closeReport(){
   document.getElementById('reportBox').style.display='none';
 }
 async function submitReport(){
-  const q=currentQuestion; if(!q) return;
+  const toastEl=document.getElementById('toast');
+  const toastEmoji=document.getElementById('toastEmoji');
+  const toastMsg=document.getElementById('toastMsg');
+  function showToast(emoji,msg,dur){
+    toastEmoji.textContent=emoji;
+    toastMsg.textContent=msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastEl._tid);
+    toastEl._tid=setTimeout(()=>toastEl.classList.remove('show'),dur||3500);
+  }
+  const q=currentQuestion;
+  if(!q){showToast('⚠️','請先載入題目',2500);return;}
   const reason=document.getElementById('reportReason').value.trim();
   closeReport();
+  showToast('⏳','正在回報...',10000);
   let ok=false;
   try{
-    // Use POST upsert (merge-duplicates) instead of PATCH —
-    // INSERT RLS is usually more permissive than UPDATE RLS in Supabase.
     const res=await fetch(`${SUPABASE_URL}/rest/v1/questions`,{
       method:'POST',
       headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},
@@ -1107,10 +1117,7 @@ async function submitReport(){
     ok=res.ok;
     if(!ok) console.warn('flag upsert failed',res.status, await res.text().catch(()=>''));
   }catch(e){console.warn('report error',e);}
-  document.getElementById('toastEmoji').textContent=ok?'🚩':'⚠️';
-  document.getElementById('toastMsg').textContent=ok?'已回報！老師將會確認這道題目':'回報失敗，請聯絡老師';
-  const t=document.getElementById('toast');t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3500);
+  showToast(ok?'🚩':'⚠️',ok?'已回報！老師將會確認這道題目':'回報失敗，請聯絡老師',3500);
 }
 
 function openLightbox(src){
