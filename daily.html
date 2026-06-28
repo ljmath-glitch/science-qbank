@@ -547,6 +547,8 @@ async function sbFetchPassage(groupId){
 // ═══════════════════════════════════════════════════════════════
 // HELPERS (ported from index.html)
 // ═══════════════════════════════════════════════════════════════
+function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function textHtml(s){return esc(s||'').replace(/\n/g,'<br>')}
 function fixLatex(text){
   if(!text) return '';
   return text.replace(/\$([^$]+)\$/g,function(_,inner){
@@ -555,7 +557,8 @@ function fixLatex(text){
        .replace(/(?<!\\)rightarrow/g,'\\rightarrow').replace(/(?<!\\)leftarrow/g,'\\leftarrow')
        .replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons')
        .replace(/(?<!\\)alpha/g,'\\alpha').replace(/(?<!\\)beta/g,'\\beta')
-       .replace(/(?<!\\)Delta/g,'\\Delta').replace(/\\ext\{/g,'\\text{');
+       .replace(/(?<!\\)Delta/g,'\\Delta').replace(/(?<!\\)degree/g,'\\degree')
+       .replace(/\\ext\{/g,'\\text{');
     return '$'+f+'$';
   });
 }
@@ -903,7 +906,7 @@ function renderQuestion(){
       }).join('');
     }
     let html = '';
-    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${q.passage.text.replace(/\n/g,'<br>')}</div>` : '');
+    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${textHtml(q.passage.text)}</div>` : '');
     if(q.firstQImgs && q.firstQImgs.length) html += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${toImgHtml(q.firstQImgs)}</div>`;
     passageBody.innerHTML = html;
     passageBox.style.display='';
@@ -916,7 +919,7 @@ function renderQuestion(){
     const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
     return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
   }).join('');
-  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem.replace(/\n/g,'<br>')}</div>${imgsHtml}`;
+  document.getElementById('qBody').innerHTML=`<div class="q-stem">${textHtml(q.stem)}</div>${imgsHtml}`;
 
   // opts
   const optsEl=document.getElementById('qOpts');
@@ -925,7 +928,7 @@ function renderQuestion(){
     q.opts.forEach((opt,i)=>{
       const btn=document.createElement('button');
       btn.className='opt-btn';
-      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${opt.replace(/\n/g,'<br>')}</span>`;
+      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${textHtml(opt)}</span>`;
       if(revealed){
         btn.disabled=true;
         if(i===q.ansIdx) btn.classList.add('correct');
@@ -989,15 +992,15 @@ function renderExplanation(q){
 
   let html='';
   html+=`<div class="step"><div class="step-title">正確答案</div>`;
-  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?q.opts[q.ansIdx]:''}</div></div>`;
+  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?esc(q.opts[q.ansIdx]):''}</div></div>`;
   if(q.sol){
-    html+=`<div class="step"><div class="step-title">詳解</div><div>${q.sol.replace(/\n/g,'<br>')}</div></div>`;
+    html+=`<div class="step"><div class="step-title">詳解</div><div>${textHtml(q.sol)}</div></div>`;
   }
   document.getElementById('explainBody').innerHTML=html;
 
   document.getElementById('kpRow').innerHTML=
     (q.keywords.length?'<span class="kp-label">知識點：</span>'+
-    q.keywords.map(k=>`<span class="kp-tag">${k}</span>`).join(''):'');
+    q.keywords.map(k=>`<span class="kp-tag">${esc(k)}</span>`).join(''):'');
 }
 
 function renderMath(){
