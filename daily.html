@@ -561,10 +561,12 @@ async function loadDailyQuestion(offset, sidx=0){
       if(ce) throw ce;
       _totalCount = count || 1;
     }
-    // deterministic offset by date + session index
+    // daily question: deterministic by date; extra questions: random
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
-    const qOffset  = (((dayEpoch+sidx) % _totalCount)+_totalCount)%_totalCount;
+    const qOffset = sidx === 0
+      ? ((dayEpoch % _totalCount) + _totalCount) % _totalCount
+      : Math.floor(Math.random() * _totalCount);
 
     const {data,error} = await sb.from('questions')
       .select('*')
@@ -579,7 +581,7 @@ async function loadDailyQuestion(offset, sidx=0){
     return q;
   }catch(e){
     console.warn('Supabase error, using fallback',e);
-    const fb = getFallback(offset);
+    const fb = getFallback(offset, sidx);
     _cache[cacheKey] = fb;
     return fb;
   }finally{
@@ -592,7 +594,7 @@ function showLoading(on){
 }
 
 // ─── Fallback (used when offline or DB error) ────────────────
-function getFallback(offset){
+function getFallback(offset, sidx=0){
   const FALLBACK=[
     {id:'f1',subject:'chem',subjectLabel:'化學',diffLvl:'中等',diffScore:5,source:'備用題',
      stem:'取 $0.1\\text{ M}$ 鹽酸 $100\\text{ mL}$ 與 $0.1\\text{ M}$ NaOH $80\\text{ mL}$ 混合，溶液 pH 最接近？',
@@ -607,7 +609,7 @@ function getFallback(offset){
   ];
   const d=new Date(); d.setDate(d.getDate()+offset);
   const ep=Math.floor(d.getTime()/86400000);
-  return FALLBACK[((ep%FALLBACK.length)+FALLBACK.length)%FALLBACK.length];
+  return FALLBACK[((ep+sidx)%FALLBACK.length+FALLBACK.length)%FALLBACK.length];
 }
 
 // ═══════════════════════════════════════════════════════════════
