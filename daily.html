@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
@@ -441,13 +440,29 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// SUPABASE
+// SUPABASE REST API (直接 fetch，不依賴 CDN)
 // ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://esfepufqyeplafzbeeag.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
-const sb = (typeof supabase !== 'undefined')
-  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
+
+async function sbCount(){
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/questions?select=*&type=neq.passage`,
+    {headers:{...SB_HDR,'Prefer':'count=exact','Range':'0-0'}}
+  );
+  const cr = res.headers.get('content-range'); // "0-0/1234"
+  return parseInt(cr.split('/')[1]);
+}
+
+async function sbFetchRow(offset){
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/questions?select=*&type=neq.passage&order=id&offset=${offset}&limit=1`,
+    {headers:SB_HDR}
+  );
+  const data = await res.json();
+  return data[0]||null;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS (ported from index.html)
@@ -546,31 +561,24 @@ function normalizeRow(row){
 // ═══════════════════════════════════════════════════════════════
 let _totalCount = null;
 const _cache = {};
-const _usedOffsets = new Set(); // tracks used DB offsets this session to avoid repeats
+const _usedOffsets = new Set();
 
 async function loadDailyQuestion(offset, sidx=0){
   const cacheKey = offset+'_'+sidx;
   if(_cache[cacheKey]) return _cache[cacheKey];
   showLoading(true);
   try{
-    if(!sb) throw new Error('Supabase not available');
-    // get total count once
+    // 取得題庫總題數
     if(_totalCount === null){
-      const {count,error:ce} = await sb.from('questions')
-        .select('*',{count:'exact',head:true})
-        .neq('type','passage');
-      if(ce) throw ce;
-      _totalCount = count || 1;
+      _totalCount = await sbCount();
     }
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
 
     let qOffset;
     if(sidx === 0){
-      // 每日一題：固定用日期決定
       qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
     } else {
-      // 下一題：隨機，避免重複已出現的題目
       let attempts = 0;
       do {
         qOffset = Math.floor(Math.random() * _totalCount);
@@ -579,19 +587,14 @@ async function loadDailyQuestion(offset, sidx=0){
     }
     _usedOffsets.add(qOffset);
 
-    const {data,error} = await sb.from('questions')
-      .select('*')
-      .neq('type','passage')
-      .order('id')
-      .range(qOffset, qOffset);
-    if(error) throw error;
-    if(!data||!data.length) throw new Error('no data');
+    const row = await sbFetchRow(qOffset);
+    if(!row) throw new Error('no data');
 
-    const q = normalizeRow(data[0]);
+    const q = normalizeRow(row);
     _cache[cacheKey] = q;
     return q;
   }catch(e){
-    console.warn('Supabase error, using fallback',e);
+    console.warn('載入失敗，使用備用題',e);
     const fb = getFallback(offset, sidx);
     _cache[cacheKey] = fb;
     return fb;
