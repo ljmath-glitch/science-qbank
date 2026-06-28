@@ -634,11 +634,21 @@ async function loadDailyQuestion(offset, sidx=0){
     const q = normalizeRow(row);
     if(q.groupId){
       try{
+        // 抓題組文章（type=passage）
         const pRow = await sbFetchPassage(q.groupId);
         if(pRow) q.passage = {
           text: fixLatex(pRow.q||''),
           imgs: Array.isArray(pRow.imgs) ? pRow.imgs : [],
         };
+        // 抓同組第一題，若當前不是第一題就把第一題的圖也帶入（承上題情境）
+        const firstRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/questions?select=id,imgs&group_id=eq.${encodeURIComponent(q.groupId)}&type=neq.passage&order=id&limit=1`,
+          {headers:SB_HDR}
+        );
+        const firstRows = await firstRes.json();
+        if(firstRows.length && firstRows[0].id !== row.id){
+          q.firstQImgs = Array.isArray(firstRows[0].imgs) ? firstRows[0].imgs : [];
+        }
       }catch(pe){ console.warn('passage fetch failed',pe); }
     }
     _cache[cacheKey] = q;
@@ -831,12 +841,17 @@ function renderQuestion(){
   // passage (題組文章)
   const passageBox = document.getElementById('passageBox');
   const passageBody = document.getElementById('passageBody');
-  if(q.passage){
-    const pImgs = q.passage.imgs.map(im=>{
-      const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
-      return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
-    }).join('');
-    passageBody.innerHTML = pImgs + q.passage.text.replace(/\n/g,'<br>');
+  if(q.passage || (q.firstQImgs && q.firstQImgs.length)){
+    function toImgHtml(imgs){
+      return (imgs||[]).map(im=>{
+        const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
+        return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
+      }).join('');
+    }
+    let html = '';
+    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${q.passage.text.replace(/\n/g,'<br>')}</div>` : '');
+    if(q.firstQImgs && q.firstQImgs.length) html += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${toImgHtml(q.firstQImgs)}</div>`;
+    passageBody.innerHTML = html;
     passageBox.style.display='';
   } else {
     passageBox.style.display='none';
