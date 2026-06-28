@@ -244,6 +244,12 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   font-family:system-ui,sans-serif;cursor:pointer;transition:.18s;
 }
 .btn-again:hover{border-color:var(--muted);color:var(--ink)}
+.btn-next{
+  padding:13px 16px;border-radius:10px;border:none;
+  background:var(--green2);color:#fff;font-size:14px;font-weight:700;
+  font-family:system-ui,sans-serif;cursor:pointer;transition:.18s;white-space:nowrap;
+}
+.btn-next:hover{background:#219a52;transform:translateY(-1px);box-shadow:0 6px 16px -6px rgba(39,174,96,.5)}
 
 /* ══ EXPLANATION ═════════════════════════════════════════════ */
 .explain-card{
@@ -413,6 +419,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="action-row">
       <button class="btn-reveal" id="btnReveal" onclick="reveal()" disabled>請先選擇答案</button>
       <button class="btn-again" id="btnAgain" onclick="resetAnswer()" style="display:none">重做</button>
+      <button class="btn-next" id="btnNextQ" onclick="nextQuestion()" style="display:none">下一題 →</button>
     </div>
   </div>
 
@@ -538,8 +545,9 @@ function normalizeRow(row){
 let _totalCount = null;
 const _cache = {};
 
-async function loadDailyQuestion(offset){
-  if(_cache[offset]) return _cache[offset];
+async function loadDailyQuestion(offset, sidx=0){
+  const cacheKey = offset+'_'+sidx;
+  if(_cache[cacheKey]) return _cache[cacheKey];
   showLoading(true);
   try{
     // get total count once
@@ -550,10 +558,10 @@ async function loadDailyQuestion(offset){
       if(ce) throw ce;
       _totalCount = count || 1;
     }
-    // deterministic offset by date
+    // deterministic offset by date + session index
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
-    const qOffset  = ((dayEpoch % _totalCount)+_totalCount)%_totalCount;
+    const qOffset  = (((dayEpoch+sidx) % _totalCount)+_totalCount)%_totalCount;
 
     const {data,error} = await sb.from('questions')
       .select('*')
@@ -564,12 +572,12 @@ async function loadDailyQuestion(offset){
     if(!data||!data.length) throw new Error('no data');
 
     const q = normalizeRow(data[0]);
-    _cache[offset] = q;
+    _cache[cacheKey] = q;
     return q;
   }catch(e){
     console.warn('Supabase error, using fallback',e);
     const fb = getFallback(offset);
-    _cache[offset] = fb;
+    _cache[cacheKey] = fb;
     return fb;
   }finally{
     showLoading(false);
@@ -620,11 +628,13 @@ const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
 function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
+function getHistKey(offset,sidx){return sidx===0?dateStr(offset):dateStr(offset)+'_s'+sidx;}
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
 let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
+let sessionIdx=0;
 
 // ═══════════════════════════════════════════════════════════════
 // RENDER CHARACTER
@@ -709,7 +719,7 @@ function renderWeekDots(){
     div.className=cls;
     div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
     div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
-    div.onclick=()=>{currentOffset=i;renderDate();loadAndRender();};
+    div.onclick=()=>{currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
     el.appendChild(div);
   }
 }
@@ -735,16 +745,21 @@ function renderQuestion(){
   const q=currentQuestion;
   if(!q) return;
   const hist=getHistory();
-  const key=dateStr(currentOffset);
+  const key=getHistKey(currentOffset,sessionIdx);
   const rec=hist[key];
   selectedOpt=rec?rec.selected:null;
   revealed=!!rec;
+
+  // session counter in date sub
+  if(sessionIdx>0){
+    document.getElementById('dateSub').textContent=`今日第 ${sessionIdx+1} 題（練習模式）`;
+  }
 
   // head
   document.getElementById('qHead').innerHTML=`
     <span class="tag ${q.subject}">${q.subjectLabel}</span>
     ${q.diffLvl?`<span class="tag diff ${DIFF_CSS[q.diffLvl]||'meta'}">${q.diffLvl}</span>`:''}
-    <span class="q-num">${q.source}</span>`;
+    <span class="q-num">${sessionIdx>0?`第 ${sessionIdx+1} 題`:q.source}</span>`;
 
   // body
   document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem.replace(/\n/g,'<br>')}</div>`;
@@ -785,12 +800,15 @@ function renderQuestion(){
   // buttons
   const btnReveal=document.getElementById('btnReveal');
   const btnAgain=document.getElementById('btnAgain');
+  const btnNextQ=document.getElementById('btnNextQ');
   if(revealed){
     btnReveal.style.display='none';
     btnAgain.style.display='block';
+    btnNextQ.style.display='block';
   } else {
     btnReveal.style.display='';
     btnAgain.style.display='none';
+    btnNextQ.style.display='none';
     if(q.hasOpts){
       btnReveal.disabled=selectedOpt===null;
       btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
@@ -839,7 +857,7 @@ function renderMath(){
 // ═══════════════════════════════════════════════════════════════
 async function loadAndRender(){
   currentQuestion=null;
-  const q=await loadDailyQuestion(currentOffset);
+  const q=await loadDailyQuestion(currentOffset,sessionIdx);
   currentQuestion=q;
   renderQuestion();
 }
@@ -857,7 +875,7 @@ function selectOpt(i){
 
 function reveal(){
   const q=currentQuestion; if(!q) return;
-  const key=dateStr(currentOffset);
+  const key=getHistKey(currentOffset,sessionIdx);
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
   hist[key]={selected:selectedOpt,correct};
@@ -874,14 +892,24 @@ function reveal(){
 }
 
 function resetAnswer(){
-  const key=dateStr(currentOffset);
+  const key=getHistKey(currentOffset,sessionIdx);
   const hist=getHistory(); delete hist[key]; saveHistory(hist);
   renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
 }
 
 function navigate(dir){
   const n=currentOffset+dir; if(n>0) return;
-  currentOffset=n; renderDate(); loadAndRender();
+  currentOffset=n; sessionIdx=0; renderDate(); loadAndRender();
+}
+
+function nextQuestion(){
+  sessionIdx++;
+  selectedOpt=null;
+  revealed=false;
+  document.getElementById('explainCard').classList.remove('show');
+  document.getElementById('resultBadge').className='result-badge';
+  loadAndRender();
+  setTimeout(()=>document.getElementById('qCard').scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
 function scrollToQuestion(){
