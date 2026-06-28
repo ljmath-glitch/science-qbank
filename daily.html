@@ -196,6 +196,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 .q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
 .q-stem{margin-bottom:12px}
+.qimg{display:block;max-width:100%;border:1px solid var(--line);border-radius:8px;margin:8px 0}
 
 .opts{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
 .opt-btn{
@@ -553,6 +554,7 @@ function normalizeRow(row){
     kp: row.kp||'',
     keywords: kws,
     hasOpts: opts.length >= 2,
+    imgs: Array.isArray(row.imgs) ? row.imgs : [],
   };
 }
 
@@ -779,7 +781,11 @@ function renderQuestion(){
     <span class="q-num">${sessionIdx>0?`第 ${sessionIdx+1} 題`:q.source}</span>`;
 
   // body
-  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem.replace(/\n/g,'<br>')}</div>`;
+  const imgsHtml = q.imgs.map(im=>{
+    const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
+    return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
+  }).join('');
+  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem.replace(/\n/g,'<br>')}</div>${imgsHtml}`;
 
   // opts
   const optsEl=document.getElementById('qOpts');
