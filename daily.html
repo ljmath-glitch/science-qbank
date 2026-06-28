@@ -611,12 +611,10 @@ function getFallback(offset){
 // CHARACTER PROGRESSION
 // ═══════════════════════════════════════════════════════════════
 const LEVELS=[
-  {name:'神秘蛋',   emoji:'🥚',rank:'新手上路',threshold:0,   next:10},
-  {name:'破殼小雞', emoji:'🐣',rank:'初露頭角',threshold:10,  next:25},
-  {name:'求知小鳥', emoji:'🐥',rank:'穩步成長',threshold:25,  next:50},
-  {name:'科學鷹眼', emoji:'🦅',rank:'精準犀利',threshold:50,  next:100},
-  {name:'自然之王', emoji:'🦁',rank:'登峰造極',threshold:100, next:200},
-  {name:'宇宙解題神',emoji:'🌟',rank:'無可匹敵',threshold:200,next:null},
+  {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  next:15},
+  {name:'小弱弱',  emoji:'😅',rank:'還在努力',threshold:15, next:40},
+  {name:'高手',    emoji:'😎',rank:'穩了穩了',threshold:40, next:80},
+  {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:80, next:null},
 ];
 function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].threshold)i=j;return{index:i,...LEVELS[i]};}
 
