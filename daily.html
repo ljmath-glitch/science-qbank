@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
@@ -433,192 +434,222 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 <script>
 // ═══════════════════════════════════════════════════════════════
-// QUESTION BANK
+// SUPABASE
 // ═══════════════════════════════════════════════════════════════
-const QUESTIONS = [
-  {
-    subject:'chem', subjectLabel:'化學', difficulty:2, source:'110學年度學測',
-    stem:'在標準狀況下，將 <span class="hl">8.0 g</span> 的 $\\text{Fe}_x\\text{O}_y$ 與足量一氧化碳反應，完全還原後得到鐵粉 <span class="hl">5.6 g</span>。則此鐵的氧化物化學式為何？',
-    opts:['FeO','$\\text{Fe}_2\\text{O}_3$','$\\text{Fe}_3\\text{O}_4$','$\\text{Fe}_2\\text{O}$'],
-    ans:1,
-    explain:{
-      hint:'先計算氧的質量，再求 Fe 與 O 的莫耳數比。',
-      steps:[
-        {title:'STEP 1　求氧的質量',body:'$m_\\text{O} = 8.0 - 5.6 = \\class{hl}{2.4}\\text{ g}$'},
-        {title:'STEP 2　求莫耳數',body:'$n_\\text{Fe}=\\dfrac{5.6}{56}=\\class{hl}{0.1}\\text{ mol}$，$n_\\text{O}=\\dfrac{2.4}{16}=\\class{hl}{0.15}\\text{ mol}$'},
-        {title:'STEP 3　整數比',body:'$n_\\text{Fe}:n_\\text{O}=0.1:0.15=\\class{hl}{2:3}$，故化學式為 $\\text{Fe}_2\\text{O}_3$'},
-      ],
-      answer:'答案為 (B) $\\text{Fe}_2\\text{O}_3$，氧化鐵（三價）。',
-      keywords:['化學計量','氧化物','莫耳數','質量守恆'],
+const SUPABASE_URL = 'https://esfepufqyeplafzbeeag.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS (ported from index.html)
+// ═══════════════════════════════════════════════════════════════
+function fixLatex(text){
+  if(!text) return '';
+  return text.replace(/\$([^$]+)\$/g,function(_,inner){
+    let f=inner.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim();
+    f=f.replace(/(?<!\\)times/g,'\\times').replace(/(?<!\\)cdot/g,'\\cdot')
+       .replace(/(?<!\\)rightarrow/g,'\\rightarrow').replace(/(?<!\\)leftarrow/g,'\\leftarrow')
+       .replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons')
+       .replace(/(?<!\\)alpha/g,'\\alpha').replace(/(?<!\\)beta/g,'\\beta')
+       .replace(/(?<!\\)Delta/g,'\\Delta').replace(/\\ext\{/g,'\\text{');
+    return '$'+f+'$';
+  });
+}
+function calcDiff(s,m,c){const t=s+m+c;if(!s||!m||!c)return{lvl:'',score:0};
+  if(t<=4)return{lvl:'簡單',score:t};if(t<=6)return{lvl:'中等',score:t};
+  if(t<=8)return{lvl:'困難',score:t};return{lvl:'極難',score:t};}
+function fieldSubject(f){
+  return f==='生物'?{cls:'bio',lbl:'生物'}:f==='理化'?{cls:'phy',lbl:'理化'}:
+         f==='地科'?{cls:'earth',lbl:'地科'}:{cls:'chem',lbl:f||'自然'};}
+
+// ─── parse options embedded in q text ───────────────────────
+// Supports: (A)... (B)... or （A）...（B）... or newline-separated
+function parseOptions(qText){
+  // try full-width brackets
+  let m = qText.match(/[（(][Ａ-Ｄ][）)]/);
+  const text = qText.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
+  // match (A) / （A）
+  const pat = /[（(][A-Da-d][）)]\s*/g;
+  const positions = [];
+  let r;
+  while((r=pat.exec(text))!==null) positions.push(r.index);
+  if(positions.length < 2) return null; // can't parse
+
+  const stem = text.slice(0, positions[0]).trim();
+  const opts = positions.map((pos,i)=>{
+    const start = pos + text.slice(pos).match(/^[（(][A-Da-d][）)]\s*/)[0].length;
+    const end   = i+1 < positions.length ? positions[i+1] : text.length;
+    return text.slice(start, end).trim().replace(/\n.*$/s,'').trim();
+  });
+  return {stem, opts};
+}
+
+// ─── convert ans string → 0-based index ────────────────────
+function ansToIndex(ans){
+  if(typeof ans === 'number') return ans;
+  const s = String(ans).trim().replace(/[()（）\s]/g,'').toUpperCase();
+  if(/^[ABCD]$/.test(s)) return s.charCodeAt(0)-65;
+  const n = parseInt(s);
+  return isNaN(n) ? 0 : n;
+}
+
+// ─── normalize a Supabase row into display format ───────────
+function normalizeRow(row){
+  const rawQ = fixLatex(row.q || row.stem || '');
+  const parsed = parseOptions(rawQ);
+  const subject = fieldSubject(row.field);
+  const diff = calcDiff(row.step||0, row.mem||0, row.con||0);
+  const ansIdx = ansToIndex(row.ans);
+
+  let stem, opts;
+  if(parsed && parsed.opts.length >= 2){
+    stem = parsed.stem;
+    opts = parsed.opts.map(fixLatex);
+  } else {
+    // fallback: whole text is stem, no separate options
+    stem = rawQ;
+    opts = [];
+  }
+
+  const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
+  const source = [row.year, row.exam].filter(Boolean).join(' ');
+
+  return {
+    id: row.id,
+    subject: subject.cls,
+    subjectLabel: subject.lbl,
+    diffLvl: diff.lvl || '—',
+    diffScore: diff.score,
+    source,
+    stem,
+    opts,
+    ansIdx,
+    ansLetter: String.fromCharCode(65+ansIdx),
+    sol: fixLatex(row.sol||''),
+    kp: row.kp||'',
+    keywords: kws,
+    hasOpts: opts.length >= 2,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUPABASE QUESTION LOADING
+// ═══════════════════════════════════════════════════════════════
+let _totalCount = null;
+const _cache = {};
+
+async function loadDailyQuestion(offset){
+  if(_cache[offset]) return _cache[offset];
+  showLoading(true);
+  try{
+    // get total count once
+    if(_totalCount === null){
+      const {count,error:ce} = await sb.from('questions')
+        .select('*',{count:'exact',head:true})
+        .neq('type','passage');
+      if(ce) throw ce;
+      _totalCount = count || 1;
     }
-  },
-  {
-    subject:'phy', subjectLabel:'物理', difficulty:2, source:'111學年度指考',
-    stem:'質量 <span class="hl">5 kg</span> 的物體靜置於水平面，靜摩擦係數 $\\mu_s=\\class{hl}{0.4}$，動摩擦係數 $\\mu_k=0.3$。施水平力 $F=\\class{hl}{25}\\text{ N}$，物體加速度為？（$g=10\\text{ m/s}^2$）',
-    opts:['$0\\text{ m/s}^2$（靜止）','$1\\text{ m/s}^2$','$2\\text{ m/s}^2$','$5\\text{ m/s}^2$'],
-    ans:2,
-    explain:{
-      hint:'先比較施力與最大靜摩擦力，再決定用哪個摩擦係數。',
-      steps:[
-        {title:'STEP 1　最大靜摩擦力',body:'$f_{s,\\max}=\\mu_s mg=\\class{hl}{0.4}\\times50=\\class{hl}{20}\\text{ N}$'},
-        {title:'STEP 2　判斷動靜',body:'$F=25>f_{s,\\max}=20$，物體運動，改用動摩擦力 $f_k=\\class{hl}{0.3}\\times50=\\class{hl}{15}\\text{ N}$'},
-        {title:'STEP 3　求加速度',body:'$a=\\dfrac{F-f_k}{m}=\\dfrac{25-15}{5}=\\class{hl}{2}\\text{ m/s}^2$'},
-      ],
-      answer:'答案為 (C) $2\\text{ m/s}^2$。',
-      keywords:['牛頓第二定律','靜摩擦力','動摩擦力'],
-    }
-  },
-  {
-    subject:'bio', subjectLabel:'生物', difficulty:1, source:'112學年度學測',
-    stem:'下列關於細胞有氧呼吸的敘述，何者正確？',
-    opts:['糖解作用發生於粒線體基質','電子傳遞鏈產生最多ATP，位於粒線體內膜','克氏循環需要O₂作為直接原料','一分子葡萄糖完整氧化僅淨產生2 ATP'],
-    ans:1,
-    explain:{
-      hint:'複習有氧呼吸三階段的位置與產物。',
-      steps:[
-        {title:'糖解作用',body:'發生於<strong>細胞質基質</strong>，淨產生 <span class="hl">2 ATP</span>。'},
-        {title:'克氏循環',body:'粒線體<strong>基質</strong>，產生 NADH、FADH₂ 及 CO₂；不直接需要 O₂。'},
-        {title:'電子傳遞鏈',body:'粒線體<strong>內膜</strong>，產生最多 ATP（約 <span class="hl">32～34個</span>）。最終電子受體為 O₂。'},
-      ],
-      answer:'答案為 (B)，電子傳遞鏈位於粒線體內膜，產生最多 ATP。',
-      keywords:['細胞呼吸','粒線體','ATP','電子傳遞鏈'],
-    }
-  },
-  {
-    subject:'earth', subjectLabel:'地科', difficulty:2, source:'113學年度學測',
-    stem:'下列哪一地質現象最能說明板塊聚合邊界（隱沒帶）的存在？',
-    opts:['中洋脊兩側磁異常條帶呈對稱分布','深源地震沿斜面分布（貝尼奧夫帶）','海洋中脊附近發育海溝','大陸板塊年齡比海洋板塊古老'],
-    ans:1,
-    explain:{
-      hint:'聚合邊界有隱沒現象，思考哪個現象只出現在這裡。',
-      steps:[
-        {title:'貝尼奧夫帶',body:'隱沒板塊在深度 <span class="hl">70～700 km</span> 引發深源地震，形成斜向地震帶，為隱沒帶直接證據。'},
-        {title:'排除其他選項',body:'(A) 磁異常條帶是張裂邊界特徵；(C) 海溝屬隱沒帶但題敘不正確；(D) 板塊年齡與擴張速率相關，非聚合邊界特徵。'},
-      ],
-      answer:'答案為 (B) 貝尼奧夫帶深源地震。',
-      keywords:['板塊構造','隱沒帶','貝尼奧夫帶','地震'],
-    }
-  },
-  {
-    subject:'chem', subjectLabel:'化學', difficulty:1, source:'109學年度指考',
-    stem:'取 $\\class{hl}{0.1}\\text{ M}$ 鹽酸 <span class="hl">100 mL</span> 與 $\\class{hl}{0.1}\\text{ M}$ NaOH <span class="hl">80 mL</span> 混合，溶液 pH 最接近？',
-    opts:['pH=7（中性）','pH<7（酸性）','pH>7（鹼性）','無法判斷'],
-    ans:1,
-    explain:{
-      hint:'先算兩溶液莫耳數，再看哪種過量。',
-      steps:[
-        {title:'STEP 1　莫耳數',body:'$n_{\\text{HCl}}=0.1\\times0.1=\\class{hl}{0.01}\\text{ mol}$，$n_{\\text{NaOH}}=0.1\\times0.08=\\class{hl}{0.008}\\text{ mol}$'},
-        {title:'STEP 2　過量判斷',body:'HCl 過量 $=0.01-0.008=\\class{hl}{0.002}\\text{ mol}$，溶液呈酸性。'},
-        {title:'STEP 3　pH',body:'$[\\text{H}^+]=\\dfrac{0.002}{0.18}\\approx\\class{hl}{0.011}\\text{ M}$，$\\text{pH}\\approx\\class{hl}{1.96}$'},
-      ],
-      answer:'答案為 (B) pH<7，HCl 過量使溶液呈酸性。',
-      keywords:['酸鹼中和','pH','莫耳數計算','當量點'],
-    }
-  },
-  {
-    subject:'phy', subjectLabel:'物理', difficulty:3, source:'112學年度指考',
-    stem:'擺長 $L=\\class{hl}{1\\text{ m}}$，$g=\\pi^2\\approx9.87\\text{ m/s}^2$，單擺週期 $T$ 為？',
-    opts:['$T=1\\text{ s}$','$T=2\\text{ s}$','$T=\\pi\\text{ s}$','$T=4\\text{ s}$'],
-    ans:1,
-    explain:{
-      hint:'$T=2\\pi\\sqrt{L/g}$，注意 $g\\approx\\pi^2$ 的化簡技巧。',
-      steps:[
-        {title:'代入公式',body:'$T=2\\pi\\sqrt{\\dfrac{1}{\\pi^2}}=2\\pi\\cdot\\dfrac{1}{\\pi}=\\class{hl}{2}\\text{ s}$'},
-      ],
-      answer:'答案為 (B) $T=2\\text{ s}$。',
-      keywords:['單擺','週期','簡諧運動'],
-    }
-  },
-  {
-    subject:'bio', subjectLabel:'生物', difficulty:2, source:'111學年度學測',
-    stem:'下列關於 DNA 複製的敘述，何者正確？',
-    opts:['DNA 複製為保留式，親代雙股完整保留','DNA 聚合酶可從 5\'→3\' 及 3\'→5\' 合成新股','引導股連續合成，落後股不連續合成產生岡崎片段','複製後子代 DNA 均由兩條新合成股組成'],
-    ans:2,
-    explain:{
-      hint:'DNA 複製為半保留式，方向性是關鍵。',
-      steps:[
-        {title:'半保留複製',body:'每條子代 DNA 含一條親代舊股與一條新合成股，由 Meselson-Stahl 實驗證明。'},
-        {title:'合成方向',body:'DNA 聚合酶只能 <span class="hl">5\'→3\'</span> 方向合成，引導股連續合成，落後股產生<strong>岡崎片段</strong>。'},
-      ],
-      answer:'答案為 (C)。引導股連續、落後股不連續，產生岡崎片段。',
-      keywords:['DNA複製','半保留式','岡崎片段','DNA聚合酶'],
-    }
-  },
-];
+    // deterministic offset by date
+    const d = new Date(); d.setDate(d.getDate()+offset);
+    const dayEpoch = Math.floor(d.getTime()/86400000);
+    const qOffset  = ((dayEpoch % _totalCount)+_totalCount)%_totalCount;
+
+    const {data,error} = await sb.from('questions')
+      .select('*')
+      .neq('type','passage')
+      .order('id')
+      .range(qOffset, qOffset);
+    if(error) throw error;
+    if(!data||!data.length) throw new Error('no data');
+
+    const q = normalizeRow(data[0]);
+    _cache[offset] = q;
+    return q;
+  }catch(e){
+    console.warn('Supabase error, using fallback',e);
+    const fb = getFallback(offset);
+    _cache[offset] = fb;
+    return fb;
+  }finally{
+    showLoading(false);
+  }
+}
+
+function showLoading(on){
+  document.getElementById('qCard').style.opacity = on ? '0.4' : '1';
+}
+
+// ─── Fallback (used when offline or DB error) ────────────────
+function getFallback(offset){
+  const FALLBACK=[
+    {id:'f1',subject:'chem',subjectLabel:'化學',diffLvl:'中等',diffScore:5,source:'備用題',
+     stem:'取 $0.1\\text{ M}$ 鹽酸 $100\\text{ mL}$ 與 $0.1\\text{ M}$ NaOH $80\\text{ mL}$ 混合，溶液 pH 最接近？',
+     opts:['pH=7（中性）','pH<7（酸性）','pH>7（鹼性）','無法判斷'],
+     ansIdx:1,ansLetter:'B',sol:'HCl 過量 $0.002$ mol，$[H^+]\\approx0.011$ M，$\\text{pH}\\approx1.96$。',
+     kp:'酸鹼中和,pH',keywords:['酸鹼中和','pH'],hasOpts:true},
+    {id:'f2',subject:'bio',subjectLabel:'生物',diffLvl:'簡單',diffScore:3,source:'備用題',
+     stem:'下列何者為真核細胞特有？',
+     opts:['細胞膜','核糖體','核膜','細胞壁'],
+     ansIdx:2,ansLetter:'C',sol:'真核細胞有核膜包裹細胞核，原核細胞無核膜。',
+     kp:'細胞',keywords:['細胞'],hasOpts:true},
+  ];
+  const d=new Date(); d.setDate(d.getDate()+offset);
+  const ep=Math.floor(d.getTime()/86400000);
+  return FALLBACK[((ep%FALLBACK.length)+FALLBACK.length)%FALLBACK.length];
+}
 
 // ═══════════════════════════════════════════════════════════════
 // CHARACTER PROGRESSION
 // ═══════════════════════════════════════════════════════════════
-const LEVELS = [
-  {name:'神秘蛋',  emoji:'🥚', rank:'新手上路', threshold:0,   next:10},
-  {name:'破殼小雞',emoji:'🐣', rank:'初露頭角', threshold:10,  next:25},
-  {name:'求知小鳥',emoji:'🐥', rank:'穩步成長', threshold:25,  next:50},
-  {name:'科學鷹眼',emoji:'🦅', rank:'精準犀利', threshold:50,  next:100},
-  {name:'自然之王',emoji:'🦁', rank:'登峰造極', threshold:100, next:200},
-  {name:'宇宙解題神',emoji:'🌟',rank:'無可匹敵', threshold:200, next:null},
+const LEVELS=[
+  {name:'神秘蛋',   emoji:'🥚',rank:'新手上路',threshold:0,   next:10},
+  {name:'破殼小雞', emoji:'🐣',rank:'初露頭角',threshold:10,  next:25},
+  {name:'求知小鳥', emoji:'🐥',rank:'穩步成長',threshold:25,  next:50},
+  {name:'科學鷹眼', emoji:'🦅',rank:'精準犀利',threshold:50,  next:100},
+  {name:'自然之王', emoji:'🦁',rank:'登峰造極',threshold:100, next:200},
+  {name:'宇宙解題神',emoji:'🌟',rank:'無可匹敵',threshold:200,next:null},
 ];
-
-function getLevel(correctCount){
-  let lv = 0;
-  for(let i=0;i<LEVELS.length;i++) if(correctCount>=LEVELS[i].threshold) lv=i;
-  return {index:lv, ...LEVELS[lv]};
-}
+function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].threshold)i=j;return{index:i,...LEVELS[i]};}
 
 // ═══════════════════════════════════════════════════════════════
 // STORAGE
 // ═══════════════════════════════════════════════════════════════
-const KEY_HIST = 'dq_history';
-const WEEKDAYS = ['日','一','二','三','四','五','六'];
-
-function getHistory(){ return JSON.parse(localStorage.getItem(KEY_HIST)||'{}') }
-function saveHistory(h){ localStorage.setItem(KEY_HIST, JSON.stringify(h)) }
-
-function dateStr(offset=0){
-  const d=new Date(); d.setDate(d.getDate()+offset);
-  return d.toISOString().slice(0,10);
-}
-
-function getQuestion(offset){
-  const d=new Date(); d.setDate(d.getDate()+offset);
-  const epoch=Math.floor(d.getTime()/86400000);
-  return QUESTIONS[((epoch%QUESTIONS.length)+QUESTIONS.length)%QUESTIONS.length];
-}
+const KEY_HIST='dq_history';
+const WEEKDAYS=['日','一','二','三','四','五','六'];
+function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
+function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
+function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
-let currentOffset=0, selectedOpt=null, revealed=false;
+let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
 
 // ═══════════════════════════════════════════════════════════════
 // RENDER CHARACTER
 // ═══════════════════════════════════════════════════════════════
 function renderCharacter(){
   const hist=getHistory();
-  const totalAns = Object.keys(hist).length;
-  const totalCorrect = Object.values(hist).filter(r=>r.correct).length;
-  const lv = getLevel(totalCorrect);
-  const nextLv = LEVELS[lv.index+1];
-
-  document.getElementById('charAvatar').textContent = lv.emoji;
-  document.getElementById('charRank').textContent = lv.rank;
-  document.getElementById('charName').textContent = lv.name;
-  document.getElementById('charLv').textContent = `Lv.${lv.index+1}`;
-
+  const totalCorrect=Object.values(hist).filter(r=>r.correct).length;
+  const lv=getLevel(totalCorrect);
+  const nextLv=LEVELS[lv.index+1];
+  document.getElementById('charAvatar').textContent=lv.emoji;
+  document.getElementById('charRank').textContent=lv.rank;
+  document.getElementById('charName').textContent=lv.name;
+  document.getElementById('charLv').textContent=`Lv.${lv.index+1}`;
   if(nextLv){
-    const cur = totalCorrect - lv.threshold;
-    const need = nextLv.threshold - lv.threshold;
-    const pct = Math.min(100, Math.round(cur/need*100));
-    document.getElementById('charNext').textContent = `下一階段：${nextLv.name} ${nextLv.emoji}`;
-    document.getElementById('charProgText').textContent = `${cur} / ${need}`;
-    document.getElementById('charProgFill').style.width = pct+'%';
-    const remaining = nextLv.threshold - totalCorrect;
-    document.getElementById('charCondText').innerHTML =
-      `不重複答對 <b>還差 ${remaining} 題</b> 即可進化為「${nextLv.name}」`;
-  } else {
-    document.getElementById('charNext').textContent = '已達最高階段 🎉';
-    document.getElementById('charProgFill').style.width = '100%';
-    document.getElementById('charProgText').textContent = '滿級';
-    document.getElementById('charCondText').textContent = '繼續累積，成為傳說！';
+    const cur=totalCorrect-lv.threshold,need=nextLv.threshold-lv.threshold;
+    document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
+    document.getElementById('charProgText').textContent=`${cur} / ${need}`;
+    document.getElementById('charProgFill').style.width=Math.min(100,Math.round(cur/need*100))+'%';
+    document.getElementById('charCondText').innerHTML=
+      `不重複答對 <b>還差 ${nextLv.threshold-totalCorrect} 題</b> 即可進化為「${nextLv.name}」`;
+  }else{
+    document.getElementById('charNext').textContent='已達最高階段 🎉';
+    document.getElementById('charProgFill').style.width='100%';
+    document.getElementById('charProgText').textContent='滿級';
+    document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
   }
 }
 
@@ -626,17 +657,13 @@ function renderCharacter(){
 // RENDER STATS
 // ═══════════════════════════════════════════════════════════════
 function renderStats(){
-  const hist=getHistory();
-  const vals=Object.values(hist);
-  const total=vals.length;
-  const correct=vals.filter(r=>r.correct).length;
-  // 近期正確率：最近10筆
+  const vals=Object.values(getHistory());
+  const total=vals.length, correct=vals.filter(r=>r.correct).length;
   const recent=vals.slice(-10);
-  const recentAcc = recent.length ? Math.round(recent.filter(r=>r.correct).length/recent.length*100) : null;
-
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statCorrect').textContent = correct;
-  document.getElementById('statAcc').textContent = recentAcc!==null ? recentAcc+'%' : '—';
+  const acc=recent.length?Math.round(recent.filter(r=>r.correct).length/recent.length*100):null;
+  document.getElementById('statTotal').textContent=total;
+  document.getElementById('statCorrect').textContent=correct;
+  document.getElementById('statAcc').textContent=acc!==null?acc+'%':'—';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -645,39 +672,26 @@ function renderStats(){
 function renderTasks(){
   const hist=getHistory();
   const todayRec=hist[dateStr(0)];
-  const todayDone=!!todayRec;
-  const todayCorrect=todayRec?.correct;
-
-  // 今日一題
   const warmFill=document.getElementById('warmFill');
   const warmBadge=document.getElementById('warmBadge');
-  warmFill.style.width = todayDone ? '100%' : '0%';
-  warmBadge.textContent = todayDone ? '✓ 完成' : '0 / 1 題';
-  warmBadge.className = todayDone ? 'task-badge done-badge' : 'task-badge todo-badge';
+  warmFill.style.width=todayRec?'100%':'0%';
+  warmBadge.textContent=todayRec?'✓ 完成':'0 / 1 題';
+  warmBadge.className=todayRec?'task-badge done-badge':'task-badge todo-badge';
 
-  // 連勝
   let streak=0;
-  for(let i=0;i>=- 365;i--){
-    if(hist[dateStr(i)]?.correct) streak++;
-    else break;
-  }
+  for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
   const STREAK_GOAL=7;
-  const pct=Math.min(100,Math.round(streak/STREAK_GOAL*100));
-  document.getElementById('challengeFill').style.width=pct+'%';
+  document.getElementById('challengeFill').style.width=Math.min(100,Math.round(streak/STREAK_GOAL*100))+'%';
   document.getElementById('challengeBadge').textContent=streak+' 連勝';
   document.getElementById('challengeDesc').textContent=`目標：${STREAK_GOAL} 連勝（再答對 ${Math.max(0,STREAK_GOAL-streak)} 題）`;
 
-  // 週完成
   let weekDone=0;
-  for(let i=-6;i<=0;i++) if(hist[dateStr(i)]) weekDone++;
-  const weekPct=Math.round(weekDone/7*100);
-  document.getElementById('weekFill').style.width=weekPct+'%';
+  for(let i=-6;i<=0;i++)if(hist[dateStr(i)])weekDone++;
+  document.getElementById('weekFill').style.width=Math.round(weekDone/7*100)+'%';
   document.getElementById('weekBadge').textContent=`${weekDone} / 7 天`;
 
-  // date label
   const d=new Date();
-  document.getElementById('taskDateLabel').textContent=
-    `${d.getMonth()+1}/${d.getDate()} 星期${WEEKDAYS[d.getDay()]}`;
+  document.getElementById('taskDateLabel').textContent=`${d.getMonth()+1}/${d.getDate()} 星期${WEEKDAYS[d.getDay()]}`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -688,17 +702,14 @@ function renderWeekDots(){
   const el=document.getElementById('weekDots');
   el.innerHTML='';
   for(let i=-6;i<=0;i++){
-    const s=dateStr(i);
-    const d=new Date(); d.setDate(d.getDate()+i);
+    const s=dateStr(i),d=new Date();d.setDate(d.getDate()+i);
     const rec=hist[s];
     const div=document.createElement('div');
-    let cls='dot';
-    if(i===0) cls+=' today';
-    if(rec) cls+=(rec.correct?' done':' wrong');
+    let cls='dot'+(i===0?' today':'')+(rec?(rec.correct?' done':' wrong'):'');
     div.className=cls;
     div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
     div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
-    div.onclick=()=>{ currentOffset=i; renderDate(); renderQuestion(); };
+    div.onclick=()=>{currentOffset=i;renderDate();loadAndRender();};
     el.appendChild(div);
   }
 }
@@ -707,63 +718,68 @@ function renderWeekDots(){
 // RENDER DATE
 // ═══════════════════════════════════════════════════════════════
 function renderDate(){
-  const d=new Date(); d.setDate(d.getDate()+currentOffset);
+  const d=new Date();d.setDate(d.getDate()+currentOffset);
   document.getElementById('dateLabel').textContent=
     `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
   document.getElementById('dateSub').textContent=
-    currentOffset===0 ? `今天・星期${WEEKDAYS[d.getDay()]}` : `星期${WEEKDAYS[d.getDay()]}`;
+    currentOffset===0?`今天・星期${WEEKDAYS[d.getDay()]}`:`星期${WEEKDAYS[d.getDay()]}`;
   document.getElementById('btnNext').disabled=currentOffset>=0;
 }
 
 // ═══════════════════════════════════════════════════════════════
-// RENDER QUESTION
+// RENDER QUESTION (uses currentQuestion)
 // ═══════════════════════════════════════════════════════════════
-const SUBJ_CLASS={chem:'chem',bio:'bio',phy:'phy',earth:'earth'};
-const DIFF_LABEL={1:'★ 基礎',2:'★★ 進階',3:'★★★ 挑戰',4:'★★★★ 困難'};
+const DIFF_CSS={簡單:'d1',中等:'d2',困難:'d3',極難:'d4'};
 
 function renderQuestion(){
-  const q=getQuestion(currentOffset);
+  const q=currentQuestion;
+  if(!q) return;
   const hist=getHistory();
   const key=dateStr(currentOffset);
   const rec=hist[key];
-  selectedOpt = rec ? rec.selected : null;
-  revealed = !!rec;
+  selectedOpt=rec?rec.selected:null;
+  revealed=!!rec;
 
   // head
   document.getElementById('qHead').innerHTML=`
-    <span class="tag ${SUBJ_CLASS[q.subject]||''}">${q.subjectLabel}</span>
-    <span class="tag diff d${q.difficulty}">${DIFF_LABEL[q.difficulty]||''}</span>
-    <span class="q-num">${q.source}</span>
-  `;
+    <span class="tag ${q.subject}">${q.subjectLabel}</span>
+    ${q.diffLvl?`<span class="tag diff ${DIFF_CSS[q.diffLvl]||'meta'}">${q.diffLvl}</span>`:''}
+    <span class="q-num">${q.source}</span>`;
 
   // body
-  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem}</div>`;
+  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem.replace(/\n/g,'<br>')}</div>`;
 
   // opts
   const optsEl=document.getElementById('qOpts');
   optsEl.innerHTML='';
-  q.opts.forEach((opt,i)=>{
-    const btn=document.createElement('button');
-    btn.className='opt-btn';
-    const lbl=String.fromCharCode(65+i);
-    btn.innerHTML=`<span class="opt-label">${lbl}</span><span>${opt}</span>`;
-    if(revealed){
-      btn.disabled=true;
-      if(i===q.ans) btn.classList.add('correct');
-      if(i===selectedOpt && selectedOpt!==q.ans) btn.classList.add('wrong');
-    } else {
-      if(i===selectedOpt) btn.classList.add('selected');
-      btn.onclick=()=>selectOpt(i);
+  if(q.hasOpts){
+    q.opts.forEach((opt,i)=>{
+      const btn=document.createElement('button');
+      btn.className='opt-btn';
+      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${opt.replace(/\n/g,'<br>')}</span>`;
+      if(revealed){
+        btn.disabled=true;
+        if(i===q.ansIdx) btn.classList.add('correct');
+        if(i===selectedOpt&&selectedOpt!==q.ansIdx) btn.classList.add('wrong');
+      } else {
+        if(i===selectedOpt) btn.classList.add('selected');
+        btn.onclick=()=>selectOpt(i);
+      }
+      optsEl.appendChild(btn);
+    });
+  } else {
+    // no parseable options — show answer directly if revealed
+    if(!revealed){
+      optsEl.innerHTML=`<div style="padding:8px 0;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted)">此題為問答題，揭曉後顯示答案。</div>`;
     }
-    optsEl.appendChild(btn);
-  });
+  }
 
   // result badge
   const badge=document.getElementById('resultBadge');
   badge.className='result-badge';
-  if(revealed && rec){
+  if(revealed&&rec){
     badge.className='result-badge '+(rec.correct?'correct':'wrong');
-    badge.innerHTML=rec.correct ? '✓ 答對了！' : `✗ 答錯了，正確答案是 (${String.fromCharCode(65+q.ans)})`;
+    badge.innerHTML=rec.correct?'✓ 答對了！':q.hasOpts?`✗ 答錯了，正確答案是 (${q.ansLetter})`:`正確答案：(${q.ansLetter})`;
   }
 
   // buttons
@@ -775,38 +791,57 @@ function renderQuestion(){
   } else {
     btnReveal.style.display='';
     btnAgain.style.display='none';
-    btnReveal.disabled=selectedOpt===null;
-    btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
+    if(q.hasOpts){
+      btnReveal.disabled=selectedOpt===null;
+      btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
+    } else {
+      btnReveal.disabled=false;
+      btnReveal.textContent='顯示答案';
+    }
   }
 
   // explanation
   const expCard=document.getElementById('explainCard');
-  if(revealed){ expCard.classList.add('show'); renderExplanation(q); }
+  if(revealed){expCard.classList.add('show');renderExplanation(q);}
   else expCard.classList.remove('show');
 
-  // render math
+  renderMath();
+}
+
+function renderExplanation(q){
+  const hint=document.getElementById('explainHint');
+  hint.style.display='none';
+
+  let html='';
+  html+=`<div class="step"><div class="step-title">正確答案</div>`;
+  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?q.opts[q.ansIdx]:''}</div></div>`;
+  if(q.sol){
+    html+=`<div class="step"><div class="step-title">詳解</div><div>${q.sol.replace(/\n/g,'<br>')}</div></div>`;
+  }
+  document.getElementById('explainBody').innerHTML=html;
+
+  document.getElementById('kpRow').innerHTML=
+    (q.keywords.length?'<span class="kp-label">知識點：</span>'+
+    q.keywords.map(k=>`<span class="kp-tag">${k}</span>`).join(''):'');
+}
+
+function renderMath(){
   setTimeout(()=>{
     renderMathInElement(document.body,{
       delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
       throwOnError:false,
     });
-  },50);
+  },60);
 }
 
-function renderExplanation(q){
-  const hint=document.getElementById('explainHint');
-  if(q.explain.hint){ hint.style.display=''; hint.innerHTML='💡 '+q.explain.hint; }
-  else hint.style.display='none';
-
-  let html='';
-  q.explain.steps.forEach(s=>{
-    html+=`<div class="step"><div class="step-title">${s.title}</div><div>${s.body}</div></div>`;
-  });
-  html+=`<p style="margin-top:12px;font-weight:700;color:var(--bio)">${q.explain.answer}</p>`;
-  document.getElementById('explainBody').innerHTML=html;
-  document.getElementById('kpRow').innerHTML=
-    '<span class="kp-label">知識點：</span>'+
-    q.explain.keywords.map(k=>`<span class="kp-tag">${k}</span>`).join('');
+// ═══════════════════════════════════════════════════════════════
+// LOAD & RENDER (async entry point)
+// ═══════════════════════════════════════════════════════════════
+async function loadAndRender(){
+  currentQuestion=null;
+  const q=await loadDailyQuestion(currentOffset);
+  currentQuestion=q;
+  renderQuestion();
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -821,48 +856,32 @@ function selectOpt(i){
 }
 
 function reveal(){
-  if(selectedOpt===null) return;
-  const q=getQuestion(currentOffset);
-  const correct=selectedOpt===q.ans;
+  const q=currentQuestion; if(!q) return;
   const key=dateStr(currentOffset);
   const hist=getHistory();
-  const wasAnswered=!!hist[key];
+  const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
   hist[key]={selected:selectedOpt,correct};
   saveHistory(hist);
 
-  // check level up
-  const before=Object.values(hist).filter(r=>r.correct).length - (correct?1:0);
+  const before=Object.values(getHistory()).filter(r=>r.correct).length-(correct?1:0);
   const after=before+(correct?1:0);
-  const lvBefore=getLevel(before).index;
-  const lvAfter=getLevel(after).index;
+  const lvBefore=getLevel(before).index, lvAfter=getLevel(after).index;
 
   revealed=true;
-  renderQuestion();
-  renderWeekDots();
-  renderStats();
-  renderTasks();
-  renderCharacter();
-
-  if(correct && lvAfter>lvBefore) showToast(lvAfter);
-
-  setTimeout(()=>{
-    document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'});
-  },200);
+  renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
+  if(correct&&lvAfter>lvBefore) showToast(lvAfter);
+  setTimeout(()=>{document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
 
 function resetAnswer(){
   const key=dateStr(currentOffset);
-  const hist=getHistory();
-  delete hist[key];
-  saveHistory(hist);
+  const hist=getHistory(); delete hist[key]; saveHistory(hist);
   renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
 }
 
 function navigate(dir){
-  const n=currentOffset+dir;
-  if(n>0) return;
-  currentOffset=n;
-  renderDate(); renderQuestion();
+  const n=currentOffset+dir; if(n>0) return;
+  currentOffset=n; renderDate(); loadAndRender();
 }
 
 function scrollToQuestion(){
@@ -872,24 +891,19 @@ function scrollToQuestion(){
 // ═══════════════════════════════════════════════════════════════
 // TOAST
 // ═══════════════════════════════════════════════════════════════
-function showToast(lvIndex){
-  const lv=LEVELS[lvIndex];
+function showToast(lvIdx){
+  const lv=LEVELS[lvIdx];
   document.getElementById('toastEmoji').textContent=lv.emoji;
   document.getElementById('toastMsg').textContent=`恭喜進化為「${lv.name}」！`;
-  const t=document.getElementById('toast');
-  t.classList.add('show');
+  const t=document.getElementById('toast'); t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
 
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
-renderCharacter();
-renderStats();
-renderTasks();
-renderWeekDots();
-renderDate();
-renderQuestion();
+renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
+loadAndRender();
 </script>
 </body>
 </html>
