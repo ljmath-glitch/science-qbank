@@ -546,6 +546,7 @@ function normalizeRow(row){
 // ═══════════════════════════════════════════════════════════════
 let _totalCount = null;
 const _cache = {};
+const _usedOffsets = new Set(); // tracks used DB offsets this session to avoid repeats
 
 async function loadDailyQuestion(offset, sidx=0){
   const cacheKey = offset+'_'+sidx;
@@ -561,12 +562,22 @@ async function loadDailyQuestion(offset, sidx=0){
       if(ce) throw ce;
       _totalCount = count || 1;
     }
-    // daily question: deterministic by date; extra questions: random
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
-    const qOffset = sidx === 0
-      ? ((dayEpoch % _totalCount) + _totalCount) % _totalCount
-      : Math.floor(Math.random() * _totalCount);
+
+    let qOffset;
+    if(sidx === 0){
+      // 每日一題：固定用日期決定
+      qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
+    } else {
+      // 下一題：隨機，避免重複已出現的題目
+      let attempts = 0;
+      do {
+        qOffset = Math.floor(Math.random() * _totalCount);
+        attempts++;
+      } while(_usedOffsets.has(qOffset) && attempts < 20);
+    }
+    _usedOffsets.add(qOffset);
 
     const {data,error} = await sb.from('questions')
       .select('*')
@@ -913,7 +924,7 @@ function resetAnswer(){
 
 function navigate(dir){
   const n=currentOffset+dir; if(n>0) return;
-  currentOffset=n; sessionIdx=0; renderDate(); loadAndRender();
+  currentOffset=n; sessionIdx=0; _usedOffsets.clear(); renderDate(); loadAndRender();
 }
 
 function nextQuestion(){
