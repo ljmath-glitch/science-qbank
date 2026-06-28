@@ -13,6 +13,7 @@
   --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
   --accent:#c0392b;--muted:#6b6557;
   --shadow:0 2px 0 #e8e2d4,0 8px 24px -12px rgba(26,34,56,.25);
+  --green2:#27ae60;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
@@ -20,104 +21,191 @@ body{
   background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.07),transparent 40%),
              radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),
              var(--paper);
-  color:var(--ink);line-height:1.7;min-height:100vh;
+  color:var(--ink);min-height:100vh;
 }
 
 /* ── header ── */
 header{
   background:linear-gradient(135deg,#13241f,#1a2238);
-  color:#f4f1ea;padding:18px 20px 16px;
-  border-bottom:4px solid var(--phy);
-  position:relative;overflow:hidden;
+  color:#f4f1ea;padding:16px 20px 14px;
+  border-bottom:4px solid var(--phy);position:relative;overflow:hidden;
 }
 header::after{
   content:"每日一題";position:absolute;right:16px;top:50%;
-  transform:translateY(-50%);font-size:40px;font-weight:700;
+  transform:translateY(-50%);font-size:36px;font-weight:700;
   letter-spacing:6px;color:rgba(255,255,255,.05);
 }
-header h1{font-size:20px;letter-spacing:3px;font-weight:700}
+header h1{font-size:19px;letter-spacing:3px;font-weight:700}
 header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-family:system-ui,sans-serif}
 .hdr-back{
   display:inline-flex;align-items:center;gap:5px;
   font-size:12px;color:#b9c2d6;font-family:system-ui,sans-serif;
-  text-decoration:none;margin-bottom:8px;opacity:.8;
+  text-decoration:none;margin-bottom:7px;opacity:.8;
 }
 .hdr-back:hover{opacity:1}
 
-/* ── main layout ── */
-.page{max-width:680px;margin:0 auto;padding:20px 16px 80px}
+/* ── page ── */
+.page{max-width:640px;margin:0 auto;padding:16px 14px 80px}
 
-/* ── date nav ── */
-.date-nav{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:18px;
+/* ══ CHARACTER CARD ══════════════════════════════════════════ */
+.char-card{
+  background:linear-gradient(135deg,#13241f,#1e3050);
+  border-radius:16px;padding:18px 18px 16px;margin-bottom:14px;
+  color:#f4f1ea;position:relative;overflow:hidden;
 }
-.date-nav .nav-btn{
+.char-card::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(circle at 80% 20%,rgba(184,134,11,.15),transparent 55%);
+}
+.char-top{display:flex;align-items:center;gap:14px;position:relative}
+.char-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  flex-shrink:0;
+}
+.char-info{flex:1}
+.char-rank{font-family:system-ui,sans-serif;font-size:11px;color:var(--phy);font-weight:700;letter-spacing:2px;margin-bottom:2px}
+.char-name{font-size:20px;font-weight:700;letter-spacing:1px}
+.char-next{font-family:system-ui,sans-serif;font-size:11px;color:rgba(244,241,234,.6);margin-top:2px}
+.char-lv{
+  position:absolute;top:0;right:0;
+  background:var(--phy);color:#fff;border-radius:20px;
+  padding:3px 10px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;
+}
+.char-progress{margin-top:14px;position:relative}
+.char-progress-label{
+  display:flex;justify-content:space-between;
+  font-family:system-ui,sans-serif;font-size:11px;
+  color:rgba(244,241,234,.6);margin-bottom:5px;
+}
+.prog-bar{height:8px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--bio),var(--phy));border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.char-condition{
+  margin-top:10px;background:rgba(255,255,255,.07);border-radius:10px;
+  padding:9px 12px;font-family:system-ui,sans-serif;font-size:12px;
+  color:rgba(244,241,234,.8);display:flex;align-items:center;gap:8px;
+}
+.char-condition .cond-icon{font-size:16px}
+.char-condition b{color:var(--phy)}
+
+/* ══ STATS ROW ═══════════════════════════════════════════════ */
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.stat-card{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:12px 10px;text-align:center;box-shadow:var(--shadow);
+}
+.stat-val{font-size:24px;font-weight:700;font-family:system-ui,sans-serif;color:var(--ink)}
+.stat-val.green{color:var(--green2)}
+.stat-val.gold{color:var(--phy)}
+.stat-lbl{font-family:system-ui,sans-serif;font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ══ TODAY TASKS ═════════════════════════════════════════════ */
+.tasks-card{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;
+}
+.tasks-head{
+  padding:12px 16px 10px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.tasks-title{font-size:14px;font-weight:700;font-family:system-ui,sans-serif;letter-spacing:1px}
+.tasks-date{font-family:system-ui,sans-serif;font-size:11px;color:var(--muted)}
+.task-row{
+  display:flex;align-items:center;gap:12px;padding:11px 16px;
+  border-bottom:1px dashed var(--line);cursor:pointer;transition:.15s;
+}
+.task-row:last-child{border-bottom:none}
+.task-row:hover{background:#f7f4ee}
+.task-row.done{opacity:.55}
+.task-icon{
+  width:38px;height:38px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:20px;
+}
+.task-icon.warm{background:#eef7f3}
+.task-icon.challenge{background:#fff6e0}
+.task-icon.retry{background:#fdeeee}
+.task-body{flex:1}
+.task-name{font-size:14px;font-weight:700;font-family:system-ui,sans-serif}
+.task-desc{font-family:system-ui,sans-serif;font-size:11px;color:var(--muted);margin-top:1px}
+.task-prog-bar{height:4px;background:var(--line);border-radius:99px;margin-top:5px;overflow:hidden}
+.task-prog-fill{height:100%;border-radius:99px;transition:width .4s}
+.task-prog-fill.warm{background:var(--bio)}
+.task-prog-fill.challenge{background:var(--phy)}
+.task-prog-fill.retry{background:var(--accent)}
+.task-badge{
+  font-family:system-ui,sans-serif;font-size:12px;font-weight:700;
+  padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0;
+}
+.task-badge.done-badge{background:#e8f5e9;color:var(--green2)}
+.task-badge.todo-badge{background:var(--paper);color:var(--muted);border:1px solid var(--line)}
+
+/* ══ WEEK DOTS ═══════════════════════════════════════════════ */
+.week-wrap{margin-bottom:14px}
+.week-label{font-family:system-ui,sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:7px}
+.week-dots{display:flex;gap:6px}
+.dot{
+  flex:1;height:40px;border-radius:10px;
+  background:var(--card);border:1.5px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-family:system-ui,sans-serif;font-size:10px;color:var(--muted);
+  font-weight:600;flex-direction:column;gap:1px;cursor:pointer;transition:.15s;
+}
+.dot:hover{border-color:var(--bio)}
+.dot.done{background:var(--bio);border-color:var(--bio);color:#fff}
+.dot.wrong{background:#fee;border-color:#e0b4b4;color:var(--accent)}
+.dot.today{border-color:var(--phy);color:var(--phy);font-weight:800;box-shadow:0 0 0 3px rgba(184,134,11,.18)}
+.dot.today.done{border-color:var(--bio);box-shadow:0 0 0 3px rgba(31,111,92,.18);color:#fff}
+.dot.today.wrong{border-color:var(--accent);box-shadow:0 0 0 3px rgba(192,57,43,.18);color:var(--accent)}
+.dot .dot-day{font-size:8px;opacity:.75}
+
+/* ══ DATE NAV ════════════════════════════════════════════════ */
+.date-nav{
+  display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;
+}
+.nav-btn{
   background:var(--card);border:1px solid var(--line);border-radius:8px;
   padding:8px 14px;font-size:13px;font-family:system-ui,sans-serif;
   color:var(--muted);cursor:pointer;transition:.15s;
 }
-.date-nav .nav-btn:hover{background:#f0ece2;color:var(--ink)}
-.date-nav .nav-btn:disabled{opacity:.35;cursor:not-allowed}
+.nav-btn:hover{background:#f0ece2;color:var(--ink)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
 .date-center{text-align:center}
-.date-label{font-family:system-ui,sans-serif;font-size:22px;font-weight:700;color:var(--ink);letter-spacing:1px}
+.date-label{font-family:system-ui,sans-serif;font-size:20px;font-weight:700;color:var(--ink)}
 .date-sub{font-family:system-ui,sans-serif;font-size:11px;color:var(--muted);margin-top:1px}
 
-/* ── streak ── */
-.streak-bar{
-  display:flex;align-items:center;justify-content:center;gap:6px;
-  margin-bottom:20px;font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);
-}
-.streak-fire{font-size:18px}
-.streak-count{font-size:18px;font-weight:700;color:var(--phy)}
-
-/* ── question card ── */
+/* ══ QUESTION CARD ═══════════════════════════════════════════ */
 .q-card{
   background:var(--card);border:1px solid var(--line);border-radius:14px;
-  box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px;
+  box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px;
 }
 .q-card-head{
-  padding:14px 18px 12px;
-  border-bottom:1px solid var(--line);
+  padding:12px 16px 10px;border-bottom:1px solid var(--line);
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
-.tag{
-  font-size:11px;padding:3px 10px;border-radius:18px;
-  font-weight:600;letter-spacing:.3px;font-family:system-ui,sans-serif;
-}
+.tag{font-size:11px;padding:3px 10px;border-radius:18px;font-weight:600;letter-spacing:.3px;font-family:system-ui,sans-serif}
 .tag.bio{background:#eef7f3;color:var(--bio)}
 .tag.phy{background:#fff6e0;color:var(--phy)}
 .tag.earth{background:#eef3ff;color:var(--earth)}
 .tag.chem{background:#fdeeee;color:var(--accent)}
-.tag.diff{background:#f0ece2;color:var(--muted)}
 .tag.diff.d1{background:#e8f5e9;color:#2e7d32}
 .tag.diff.d2{background:#fff8e1;color:#f57f17}
 .tag.diff.d3{background:#fff0e0;color:#e8740c}
 .tag.diff.d4{background:#ffebee;color:#c62828}
-.q-num{
-  margin-left:auto;font-family:system-ui,sans-serif;
-  font-size:12px;color:var(--muted);
-}
+.q-num{margin-left:auto;font-family:system-ui,sans-serif;font-size:11px;color:var(--muted)}
 
-.q-body{padding:18px 18px 6px;font-size:16px;line-height:1.85}
-.q-passage{
-  background:#f7f4ec;border-left:3px solid var(--phy);
-  border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:14px;
-  font-size:14px;color:#3a3328;
-}
-.q-stem{margin-bottom:14px}
+.q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
+.q-stem{margin-bottom:12px}
 
-/* ── options ── */
-.opts{padding:0 18px 18px;display:flex;flex-direction:column;gap:9px}
+.opts{padding:0 16px 16px;display:flex;flex-direction:column;gap:8px}
 .opt-btn{
-  display:flex;align-items:flex-start;gap:12px;
-  padding:12px 16px;border-radius:10px;border:1.5px solid var(--line);
-  background:#fff;cursor:pointer;text-align:left;
+  display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
+  border-radius:10px;border:1.5px solid var(--line);background:#fff;
+  cursor:pointer;text-align:left;
   font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;
-  font-size:15px;color:var(--ink);transition:.18s;line-height:1.6;
-  width:100%;
+  font-size:15px;color:var(--ink);transition:.18s;line-height:1.6;width:100%;
 }
-.opt-btn:hover:not(:disabled){border-color:var(--bio);background:#f4faf7;transform:translateX(2px)}
+.opt-btn:hover:not(:disabled){border-color:var(--bio);background:#f4faf7;transform:translateX(3px)}
 .opt-btn .opt-label{
   display:inline-flex;align-items:center;justify-content:center;
   width:26px;height:26px;min-width:26px;border-radius:50%;
@@ -125,113 +213,85 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   font-size:13px;font-weight:700;font-family:system-ui,sans-serif;
   color:var(--muted);transition:.18s;margin-top:1px;
 }
-.opt-btn.selected .opt-label{background:var(--bio);border-color:var(--bio);color:#fff}
 .opt-btn.selected{border-color:var(--bio);background:#f0faf5}
-.opt-btn.correct{border-color:#27ae60;background:#f0faf5}
-.opt-btn.correct .opt-label{background:#27ae60;border-color:#27ae60;color:#fff}
+.opt-btn.selected .opt-label{background:var(--bio);border-color:var(--bio);color:#fff}
+.opt-btn.correct{border-color:var(--green2);background:#f0faf5}
+.opt-btn.correct .opt-label{background:var(--green2);border-color:var(--green2);color:#fff}
 .opt-btn.wrong{border-color:var(--accent);background:#fff5f5}
 .opt-btn.wrong .opt-label{background:var(--accent);border-color:var(--accent);color:#fff}
 .opt-btn:disabled{cursor:default;transform:none}
 
-/* ── action row ── */
-.action-row{padding:0 18px 18px;display:flex;gap:10px}
-.btn-reveal{
-  flex:1;padding:14px;border-radius:10px;border:none;
-  background:var(--bio);color:#fff;font-size:16px;font-weight:700;
-  font-family:system-ui,sans-serif;cursor:pointer;letter-spacing:1px;
-  transition:.18s;
-}
-.btn-reveal:hover{background:#185f4e;transform:translateY(-1px);box-shadow:0 6px 16px -6px rgba(31,111,92,.5)}
-.btn-reveal:disabled{background:#a0c4bb;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-again{
-  padding:14px 18px;border-radius:10px;border:1.5px solid var(--line);
-  background:#fff;color:var(--muted);font-size:14px;font-weight:600;
-  font-family:system-ui,sans-serif;cursor:pointer;transition:.18s;
-}
-.btn-again:hover{border-color:var(--muted);color:var(--ink)}
-
-/* ── result badge ── */
 .result-badge{
-  margin:0 18px 14px;padding:10px 16px;border-radius:10px;
+  margin:0 16px 12px;padding:10px 14px;border-radius:10px;
   font-family:system-ui,sans-serif;font-size:14px;font-weight:700;
-  display:none;align-items:center;gap:8px;
+  align-items:center;gap:8px;display:none;
 }
 .result-badge.correct{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;display:flex}
 .result-badge.wrong{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;display:flex}
 
-/* ── explanation ── */
+.action-row{padding:0 16px 16px;display:flex;gap:9px}
+.btn-reveal{
+  flex:1;padding:13px;border-radius:10px;border:none;
+  background:var(--bio);color:#fff;font-size:16px;font-weight:700;
+  font-family:system-ui,sans-serif;cursor:pointer;letter-spacing:1px;transition:.18s;
+}
+.btn-reveal:hover{background:#185f4e;transform:translateY(-1px);box-shadow:0 6px 16px -6px rgba(31,111,92,.5)}
+.btn-reveal:disabled{background:#a0c4bb;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-again{
+  padding:13px 16px;border-radius:10px;border:1.5px solid var(--line);
+  background:#fff;color:var(--muted);font-size:13px;font-weight:600;
+  font-family:system-ui,sans-serif;cursor:pointer;transition:.18s;
+}
+.btn-again:hover{border-color:var(--muted);color:var(--ink)}
+
+/* ══ EXPLANATION ═════════════════════════════════════════════ */
 .explain-card{
   background:var(--card);border:1px solid var(--line);border-radius:14px;
-  box-shadow:var(--shadow);overflow:hidden;display:none;
+  box-shadow:var(--shadow);overflow:hidden;display:none;margin-bottom:14px;
 }
 .explain-card.show{display:block}
 .explain-head{
-  background:var(--ink);color:#f4f1ea;
-  padding:12px 18px;font-size:14px;font-weight:700;letter-spacing:2px;
-  font-family:system-ui,sans-serif;display:flex;align-items:center;gap:8px;
+  background:var(--ink);color:#f4f1ea;padding:11px 16px;
+  font-size:14px;font-weight:700;letter-spacing:2px;font-family:system-ui,sans-serif;
 }
 .explain-hint{
   background:#fdf3f0;border:1px solid #f0c4bb;border-radius:8px;
-  padding:9px 14px;margin:14px 18px 0;
-  font-size:13px;color:#8b3a2e;font-family:system-ui,sans-serif;
-  line-height:1.6;
+  padding:9px 13px;margin:12px 16px 0;
+  font-size:13px;color:#8b3a2e;font-family:system-ui,sans-serif;line-height:1.6;
 }
-.explain-body{padding:14px 18px 18px;font-size:15px;line-height:1.9}
-.explain-body p{margin-bottom:10px}
-.explain-body .step{
-  background:#f7f4ec;border-radius:8px;padding:12px 16px;
-  margin:10px 0;font-size:14px;
+.explain-body{padding:12px 16px 16px;font-size:15px;line-height:1.9}
+.explain-body p{margin-bottom:9px}
+.step{
+  background:#f7f4ec;border-radius:8px;padding:11px 14px;margin:9px 0;font-size:14px;
 }
-.explain-body .step-title{
-  font-family:system-ui,sans-serif;font-size:12px;font-weight:700;
-  color:var(--phy);margin-bottom:6px;letter-spacing:1px;
+.step-title{
+  font-family:system-ui,sans-serif;font-size:11px;font-weight:700;
+  color:var(--phy);margin-bottom:5px;letter-spacing:1px;
 }
-
-/* highlighted numbers (like the app screenshot) */
-.hl{
-  background:rgba(184,134,11,.15);
-  border-bottom:2px dotted var(--phy);
-  border-radius:2px;padding:0 2px;
-}
-.hl.red{
-  background:rgba(192,57,43,.12);
-  border-bottom-color:var(--accent);
-}
-
-/* ── knowledge tag ── */
+.hl{background:rgba(184,134,11,.15);border-bottom:2px dotted var(--phy);border-radius:2px;padding:0 2px}
+.hl.red{background:rgba(192,57,43,.12);border-bottom-color:var(--accent)}
 .kp-row{
-  display:flex;flex-wrap:wrap;gap:6px;
-  padding:12px 18px;border-top:1px dashed var(--line);
-  font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);
+  display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+  border-top:1px dashed var(--line);font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);
 }
 .kp-label{font-weight:700;color:var(--phy);margin-right:2px}
-.kp-tag{
-  background:#fff6e0;color:var(--phy);border-radius:12px;
-  padding:2px 10px;font-size:11px;font-weight:600;
-}
+.kp-tag{background:#fff6e0;color:var(--phy);border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600}
 
-/* ── progress dots ── */
-.week-dots{
-  display:flex;justify-content:center;gap:8px;margin-bottom:20px;
+/* ══ LEVEL UP TOAST ══════════════════════════════════════════ */
+.toast{
+  position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-100%);
+  background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;
+  border-radius:0 0 16px 16px;padding:16px 24px 14px;
+  font-family:system-ui,sans-serif;font-size:14px;font-weight:700;
+  text-align:center;z-index:999;transition:.4s cubic-bezier(.34,1.56,.64,1);
+  box-shadow:0 8px 32px rgba(0,0,0,.3);min-width:260px;
 }
-.dot{
-  width:32px;height:32px;border-radius:50%;
-  background:var(--card);border:1.5px solid var(--line);
-  display:flex;align-items:center;justify-content:center;
-  font-family:system-ui,sans-serif;font-size:10px;color:var(--muted);
-  font-weight:600;flex-direction:column;gap:1px;
-}
-.dot.done{background:var(--bio);border-color:var(--bio);color:#fff}
-.dot.today{border-color:var(--phy);color:var(--phy);font-weight:800;
-  box-shadow:0 0 0 3px rgba(184,134,11,.2)}
-.dot.missed{background:#f5eee8;border-color:var(--line)}
-.dot .dot-day{font-size:8px;opacity:.8}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast .toast-emoji{font-size:28px;display:block;margin-bottom:4px}
 
-/* ── loading ── */
-.loading{text-align:center;padding:60px 20px;color:var(--muted);font-family:system-ui,sans-serif}
-
-@media(max-width:480px){
-  .date-label{font-size:18px}
+@media(max-width:420px){
+  .char-name{font-size:17px}
+  .stat-val{font-size:20px}
   .q-body{font-size:15px}
   .opt-btn{font-size:14px}
 }
@@ -249,18 +309,91 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 <div class="page">
 
-  <!-- streak -->
-  <div class="streak-bar">
-    <span class="streak-fire">🔥</span>
-    <span>連續作答</span>
-    <span class="streak-count" id="streakCount">0</span>
-    <span>天</span>
+  <!-- ① 角色卡 -->
+  <div class="char-card" id="charCard">
+    <div class="char-top">
+      <div class="char-avatar" id="charAvatar"></div>
+      <div class="char-info">
+        <div class="char-rank" id="charRank"></div>
+        <div class="char-name" id="charName"></div>
+        <div class="char-next" id="charNext"></div>
+      </div>
+      <div class="char-lv" id="charLv"></div>
+    </div>
+    <div class="char-progress">
+      <div class="char-progress-label">
+        <span>升階進度</span>
+        <span id="charProgText"></span>
+      </div>
+      <div class="prog-bar"><div class="prog-fill" id="charProgFill" style="width:0%"></div></div>
+    </div>
+    <div class="char-condition">
+      <span class="cond-icon">⚡</span>
+      <span id="charCondText"></span>
+    </div>
   </div>
 
-  <!-- week dots -->
-  <div class="week-dots" id="weekDots"></div>
+  <!-- ② 統計三欄 -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" id="statTotal">0</div>
+      <div class="stat-lbl">累積答題</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val green" id="statCorrect">0</div>
+      <div class="stat-lbl">答對題數</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val gold" id="statAcc">—</div>
+      <div class="stat-lbl">近期正確率</div>
+    </div>
+  </div>
 
-  <!-- date nav -->
+  <!-- ③ 今日任務 -->
+  <div class="tasks-card">
+    <div class="tasks-head">
+      <div class="tasks-title">📋 今日任務</div>
+      <div class="tasks-date" id="taskDateLabel"></div>
+    </div>
+    <!-- 每日一題 -->
+    <div class="task-row" id="taskWarm" onclick="scrollToQuestion()">
+      <div class="task-icon warm">🌱</div>
+      <div class="task-body">
+        <div class="task-name">今日一題</div>
+        <div class="task-desc">每天一題，累積實力</div>
+        <div class="task-prog-bar"><div class="task-prog-fill warm" id="warmFill" style="width:0%"></div></div>
+      </div>
+      <div class="task-badge todo-badge" id="warmBadge">0 / 1 題</div>
+    </div>
+    <!-- 連續答對 -->
+    <div class="task-row" id="taskChallenge" onclick="scrollToQuestion()">
+      <div class="task-icon challenge">🎯</div>
+      <div class="task-body">
+        <div class="task-name">連續挑戰</div>
+        <div class="task-desc" id="challengeDesc">連續答對累積升階</div>
+        <div class="task-prog-bar"><div class="task-prog-fill challenge" id="challengeFill" style="width:0%"></div></div>
+      </div>
+      <div class="task-badge todo-badge" id="challengeBadge">0 連勝</div>
+    </div>
+    <!-- 週完成率 -->
+    <div class="task-row">
+      <div class="task-icon retry">📅</div>
+      <div class="task-body">
+        <div class="task-name">本週完成率</div>
+        <div class="task-desc">已完成天數 / 7天</div>
+        <div class="task-prog-bar"><div class="task-prog-fill retry" id="weekFill" style="width:0%"></div></div>
+      </div>
+      <div class="task-badge todo-badge" id="weekBadge">0 / 7 天</div>
+    </div>
+  </div>
+
+  <!-- ④ 週日曆 -->
+  <div class="week-wrap">
+    <div class="week-label">本週作答紀錄</div>
+    <div class="week-dots" id="weekDots"></div>
+  </div>
+
+  <!-- ⑤ 日期導覽 -->
   <div class="date-nav">
     <button class="nav-btn" id="btnPrev" onclick="navigate(-1)">◀ 前一天</button>
     <div class="date-center">
@@ -270,7 +403,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <button class="nav-btn" id="btnNext" onclick="navigate(1)">後一天 ▶</button>
   </div>
 
-  <!-- question card -->
+  <!-- ⑥ 題目卡 -->
   <div class="q-card" id="qCard">
     <div class="q-card-head" id="qHead"></div>
     <div class="q-body" id="qBody"></div>
@@ -282,7 +415,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     </div>
   </div>
 
-  <!-- explanation -->
+  <!-- ⑦ 詳解 -->
   <div class="explain-card" id="explainCard">
     <div class="explain-head">💡 詳解</div>
     <div class="explain-hint" id="explainHint" style="display:none"></div>
@@ -292,401 +425,470 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 </div>
 
+<!-- Level Up Toast -->
+<div class="toast" id="toast">
+  <span class="toast-emoji" id="toastEmoji"></span>
+  <span id="toastMsg"></span>
+</div>
+
 <script>
-// ── Sample question bank ──────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// QUESTION BANK
+// ═══════════════════════════════════════════════════════════════
 const QUESTIONS = [
   {
-    subject:'chem', subjectLabel:'化學',
-    difficulty:2,
-    source:'110學年度學測',
+    subject:'chem', subjectLabel:'化學', difficulty:2, source:'110學年度學測',
     stem:'在標準狀況下，將 <span class="hl">8.0 g</span> 的 $\\text{Fe}_x\\text{O}_y$ 與足量一氧化碳反應，完全還原後得到鐵粉 <span class="hl">5.6 g</span>。則此鐵的氧化物化學式為何？',
     opts:['FeO','$\\text{Fe}_2\\text{O}_3$','$\\text{Fe}_3\\text{O}_4$','$\\text{Fe}_2\\text{O}$'],
     ans:1,
     explain:{
-      hint:'可先計算氧的質量，再求 Fe 與 O 的莫耳數比。',
+      hint:'先計算氧的質量，再求 Fe 與 O 的莫耳數比。',
       steps:[
-        {title:'STEP 1　求氧的質量',
-         body:'$m_\\text{O} = \\text{\\small 8.0} - \\text{\\small 5.6} = \\class{hl}{2.4}\\text{ g}$'},
-        {title:'STEP 2　求莫耳數',
-         body:'$n_\\text{Fe} = \\dfrac{5.6}{56} = \\class{hl}{0.1}\\text{ mol}$，$n_\\text{O} = \\dfrac{2.4}{16} = \\class{hl}{0.15}\\text{ mol}$'},
-        {title:'STEP 3　求簡單整數比',
-         body:'$n_\\text{Fe} : n_\\text{O} = 0.1 : 0.15 = \\class{hl}{2 : 3}$，故化學式為 $\\text{Fe}_2\\text{O}_3$。'},
+        {title:'STEP 1　求氧的質量',body:'$m_\\text{O} = 8.0 - 5.6 = \\class{hl}{2.4}\\text{ g}$'},
+        {title:'STEP 2　求莫耳數',body:'$n_\\text{Fe}=\\dfrac{5.6}{56}=\\class{hl}{0.1}\\text{ mol}$，$n_\\text{O}=\\dfrac{2.4}{16}=\\class{hl}{0.15}\\text{ mol}$'},
+        {title:'STEP 3　整數比',body:'$n_\\text{Fe}:n_\\text{O}=0.1:0.15=\\class{hl}{2:3}$，故化學式為 $\\text{Fe}_2\\text{O}_3$'},
       ],
-      answer:'答案為 (B) $\\text{Fe}_2\\text{O}_3$，即氧化鐵（三價鐵）。',
+      answer:'答案為 (B) $\\text{Fe}_2\\text{O}_3$，氧化鐵（三價）。',
       keywords:['化學計量','氧化物','莫耳數','質量守恆'],
     }
   },
   {
-    subject:'phy', subjectLabel:'物理',
-    difficulty:2,
-    source:'111學年度指考',
-    stem:'一物體靜置於水平面上，已知物體質量為 <span class="hl">5 kg</span>，與地面的靜摩擦係數 $\\mu_s = \\class{hl}{0.4}$，動摩擦係數 $\\mu_k = 0.3$。若施以水平力 $F = \\class{hl}{25}\\text{ N}$，則物體的加速度大小為何？（$g = 10\\text{ m/s}^2$）',
+    subject:'phy', subjectLabel:'物理', difficulty:2, source:'111學年度指考',
+    stem:'質量 <span class="hl">5 kg</span> 的物體靜置於水平面，靜摩擦係數 $\\mu_s=\\class{hl}{0.4}$，動摩擦係數 $\\mu_k=0.3$。施水平力 $F=\\class{hl}{25}\\text{ N}$，物體加速度為？（$g=10\\text{ m/s}^2$）',
     opts:['$0\\text{ m/s}^2$（靜止）','$1\\text{ m/s}^2$','$2\\text{ m/s}^2$','$5\\text{ m/s}^2$'],
-    ans:1,
+    ans:2,
     explain:{
-      hint:'先比較施力與最大靜摩擦力大小，再決定用哪個摩擦係數。',
+      hint:'先比較施力與最大靜摩擦力，再決定用哪個摩擦係數。',
       steps:[
-        {title:'STEP 1　最大靜摩擦力',
-         body:'$f_{s,\\max} = \\mu_s \\cdot mg = \\class{hl}{0.4} \\times 5 \\times 10 = \\class{hl}{20}\\text{ N}$'},
-        {title:'STEP 2　判斷是否移動',
-         body:'$F = 25\\text{ N} > f_{s,\\max} = 20\\text{ N}$，物體開始運動，使用動摩擦力。'},
-        {title:'STEP 3　求加速度',
-         body:'$f_k = \\mu_k mg = \\class{hl}{0.3} \\times 50 = \\class{hl}{15}\\text{ N}$<br>$a = \\dfrac{F - f_k}{m} = \\dfrac{25-15}{5} = \\class{hl}{2}\\text{ m/s}^2$'},
+        {title:'STEP 1　最大靜摩擦力',body:'$f_{s,\\max}=\\mu_s mg=\\class{hl}{0.4}\\times50=\\class{hl}{20}\\text{ N}$'},
+        {title:'STEP 2　判斷動靜',body:'$F=25>f_{s,\\max}=20$，物體運動，改用動摩擦力 $f_k=\\class{hl}{0.3}\\times50=\\class{hl}{15}\\text{ N}$'},
+        {title:'STEP 3　求加速度',body:'$a=\\dfrac{F-f_k}{m}=\\dfrac{25-15}{5}=\\class{hl}{2}\\text{ m/s}^2$'},
       ],
       answer:'答案為 (C) $2\\text{ m/s}^2$。',
       keywords:['牛頓第二定律','靜摩擦力','動摩擦力'],
     }
   },
   {
-    subject:'bio', subjectLabel:'生物',
-    difficulty:1,
-    source:'112學年度學測',
+    subject:'bio', subjectLabel:'生物', difficulty:1, source:'112學年度學測',
     stem:'下列關於細胞有氧呼吸的敘述，何者正確？',
-    opts:[
-      '糖解作用發生於粒線體基質中',
-      '電子傳遞鏈產生最多 ATP，發生於粒線體內膜',
-      '克氏循環不需要氧氣，但需要 $\\text{CO}_2$',
-      '一分子葡萄糖完整氧化可淨產生 2 個 ATP',
-    ],
+    opts:['糖解作用發生於粒線體基質','電子傳遞鏈產生最多ATP，位於粒線體內膜','克氏循環需要O₂作為直接原料','一分子葡萄糖完整氧化僅淨產生2 ATP'],
     ans:1,
     explain:{
-      hint:'複習有氧呼吸三個階段的位置與產物。',
+      hint:'複習有氧呼吸三階段的位置與產物。',
       steps:[
-        {title:'糖解作用',
-         body:'發生於<strong>細胞質基質</strong>（不是粒線體），分解葡萄糖為丙酮酸，淨產生 <span class="hl">2 ATP</span>。'},
-        {title:'克氏循環（TCA循環）',
-         body:'發生於粒線體<strong>基質</strong>，需要乙醯CoA，產生 NADH、FADH₂ 及 CO₂。'},
-        {title:'電子傳遞鏈（氧化磷酸化）',
-         body:'發生於粒線體<strong>內膜</strong>，利用 NADH、FADH₂ 驅動 ATP 合成酶，產生大量 ATP（約 <span class="hl">32～34 個</span>）。最終電子受體為 O₂。'},
+        {title:'糖解作用',body:'發生於<strong>細胞質基質</strong>，淨產生 <span class="hl">2 ATP</span>。'},
+        {title:'克氏循環',body:'粒線體<strong>基質</strong>，產生 NADH、FADH₂ 及 CO₂；不直接需要 O₂。'},
+        {title:'電子傳遞鏈',body:'粒線體<strong>內膜</strong>，產生最多 ATP（約 <span class="hl">32～34個</span>）。最終電子受體為 O₂。'},
       ],
-      answer:'答案為 (B)。電子傳遞鏈確實產生最多ATP，且位於粒線體內膜。',
+      answer:'答案為 (B)，電子傳遞鏈位於粒線體內膜，產生最多 ATP。',
       keywords:['細胞呼吸','粒線體','ATP','電子傳遞鏈'],
     }
   },
   {
-    subject:'earth', subjectLabel:'地科',
-    difficulty:2,
-    source:'113學年度學測',
+    subject:'earth', subjectLabel:'地科', difficulty:2, source:'113學年度學測',
     stem:'下列哪一地質現象最能說明板塊聚合邊界（隱沒帶）的存在？',
-    opts:[
-      '中洋脊兩側的磁異常條帶呈對稱分布',
-      '深源地震沿斜面分布（貝尼奧夫帶）',
-      '海洋中脊附近海溝發育',
-      '大陸板塊年齡比海洋板塊古老',
-    ],
+    opts:['中洋脊兩側磁異常條帶呈對稱分布','深源地震沿斜面分布（貝尼奧夫帶）','海洋中脊附近發育海溝','大陸板塊年齡比海洋板塊古老'],
     ans:1,
     explain:{
       hint:'聚合邊界有隱沒現象，思考哪個現象只出現在這裡。',
       steps:[
-        {title:'貝尼奧夫帶',
-         body:'隱沒板塊沿斜面下插，在深度 <span class="hl">70～700 km</span> 間引發深源地震，形成從淺到深的斜向地震帶，為隱沒帶的直接證據。'},
-        {title:'排除其他選項',
-         body:'(A) 磁異常條帶是<strong>張裂</strong>邊界（中洋脊）的特徵；(C) 海溝出現在隱沒帶但中洋脊是張裂；(D) 板塊年齡分布與擴張速率有關，非聚合邊界特徵。'},
+        {title:'貝尼奧夫帶',body:'隱沒板塊在深度 <span class="hl">70～700 km</span> 引發深源地震，形成斜向地震帶，為隱沒帶直接證據。'},
+        {title:'排除其他選項',body:'(A) 磁異常條帶是張裂邊界特徵；(C) 海溝屬隱沒帶但題敘不正確；(D) 板塊年齡與擴張速率相關，非聚合邊界特徵。'},
       ],
-      answer:'答案為 (B) 深源地震沿貝尼奧夫帶分布。',
+      answer:'答案為 (B) 貝尼奧夫帶深源地震。',
       keywords:['板塊構造','隱沒帶','貝尼奧夫帶','地震'],
     }
   },
   {
-    subject:'chem', subjectLabel:'化學',
-    difficulty:1,
-    source:'109學年度指考',
-    stem:'取 $\\class{hl}{0.1}\\text{ M}$ 鹽酸 <span class="hl">100 mL</span> 與 $\\class{hl}{0.1}\\text{ M}$ 氫氧化鈉 <span class="hl">80 mL</span> 混合後，溶液的 pH 值最接近何者？',
-    opts:['pH = 7（中性）','pH < 7（酸性）','pH > 7（鹼性）','無法判斷'],
+    subject:'chem', subjectLabel:'化學', difficulty:1, source:'109學年度指考',
+    stem:'取 $\\class{hl}{0.1}\\text{ M}$ 鹽酸 <span class="hl">100 mL</span> 與 $\\class{hl}{0.1}\\text{ M}$ NaOH <span class="hl">80 mL</span> 混合，溶液 pH 最接近？',
+    opts:['pH=7（中性）','pH<7（酸性）','pH>7（鹼性）','無法判斷'],
     ans:1,
     explain:{
-      hint:'先算兩種溶液的莫耳數，再看哪種過量。',
+      hint:'先算兩溶液莫耳數，再看哪種過量。',
       steps:[
-        {title:'STEP 1　計算莫耳數',
-         body:'$n_{\\text{HCl}} = \\class{hl}{0.1} \\times \\class{hl}{0.1} = 0.01\\text{ mol}$<br>$n_{\\text{NaOH}} = \\class{hl}{0.1} \\times \\class{hl}{0.08} = 0.008\\text{ mol}$'},
-        {title:'STEP 2　中和後剩餘',
-         body:'HCl 過量 $= 0.01 - 0.008 = \\class{hl}{0.002}\\text{ mol}$，溶液呈酸性。'},
-        {title:'STEP 3　計算 pH',
-         body:'總體積 $= 180\\text{ mL} = 0.18\\text{ L}$<br>$[\\text{H}^+] = \\dfrac{0.002}{0.18} \\approx \\class{hl}{0.011}\\text{ M}$<br>$\\text{pH} \\approx -\\log(0.011) \\approx \\class{hl}{1.96}$'},
+        {title:'STEP 1　莫耳數',body:'$n_{\\text{HCl}}=0.1\\times0.1=\\class{hl}{0.01}\\text{ mol}$，$n_{\\text{NaOH}}=0.1\\times0.08=\\class{hl}{0.008}\\text{ mol}$'},
+        {title:'STEP 2　過量判斷',body:'HCl 過量 $=0.01-0.008=\\class{hl}{0.002}\\text{ mol}$，溶液呈酸性。'},
+        {title:'STEP 3　pH',body:'$[\\text{H}^+]=\\dfrac{0.002}{0.18}\\approx\\class{hl}{0.011}\\text{ M}$，$\\text{pH}\\approx\\class{hl}{1.96}$'},
       ],
-      answer:'答案為 (B) pH < 7（酸性），HCl 過量使溶液呈酸性。',
+      answer:'答案為 (B) pH<7，HCl 過量使溶液呈酸性。',
       keywords:['酸鹼中和','pH','莫耳數計算','當量點'],
     }
   },
   {
-    subject:'phy', subjectLabel:'物理',
-    difficulty:3,
-    source:'112學年度指考',
-    stem:'一單擺在地表附近振動，擺長為 $L = \\class{hl}{1\\text{ m}}$，忽略空氣阻力。已知 $g = \\pi^2 \\approx 9.87\\text{ m/s}^2$，則此擺的週期 $T$ 為何？',
-    opts:['$T = 1\\text{ s}$','$T = 2\\text{ s}$','$T = \\pi\\text{ s}$','$T = 4\\text{ s}$'],
+    subject:'phy', subjectLabel:'物理', difficulty:3, source:'112學年度指考',
+    stem:'擺長 $L=\\class{hl}{1\\text{ m}}$，$g=\\pi^2\\approx9.87\\text{ m/s}^2$，單擺週期 $T$ 為？',
+    opts:['$T=1\\text{ s}$','$T=2\\text{ s}$','$T=\\pi\\text{ s}$','$T=4\\text{ s}$'],
     ans:1,
     explain:{
-      hint:'單擺週期公式 $T = 2\\pi\\sqrt{L/g}$，注意 $g \\approx \\pi^2$ 的小技巧。',
+      hint:'$T=2\\pi\\sqrt{L/g}$，注意 $g\\approx\\pi^2$ 的化簡技巧。',
       steps:[
-        {title:'代入公式',
-         body:'$T = 2\\pi\\sqrt{\\dfrac{L}{g}} = 2\\pi\\sqrt{\\dfrac{\\class{hl}{1}}{\\class{hl}{\\pi^2}}} = 2\\pi \\cdot \\dfrac{1}{\\pi} = \\class{hl}{2}\\text{ s}$'},
+        {title:'代入公式',body:'$T=2\\pi\\sqrt{\\dfrac{1}{\\pi^2}}=2\\pi\\cdot\\dfrac{1}{\\pi}=\\class{hl}{2}\\text{ s}$'},
       ],
-      answer:'答案為 (B) $T = 2\\text{ s}$。',
+      answer:'答案為 (B) $T=2\\text{ s}$。',
       keywords:['單擺','週期','簡諧運動'],
     }
   },
   {
-    subject:'bio', subjectLabel:'生物',
-    difficulty:2,
-    source:'111學年度學測',
+    subject:'bio', subjectLabel:'生物', difficulty:2, source:'111學年度學測',
     stem:'下列關於 DNA 複製的敘述，何者正確？',
-    opts:[
-      'DNA 複製是保留式複製，親代雙股完整保留',
-      'DNA 聚合酶可以從 5\'→3\' 及 3\'→5\' 方向合成新股',
-      '引導股（leading strand）連續合成，落後股（lagging strand）不連續合成，產生岡崎片段',
-      '複製完成後，子代 DNA 均由兩條新合成的股組成',
-    ],
+    opts:['DNA 複製為保留式，親代雙股完整保留','DNA 聚合酶可從 5\'→3\' 及 3\'→5\' 合成新股','引導股連續合成，落後股不連續合成產生岡崎片段','複製後子代 DNA 均由兩條新合成股組成'],
     ans:2,
     explain:{
       hint:'DNA 複製為半保留式，方向性是關鍵。',
       steps:[
-        {title:'半保留複製',
-         body:'每條子代 DNA 含一條<strong>親代舊股</strong>與一條<strong>新合成股</strong>，稱為半保留式，已由 Meselson-Stahl 實驗證明。'},
-        {title:'合成方向',
-         body:'DNA 聚合酶只能以 <span class="hl">5\'→3\'</span> 方向合成，因此以 3\'→5\' 模板股連續合成引導股，另一股則不連續產生<strong>岡崎片段</strong>。'},
+        {title:'半保留複製',body:'每條子代 DNA 含一條親代舊股與一條新合成股，由 Meselson-Stahl 實驗證明。'},
+        {title:'合成方向',body:'DNA 聚合酶只能 <span class="hl">5\'→3\'</span> 方向合成，引導股連續合成，落後股產生<strong>岡崎片段</strong>。'},
       ],
-      answer:'答案為 (C)。引導股連續合成，落後股不連續合成，產生岡崎片段。',
+      answer:'答案為 (C)。引導股連續、落後股不連續，產生岡崎片段。',
       keywords:['DNA複製','半保留式','岡崎片段','DNA聚合酶'],
     }
   },
 ];
 
-// ── State ─────────────────────────────────────────────────────
-const TODAY_OFFSET = 0;  // 0 = today
-let currentOffset = 0;   // days from today (0=today, -1=yesterday...)
-let selectedOpt = null;
-let revealed = false;
+// ═══════════════════════════════════════════════════════════════
+// CHARACTER PROGRESSION
+// ═══════════════════════════════════════════════════════════════
+const LEVELS = [
+  {name:'神秘蛋',  emoji:'🥚', rank:'新手上路', threshold:0,   next:10},
+  {name:'破殼小雞',emoji:'🐣', rank:'初露頭角', threshold:10,  next:25},
+  {name:'求知小鳥',emoji:'🐥', rank:'穩步成長', threshold:25,  next:50},
+  {name:'科學鷹眼',emoji:'🦅', rank:'精準犀利', threshold:50,  next:100},
+  {name:'自然之王',emoji:'🦁', rank:'登峰造極', threshold:100, next:200},
+  {name:'宇宙解題神',emoji:'🌟',rank:'無可匹敵', threshold:200, next:null},
+];
 
-// localStorage keys
-const KEY_STREAK = 'dq_streak';
-const KEY_LAST   = 'dq_last_date';
-const KEY_HIST   = 'dq_history';  // {dateStr: {selected, correct}}
-
-function todayStr(offset=0){
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  return d.toISOString().slice(0,10);
+function getLevel(correctCount){
+  let lv = 0;
+  for(let i=0;i<LEVELS.length;i++) if(correctCount>=LEVELS[i].threshold) lv=i;
+  return {index:lv, ...LEVELS[lv]};
 }
+
+// ═══════════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════════
+const KEY_HIST = 'dq_history';
+const WEEKDAYS = ['日','一','二','三','四','五','六'];
 
 function getHistory(){ return JSON.parse(localStorage.getItem(KEY_HIST)||'{}') }
 function saveHistory(h){ localStorage.setItem(KEY_HIST, JSON.stringify(h)) }
 
+function dateStr(offset=0){
+  const d=new Date(); d.setDate(d.getDate()+offset);
+  return d.toISOString().slice(0,10);
+}
+
 function getQuestion(offset){
-  // pick question by date deterministically
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  const epoch = Math.floor(d.getTime() / 86400000);
-  return QUESTIONS[((epoch % QUESTIONS.length) + QUESTIONS.length) % QUESTIONS.length];
+  const d=new Date(); d.setDate(d.getDate()+offset);
+  const epoch=Math.floor(d.getTime()/86400000);
+  return QUESTIONS[((epoch%QUESTIONS.length)+QUESTIONS.length)%QUESTIONS.length];
 }
 
-// ── Render ────────────────────────────────────────────────────
-const WEEKDAYS = ['日','一','二','三','四','五','六'];
-const MONTHS   = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentOffset=0, selectedOpt=null, revealed=false;
 
-function renderDate(){
-  const d = new Date();
-  d.setDate(d.getDate() + currentOffset);
-  document.getElementById('dateLabel').textContent =
-    `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-  const isToday = currentOffset === 0;
-  document.getElementById('dateSub').textContent =
-    isToday ? `今天・星期${WEEKDAYS[d.getDay()]}` : `星期${WEEKDAYS[d.getDay()]}`;
-  document.getElementById('btnNext').disabled = currentOffset >= 0;
+// ═══════════════════════════════════════════════════════════════
+// RENDER CHARACTER
+// ═══════════════════════════════════════════════════════════════
+function renderCharacter(){
+  const hist=getHistory();
+  const totalAns = Object.keys(hist).length;
+  const totalCorrect = Object.values(hist).filter(r=>r.correct).length;
+  const lv = getLevel(totalCorrect);
+  const nextLv = LEVELS[lv.index+1];
+
+  document.getElementById('charAvatar').textContent = lv.emoji;
+  document.getElementById('charRank').textContent = lv.rank;
+  document.getElementById('charName').textContent = lv.name;
+  document.getElementById('charLv').textContent = `Lv.${lv.index+1}`;
+
+  if(nextLv){
+    const cur = totalCorrect - lv.threshold;
+    const need = nextLv.threshold - lv.threshold;
+    const pct = Math.min(100, Math.round(cur/need*100));
+    document.getElementById('charNext').textContent = `下一階段：${nextLv.name} ${nextLv.emoji}`;
+    document.getElementById('charProgText').textContent = `${cur} / ${need}`;
+    document.getElementById('charProgFill').style.width = pct+'%';
+    const remaining = nextLv.threshold - totalCorrect;
+    document.getElementById('charCondText').innerHTML =
+      `不重複答對 <b>還差 ${remaining} 題</b> 即可進化為「${nextLv.name}」`;
+  } else {
+    document.getElementById('charNext').textContent = '已達最高階段 🎉';
+    document.getElementById('charProgFill').style.width = '100%';
+    document.getElementById('charProgText').textContent = '滿級';
+    document.getElementById('charCondText').textContent = '繼續累積，成為傳說！';
+  }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// RENDER STATS
+// ═══════════════════════════════════════════════════════════════
+function renderStats(){
+  const hist=getHistory();
+  const vals=Object.values(hist);
+  const total=vals.length;
+  const correct=vals.filter(r=>r.correct).length;
+  // 近期正確率：最近10筆
+  const recent=vals.slice(-10);
+  const recentAcc = recent.length ? Math.round(recent.filter(r=>r.correct).length/recent.length*100) : null;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCorrect').textContent = correct;
+  document.getElementById('statAcc').textContent = recentAcc!==null ? recentAcc+'%' : '—';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER TASKS
+// ═══════════════════════════════════════════════════════════════
+function renderTasks(){
+  const hist=getHistory();
+  const todayRec=hist[dateStr(0)];
+  const todayDone=!!todayRec;
+  const todayCorrect=todayRec?.correct;
+
+  // 今日一題
+  const warmFill=document.getElementById('warmFill');
+  const warmBadge=document.getElementById('warmBadge');
+  warmFill.style.width = todayDone ? '100%' : '0%';
+  warmBadge.textContent = todayDone ? '✓ 完成' : '0 / 1 題';
+  warmBadge.className = todayDone ? 'task-badge done-badge' : 'task-badge todo-badge';
+
+  // 連勝
+  let streak=0;
+  for(let i=0;i>=- 365;i--){
+    if(hist[dateStr(i)]?.correct) streak++;
+    else break;
+  }
+  const STREAK_GOAL=7;
+  const pct=Math.min(100,Math.round(streak/STREAK_GOAL*100));
+  document.getElementById('challengeFill').style.width=pct+'%';
+  document.getElementById('challengeBadge').textContent=streak+' 連勝';
+  document.getElementById('challengeDesc').textContent=`目標：${STREAK_GOAL} 連勝（再答對 ${Math.max(0,STREAK_GOAL-streak)} 題）`;
+
+  // 週完成
+  let weekDone=0;
+  for(let i=-6;i<=0;i++) if(hist[dateStr(i)]) weekDone++;
+  const weekPct=Math.round(weekDone/7*100);
+  document.getElementById('weekFill').style.width=weekPct+'%';
+  document.getElementById('weekBadge').textContent=`${weekDone} / 7 天`;
+
+  // date label
+  const d=new Date();
+  document.getElementById('taskDateLabel').textContent=
+    `${d.getMonth()+1}/${d.getDate()} 星期${WEEKDAYS[d.getDay()]}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER WEEK DOTS
+// ═══════════════════════════════════════════════════════════════
 function renderWeekDots(){
-  const hist = getHistory();
-  const container = document.getElementById('weekDots');
-  container.innerHTML = '';
-  for(let i = -6; i <= 0; i++){
-    const dt = new Date();
-    dt.setDate(dt.getDate() + i);
-    const str = dt.toISOString().slice(0,10);
-    const day = WEEKDAYS[dt.getDay()];
-    const rec = hist[str];
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (i===0?' today':'') + (rec ? (rec.correct?' done':' missed') : '');
-    dot.innerHTML = `<span>${i===0?'今':day}</span><span class="dot-day">${dt.getDate()}</span>`;
-    dot.title = str + (rec ? (rec.correct?' ✓':' ✗') : ' 未作答');
-    container.appendChild(dot);
+  const hist=getHistory();
+  const el=document.getElementById('weekDots');
+  el.innerHTML='';
+  for(let i=-6;i<=0;i++){
+    const s=dateStr(i);
+    const d=new Date(); d.setDate(d.getDate()+i);
+    const rec=hist[s];
+    const div=document.createElement('div');
+    let cls='dot';
+    if(i===0) cls+=' today';
+    if(rec) cls+=(rec.correct?' done':' wrong');
+    div.className=cls;
+    div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
+    div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
+    div.onclick=()=>{ currentOffset=i; renderDate(); renderQuestion(); };
+    el.appendChild(div);
   }
 }
 
-function renderStreak(){
-  const hist = getHistory();
-  let streak = 0;
-  for(let i = 0; i >= -365; i--){
-    const s = todayStr(i);
-    if(hist[s]?.correct){ streak++ } else { break }
-  }
-  document.getElementById('streakCount').textContent = streak;
+// ═══════════════════════════════════════════════════════════════
+// RENDER DATE
+// ═══════════════════════════════════════════════════════════════
+function renderDate(){
+  const d=new Date(); d.setDate(d.getDate()+currentOffset);
+  document.getElementById('dateLabel').textContent=
+    `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('dateSub').textContent=
+    currentOffset===0 ? `今天・星期${WEEKDAYS[d.getDay()]}` : `星期${WEEKDAYS[d.getDay()]}`;
+  document.getElementById('btnNext').disabled=currentOffset>=0;
 }
 
-const SUBJ_CLASS = {chem:'chem',bio:'bio',phy:'phy',earth:'earth'};
-const DIFF_LABEL = {1:'★ 基礎',2:'★★ 進階',3:'★★★ 挑戰',4:'★★★★ 困難'};
+// ═══════════════════════════════════════════════════════════════
+// RENDER QUESTION
+// ═══════════════════════════════════════════════════════════════
+const SUBJ_CLASS={chem:'chem',bio:'bio',phy:'phy',earth:'earth'};
+const DIFF_LABEL={1:'★ 基礎',2:'★★ 進階',3:'★★★ 挑戰',4:'★★★★ 困難'};
 
 function renderQuestion(){
-  const q = getQuestion(currentOffset);
-  const hist = getHistory();
-  const dateKey = todayStr(currentOffset);
-  const rec = hist[dateKey];
-
+  const q=getQuestion(currentOffset);
+  const hist=getHistory();
+  const key=dateStr(currentOffset);
+  const rec=hist[key];
   selectedOpt = rec ? rec.selected : null;
   revealed = !!rec;
 
   // head
-  const head = document.getElementById('qHead');
-  head.innerHTML = `
+  document.getElementById('qHead').innerHTML=`
     <span class="tag ${SUBJ_CLASS[q.subject]||''}">${q.subjectLabel}</span>
     <span class="tag diff d${q.difficulty}">${DIFF_LABEL[q.difficulty]||''}</span>
     <span class="q-num">${q.source}</span>
   `;
 
-  // body / stem
-  const body = document.getElementById('qBody');
-  body.innerHTML = `<div class="q-stem">${q.stem}</div>`;
+  // body
+  document.getElementById('qBody').innerHTML=`<div class="q-stem">${q.stem}</div>`;
 
-  // options
-  const optsEl = document.getElementById('qOpts');
-  optsEl.innerHTML = '';
-  q.opts.forEach((opt, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'opt-btn';
-    btn.dataset.i = i;
-    const label = String.fromCharCode(65+i);
-    btn.innerHTML = `<span class="opt-label">${label}</span><span>${opt}</span>`;
-
+  // opts
+  const optsEl=document.getElementById('qOpts');
+  optsEl.innerHTML='';
+  q.opts.forEach((opt,i)=>{
+    const btn=document.createElement('button');
+    btn.className='opt-btn';
+    const lbl=String.fromCharCode(65+i);
+    btn.innerHTML=`<span class="opt-label">${lbl}</span><span>${opt}</span>`;
     if(revealed){
-      btn.disabled = true;
-      if(i === q.ans) btn.classList.add('correct');
-      if(i === selectedOpt && selectedOpt !== q.ans) btn.classList.add('wrong');
+      btn.disabled=true;
+      if(i===q.ans) btn.classList.add('correct');
+      if(i===selectedOpt && selectedOpt!==q.ans) btn.classList.add('wrong');
     } else {
-      if(i === selectedOpt) btn.classList.add('selected');
-      btn.onclick = () => selectOpt(i);
+      if(i===selectedOpt) btn.classList.add('selected');
+      btn.onclick=()=>selectOpt(i);
     }
     optsEl.appendChild(btn);
   });
 
   // result badge
-  const badge = document.getElementById('resultBadge');
-  badge.className = 'result-badge';
+  const badge=document.getElementById('resultBadge');
+  badge.className='result-badge';
   if(revealed && rec){
-    if(rec.correct){
-      badge.className = 'result-badge correct';
-      badge.innerHTML = '✓ 答對了！繼續保持';
-    } else {
-      badge.className = 'result-badge wrong';
-      badge.innerHTML = `✗ 答錯了，正確答案是 (${String.fromCharCode(65+q.ans)})`;
-    }
+    badge.className='result-badge '+(rec.correct?'correct':'wrong');
+    badge.innerHTML=rec.correct ? '✓ 答對了！' : `✗ 答錯了，正確答案是 (${String.fromCharCode(65+q.ans)})`;
   }
 
-  // action buttons
-  const btnReveal = document.getElementById('btnReveal');
-  const btnAgain = document.getElementById('btnAgain');
+  // buttons
+  const btnReveal=document.getElementById('btnReveal');
+  const btnAgain=document.getElementById('btnAgain');
   if(revealed){
-    btnReveal.style.display = 'none';
-    btnAgain.style.display = 'block';
+    btnReveal.style.display='none';
+    btnAgain.style.display='block';
   } else {
-    btnReveal.style.display = '';
-    btnAgain.style.display = 'none';
-    btnReveal.disabled = selectedOpt === null;
-    btnReveal.textContent = selectedOpt !== null ? '揭曉答案' : '請先選擇答案';
+    btnReveal.style.display='';
+    btnAgain.style.display='none';
+    btnReveal.disabled=selectedOpt===null;
+    btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
   }
 
   // explanation
-  const explainCard = document.getElementById('explainCard');
-  if(revealed){
-    explainCard.classList.add('show');
-    renderExplanation(q);
-  } else {
-    explainCard.classList.remove('show');
-  }
+  const expCard=document.getElementById('explainCard');
+  if(revealed){ expCard.classList.add('show'); renderExplanation(q); }
+  else expCard.classList.remove('show');
 
   // render math
-  setTimeout(() => {
-    renderMathInElement(document.body, {
-      delimiters:[
-        {left:'$$',right:'$$',display:true},
-        {left:'$',right:'$',display:false},
-      ],
+  setTimeout(()=>{
+    renderMathInElement(document.body,{
+      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
       throwOnError:false,
     });
-  }, 50);
+  },50);
 }
 
 function renderExplanation(q){
-  const hint = document.getElementById('explainHint');
-  if(q.explain.hint){
-    hint.style.display = '';
-    hint.innerHTML = '💡 ' + q.explain.hint;
-  } else {
-    hint.style.display = 'none';
-  }
+  const hint=document.getElementById('explainHint');
+  if(q.explain.hint){ hint.style.display=''; hint.innerHTML='💡 '+q.explain.hint; }
+  else hint.style.display='none';
 
-  let html = '';
-  q.explain.steps.forEach(s => {
-    html += `<div class="step"><div class="step-title">${s.title}</div><div>${s.body}</div></div>`;
+  let html='';
+  q.explain.steps.forEach(s=>{
+    html+=`<div class="step"><div class="step-title">${s.title}</div><div>${s.body}</div></div>`;
   });
-  html += `<p style="margin-top:14px;font-weight:700;color:var(--bio)">${q.explain.answer}</p>`;
-  document.getElementById('explainBody').innerHTML = html;
-
-  const kpRow = document.getElementById('kpRow');
-  kpRow.innerHTML = '<span class="kp-label">知識點：</span>' +
-    q.explain.keywords.map(k => `<span class="kp-tag">${k}</span>`).join('');
+  html+=`<p style="margin-top:12px;font-weight:700;color:var(--bio)">${q.explain.answer}</p>`;
+  document.getElementById('explainBody').innerHTML=html;
+  document.getElementById('kpRow').innerHTML=
+    '<span class="kp-label">知識點：</span>'+
+    q.explain.keywords.map(k=>`<span class="kp-tag">${k}</span>`).join('');
 }
 
-// ── Interactions ──────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════════════════════════════
 function selectOpt(i){
   if(revealed) return;
-  selectedOpt = i;
-  document.querySelectorAll('.opt-btn').forEach((b,j) => {
-    b.classList.toggle('selected', j===i);
-  });
-  const btn = document.getElementById('btnReveal');
-  btn.disabled = false;
-  btn.textContent = '揭曉答案';
+  selectedOpt=i;
+  document.querySelectorAll('.opt-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
+  const btn=document.getElementById('btnReveal');
+  btn.disabled=false; btn.textContent='揭曉答案';
 }
 
 function reveal(){
-  if(selectedOpt === null) return;
-  const q = getQuestion(currentOffset);
-  const correct = selectedOpt === q.ans;
-  const dateKey = todayStr(currentOffset);
-  const hist = getHistory();
-  hist[dateKey] = {selected: selectedOpt, correct};
+  if(selectedOpt===null) return;
+  const q=getQuestion(currentOffset);
+  const correct=selectedOpt===q.ans;
+  const key=dateStr(currentOffset);
+  const hist=getHistory();
+  const wasAnswered=!!hist[key];
+  hist[key]={selected:selectedOpt,correct};
   saveHistory(hist);
-  revealed = true;
+
+  // check level up
+  const before=Object.values(hist).filter(r=>r.correct).length - (correct?1:0);
+  const after=before+(correct?1:0);
+  const lvBefore=getLevel(before).index;
+  const lvAfter=getLevel(after).index;
+
+  revealed=true;
   renderQuestion();
   renderWeekDots();
-  renderStreak();
-  // scroll to explanation
-  setTimeout(() => {
+  renderStats();
+  renderTasks();
+  renderCharacter();
+
+  if(correct && lvAfter>lvBefore) showToast(lvAfter);
+
+  setTimeout(()=>{
     document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'});
-  }, 200);
+  },200);
 }
 
 function resetAnswer(){
-  const dateKey = todayStr(currentOffset);
-  const hist = getHistory();
-  delete hist[dateKey];
+  const key=dateStr(currentOffset);
+  const hist=getHistory();
+  delete hist[key];
   saveHistory(hist);
-  renderQuestion();
-  renderWeekDots();
-  renderStreak();
+  renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
 }
 
 function navigate(dir){
-  const newOffset = currentOffset + dir;
-  if(newOffset > 0) return;
-  currentOffset = newOffset;
-  renderDate();
-  renderQuestion();
+  const n=currentOffset+dir;
+  if(n>0) return;
+  currentOffset=n;
+  renderDate(); renderQuestion();
 }
 
-// ── Init ──────────────────────────────────────────────────────
-renderDate();
+function scrollToQuestion(){
+  document.getElementById('qCard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════
+function showToast(lvIndex){
+  const lv=LEVELS[lvIndex];
+  document.getElementById('toastEmoji').textContent=lv.emoji;
+  document.getElementById('toastMsg').textContent=`恭喜進化為「${lv.name}」！`;
+  const t=document.getElementById('toast');
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+renderCharacter();
+renderStats();
+renderTasks();
 renderWeekDots();
-renderStreak();
+renderDate();
 renderQuestion();
 </script>
 </body>
