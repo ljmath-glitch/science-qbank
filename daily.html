@@ -197,6 +197,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .filter-bar{display:flex;gap:8px;padding:0 0 10px;flex-wrap:wrap}
 .filter-sel{flex:1;min-width:130px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:system-ui,sans-serif;font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%236b6557'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .filter-sel:focus{outline:none;border-color:var(--bio)}
+.start-btn{width:100%;padding:12px;background:var(--bio);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:system-ui,sans-serif;cursor:pointer;letter-spacing:1px;transition:.15s;margin-top:4px}
+.start-btn:hover{filter:brightness(1.1)}
+.start-btn.refilter{background:var(--muted);font-size:13px;padding:8px;margin-top:2px}
 
 .q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
 .q-stem{margin-bottom:12px}
@@ -461,7 +464,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <!-- ⑥ 篩選器 -->
   <div class="filter-bar">
     <select class="filter-sel" id="selBook" onchange="applyFilter()">
-      <option value="">全部年級學期</option>
+      <option value="">全年級（含會考）</option>
       <option value="一上">七年級上學期（一上）</option>
       <option value="一下">七年級下學期（一下）</option>
       <option value="二上">八年級上學期（二上）</option>
@@ -470,15 +473,16 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       <option value="三下">九年級下學期（三下）</option>
     </select>
     <select class="filter-sel" id="selExam" onchange="applyFilter()">
-      <option value="">全部段考</option>
+      <option value="">所有（含會考）</option>
       <option value="第一次">第一次段考</option>
       <option value="第二次">第二次段考</option>
       <option value="第三次">第三次段考</option>
     </select>
+    <button class="start-btn" id="startBtn" onclick="startPractice()">開始練習 →</button>
   </div>
 
   <!-- ⑦ 題目卡 -->
-  <div class="q-card" id="qCard">
+  <div class="q-card" id="qCard" style="display:none">
     <div class="q-card-head" id="qHead"></div>
     <div id="passageBox" class="passage-box" style="display:none">
       <div class="passage-head">📄 閱讀題組</div>
@@ -538,13 +542,15 @@ const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_AN
 
 // ── 篩選器狀態 ──────────────────────────────────────────────────
 let _filter = {book:'', exam:''};
+let _started = false;
+
 function filterQS(){
   let q='type=neq.passage';
   if(_filter.book) q+=`&book=eq.${encodeURIComponent(_filter.book)}`;
   if(_filter.exam) q+=`&exam=like.*${encodeURIComponent(_filter.exam)}*`;
   return q;
 }
-function applyFilter(){
+function _resetFilterState(){
   _filter.book = document.getElementById('selBook').value;
   _filter.exam = document.getElementById('selExam').value;
   _totalCount = null;
@@ -554,6 +560,18 @@ function applyFilter(){
   for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('dq_pin_'))toRemove.push(k);}
   toRemove.forEach(k=>localStorage.removeItem(k));
   sessionIdx=0;
+}
+function startPractice(){
+  _started = true;
+  document.getElementById('qCard').style.display='';
+  const btn=document.getElementById('startBtn');
+  btn.textContent='重新篩選 ↺'; btn.classList.add('refilter');
+  _resetFilterState();
+  loadAndRender();
+}
+function applyFilter(){
+  if(!_started) return; // 先按「開始練習」才生效
+  _resetFilterState();
   loadAndRender();
 }
 
@@ -914,7 +932,7 @@ function renderWeekDots(){
     div.className=cls;
     div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
     div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
-    div.onclick=()=>{currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
+    div.onclick=()=>{if(!_started)return;currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
     el.appendChild(div);
   }
 }
@@ -1133,6 +1151,7 @@ function resetAnswer(){
 }
 
 function navigate(dir){
+  if(!_started) return;
   const n=currentOffset+dir; if(n>0) return;
   currentOffset=n; sessionIdx=0; _usedOffsets.clear(); renderDate(); loadAndRender();
 }
@@ -1220,7 +1239,6 @@ function showToast(lvIdx){
 // INIT
 // ═══════════════════════════════════════════════════════════════
 renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
-loadAndRender();
 </script>
 </body>
 </html>
