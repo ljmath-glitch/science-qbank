@@ -21,7 +21,7 @@
   body{font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;
     background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
-  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative;overflow:hidden}
+  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative}
 
   header h1{font-size:24px;letter-spacing:3px;font-weight:700}
   header .sub{font-size:12px;color:#b9c2d6;margin-top:4px;letter-spacing:1px;font-family:system-ui,sans-serif}
@@ -147,7 +147,7 @@
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
   .bell-badge{display:none;position:absolute;top:-2px;right:-2px;background:#e53935;color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 3px;font-family:system-ui,sans-serif;pointer-events:none}
-  .bell-panel{display:none;position:absolute;top:calc(100% + 10px);right:0;width:360px;max-height:440px;background:#fff;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);z-index:9999;overflow:hidden;border:1px solid #e0e0e0}
+  .bell-panel{display:none;position:fixed;width:360px;max-height:440px;background:#fff;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);z-index:9999;overflow:hidden;border:1px solid #e0e0e0}
   .bell-panel-hdr{padding:12px 16px;background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
   .bell-panel-hdr button{background:none;border:none;color:#b9c2d6;cursor:pointer;font-size:20px;line-height:1}
   .bell-list{overflow-y:auto;max-height:380px}
@@ -1068,8 +1068,17 @@ async function updateBell(){
 }
 function toggleBellPanel(){
   _bellOpen=!_bellOpen;
-  document.getElementById('bellPanel').style.display=_bellOpen?'block':'none';
-  if(_bellOpen)updateBell();
+  const panel=document.getElementById('bellPanel');
+  if(_bellOpen){
+    const btn=document.getElementById('bellBtn');
+    const r=btn.getBoundingClientRect();
+    panel.style.top=(r.bottom+8)+'px';
+    panel.style.right=(window.innerWidth-r.right)+'px';
+    panel.style.display='block';
+    updateBell();
+  }else{
+    panel.style.display='none';
+  }
 }
 document.addEventListener('click',function(e){
   const panel=document.getElementById('bellPanel');
