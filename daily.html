@@ -457,7 +457,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <!-- ⑥ 題目卡 -->
   <div class="q-card" id="qCard">
     <div class="q-card-head" id="qHead"></div>
-    <div id="passageBox" style="display:none">
+    <div id="passageBox" class="passage-box" style="display:none">
       <div class="passage-head">📄 閱讀題組</div>
       <div class="passage-body" id="passageBody"></div>
     </div>
@@ -532,12 +532,16 @@ async function sbFetchRow(offset){
 }
 
 async function sbFetchPassage(groupId){
+  // Fetch all rows in the group and find the passage row client-side,
+  // avoiding a server-side filter on the 'type' column which can be
+  // mishandled as a content-negotiation parameter by some PostgREST versions.
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=*&type=eq.passage&group_id=eq.${encodeURIComponent(groupId)}&limit=1`,
+    `${SUPABASE_URL}/rest/v1/questions?select=*&group_id=eq.${encodeURIComponent(groupId)}&limit=50`,
     {headers:SB_HDR}
   );
   const data = await res.json();
-  return data[0]||null;
+  if(!Array.isArray(data)) return null;
+  return data.find(r => r.type === 'passage') || null;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -680,20 +684,22 @@ async function loadDailyQuestion(offset, sidx=0){
     const q = normalizeRow(row);
     if(q.groupId){
       try{
-        // 抓題組文章（type=passage）
         const pRow = await sbFetchPassage(q.groupId);
         if(pRow) q.passage = {
           text: fixLatex(pRow.q||''),
           imgs: Array.isArray(pRow.imgs) ? pRow.imgs : [],
         };
-        // 抓同組第一題，若當前不是第一題就把第一題的圖也帶入（承上題情境）
-        const firstRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/questions?select=id,imgs&group_id=eq.${encodeURIComponent(q.groupId)}&type=neq.passage&order=id&limit=1`,
+        // 抓同組第一題的圖（承上題情境）：同一個 group_id 內 id 最小的非 passage 題
+        const sibRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/questions?select=id,imgs,type&group_id=eq.${encodeURIComponent(q.groupId)}&order=id&limit=30`,
           {headers:SB_HDR}
         );
-        const firstRows = await firstRes.json();
-        if(firstRows.length && firstRows[0].id !== row.id){
-          q.firstQImgs = Array.isArray(firstRows[0].imgs) ? firstRows[0].imgs : [];
+        const sibRows = await sibRes.json();
+        if(Array.isArray(sibRows)){
+          const firstSub = sibRows.find(r => r.type !== 'passage');
+          if(firstSub && firstSub.id !== row.id){
+            q.firstQImgs = Array.isArray(firstSub.imgs) ? firstSub.imgs : [];
+          }
         }
       }catch(pe){ console.warn('passage fetch failed',pe); }
     }
