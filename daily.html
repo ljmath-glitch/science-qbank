@@ -445,7 +445,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 // ═══════════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://esfepufqyeplafzbeeag.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = (typeof supabase !== 'undefined')
+  ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 // ═══════════════════════════════════════════════════════════════
 // HELPERS (ported from index.html)
@@ -550,6 +552,7 @@ async function loadDailyQuestion(offset, sidx=0){
   if(_cache[cacheKey]) return _cache[cacheKey];
   showLoading(true);
   try{
+    if(!sb) throw new Error('Supabase not available');
     // get total count once
     if(_totalCount === null){
       const {count,error:ce} = await sb.from('questions')
