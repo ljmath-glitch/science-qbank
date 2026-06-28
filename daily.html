@@ -197,6 +197,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
 .q-stem{margin-bottom:12px}
 .qimg{display:block;max-width:100%;border:1px solid var(--line);border-radius:8px;margin:8px 0;cursor:zoom-in}
+.passage-box{background:#f8f6f0;border:1px solid var(--line);border-left:4px solid var(--earth);border-radius:12px;margin:12px 16px 4px;overflow:hidden}
+.passage-head{padding:8px 14px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;color:var(--earth);letter-spacing:1px}
+.passage-body{padding:4px 14px 12px;font-size:14px;line-height:1.9}
 .lightbox{
   display:none;position:fixed;inset:0;z-index:9999;
   background:rgba(0,0,0,.92);
@@ -428,6 +431,10 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <!-- ⑥ 題目卡 -->
   <div class="q-card" id="qCard">
     <div class="q-card-head" id="qHead"></div>
+    <div id="passageBox" style="display:none">
+      <div class="passage-head">📄 閱讀題組</div>
+      <div class="passage-body" id="passageBody"></div>
+    </div>
     <div class="q-body" id="qBody"></div>
     <div class="opts" id="qOpts"></div>
     <div class="result-badge" id="resultBadge"></div>
@@ -480,6 +487,15 @@ async function sbCount(){
 async function sbFetchRow(offset){
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/questions?select=*&type=neq.passage&order=id&offset=${offset}&limit=1`,
+    {headers:SB_HDR}
+  );
+  const data = await res.json();
+  return data[0]||null;
+}
+
+async function sbFetchPassage(groupId){
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/questions?select=*&type=eq.passage&group_id=eq.${encodeURIComponent(groupId)}&limit=1`,
     {headers:SB_HDR}
   );
   const data = await res.json();
@@ -576,6 +592,8 @@ function normalizeRow(row){
     keywords: kws,
     hasOpts: opts.length >= 2,
     imgs: Array.isArray(row.imgs) ? row.imgs : [],
+    groupId: row.group_id || null,
+    passage: null, // filled after fetch if needed
   };
 }
 
@@ -614,6 +632,15 @@ async function loadDailyQuestion(offset, sidx=0){
     if(!row) throw new Error('no data');
 
     const q = normalizeRow(row);
+    if(q.groupId){
+      try{
+        const pRow = await sbFetchPassage(q.groupId);
+        if(pRow) q.passage = {
+          text: fixLatex(pRow.q||''),
+          imgs: Array.isArray(pRow.imgs) ? pRow.imgs : [],
+        };
+      }catch(pe){ console.warn('passage fetch failed',pe); }
+    }
     _cache[cacheKey] = q;
     return q;
   }catch(e){
@@ -800,6 +827,20 @@ function renderQuestion(){
     <span class="tag ${q.subject}">${q.subjectLabel}</span>
     ${q.diffLvl?`<span class="tag diff ${DIFF_CSS[q.diffLvl]||'meta'}">${q.diffLvl}</span>`:''}
     <span class="q-num">${sessionIdx>0?`第 ${sessionIdx+1} 題`:q.source}</span>`;
+
+  // passage (題組文章)
+  const passageBox = document.getElementById('passageBox');
+  const passageBody = document.getElementById('passageBody');
+  if(q.passage){
+    const pImgs = q.passage.imgs.map(im=>{
+      const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
+      return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
+    }).join('');
+    passageBody.innerHTML = pImgs + q.passage.text.replace(/\n/g,'<br>');
+    passageBox.style.display='';
+  } else {
+    passageBox.style.display='none';
+  }
 
   // body
   const imgsHtml = q.imgs.map(im=>{
