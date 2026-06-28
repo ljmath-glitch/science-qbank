@@ -656,7 +656,15 @@ async function loadDailyQuestion(offset, sidx=0){
 
     let qOffset;
     if(sidx === 0){
-      qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
+      // Pin today's offset so the same question always shows after refresh
+      const pinKey = 'dq_pin_' + dateStr(offset);
+      const pinned = localStorage.getItem(pinKey);
+      if(pinned !== null){
+        qOffset = parseInt(pinned, 10);
+      } else {
+        qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
+        localStorage.setItem(pinKey, String(qOffset));
+      }
     } else {
       let attempts = 0;
       do {
@@ -861,7 +869,9 @@ function renderQuestion(){
   if(!q) return;
   const hist=getHistory();
   const key=getHistKey(currentOffset,sessionIdx);
-  const rec=hist[key];
+  let rec=hist[key];
+  // Discard stale record if it belongs to a different question (qid mismatch)
+  if(rec && rec.qid && rec.qid !== q.id) rec = null;
   selectedOpt=rec?rec.selected:null;
   revealed=!!rec;
 
@@ -1030,7 +1040,7 @@ function reveal(){
   const key=getHistKey(currentOffset,sessionIdx);
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
-  hist[key]={selected:selectedOpt,correct};
+  hist[key]={selected:selectedOpt,correct,qid:q.id};
   saveHistory(hist);
 
   const before=Object.values(getHistory()).filter(r=>r.correct).length-(correct?1:0);
