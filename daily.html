@@ -193,6 +193,10 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .tag.diff.d3{background:#fff0e0;color:#e8740c}
 .tag.diff.d4{background:#ffebee;color:#c62828}
 .q-num{margin-left:auto;font-family:system-ui,sans-serif;font-size:11px;color:var(--muted)}
+.q-source{width:100%;font-size:11px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:4px;letter-spacing:.3px}
+.filter-bar{display:flex;gap:8px;padding:0 0 10px;flex-wrap:wrap}
+.filter-sel{flex:1;min-width:130px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font-family:system-ui,sans-serif;font-size:13px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%236b6557'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.filter-sel:focus{outline:none;border-color:var(--bio)}
 
 .q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
 .q-stem{margin-bottom:12px}
@@ -454,7 +458,26 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <button class="nav-btn" id="btnNext" onclick="navigate(1)">後一天 ▶</button>
   </div>
 
-  <!-- ⑥ 題目卡 -->
+  <!-- ⑥ 篩選器 -->
+  <div class="filter-bar">
+    <select class="filter-sel" id="selBook" onchange="applyFilter()">
+      <option value="">全部年級學期</option>
+      <option value="一上">七年級上學期（一上）</option>
+      <option value="一下">七年級下學期（一下）</option>
+      <option value="二上">八年級上學期（二上）</option>
+      <option value="二下">八年級下學期（二下）</option>
+      <option value="三上">九年級上學期（三上）</option>
+      <option value="三下">九年級下學期（三下）</option>
+    </select>
+    <select class="filter-sel" id="selExam" onchange="applyFilter()">
+      <option value="">全部段考</option>
+      <option value="第一次">第一次段考</option>
+      <option value="第二次">第二次段考</option>
+      <option value="第三次">第三次段考</option>
+    </select>
+  </div>
+
+  <!-- ⑦ 題目卡 -->
   <div class="q-card" id="qCard">
     <div class="q-card-head" id="qHead"></div>
     <div id="passageBox" class="passage-box" style="display:none">
@@ -513,18 +536,39 @@ const SUPABASE_URL = 'https://esfepufqyeplafzbeeag.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
 
+// ── 篩選器狀態 ──────────────────────────────────────────────────
+let _filter = {book:'', exam:''};
+function filterQS(){
+  let q='type=neq.passage';
+  if(_filter.book) q+=`&book=eq.${encodeURIComponent(_filter.book)}`;
+  if(_filter.exam) q+=`&exam=like.*${encodeURIComponent(_filter.exam)}*`;
+  return q;
+}
+function applyFilter(){
+  _filter.book = document.getElementById('selBook').value;
+  _filter.exam = document.getElementById('selExam').value;
+  _totalCount = null;
+  for(const k in _cache) delete _cache[k];
+  _usedOffsets.clear();
+  const toRemove=[];
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('dq_pin_'))toRemove.push(k);}
+  toRemove.forEach(k=>localStorage.removeItem(k));
+  sessionIdx=0;
+  loadAndRender();
+}
+
 async function sbCount(){
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=*&type=neq.passage`,
+    `${SUPABASE_URL}/rest/v1/questions?select=*&${filterQS()}`,
     {headers:{...SB_HDR,'Prefer':'count=exact','Range':'0-0'}}
   );
-  const cr = res.headers.get('content-range'); // "0-0/1234"
+  const cr = res.headers.get('content-range');
   return parseInt(cr.split('/')[1]);
 }
 
 async function sbFetchRow(offset){
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=*&type=neq.passage&order=id&offset=${offset}&limit=1`,
+    `${SUPABASE_URL}/rest/v1/questions?select=*&${filterQS()}&order=id&offset=${offset}&limit=1`,
     {headers:SB_HDR}
   );
   const data = await res.json();
@@ -548,7 +592,25 @@ async function sbFetchPassage(groupId){
 // HELPERS (ported from index.html)
 // ═══════════════════════════════════════════════════════════════
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function textHtml(s){return esc(s||'').replace(/\n/g,'<br>')}
+function mathToHtml(text){
+  if(!text) return '';
+  const segs=[];
+  const pat=/\$\$([^$]+)\$\$|\$([^$]+)\$/g;
+  let last=0,m;
+  while((m=pat.exec(text))!==null){
+    if(m.index>last) segs.push({t:'txt',v:text.slice(last,m.index)});
+    const disp=m[0].startsWith('$$');
+    segs.push({t:'math',v:disp?m[1]:m[2],disp});
+    last=m.index+m[0].length;
+  }
+  if(last<text.length) segs.push({t:'txt',v:text.slice(last)});
+  return segs.map(s=>{
+    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>');
+    if(typeof katex==='undefined') return esc(s.v);
+    try{return katex.renderToString(s.v,{throwOnError:false,displayMode:s.disp});}
+    catch(e){return esc(s.v);}
+  }).join('');
+}
 function fixLatex(text){
   if(!text) return '';
   return text.replace(/\$([^$]+)\$/g,function(_,inner){
@@ -619,7 +681,7 @@ function normalizeRow(row){
   }
 
   const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
-  const source = [row.year, row.exam].filter(Boolean).join(' ');
+  const srcParts = [row.year, row.school, row.exam, row.no?`第${row.no}題`:''].filter(Boolean);
 
   return {
     id: row.id,
@@ -627,7 +689,8 @@ function normalizeRow(row){
     subjectLabel: subject.lbl,
     diffLvl: diff.lvl || '—',
     diffScore: diff.score,
-    source,
+    source: srcParts.join(' · '),
+    year: row.year||'', school: row.school||'', exam: row.exam||'', no: row.no||'',
     stem,
     opts,
     ansIdx,
@@ -638,7 +701,7 @@ function normalizeRow(row){
     hasOpts: opts.length >= 2,
     imgs: Array.isArray(row.imgs) ? row.imgs : [],
     groupId: row.group_id || null,
-    passage: null, // filled after fetch if needed
+    passage: null,
   };
 }
 
@@ -890,10 +953,12 @@ function renderQuestion(){
   }
 
   // head
+  const srcLabel = sessionIdx>0?`第 ${sessionIdx+1} 題`:'今日一題';
   document.getElementById('qHead').innerHTML=`
     <span class="tag ${q.subject}">${q.subjectLabel}</span>
     ${q.diffLvl?`<span class="tag diff ${DIFF_CSS[q.diffLvl]||'meta'}">${q.diffLvl}</span>`:''}
-    <span class="q-num">${sessionIdx>0?`第 ${sessionIdx+1} 題`:q.source}</span>`;
+    <span class="q-num">${srcLabel}</span>
+    ${q.source?`<div class="q-source">${esc(q.source)}</div>`:''}`;
 
   // passage (題組文章)
   const passageBox = document.getElementById('passageBox');
@@ -906,7 +971,7 @@ function renderQuestion(){
       }).join('');
     }
     let html = '';
-    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${textHtml(q.passage.text)}</div>` : '');
+    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${mathToHtml(q.passage.text)}</div>` : '');
     if(q.firstQImgs && q.firstQImgs.length) html += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${toImgHtml(q.firstQImgs)}</div>`;
     passageBody.innerHTML = html;
     passageBox.style.display='';
@@ -919,7 +984,7 @@ function renderQuestion(){
     const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
     return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
   }).join('');
-  document.getElementById('qBody').innerHTML=`<div class="q-stem">${textHtml(q.stem)}</div>${imgsHtml}`;
+  document.getElementById('qBody').innerHTML=`<div class="q-stem">${mathToHtml(q.stem)}</div>${imgsHtml}`;
 
   // opts
   const optsEl=document.getElementById('qOpts');
@@ -928,7 +993,7 @@ function renderQuestion(){
     q.opts.forEach((opt,i)=>{
       const btn=document.createElement('button');
       btn.className='opt-btn';
-      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${textHtml(opt)}</span>`;
+      btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${mathToHtml(opt)}</span>`;
       if(revealed){
         btn.disabled=true;
         if(i===q.ansIdx) btn.classList.add('correct');
@@ -983,7 +1048,6 @@ function renderQuestion(){
   if(revealed){expCard.classList.add('show');renderExplanation(q);}
   else expCard.classList.remove('show');
 
-  renderMath();
 }
 
 function renderExplanation(q){
@@ -992,9 +1056,9 @@ function renderExplanation(q){
 
   let html='';
   html+=`<div class="step"><div class="step-title">正確答案</div>`;
-  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?esc(q.opts[q.ansIdx]):''}</div></div>`;
+  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx]):''}</div></div>`;
   if(q.sol){
-    html+=`<div class="step"><div class="step-title">詳解</div><div>${textHtml(q.sol)}</div></div>`;
+    html+=`<div class="step"><div class="step-title">詳解</div><div>${mathToHtml(q.sol)}</div></div>`;
   }
   document.getElementById('explainBody').innerHTML=html;
 
