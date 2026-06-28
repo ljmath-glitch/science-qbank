@@ -628,8 +628,8 @@ function getFallback(offset, sidx=0){
 // ═══════════════════════════════════════════════════════════════
 const LEVELS=[
   {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  next:15},
-  {name:'小弱弱',  emoji:'😅',rank:'還在努力',threshold:15, next:40},
-  {name:'高手',    emoji:'😎',rank:'穩了穩了',threshold:40, next:80},
+  {name:'NPC',     emoji:'🤖',rank:'背景角色',threshold:15, next:40},
+  {name:'人上人',  emoji:'😎',rank:'脫穎而出',threshold:40, next:80},
   {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:80, next:null},
 ];
 function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].threshold)i=j;return{index:i,...LEVELS[i]};}
