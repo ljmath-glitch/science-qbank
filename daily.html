@@ -846,10 +846,21 @@ function renderExplanation(q){
 
 function renderMath(){
   setTimeout(()=>{
-    renderMathInElement(document.body,{
-      delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
-      throwOnError:false,
-    });
+    if(typeof renderMathInElement !== 'undefined'){
+      try{
+        renderMathInElement(document.body,{
+          delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],
+          throwOnError:false,
+        });
+      }catch(e){console.warn('KaTeX error',e);}
+    } else {
+      // KaTeX CDN not loaded — strip $ delimiters so math is at least readable
+      document.querySelectorAll('.q-stem,.opt-btn span:last-child,.explain-body *').forEach(el=>{
+        if(el.childNodes.length===1&&el.childNodes[0].nodeType===3){
+          el.textContent=el.textContent.replace(/\$\$([^$]+)\$\$/g,'[$1]').replace(/\$([^$]+)\$/g,'$1');
+        }
+      });
+    }
   },60);
 }
 
