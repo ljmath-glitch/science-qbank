@@ -248,7 +248,33 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .result-badge.correct{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;display:flex}
 .result-badge.wrong{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;display:flex}
 
-.action-row{padding:0 16px 16px;display:flex;gap:9px}
+.action-row{padding:0 16px 10px;display:flex;gap:9px}
+.btn-flag{
+  display:block;width:calc(100% - 32px);margin:0 16px 14px;
+  padding:9px;border-radius:8px;border:1px dashed #e0b4b4;
+  background:#fff9f9;color:var(--accent);font-size:13px;font-weight:600;
+  font-family:system-ui,sans-serif;cursor:pointer;transition:.15s;text-align:center;
+}
+.btn-flag:hover{background:#ffecec;border-color:var(--accent)}
+
+/* ── Report Modal ── */
+.report-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9997}
+.report-box{
+  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:640px;background:#fff;border-radius:18px 18px 0 0;
+  padding:20px 20px 36px;z-index:9998;
+}
+.report-title{font-size:16px;font-weight:700;font-family:system-ui,sans-serif;margin-bottom:14px}
+.report-input{
+  width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:12px;font-size:15px;font-family:inherit;resize:none;height:90px;
+  outline:none;transition:.15s;
+}
+.report-input:focus{border-color:var(--accent)}
+.report-input::placeholder{color:#bbb}
+.report-btns{display:flex;gap:10px;margin-top:12px}
+.report-cancel{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:14px;font-weight:600;font-family:system-ui,sans-serif;cursor:pointer}
+.report-submit{flex:2;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;font-family:system-ui,sans-serif;cursor:pointer}
 .btn-reveal{
   flex:1;padding:13px;border-radius:10px;border:none;
   background:var(--bio);color:#fff;font-size:16px;font-weight:700;
@@ -443,6 +469,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       <button class="btn-again" id="btnAgain" onclick="resetAnswer()" style="display:none">重做</button>
       <button class="btn-next" id="btnNextQ" onclick="nextQuestion()" style="display:none">下一題 →</button>
     </div>
+    <button class="btn-flag" id="btnFlag" onclick="openReport()" style="display:none">🚩 回報錯誤</button>
   </div>
 
   <!-- ⑦ 詳解 -->
@@ -453,6 +480,17 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="kp-row" id="kpRow"></div>
   </div>
 
+</div>
+
+<!-- Report Modal -->
+<div id="reportOverlay" class="report-overlay" style="display:none" onclick="closeReport()"></div>
+<div id="reportBox" class="report-box" style="display:none">
+  <div class="report-title">🚩 回報錯誤</div>
+  <textarea id="reportReason" class="report-input" placeholder="請描述錯誤內容（選填）" rows="3"></textarea>
+  <div class="report-btns">
+    <button class="report-cancel" onclick="closeReport()">取消</button>
+    <button class="report-submit" onclick="submitReport()">送出回報</button>
+  </div>
 </div>
 
 <!-- Lightbox -->
@@ -918,6 +956,9 @@ function renderQuestion(){
     }
   }
 
+  // flag button – show whenever a question is loaded
+  document.getElementById('btnFlag').style.display='';
+
   // explanation
   const expCard=document.getElementById('explainCard');
   if(revealed){expCard.classList.add('show');renderExplanation(q);}
@@ -1021,6 +1062,40 @@ function nextQuestion(){
   document.getElementById('resultBadge').className='result-badge';
   loadAndRender();
   setTimeout(()=>document.getElementById('qCard').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+// ── 報錯 ──────────────────────────────────────────────────────
+function openReport(){
+  if(!currentQuestion) return;
+  document.getElementById('reportReason').value='';
+  document.getElementById('reportOverlay').style.display='';
+  document.getElementById('reportBox').style.display='';
+}
+function closeReport(){
+  document.getElementById('reportOverlay').style.display='none';
+  document.getElementById('reportBox').style.display='none';
+}
+async function submitReport(){
+  const q=currentQuestion; if(!q) return;
+  const reason=document.getElementById('reportReason').value.trim();
+  closeReport();
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/questions?id=eq.${encodeURIComponent(q.id)}`,{
+      method:'PATCH',
+      headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({flag:true})
+    });
+    // try inserting to reports table (graceful fail if table doesn't exist)
+    fetch(`${SUPABASE_URL}/rest/v1/reports`,{
+      method:'POST',
+      headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({question_id:String(q.id),reason:reason||null,reported_at:new Date().toISOString()})
+    }).catch(()=>{});
+  }catch(e){console.warn('report error',e);}
+  document.getElementById('toastEmoji').textContent='🚩';
+  document.getElementById('toastMsg').textContent='已回報！老師將會確認這道題目';
+  const t=document.getElementById('toast');t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),3000);
 }
 
 function openLightbox(src){
