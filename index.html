@@ -1081,7 +1081,7 @@ async function updateBell(){
     // Use direct REST fetch instead of SDK to avoid silent SDK errors
     const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
     const res=await fetch(
-      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,q,year,school,exam,no,basis,updated_at&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
+      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,year,school,exam,no,basis,updated_at&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
       {headers:hdr}
     );
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1137,12 +1137,10 @@ function renderBellList(items){
     const isReport=it.basis&&it.basis.startsWith('[回報]');
     const reason=isReport?it.basis.replace('[回報]','').trim():'';
     const timeStr=it.updated_at?new Date(it.updated_at).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-    const qSnippet=(it.q||'').replace(/\n/g,' ').trim().slice(0,50);
     return `<div class="bell-item">
     <div class="bell-item-title">${esc(it.summary||it.kp||'（無摘要）')}</div>
     <div class="bell-item-meta">${esc([it.year,it.school,it.exam,it.no?'No.'+it.no:''].filter(Boolean).join(' · '))}</div>
-    ${qSnippet?`<div class="bell-item-reason" style="color:#1a2238;background:#f7f4ee;border-color:#c9c0b0">📝 ${esc(qSnippet)}${it.q&&it.q.length>50?'…':''}</div>`:''}
-    ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:''}
+    ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:'<div class="bell-item-reason" style="color:#999;background:#f7f4ee;border-color:#ccc">（未填寫回報說明）</div>'}
     ${timeStr?`<div class="bell-item-time">🕐 回報時間：${timeStr}</div>`:''}
     <button class="btn sm green" onclick="bellResolve('${it.id}')">✓ 確認已解決</button>
   </div>`;
