@@ -478,7 +478,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       <option value="第二次">第二次段考</option>
       <option value="第三次">第三次段考</option>
     </select>
-    <button class="start-btn" id="startBtn" onclick="startPractice()">開始練習 →</button>
+    <button class="start-btn" id="startBtn" onclick="applyFilter()">套用篩選 →</button>
   </div>
 
   <!-- ⑦ 題目卡 -->
@@ -542,7 +542,6 @@ const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_AN
 
 // ── 篩選器狀態 ──────────────────────────────────────────────────
 let _filter = {book:'', exam:''};
-let _started = false;
 
 function filterQS(){
   let q='type=neq.passage';
@@ -561,19 +560,12 @@ function _resetFilterState(){
   toRemove.forEach(k=>localStorage.removeItem(k));
   sessionIdx=0;
 }
-function startPractice(){
-  _started = true;
-  document.getElementById('qCard').style.display='';
-  const btn=document.getElementById('startBtn');
-  btn.textContent='重新篩選 ↺'; btn.classList.add('refilter');
-  _resetFilterState();
-  loadAndRender();
-}
 function applyFilter(){
-  if(!_started) return; // 先按「開始練習」才生效
+  document.getElementById('qCard').style.display='';
   _resetFilterState();
   loadAndRender();
 }
+function startPractice(){ applyFilter(); }
 
 async function sbCount(){
   const res = await fetch(
@@ -935,7 +927,7 @@ function renderWeekDots(){
     div.className=cls;
     div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
     div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
-    div.onclick=()=>{if(!_started)return;currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
+    div.onclick=()=>{currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
     el.appendChild(div);
   }
 }
@@ -1167,7 +1159,6 @@ function resetAnswer(){
 }
 
 function navigate(dir){
-  if(!_started) return;
   const n=currentOffset+dir; if(n>0) return;
   currentOffset=n; sessionIdx=0; _usedOffsets.clear(); renderDate(); loadAndRender();
 }
@@ -1255,6 +1246,7 @@ function showToast(lvIdx){
 // INIT
 // ═══════════════════════════════════════════════════════════════
 renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
+applyFilter();
 </script>
 </body>
 </html>
