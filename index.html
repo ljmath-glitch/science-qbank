@@ -2308,6 +2308,7 @@ const TB_BUTTONS={
   report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
   kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
+  daily:   ()=>`<a class="btn" href="daily.html" style="text-decoration:none">📅 每日一題</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
@@ -2321,7 +2322,7 @@ const TB_BUTTONS={
 const TB_ROW_LABELS=['資料管理','功能工具','生成詳解','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
-  ['claude','report','kp','progress','guide'],
+  ['claude','report','kp','progress','daily','guide'],
   ['batchProvider','batchGeminiModel','batchGenBtn','solPromptBtn'],
   ['selFilt','selAll','stat'],
 ];
