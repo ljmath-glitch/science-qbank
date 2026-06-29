@@ -1412,7 +1412,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
-  renderMath(list);updateFloat();updateBell()}
+  renderMath(list);updateFloat();}
 function fixLatex(text){
   return text.replace(/\$([^$]+)\$/g,function(match,inner){
     var fixed=inner;
@@ -2427,6 +2427,7 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
     return;
   }
   await loadAIConfig();await load();buildFilters();render();
+  updateBell();
 })();
 </script>
 
