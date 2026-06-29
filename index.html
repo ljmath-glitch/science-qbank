@@ -154,7 +154,9 @@
   .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:system-ui,sans-serif}
   .bell-item:last-child{border-bottom:none}
   .bell-item-title{font-size:13px;color:#222;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .bell-item-meta{font-size:11px;color:#888;margin-bottom:7px}
+  .bell-item-meta{font-size:11px;color:#888;margin-bottom:4px}
+  .bell-item-reason{font-size:12px;color:#c0392b;background:#fff5f5;border-left:3px solid #e74c3c;padding:4px 8px;border-radius:0 5px 5px 0;margin:4px 0;line-height:1.5}
+  .bell-item-time{font-size:11px;color:#999;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -1079,7 +1081,7 @@ async function updateBell(){
     // Use direct REST fetch instead of SDK to avoid silent SDK errors
     const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
     const res=await fetch(
-      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,year,school,exam,no&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
+      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,year,school,exam,no,basis,updated_at&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
       {headers:hdr}
     );
     if(!res.ok) throw new Error('HTTP '+res.status);
@@ -1127,11 +1129,18 @@ function renderBellList(items){
     el.innerHTML='<div style="padding:24px;text-align:center;color:#999;font-family:system-ui,sans-serif;font-size:13px">目前沒有待確認的題目 ✓</div>';
     return;
   }
-  el.innerHTML=items.map(it=>`<div class="bell-item">
+  el.innerHTML=items.map(it=>{
+    const isReport=it.basis&&it.basis.startsWith('[回報]');
+    const reason=isReport?it.basis.replace('[回報]','').trim():'';
+    const timeStr=it.updated_at?new Date(it.updated_at).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+    return `<div class="bell-item">
     <div class="bell-item-title">${esc(it.summary||it.kp||'（無摘要）')}</div>
     <div class="bell-item-meta">${esc([it.year,it.school,it.exam,it.no?'No.'+it.no:''].filter(Boolean).join(' · '))}</div>
+    ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:''}
+    ${timeStr?`<div class="bell-item-time">🕐 回報時間：${timeStr}</div>`:''}
     <button class="btn sm" onclick="bellResolve('${it.id}')">標為已處理</button>
-  </div>`).join('');
+  </div>`;
+  }).join('');
 }
 
 /* ===== 章節清單管理 ===== */

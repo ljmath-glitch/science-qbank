@@ -1214,7 +1214,7 @@ async function submitReport(){
     const res=await fetch(`${SUPABASE_URL}/rest/v1/questions`,{
       method:'POST',
       headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},
-      body:JSON.stringify({id:q.id,flag:true})
+      body:JSON.stringify({id:q.id,flag:true,basis:'[回報] '+(reason||'（未填寫）'),updated_at:new Date().toISOString()})
     });
     ok=res.ok;
     if(!ok) console.warn('flag upsert failed',res.status, await res.text().catch(()=>''));
