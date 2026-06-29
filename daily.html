@@ -588,16 +588,16 @@ async function sbFetchRow(offset){
 }
 
 async function sbFetchPassage(groupId){
-  // Fetch all rows in the group and find the passage row client-side,
-  // avoiding a server-side filter on the 'type' column which can be
-  // mishandled as a content-negotiation parameter by some PostgREST versions.
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=*&group_id=eq.${encodeURIComponent(groupId)}&limit=50`,
+    `${SUPABASE_URL}/rest/v1/questions?select=id,q,imgs,type&group_id=eq.${encodeURIComponent(groupId)}&order=id&limit=50`,
     {headers:SB_HDR}
   );
   const data = await res.json();
-  if(!Array.isArray(data)) return null;
-  return data.find(r => r.type === 'passage') || null;
+  if(!Array.isArray(data)) return {passageRow:null, firstSubRow:null};
+  return {
+    passageRow:  data.find(r => r.type === 'passage') || null,
+    firstSubRow: data.find(r => r.type !== 'passage') || null,
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -763,22 +763,18 @@ async function loadDailyQuestion(offset, sidx=0){
     const q = normalizeRow(row);
     if(q.groupId){
       try{
-        const pRow = await sbFetchPassage(q.groupId);
-        if(pRow) q.passage = {
-          text: fixLatex(pRow.q||''),
-          imgs: Array.isArray(pRow.imgs) ? pRow.imgs : [],
-        };
-        // 抓同組第一題的圖（承上題情境）：同一個 group_id 內 id 最小的非 passage 題
-        const sibRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/questions?select=id,imgs,type&group_id=eq.${encodeURIComponent(q.groupId)}&order=id&limit=30`,
-          {headers:SB_HDR}
-        );
-        const sibRows = await sibRes.json();
-        if(Array.isArray(sibRows)){
-          const firstSub = sibRows.find(r => r.type !== 'passage');
-          if(firstSub && firstSub.id !== row.id){
-            q.firstQImgs = Array.isArray(firstSub.imgs) ? firstSub.imgs : [];
-          }
+        const {passageRow, firstSubRow} = await sbFetchPassage(q.groupId);
+        if(passageRow){
+          q.passage = {
+            text: fixLatex(passageRow.q||''),
+            imgs: Array.isArray(passageRow.imgs) ? passageRow.imgs : [],
+          };
+        } else if(firstSubRow && firstSubRow.id !== row.id){
+          // 沒有獨立題組文章：以同組第一題的文字與圖片作為題組文章
+          q.passage = {
+            text: fixLatex(firstSubRow.q||''),
+            imgs: Array.isArray(firstSubRow.imgs) ? firstSubRow.imgs : [],
+          };
         }
       }catch(pe){ console.warn('passage fetch failed',pe); }
     }
@@ -805,12 +801,12 @@ function getFallback(offset, sidx=0){
      stem:'取 $0.1\\text{ M}$ 鹽酸 $100\\text{ mL}$ 與 $0.1\\text{ M}$ NaOH $80\\text{ mL}$ 混合，溶液 pH 最接近？',
      opts:['pH=7（中性）','pH<7（酸性）','pH>7（鹼性）','無法判斷'],
      ansIdx:1,ansLetter:'B',sol:'HCl 過量 $0.002$ mol，$[H^+]\\approx0.011$ M，$\\text{pH}\\approx1.96$。',
-     kp:'酸鹼中和,pH',keywords:['酸鹼中和','pH'],hasOpts:true,imgs:[],groupId:null,passage:null,firstQImgs:[]},
+     kp:'酸鹼中和,pH',keywords:['酸鹼中和','pH'],hasOpts:true,imgs:[],groupId:null,passage:null},
     {id:'f2',subject:'bio',subjectLabel:'生物',diffLvl:'簡單',diffScore:3,source:'備用題',
      stem:'下列何者為真核細胞特有？',
      opts:['細胞膜','核糖體','核膜','細胞壁'],
      ansIdx:2,ansLetter:'C',sol:'真核細胞有核膜包裹細胞核，原核細胞無核膜。',
-     kp:'細胞',keywords:['細胞'],hasOpts:true,imgs:[],groupId:null,passage:null,firstQImgs:[]},
+     kp:'細胞',keywords:['細胞'],hasOpts:true,imgs:[],groupId:null,passage:null},
   ];
   const d=new Date(); d.setDate(d.getDate()+offset);
   const ep=Math.floor(d.getTime()/86400000);
@@ -976,16 +972,15 @@ function renderQuestion(){
   // passage (題組文章)
   const passageBox = document.getElementById('passageBox');
   const passageBody = document.getElementById('passageBody');
-  if(q.passage || (q.firstQImgs && q.firstQImgs.length)){
+  if(q.passage){
     function toImgHtml(imgs){
       return (imgs||[]).map(im=>{
         const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
         return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
       }).join('');
     }
-    let html = '';
-    if(q.passage) html += toImgHtml(q.passage.imgs) + (q.passage.text ? `<div>${mathToHtml(q.passage.text)}</div>` : '');
-    if(q.firstQImgs && q.firstQImgs.length) html += `<div style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${toImgHtml(q.firstQImgs)}</div>`;
+    let html = toImgHtml(q.passage.imgs);
+    if(q.passage.text) html += `<div>${mathToHtml(q.passage.text)}</div>`;
     passageBody.innerHTML = html;
     passageBox.style.display='';
   } else {
