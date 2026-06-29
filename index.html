@@ -177,7 +177,7 @@
   <div class="layout">
     <aside class="panel side">
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
-      <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="render()"></div>
+      <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
       <div class="grid2">
         <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
@@ -794,6 +794,16 @@ function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
+function precompute(it){
+  it._diff=calcDiff(it.step,it.mem,it.con);
+  it._sylYear=parseSylYear(it.year);
+  it._sylSem=parseSylSem(it.year);
+  it._examType=examType(it.exam,it.school);
+  it._examRoundNum=examRoundNum(it.exam);
+  it._grade=gradeFromExam(it.exam,it.book);
+  it._fixedQ=fixLatex(it.q||'');
+  return it;
+}
 
 /* ===== 雲端讀取（取代原本的 localStorage load） ===== */
 async function load(){
@@ -812,6 +822,13 @@ async function load(){
     PASSAGES={};
     all.filter(x=>x.type==='passage').forEach(x=>{if(x.groupId)PASSAGES[x.groupId]=x;});
     DB=all.filter(x=>x.type!=='passage');
+    DB.forEach(precompute);
+    DB.sort((a,b)=>{
+      if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
+      if((a.school||'')!==(b.school||''))return (a.school||'').localeCompare(b.school||'');
+      if((a.exam||'')!==(b.exam||''))return (a.exam||'').localeCompare(b.exam||'');
+      return (parseInt(a.no)||0)-(parseInt(b.no)||0);
+    });
   }
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
   if(e2)console.error(e2);
@@ -1348,32 +1365,33 @@ function matches(it){const s=fSearch.value.trim();
   if(fSub.value&&it.sub!==fSub.value)return false;
   if(fKp.value&&!(it.kp||'').includes(fKp.value))return false;
   if(fType.value&&it.type!==fType.value)return false;
-  if(fDiff.value&&calcDiff(it.step,it.mem,it.con).lvl!==fDiff.value)return false;
-  if(fYear.value&&parseSylYear(it.year)!==fYear.value)return false;
-  if(fSem.value&&parseSylSem(it.year)!==fSem.value)return false;
+  if(fDiff.value&&(it._diff||calcDiff(it.step,it.mem,it.con)).lvl!==fDiff.value)return false;
+  if(fYear.value&&(it._sylYear!==undefined?it._sylYear:parseSylYear(it.year))!==fYear.value)return false;
+  if(fSem.value&&(it._sylSem!==undefined?it._sylSem:parseSylSem(it.year))!==fSem.value)return false;
   if(fSchool.value&&it.school!==fSchool.value)return false;
-  if(fExamType.value&&examType(it.exam,it.school)!==fExamType.value)return false;
-  if(fRound.value&&examRoundNum(it.exam)!==fRound.value)return false;
-  if(fGrade.value&&gradeFromExam(it.exam,it.book)!==fGrade.value)return false;
+  if(fExamType.value&&(it._examType!==undefined?it._examType:examType(it.exam,it.school))!==fExamType.value)return false;
+  if(fRound.value&&(it._examRoundNum!==undefined?it._examRoundNum:examRoundNum(it.exam))!==fRound.value)return false;
+  if(fGrade.value&&(it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book))!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   return true}
+const PAGE_SIZE=50;let _page=0,_lastShown=[];
+let _renderTimer=null;
+function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
 function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
-  // 題組自動展開：符合條件的題若屬於某題組，把同題組的其他小題也一起帶出來（即使它們本身不符篩選）
+  // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
-  if(_gids.size)shown=DB.filter(it=>matches(it)||(it.groupId&&_gids.has(it.groupId)));
-  // 顯示排序：年度 → 學校 → 考試名稱 → 題號（題號依數字大小）。存檔後重抓雲端也維持此順序
-  shown.sort((a,b)=>{
-    if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
-    if((a.school||'')!==(b.school||''))return (a.school||'').localeCompare(b.school||'');
-    if((a.exam||'')!==(b.exam||''))return (a.exam||'').localeCompare(b.exam||'');
-    return (parseInt(a.no)||0)-(parseInt(b.no)||0);
-  });
+  if(_gids.size){const _sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>_sSet.has(it.id)||(it.groupId&&_gids.has(it.groupId)));}
+  _lastShown=shown;_page=0;
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
+  renderPage(list,shown,0);}
+function renderPage(list,shown,page){
+  const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,shown.length);
+  const pageItems=shown.slice(start,end);
   const _shownPs=new Set();
-  list.innerHTML=shown.map(it=>{
+  list.innerHTML=pageItems.map(it=>{
     let passageHtml='';
     const _gid=it.groupId||'';
     if(_gid&&PASSAGES[_gid]&&!_shownPs.has(_gid)){
@@ -1384,7 +1402,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
       passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'Songti SC','STSong','Noto Serif TC',Georgia,serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
     }
     const d=calcDiff(it.step,it.mem,it.con);
-    const cleanQ=fixLatex(it.q||'');
+    const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
     const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
@@ -1412,7 +1430,16 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
-  renderMath(list);updateFloat();}
+  // 分頁導覽
+  if(shown.length>PAGE_SIZE){
+    const totalPages=Math.ceil(shown.length/PAGE_SIZE);
+    const nav=document.createElement('div');
+    nav.style.cssText='display:flex;align-items:center;gap:8px;padding:14px 0;font-family:system-ui,sans-serif;font-size:13px;justify-content:center';
+    nav.innerHTML=`<button class="btn sm" ${page===0?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page-1});window.scrollTo(0,0)">◀ 上一頁</button><span style="color:var(--muted)">第 ${page+1} / ${totalPages} 頁（共 ${shown.length} 題）</span><button class="btn sm" ${end>=shown.length?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page+1});window.scrollTo(0,0)">下一頁 ▶</button>`;
+    list.appendChild(nav);
+  }
+  if(pageItems.length<=20)renderMath(list);
+  updateFloat();}
 function fixLatex(text){
   return text.replace(/\$([^$]+)\$/g,function(match,inner){
     var fixed=inner;
@@ -2476,9 +2503,9 @@ async function deletePickedItems(){
 function selectFiltered(){
   /* 直接複用 matches()，確保與畫面篩選結果完全一致（含所有欄位） */
   let shown=DB.filter(matches);
-  /* 題組自動展開：與 render() 邏輯一致，把同題組的其他小題一併選取 */
+  /* 題組自動展開：與 render() 一致，用 Set 補齊，不重複呼叫 matches() */
   const gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
-  if(gids.size)shown=DB.filter(it=>matches(it)||(it.groupId&&gids.has(it.groupId)));
+  if(gids.size){const sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>sSet.has(it.id)||(it.groupId&&gids.has(it.groupId)));}
   shown.forEach(it=>PICKS.add(it.id));
   render();
 }
