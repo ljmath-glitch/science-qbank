@@ -577,11 +577,13 @@ function applyFilter(){
 
 async function sbCount(){
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=*&${filterQS()}`,
-    {headers:{...SB_HDR,'Prefer':'count=exact','Range':'0-0'}}
+    `${SUPABASE_URL}/rest/v1/questions?select=id&${filterQS()}&limit=1`,
+    {headers:{...SB_HDR,'Prefer':'count=exact'}}
   );
   const cr = res.headers.get('content-range');
-  return parseInt(cr.split('/')[1]);
+  if(!cr) throw new Error('no content-range header');
+  const total = parseInt((cr.split('/')[1]||'0'), 10);
+  return isNaN(total) ? 0 : total;
 }
 
 async function sbFetchRow(offset){
@@ -739,6 +741,7 @@ async function loadDailyQuestion(offset, sidx=0){
     if(_totalCount === null){
       _totalCount = await sbCount();
     }
+    if(_totalCount === 0) return null;
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
 
@@ -810,12 +813,12 @@ function getFallback(offset, sidx=0){
      stem:'取 $0.1\\text{ M}$ 鹽酸 $100\\text{ mL}$ 與 $0.1\\text{ M}$ NaOH $80\\text{ mL}$ 混合，溶液 pH 最接近？',
      opts:['pH=7（中性）','pH<7（酸性）','pH>7（鹼性）','無法判斷'],
      ansIdx:1,ansLetter:'B',sol:'HCl 過量 $0.002$ mol，$[H^+]\\approx0.011$ M，$\\text{pH}\\approx1.96$。',
-     kp:'酸鹼中和,pH',keywords:['酸鹼中和','pH'],hasOpts:true},
+     kp:'酸鹼中和,pH',keywords:['酸鹼中和','pH'],hasOpts:true,imgs:[],groupId:null,passage:null,firstQImgs:[]},
     {id:'f2',subject:'bio',subjectLabel:'生物',diffLvl:'簡單',diffScore:3,source:'備用題',
      stem:'下列何者為真核細胞特有？',
      opts:['細胞膜','核糖體','核膜','細胞壁'],
      ansIdx:2,ansLetter:'C',sol:'真核細胞有核膜包裹細胞核，原核細胞無核膜。',
-     kp:'細胞',keywords:['細胞'],hasOpts:true},
+     kp:'細胞',keywords:['細胞'],hasOpts:true,imgs:[],groupId:null,passage:null,firstQImgs:[]},
   ];
   const d=new Date(); d.setDate(d.getDate()+offset);
   const ep=Math.floor(d.getTime()/86400000);
@@ -998,7 +1001,7 @@ function renderQuestion(){
   }
 
   // body
-  const imgsHtml = q.imgs.map(im=>{
+  const imgsHtml = (q.imgs||[]).map(im=>{
     const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
     return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
   }).join('');
@@ -1112,6 +1115,19 @@ async function loadAndRender(){
   currentQuestion=null;
   const q=await loadDailyQuestion(currentOffset,sessionIdx);
   currentQuestion=q;
+  if(!q){
+    document.getElementById('qHead').innerHTML='';
+    document.getElementById('passageBox').style.display='none';
+    document.getElementById('qBody').innerHTML='<div style="padding:24px 16px;text-align:center;color:var(--muted);font-family:system-ui,sans-serif;line-height:1.7">找不到符合條件的題目<br><span style="font-size:13px">請嘗試放寬篩選條件</span></div>';
+    document.getElementById('qOpts').innerHTML='';
+    document.getElementById('resultBadge').className='result-badge';
+    document.getElementById('btnReveal').style.display='none';
+    document.getElementById('btnAgain').style.display='none';
+    document.getElementById('btnNextQ').style.display='none';
+    document.getElementById('btnFlag').style.display='none';
+    document.getElementById('explainCard').classList.remove('show');
+    return;
+  }
   renderQuestion();
 }
 
