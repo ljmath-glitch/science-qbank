@@ -336,10 +336,10 @@ async function docxToMarkdown(file){
       .filter(n=>n.startsWith('word/media/')&&!docxZip.files[n].dir);
     for(const path of mediaFiles){
       const fname=path.split('/').pop();
-      if(/\.(wmf|emf)$/i.test(fname)) continue; // 跳過向量格式
       const b64=await docxZip.files[path].async('base64');
       images[fname]=b64;
     }
+    appendLog(`word/media/ 找到 ${mediaFiles.length} 個檔案`);
   }catch(e){ appendLog('圖片萃取警告：'+e.message); }
 
   return {markdown, images};
@@ -386,7 +386,7 @@ async function step1(){
     await downloadZip(basename, docContent, images);
 
     setBub(1,'done');
-    setMsg(1,`已下載 ZIP（${imgCount} 張圖片）`,'ok');
+    setMsg(1, imgCount>0 ? `已下載 ZIP（${imgCount} 張圖片）` : '已下載 ZIP（⚠️ 未找到圖片，請展開執行記錄查看）', imgCount>0?'ok':'warn');
     setBub(2,'waiting'); document.getElementById('btn2').disabled=false; setActive(2);
   }catch(e){
     appendLog('錯誤：'+e.message);
