@@ -351,7 +351,7 @@ async function downloadZip(basename, markdown, images, folderPrefix){
   const prefix=typeof folderPrefix==='string'?folderPrefix+'/':
                typeof folderPrefix==='object'?folderPrefix.prefix:'';
 
-  zip.file(prefix+basename+'.md', markdown);
+  zip.file(prefix+basename+'.txt', markdown);
   const imgNames=Object.keys(images);
   imgNames.forEach(name=>{
     zip.file(prefix+'images/'+name, images[name], {base64:true});
@@ -675,7 +675,7 @@ async function runBatch(){
       const imgCount=Object.keys(images).length;
 
       // 每份考卷放進子資料夾
-      zip.file(`${basename}/${basename}.md`, content);
+      zip.file(`${basename}/${basename}.txt`, content);
       Object.entries(images).forEach(([name,b64])=>{
         zip.file(`${basename}/images/${name}`, b64, {base64:true});
       });
