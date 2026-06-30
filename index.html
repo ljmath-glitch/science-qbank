@@ -1438,7 +1438,7 @@ function renderPage(list,shown,page){
     nav.innerHTML=`<button class="btn sm" ${page===0?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page-1});window.scrollTo(0,0)">◀ 上一頁</button><span style="color:var(--muted)">第 ${page+1} / ${totalPages} 頁（共 ${shown.length} 題）</span><button class="btn sm" ${end>=shown.length?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page+1});window.scrollTo(0,0)">下一頁 ▶</button>`;
     list.appendChild(nav);
   }
-  if(pageItems.length<=20)renderMath(list);
+  (window.requestIdleCallback||setTimeout)(()=>renderMath(list));
   updateFloat();}
 function fixLatex(text){
   return text.replace(/\$([^$]+)\$/g,function(match,inner){
