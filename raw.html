@@ -111,7 +111,7 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
           <div class="step-desc">在瀏覽器內轉換，自動偵測題號結構</div>
           <div class="step-msg" id="msg1"></div>
         </div>
-        <button class="btn btn-raw" id="btn1" onclick="step1()" disabled>開始轉換</button>
+        <button class="btn btn-raw" id="btn1" onclick="step1()" disabled>轉換並下載 ZIP</button>
       </div>
       <div class="connector"></div>
     </div>
@@ -160,17 +160,6 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
     <div class="card">
       <div class="card-title">貼上 AI 生成的 CSV</div>
       <textarea class="csv-area" id="csvArea" placeholder="將 AI 輸出的 CSV 全部貼在這裡…"></textarea>
-    </div>
-  </div>
-
-  <!-- 整理後的文字預覽 -->
-  <div id="docPreviewCard" style="display:none;margin-top:16px">
-    <div class="card">
-      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
-        <span>整理後文字（可確認題號是否正確）</span>
-        <span id="docPreviewCount" style="font-size:11px;color:var(--bio);font-weight:700"></span>
-      </div>
-      <textarea class="csv-area" id="docPreviewArea" readonly style="height:200px;background:#f8f6f0;font-size:12px"></textarea>
     </div>
   </div>
 
@@ -226,6 +215,7 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 let selectedFile = null;
 let docContent = '';
 let csvFilename = '';
+let currentImages = {};
 let logVisible = false;
 
 // ── 工具 ───────────────────────────────────────────────────────────────
@@ -292,32 +282,87 @@ function parseFilename(name){
   return{school,grade,yearSemester,examName};
 }
 
-function fixQuestionStructure(text){
-  // 找真正題目（含 (A) 選項），重新編號
-  const lines=text.split('\n');
-  const out=[];
-  let qNum=0;
-  for(let i=0;i<lines.length;i++){
-    const line=lines[i];
-    const m=line.match(/^(\d+)[.\s、。]+(.+)/);
-    if(m){
-      const rest=m[2].trim();
-      // 往後10行找 (A)
-      const lookahead=lines.slice(i,i+12).join('\n');
-      if(/\(A\)|（A）/.test(lookahead)){
-        if(/^(單選題|多選題|填充|計算)/.test(rest)){continue;}
-        qNum++;
-        out.push('');
-        out.push(`## 第 ${qNum} 題`);
-        out.push(rest);
-        continue;
-      }
-    }
-    // 移除行首殘留題號
-    const cleaned=qNum>0?line.replace(/^(\d+)(?=[一-鿿（【「\(A\)])/,''):line;
-    out.push(cleaned);
+// ── HTML → Markdown ──────────────────────────────────────────────────
+function htmlToMarkdown(html){
+  const d=document.createElement('div');
+  d.innerHTML=html;
+
+  function table2text(tbl){
+    return Array.from(tbl.querySelectorAll('tr')).map(r=>
+      Array.from(r.querySelectorAll('td,th')).map(c=>walk(c).trim().replace(/\n+/g,' ')).join(' | ')
+    ).filter(r=>r.trim()).join('\n')+'\n\n';
   }
-  return out.join('\n');
+
+  function walk(node){
+    if(node.nodeType===3) return node.textContent;
+    if(node.nodeType!==1) return '';
+    const tag=node.tagName.toLowerCase();
+    if(tag==='script'||tag==='style') return '';
+    if(tag==='table') return table2text(node);
+    const inner=Array.from(node.childNodes).map(walk).join('');
+    switch(tag){
+      case 'p': return inner.trim()?inner.trim()+'\n\n':'';
+      case 'br': return '\n';
+      case 'img':{const s=node.getAttribute('src')||'';return s?`\n![](${s})\n`:''}
+      case 'li': return `- ${inner.trim()}\n`;
+      case 'ul': case 'ol': return '\n'+inner;
+      default: return inner;
+    }
+  }
+
+  return walk(d)
+    .replace(/\r\n/g,'\n')
+    .replace(/[ \t]+\n/g,'\n')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+// ── DOCX → markdown + images ─────────────────────────────────────────
+async function docxToMarkdown(file){
+  const arrayBuffer=await file.arrayBuffer();
+  const images={};
+  let imgIdx=0;
+
+  const result=await mammoth.convertToHtml({
+    arrayBuffer,
+    convertImage: mammoth.images.imgElement(function(image){
+      imgIdx++;
+      const ext=(image.contentType||'image/png').replace('image/','').split(';')[0]||'png';
+      const name=`img${String(imgIdx).padStart(2,'0')}.${ext}`;
+      return image.read('base64').then(function(b64){
+        images[name]=b64;
+        return {src:`images/${name}`};
+      });
+    })
+  });
+
+  const warnings=result.messages.filter(m=>m.type==='warning');
+  if(warnings.length) appendLog('警告：'+warnings.map(m=>m.message).join(', '));
+
+  const markdown=htmlToMarkdown(result.value);
+  return {markdown, images};
+}
+
+// ── 建立並下載 ZIP ────────────────────────────────────────────────────
+async function downloadZip(basename, markdown, images, folderPrefix){
+  const zip=typeof folderPrefix==='object'?folderPrefix.zip:new JSZip();
+  const prefix=typeof folderPrefix==='string'?folderPrefix+'/':
+               typeof folderPrefix==='object'?folderPrefix.prefix:'';
+
+  zip.file(prefix+basename+'.md', markdown);
+  const imgNames=Object.keys(images);
+  imgNames.forEach(name=>{
+    zip.file(prefix+'images/'+name, images[name], {base64:true});
+  });
+
+  if(typeof folderPrefix!=='object'){
+    const blob=await zip.generateAsync({type:'blob'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=basename+'.zip'; a.click();
+    URL.revokeObjectURL(url);
+  }
+  return {imgCount:imgNames.length};
 }
 
 async function step1(){
@@ -327,26 +372,20 @@ async function step1(){
   document.getElementById('btn2').disabled=true;
 
   try{
-    const arrayBuffer=await selectedFile.arrayBuffer();
-    const result=await mammoth.extractRawText({arrayBuffer});
-    const warnings=result.messages.filter(m=>m.type==='warning');
-    if(warnings.length) appendLog('警告：'+warnings.map(m=>m.message).join(', '));
-
-    const raw=result.value;
-    const processed=fixQuestionStructure(raw);
+    const {markdown, images}=await docxToMarkdown(selectedFile);
     const basename=selectedFile.name.replace(/\.docx$/i,'');
-    docContent=`# ${basename}\n${processed}`;
+    docContent=`# ${basename}\n\n${markdown}`;
     csvFilename=basename;
+    currentImages=images;
 
-    const qCount=(docContent.match(/\n## 第/g)||[]).length;
-    appendLog(`${basename}：偵測到 ${qCount} 題`);
-    setBub(1,'done'); setMsg(1,`完成：偵測到 ${qCount} 題`,'ok');
+    const imgCount=Object.keys(images).length;
+    appendLog(`${basename}：${imgCount} 張圖片`);
+
+    await downloadZip(basename, docContent, images);
+
+    setBub(1,'done');
+    setMsg(1,`已下載 ZIP（${imgCount} 張圖片）`,'ok');
     setBub(2,'waiting'); document.getElementById('btn2').disabled=false; setActive(2);
-
-    // 顯示整理後的文字預覽
-    document.getElementById('docPreviewCard').style.display='';
-    document.getElementById('docPreviewArea').value=docContent;
-    document.getElementById('docPreviewCount').textContent=`共 ${qCount} 題`;
   }catch(e){
     appendLog('錯誤：'+e.message);
     setBub(1,'error'); setMsg(1,'轉換失敗，請看執行記錄','err');
@@ -628,18 +667,19 @@ async function runBatch(){
     document.getElementById('bst_'+i).textContent='⏳';
     document.getElementById('bmsg_'+i).textContent='轉換中…';
     try{
-      const ab=await f.arrayBuffer();
-      const res=await mammoth.extractRawText({arrayBuffer:ab});
-      const raw=res.value;
-      const processed=fixQuestionStructure(raw);
       const basename=f.name.replace(/\.docx$/i,'');
-      const content=`# ${basename}\n${processed}`;
-      const qCount=(content.match(/\n## 第/g)||[]).length;
-      const info=parseFilename(basename);
-      const prompt=buildPrompt(content,basename,info);
-      zip.file(basename+'_prompt.txt',prompt);
+      const {markdown, images}=await docxToMarkdown(f);
+      const content=`# ${basename}\n\n${markdown}`;
+      const imgCount=Object.keys(images).length;
+
+      // 每份考卷放進子資料夾
+      zip.file(`${basename}/${basename}.md`, content);
+      Object.entries(images).forEach(([name,b64])=>{
+        zip.file(`${basename}/images/${name}`, b64, {base64:true});
+      });
+
       document.getElementById('bst_'+i).textContent='✅';
-      document.getElementById('bmsg_'+i).textContent=`${qCount} 題`;
+      document.getElementById('bmsg_'+i).textContent=`${imgCount} 張圖片`;
       ok++;
     }catch(e){
       document.getElementById('bst_'+i).textContent='❌';
@@ -652,9 +692,9 @@ async function runBatch(){
     const blob=await zip.generateAsync({type:'blob'});
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download='prompts_'+new Date().toISOString().slice(0,10)+'.zip'; a.click();
+    a.href=url; a.download='考卷_'+new Date().toISOString().slice(0,10)+'.zip'; a.click();
     URL.revokeObjectURL(url);
-    btn.textContent=`✓ 已下載 ${ok} 份 Prompt ZIP`;
+    btn.textContent=`✓ 已下載 ${ok} 份考卷 ZIP`;
   }else{
     btn.textContent='所有檔案都失敗了';
   }
