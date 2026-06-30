@@ -1131,6 +1131,10 @@ document.addEventListener('click',function(e){
     _bellOpen=false;panel.style.display='none';
   }
 });
+function bellEdit(id){
+  _bellOpen=false;document.getElementById('bellPanel').style.display='none';
+  openEdit(id);
+}
 async function bellResolve(id){
   const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
   try{
@@ -1159,7 +1163,10 @@ function renderBellList(items){
     <div class="bell-item-meta">${esc([it.year,it.school,it.exam,it.no?'No.'+it.no:''].filter(Boolean).join(' · '))}</div>
     ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:'<div class="bell-item-reason" style="color:#999;background:#f7f4ee;border-color:#ccc">（未填寫回報說明）</div>'}
     ${timeStr?`<div class="bell-item-time">🕐 回報時間：${timeStr}</div>`:''}
-    <button class="btn sm green" onclick="bellResolve('${it.id}')">✓ 確認已解決</button>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button class="btn sm" onclick="bellEdit('${it.id}')">✏️ 前往編輯</button>
+      <button class="btn sm green" onclick="bellResolve('${it.id}')">✓ 確認已解決</button>
+    </div>
   </div>`;
   }).join('');
 }
