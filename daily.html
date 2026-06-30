@@ -282,6 +282,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .report-btns{display:flex;gap:10px;margin-top:12px}
 .report-cancel{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--line);background:#fff;font-size:14px;font-weight:600;font-family:system-ui,sans-serif;cursor:pointer}
 .report-submit{flex:2;padding:12px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-size:14px;font-weight:700;font-family:system-ui,sans-serif;cursor:pointer}
+.lock-err{color:var(--accent);font-size:12px;font-family:system-ui,sans-serif;margin-top:8px;display:none}
 .btn-reveal{
   flex:1;padding:13px;border-radius:10px;border:none;
   background:var(--bio);color:#fff;font-size:16px;font-weight:700;
@@ -375,9 +376,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 <header>
   <div>
-    <a class="hdr-back" href="index.html">← 返回題庫系統</a>
+    <a class="hdr-back" href="javascript:void(0)" onclick="openLockModal()">🔒 返回題庫系統</a>
     <h1>每日一題</h1>
-    <div class="sub">每天一道，穩紮穩打 · 茲茲文教自然科</div>
+    <div class="sub">每天一道，穩紮穩打 · 福大自然</div>
   </div>
 </header>
 
@@ -539,6 +540,18 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <div class="report-btns">
     <button class="report-cancel" onclick="closeReport()">取消</button>
     <button class="report-submit" onclick="submitReport()">送出回報</button>
+  </div>
+</div>
+
+<!-- Lock Modal -->
+<div id="lockOverlay" class="report-overlay" style="display:none" onclick="closeLockModal()"></div>
+<div id="lockBox" class="report-box" style="display:none">
+  <div class="report-title">🔒 請輸入密碼以返回題庫系統</div>
+  <input id="lockInput" class="report-input" style="height:auto" type="password" inputmode="numeric" placeholder="密碼" maxlength="20">
+  <div id="lockErr" class="lock-err">密碼錯誤，請再試一次</div>
+  <div class="report-btns">
+    <button class="report-cancel" onclick="closeLockModal()">取消</button>
+    <button class="report-submit" onclick="submitLock()">確認</button>
   </div>
 </div>
 
@@ -1227,6 +1240,33 @@ function closeReport(){
   document.getElementById('reportOverlay').style.display='none';
   document.getElementById('reportBox').style.display='none';
 }
+
+// ── 返回題庫系統密碼鎖 ────────────────────────────────────────
+const LOCK_PASSWORD='0000';
+function openLockModal(){
+  document.getElementById('lockInput').value='';
+  document.getElementById('lockErr').style.display='none';
+  document.getElementById('lockOverlay').style.display='';
+  document.getElementById('lockBox').style.display='';
+  setTimeout(()=>document.getElementById('lockInput').focus(),50);
+}
+function closeLockModal(){
+  document.getElementById('lockOverlay').style.display='none';
+  document.getElementById('lockBox').style.display='none';
+}
+function submitLock(){
+  const val=document.getElementById('lockInput').value.trim();
+  if(val===LOCK_PASSWORD){
+    window.location.href='index.html';
+  } else {
+    document.getElementById('lockErr').style.display='block';
+  }
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter' && document.getElementById('lockBox').style.display!=='none'){
+    submitLock();
+  }
+});
 async function submitReport(){
   const toastEl=document.getElementById('toast');
   const toastEmoji=document.getElementById('toastEmoji');
