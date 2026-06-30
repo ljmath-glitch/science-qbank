@@ -589,15 +589,16 @@ async function sbFetchRow(offset){
 
 async function sbFetchPassage(groupId){
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/questions?select=id,q,imgs,type&group_id=eq.${encodeURIComponent(groupId)}&order=id&limit=50`,
+    `${SUPABASE_URL}/rest/v1/questions?select=id,no,q,imgs,type&group_id=eq.${encodeURIComponent(groupId)}&limit=50`,
     {headers:SB_HDR}
   );
   const data = await res.json();
   if(!Array.isArray(data)) return {passageRow:null, firstSubRow:null};
-  return {
-    passageRow:  data.find(r => r.type === 'passage') || null,
-    firstSubRow: data.find(r => r.type !== 'passage') || null,
-  };
+  const passageRow = data.find(r => r.type === 'passage') || null;
+  // 按題號排序（no 欄位為文字，需轉整數），取最小題號為第一題
+  const subs = data.filter(r => r.type !== 'passage')
+                   .sort((a,b) => (parseInt(a.no)||0) - (parseInt(b.no)||0));
+  return {passageRow, firstSubRow: subs[0] || null};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -769,8 +770,8 @@ async function loadDailyQuestion(offset, sidx=0){
             text: fixLatex(passageRow.q||''),
             imgs: Array.isArray(passageRow.imgs) ? passageRow.imgs : [],
           };
-        } else if(firstSubRow && firstSubRow.id !== row.id){
-          // 沒有獨立題組文章：以同組第一題的文字與圖片作為題組文章
+        } else if(firstSubRow && (parseInt(firstSubRow.no)||0) !== (parseInt(row.no)||0)){
+          // 沒有獨立題組文章且本題不是第一題：以第一題的文字與圖片作為題組文章
           q.passage = {
             text: fixLatex(firstSubRow.q||''),
             imgs: Array.isArray(firstSubRow.imgs) ? firstSubRow.imgs : [],
