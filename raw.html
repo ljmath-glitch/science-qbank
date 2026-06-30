@@ -320,26 +320,28 @@ function htmlToMarkdown(html){
 // ── DOCX → markdown + images ─────────────────────────────────────────
 async function docxToMarkdown(file){
   const arrayBuffer=await file.arrayBuffer();
-  const images={};
-  let imgIdx=0;
 
-  const result=await mammoth.convertToHtml({
-    arrayBuffer,
-    convertImage: mammoth.images.imgElement(function(image){
-      imgIdx++;
-      const ext=(image.contentType||'image/png').replace('image/','').split(';')[0]||'png';
-      const name=`img${String(imgIdx).padStart(2,'0')}.${ext}`;
-      return image.read('base64').then(function(b64){
-        images[name]=b64;
-        return {src:`images/${name}`};
-      });
-    })
-  });
-
-  const warnings=result.messages.filter(m=>m.type==='warning');
+  // 文字：用 mammoth extractRawText
+  const textResult=await mammoth.extractRawText({arrayBuffer});
+  const warnings=textResult.messages.filter(m=>m.type==='warning');
   if(warnings.length) appendLog('警告：'+warnings.map(m=>m.message).join(', '));
+  const markdown=textResult.value
+    .replace(/\r\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim();
 
-  const markdown=htmlToMarkdown(result.value);
+  // 圖片：DOCX 本身是 ZIP，直接讀 word/media/ 資料夾
+  const images={};
+  try{
+    const docxZip=await JSZip.loadAsync(arrayBuffer);
+    const mediaFiles=Object.keys(docxZip.files)
+      .filter(n=>n.startsWith('word/media/')&&!docxZip.files[n].dir);
+    for(const path of mediaFiles){
+      const fname=path.split('/').pop();
+      if(/\.(wmf|emf)$/i.test(fname)) continue; // 跳過向量格式
+      const b64=await docxZip.files[path].async('base64');
+      images[fname]=b64;
+    }
+  }catch(e){ appendLog('圖片萃取警告：'+e.message); }
+
   return {markdown, images};
 }
 
