@@ -2377,7 +2377,11 @@ const TB_DEFAULT=[
 ];
 let tbEditing=false,tbDragEl=null;
 function renderToolbar(){
-  const layout=JSON.parse(localStorage.getItem('tbLayout')||'null')||TB_DEFAULT;
+  let layout=JSON.parse(localStorage.getItem('tbLayout')||'null')||TB_DEFAULT;
+  // 確保 TB_BUTTONS 裡的新 key 不被 localStorage 快取漏掉
+  const allKeys=layout.flat();
+  const missing=Object.keys(TB_BUTTONS).filter(k=>!allKeys.includes(k));
+  if(missing.length){layout[1]=[...(layout[1]||[]),...missing];localStorage.setItem('tbLayout',JSON.stringify(layout));}
   const wrap=document.getElementById('tbWrap');
   wrap.querySelectorAll('.tb-row').forEach(r=>r.innerHTML='');
   const rows=wrap.querySelectorAll('.tb-row');
