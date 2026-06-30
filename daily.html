@@ -353,6 +353,22 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   .q-body{font-size:15px}
   .opt-btn{font-size:14px}
 }
+
+/* ══ PRACTICE MODE ═══════════════════════════════════════════ */
+.practice-banner{
+  background:#fff8e1;border:1.5px solid #ffca28;border-radius:12px;
+  padding:11px 14px;margin-bottom:14px;
+  font-family:system-ui,sans-serif;font-size:13px;color:#5d4037;
+  line-height:1.6;display:none;
+}
+.practice-banner.show{display:block}
+.btn-read-done{
+  display:block;width:calc(100% - 32px);margin:0 16px 14px;
+  padding:10px;border-radius:8px;border:1.5px solid var(--bio);
+  background:#eef7f3;color:var(--bio);font-size:13px;font-weight:700;
+  font-family:system-ui,sans-serif;cursor:pointer;transition:.15s;text-align:center;
+}
+.btn-read-done:hover{background:var(--bio);color:#fff}
 </style>
 </head>
 <body>
@@ -481,6 +497,11 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <button class="start-btn" id="startBtn" onclick="applyFilter()">套用篩選 →</button>
   </div>
 
+  <!-- 練習模式警示 -->
+  <div id="practiceBanner" class="practice-banner">
+    ⚠️ <strong>練習模式：</strong>請看懂題目與詳解後再按「繼續下一題」，按下後不可返回上一題。
+  </div>
+
   <!-- ⑦ 題目卡 -->
   <div class="q-card" id="qCard" style="display:none">
     <div class="q-card-head" id="qHead"></div>
@@ -505,6 +526,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="explain-hint" id="explainHint" style="display:none"></div>
     <div class="explain-body" id="explainBody"></div>
     <div class="kp-row" id="kpRow"></div>
+    <button class="btn-read-done" id="btnReadDone" onclick="markExplanationRead()" style="display:none">✓ 已看懂詳解，繼續下一題 →</button>
   </div>
 
 </div>
@@ -840,6 +862,7 @@ function getHistKey(offset,sidx){return sidx===0?dateStr(offset):dateStr(offset)
 // ═══════════════════════════════════════════════════════════════
 let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
 let sessionIdx=0;
+let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
 // RENDER CHARACTER
@@ -924,7 +947,7 @@ function renderWeekDots(){
     div.className=cls;
     div.innerHTML=`<span>${i===0?'今':WEEKDAYS[d.getDay()]}</span><span class="dot-day">${d.getDate()}</span>`;
     div.title=s+(rec?(rec.correct?' ✓':' ✗'):' 未作答');
-    div.onclick=()=>{currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
+    div.onclick=()=>{if(sessionIdx>0)return;currentOffset=i;sessionIdx=0;renderDate();loadAndRender();};
     el.appendChild(div);
   }
 }
@@ -939,6 +962,7 @@ function renderDate(){
   document.getElementById('dateSub').textContent=
     currentOffset===0?`今天・星期${WEEKDAYS[d.getDay()]}`:`星期${WEEKDAYS[d.getDay()]}`;
   document.getElementById('btnNext').disabled=currentOffset>=0;
+  document.getElementById('btnPrev').disabled=sessionIdx>0;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1028,6 +1052,10 @@ function renderQuestion(){
     badge.innerHTML=rec.correct?'✓ 答對了！':q.hasOpts?`✗ 答錯了，正確答案是 (${q.ansLetter})`:`正確答案：(${q.ansLetter})`;
   }
 
+  // practice mode
+  const inPractice=sessionIdx>0;
+  document.getElementById('practiceBanner').className='practice-banner'+(inPractice?' show':'');
+
   // buttons
   const btnReveal=document.getElementById('btnReveal');
   const btnAgain=document.getElementById('btnAgain');
@@ -1036,6 +1064,14 @@ function renderQuestion(){
     btnReveal.style.display='none';
     btnAgain.style.display='block';
     btnNextQ.style.display='block';
+    if(inPractice&&!explanationRead){
+      btnNextQ.disabled=true;
+      btnNextQ.textContent='請先閱讀詳解 ↓';
+    } else {
+      btnNextQ.disabled=false;
+      btnNextQ.textContent='下一題 →';
+    }
+    document.getElementById('btnReadDone').style.display=(inPractice&&!explanationRead)?'':'none';
   } else {
     btnReveal.style.display='';
     btnAgain.style.display='none';
@@ -1155,18 +1191,29 @@ function resetAnswer(){
 }
 
 function navigate(dir){
+  if(sessionIdx>0) return;
   const n=currentOffset+dir; if(n>0) return;
   currentOffset=n; sessionIdx=0; _usedOffsets.clear(); renderDate(); loadAndRender();
 }
 
 function nextQuestion(){
+  explanationRead=false;
   sessionIdx++;
   selectedOpt=null;
   revealed=false;
   document.getElementById('explainCard').classList.remove('show');
   document.getElementById('resultBadge').className='result-badge';
   loadAndRender();
+  renderDate();
   setTimeout(()=>document.getElementById('qCard').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function markExplanationRead(){
+  explanationRead=true;
+  document.getElementById('btnReadDone').style.display='none';
+  const btn=document.getElementById('btnNextQ');
+  btn.disabled=false;
+  btn.textContent='下一題 →';
 }
 
 // ── 報錯 ──────────────────────────────────────────────────────
