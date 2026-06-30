@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>raw考卷前處理 · 茲茲文教</title>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 :root{--ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;--bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;--accent:#c0392b;--muted:#6b6557;--shadow:0 2px 0 #e8e2d4,0 8px 24px -12px rgba(26,34,56,.25);--raw:#7b3f00}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -162,10 +163,48 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
     </div>
   </div>
 
+  <!-- 整理後的文字預覽 -->
+  <div id="docPreviewCard" style="display:none;margin-top:16px">
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span>整理後文字（可確認題號是否正確）</span>
+        <span id="docPreviewCount" style="font-size:11px;color:var(--bio);font-weight:700"></span>
+      </div>
+      <textarea class="csv-area" id="docPreviewArea" readonly style="height:200px;background:#f8f6f0;font-size:12px"></textarea>
+    </div>
+  </div>
+
   <!-- 執行記錄 -->
   <div style="margin-top:20px">
     <span class="log-toggle" onclick="toggleLog()">▶ 顯示執行記錄</span>
     <div class="log" id="log"></div>
+  </div>
+
+  <!-- 分隔線 -->
+  <div style="margin:32px 0 8px;display:flex;align-items:center;gap:12px">
+    <div style="flex:1;height:1px;background:var(--line)"></div>
+    <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;white-space:nowrap">批次處理</div>
+    <div style="flex:1;height:1px;background:var(--line)"></div>
+  </div>
+
+  <!-- 批次卡 -->
+  <div class="card">
+    <div class="card-title">一次上傳多份考卷 → 下載所有 Prompt（ZIP）</div>
+    <div class="drop-zone" id="batchDropZone"
+         onclick="document.getElementById('batchFileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="onBatchDrop(event)">
+      <input type="file" id="batchFileInput" accept=".docx" multiple style="display:none"
+             onchange="onBatchSelect(this.files)">
+      <div class="drop-icon">📂</div>
+      <div class="drop-label" id="batchDropLabel">點擊選擇多份 .docx，或將檔案拖放到這裡</div>
+    </div>
+    <div id="batchList" style="margin-top:12px;display:none"></div>
+    <button class="btn btn-raw" id="batchBtn" onclick="runBatch()" disabled
+            style="width:100%;margin-top:12px;justify-content:center;font-size:14px;padding:11px">
+      批次轉換並下載 ZIP
+    </button>
   </div>
 
 </div>
@@ -289,8 +328,6 @@ async function step1(){
 
   try{
     const arrayBuffer=await selectedFile.arrayBuffer();
-
-    // mammoth.js 萃取純文字
     const result=await mammoth.extractRawText({arrayBuffer});
     const warnings=result.messages.filter(m=>m.type==='warning');
     if(warnings.length) appendLog('警告：'+warnings.map(m=>m.message).join(', '));
@@ -305,6 +342,11 @@ async function step1(){
     appendLog(`${basename}：偵測到 ${qCount} 題`);
     setBub(1,'done'); setMsg(1,`完成：偵測到 ${qCount} 題`,'ok');
     setBub(2,'waiting'); document.getElementById('btn2').disabled=false; setActive(2);
+
+    // 顯示整理後的文字預覽
+    document.getElementById('docPreviewCard').style.display='';
+    document.getElementById('docPreviewArea').value=docContent;
+    document.getElementById('docPreviewCount').textContent=`共 ${qCount} 題`;
   }catch(e){
     appendLog('錯誤：'+e.message);
     setBub(1,'error'); setMsg(1,'轉換失敗，請看執行記錄','err');
@@ -313,9 +355,10 @@ async function step1(){
 }
 
 // ── 步驟 2：複製 Prompt ──────────────────────────────────────────────
-function buildPrompt(){
-  const basename=csvFilename;
-  const info=parseFilename(basename);
+function buildPrompt(overrideContent, overrideBasename, overrideInfo){
+  const basename=overrideBasename||csvFilename;
+  const content=overrideContent||docContent;
+  const info=overrideInfo!==undefined?overrideInfo:parseFilename(basename);
   const school=info?info.school:'（請從卷子封面判斷）';
   const grade=info?info.grade:'（請從卷子判斷）';
   const yearSemester=info?info.yearSemester:'（請從卷子判斷）';
@@ -508,7 +551,7 @@ B6|九下地科|地科|C4 永續的地球|4-3 人與自然的互動
 只輸出 CSV，不要其他說明文字。
 
 【以下為考卷內容】
-${docContent}`;
+${content}`;
 }
 
 async function step2(){
@@ -541,6 +584,81 @@ function step3(){
   document.getElementById('csvCard').style.display='block';
   setActive(4);
   setTimeout(()=>document.getElementById('csvArea').focus(),100);
+}
+
+// ── 批次處理 ─────────────────────────────────────────────────────────
+let batchFiles=[];
+
+function onBatchDrop(ev){
+  ev.preventDefault();
+  document.getElementById('batchDropZone').classList.remove('drag-over');
+  onBatchSelect(ev.dataTransfer.files);
+}
+
+function onBatchSelect(fileList){
+  batchFiles=Array.from(fileList).filter(f=>f.name.toLowerCase().endsWith('.docx'));
+  const list=document.getElementById('batchList');
+  const btn=document.getElementById('batchBtn');
+  if(!batchFiles.length){list.style.display='none';btn.disabled=true;return;}
+
+  document.getElementById('batchDropZone').classList.add('has-file');
+  document.getElementById('batchDropLabel').textContent=`已選 ${batchFiles.length} 份考卷`;
+
+  list.style.display='';
+  list.innerHTML=batchFiles.map((f,i)=>
+    `<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px">
+      <span id="bst_${i}" style="font-size:16px">📄</span>
+      <span style="flex:1;word-break:break-all">${f.name}</span>
+      <span id="bmsg_${i}" style="font-size:11px;color:var(--muted)"></span>
+    </div>`
+  ).join('');
+  btn.disabled=false;
+  btn.textContent='批次轉換並下載 ZIP';
+}
+
+async function runBatch(){
+  if(!batchFiles.length||typeof JSZip==='undefined') return;
+  const btn=document.getElementById('batchBtn');
+  btn.disabled=true; btn.textContent='處理中⋯';
+  const zip=new JSZip();
+  let ok=0;
+
+  for(let i=0;i<batchFiles.length;i++){
+    const f=batchFiles[i];
+    document.getElementById('bst_'+i).textContent='⏳';
+    document.getElementById('bmsg_'+i).textContent='轉換中…';
+    try{
+      const ab=await f.arrayBuffer();
+      const res=await mammoth.extractRawText({arrayBuffer:ab});
+      const raw=res.value;
+      const processed=fixQuestionStructure(raw);
+      const basename=f.name.replace(/\.docx$/i,'');
+      const content=`# ${basename}\n${processed}`;
+      const qCount=(content.match(/\n## 第/g)||[]).length;
+      const info=parseFilename(basename);
+      const prompt=buildPrompt(content,basename,info);
+      zip.file(basename+'_prompt.txt',prompt);
+      document.getElementById('bst_'+i).textContent='✅';
+      document.getElementById('bmsg_'+i).textContent=`${qCount} 題`;
+      ok++;
+    }catch(e){
+      document.getElementById('bst_'+i).textContent='❌';
+      document.getElementById('bmsg_'+i).textContent='失敗';
+      console.warn(f.name,e);
+    }
+  }
+
+  if(ok>0){
+    const blob=await zip.generateAsync({type:'blob'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='prompts_'+new Date().toISOString().slice(0,10)+'.zip'; a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent=`✓ 已下載 ${ok} 份 Prompt ZIP`;
+  }else{
+    btn.textContent='所有檔案都失敗了';
+  }
+  setTimeout(()=>{btn.disabled=false;btn.textContent='批次轉換並下載 ZIP';},4000);
 }
 
 // ── 步驟 4：下載 CSV ─────────────────────────────────────────────────
