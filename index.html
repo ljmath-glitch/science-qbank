@@ -2352,25 +2352,25 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
-  add:     ()=>`<button class="btn" style="background:#f0fdf4;color:#166534;border-color:#86efac" onclick="openAdd()">手動新增</button>`,
+  add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
-  backup:  ()=>`<button class="btn green" onclick="exportJSON()">⬇ 備份</button>`,
-  restore: ()=>`<button class="btn" style="background:#fffbeb;color:#92400e;border-color:#fcd34d" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
+  backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
+  restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
   claude:  ()=>`<button class="btn gold" onclick="showPrompt()">📋 Claude 指令</button>`,
-  report:  ()=>`<button class="btn" style="background:#faf5ff;color:#7c3aed;border-color:#c4b5fd" onclick="openReport()">📊 知識點分析</button>`,
-  kp:      ()=>`<button class="btn" style="background:#f0fdfa;color:#0f766e;border-color:#5eead4" onclick="openKpManager()">🏷 章節清單</button>`,
-  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none;background:#eff6ff;color:#1d4ed8;border-color:#93c5fd">📋 共編進度表</a>`,
+  report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
+  kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
+  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
-  raw:     ()=>`<a class="btn" href="raw.html" style="text-decoration:none;background:#7b3f00;color:#fff;border-color:#7b3f00">📄 raw考卷前處理</a>`,
-  selFilt: ()=>`<button class="btn sm" style="background:#f0fdfa;color:#0f766e;border-color:#5eead4" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
-  selAll:  ()=>`<button class="btn sm" style="background:#fffbeb;color:#92400e;border-color:#fcd34d" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select>`,
-  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
-  batchGenBtn:  ()=>`<button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button>`,
-  solPromptBtn: ()=>`<button class="btn sm" style="background:#eff6ff;color:#1d4ed8;border-color:#93c5fd" onclick="showSolPrompt()">📋 生成prompt</button>`,
+  raw:     ()=>`<a class="btn" href="raw.html" style="text-decoration:none">📄 raw考卷前處理</a>`,
+  selFilt: ()=>`<button class="btn sm" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
+  selAll:  ()=>`<button class="btn sm" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
+  batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:system-ui,sans-serif;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select>`,
+  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:system-ui,sans-serif;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
+  batchGenBtn:  ()=>`<button class="btn sm primary" onclick="batchGenerateSol()">✨ 批次生成詳解</button>`,
+  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 生成prompt</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='5';
+const TB_VER='6';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
