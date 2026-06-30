@@ -791,6 +791,7 @@ function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).sli
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
 function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
   r.group_id=it.groupId||'';delete r.groupId;
+  ['_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ'].forEach(k=>delete r[k]);
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
