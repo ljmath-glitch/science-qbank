@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>raw考卷前處理 · 茲茲文教</title>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<style>
+:root{--ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;--bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;--accent:#c0392b;--muted:#6b6557;--shadow:0 2px 0 #e8e2d4,0 8px 24px -12px rgba(26,34,56,.25);--raw:#7b3f00}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;padding-bottom:60px}
+header{background:linear-gradient(135deg,#3d1a00,#1a2238);color:#f4f1ea;padding:20px 32px 18px;border-bottom:4px solid var(--raw)}
+header h1{font-size:20px;letter-spacing:2px;font-weight:700}
+header .sub{font-size:12px;color:#c9b8a8;margin-top:3px;letter-spacing:1px}
+nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.back-btn{font-size:13px;font-weight:700;padding:6px 14px;border-radius:7px;background:var(--accent);color:#fff;text-decoration:none;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:.15s}
+.back-btn:hover{opacity:.85}
+.wrap{max-width:680px;margin:0 auto;padding:28px 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px}
+.card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+
+/* 上傳區 */
+.drop-zone{border:2px dashed #c8b89a;border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;user-select:none}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--raw);background:#fff5ec}
+.drop-zone.has-file{border-color:var(--bio);background:#f0faf5}
+.drop-icon{font-size:28px;line-height:1;margin-bottom:8px}
+.drop-label{font-size:14px;color:var(--muted)}
+
+/* 步驟 */
+.steps{display:flex;flex-direction:column;gap:0}
+.step-wrap{display:flex;flex-direction:column}
+.connector{width:2px;height:14px;background:var(--line);margin-left:35px}
+.step{background:var(--card);border-radius:12px;padding:16px 20px;box-shadow:var(--shadow);display:flex;align-items:center;gap:14px;transition:box-shadow .2s}
+.step.active{box-shadow:0 0 0 2px var(--raw),var(--shadow)}
+.bubble{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;transition:background .3s,color .3s}
+.bubble.idle{background:#f0ece2;color:#bbb}
+.bubble.running{background:#fff3e0;color:var(--raw)}
+.bubble.done{background:#e8f5e9;color:var(--bio)}
+.bubble.error{background:#fde8e8;color:var(--accent)}
+.bubble.waiting{background:#fffbe6;color:var(--phy)}
+.step-body{flex:1;min-width:0}
+.step-title{font-size:15px;font-weight:700;color:var(--ink)}
+.step-desc{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.step-msg{font-size:12px;margin-top:5px;min-height:16px;color:var(--earth)}
+.step-msg.ok{color:var(--bio)}
+.step-msg.err{color:var(--accent)}
+.step-msg.warn{color:var(--phy)}
+
+.btn{font-family:system-ui,sans-serif;font-size:13px;font-weight:700;padding:9px 16px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{transform:translateY(-1px);box-shadow:0 3px 8px -3px rgba(0,0,0,.25)}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.3;cursor:default;transform:none;box-shadow:none}
+.btn-raw{background:var(--raw);color:#fff;border-color:var(--raw)}
+.btn-bio{background:var(--bio);color:#fff;border-color:var(--bio)}
+.btn-phy{background:var(--phy);color:#fff;border-color:var(--phy)}
+
+/* CSV 貼上區 */
+.csv-area{width:100%;height:150px;border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;font-family:'SF Mono','Menlo','Consolas',monospace;font-size:12px;resize:vertical;outline:none;transition:border-color .2s;background:#fff;margin-top:8px}
+.csv-area:focus{border-color:var(--raw)}
+
+/* Fallback modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:14px;padding:24px;width:min(560px,90vw);max-height:82vh;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h2{font-size:16px;font-weight:700;color:var(--ink)}
+.modal p{font-size:13px;color:var(--muted)}
+.modal textarea{flex:1;min-height:180px;border:1.5px solid var(--line);border-radius:8px;padding:10px;font-family:'SF Mono','Menlo','Consolas',monospace;font-size:12px;resize:none;outline:none}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+
+.log-toggle{font-size:12px;color:var(--muted);cursor:pointer;user-select:none;display:inline-block;margin-bottom:6px}
+.log-toggle:hover{color:var(--ink)}
+.log{background:#1e1e2e;border-radius:10px;padding:14px 16px;color:#cdd6f4;font-family:'SF Mono','Menlo','Consolas',monospace;font-size:12px;white-space:pre-wrap;max-height:180px;overflow-y:auto;display:none}
+.log.show{display:block}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>📄 raw考卷前處理</h1>
+    <div class="sub">試卷寶 DOCX → 整理 Markdown → AI 生成 CSV → 匯入題庫</div>
+  </div>
+</header>
+<nav>
+  <a class="back-btn" href="index.html">← 返回題庫系統</a>
+</nav>
+
+<div class="wrap">
+
+  <!-- 上傳 -->
+  <div class="card">
+    <div class="card-title">考卷檔案（試卷寶匯出的 .docx）</div>
+    <div class="drop-zone" id="dropZone"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="onDrop(event)">
+      <input type="file" id="fileInput" accept=".docx" style="display:none" onchange="onFileSelect(this.files[0])">
+      <div class="drop-icon">📁</div>
+      <div class="drop-label" id="dropLabel">點擊選擇 .docx，或將檔案拖放到這裡</div>
+    </div>
+  </div>
+
+  <!-- 步驟 -->
+  <div class="steps">
+    <div class="step-wrap">
+      <div class="step" id="step1">
+        <div class="bubble idle" id="bub1">1</div>
+        <div class="step-body">
+          <div class="step-title">DOCX → 整理文字</div>
+          <div class="step-desc">在瀏覽器內轉換，自動偵測題號結構</div>
+          <div class="step-msg" id="msg1"></div>
+        </div>
+        <button class="btn btn-raw" id="btn1" onclick="step1()" disabled>開始轉換</button>
+      </div>
+      <div class="connector"></div>
+    </div>
+
+    <div class="step-wrap">
+      <div class="step" id="step2">
+        <div class="bubble idle" id="bub2">2</div>
+        <div class="step-body">
+          <div class="step-title">複製 Prompt → 貼進 AI</div>
+          <div class="step-desc">自動嵌入考卷內容與 22 欄分析規則</div>
+          <div class="step-msg" id="msg2"></div>
+        </div>
+        <button class="btn btn-raw" id="btn2" onclick="step2()" disabled>複製 Prompt</button>
+      </div>
+      <div class="connector"></div>
+    </div>
+
+    <div class="step-wrap">
+      <div class="step" id="step3">
+        <div class="bubble idle" id="bub3">3</div>
+        <div class="step-body">
+          <div class="step-title">開啟 AI，貼上，複製 CSV</div>
+          <div class="step-desc">Claude / Gemini / ChatGPT 皆可，複製完 CSV 後回來</div>
+          <div class="step-msg" id="msg3"></div>
+        </div>
+        <button class="btn btn-phy" id="btn3" onclick="step3()" disabled>已複製 CSV ✓</button>
+      </div>
+      <div class="connector"></div>
+    </div>
+
+    <div class="step-wrap">
+      <div class="step" id="step4">
+        <div class="bubble idle" id="bub4">4</div>
+        <div class="step-body">
+          <div class="step-title">貼上 CSV → 下載</div>
+          <div class="step-desc">將 AI 輸出的 CSV 貼到下方，點「下載 CSV」</div>
+          <div class="step-msg" id="msg4"></div>
+        </div>
+        <button class="btn btn-bio" id="btn4" onclick="downloadCSV()" disabled>下載 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSV 貼上區 -->
+  <div id="csvCard" style="display:none;margin-top:16px">
+    <div class="card">
+      <div class="card-title">貼上 AI 生成的 CSV</div>
+      <textarea class="csv-area" id="csvArea" placeholder="將 AI 輸出的 CSV 全部貼在這裡…"></textarea>
+    </div>
+  </div>
+
+  <!-- 執行記錄 -->
+  <div style="margin-top:20px">
+    <span class="log-toggle" onclick="toggleLog()">▶ 顯示執行記錄</span>
+    <div class="log" id="log"></div>
+  </div>
+
+</div>
+
+<!-- Prompt Fallback Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>請手動複製 Prompt</h2>
+    <p>瀏覽器未授權剪貼簿存取。請全選（Ctrl+A 或 Cmd+A）後手動複製。</p>
+    <textarea id="promptFallback" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-raw" onclick="closeModal()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 狀態 ───────────────────────────────────────────────────────────────
+let selectedFile = null;
+let docContent = '';
+let csvFilename = '';
+let logVisible = false;
+
+// ── 工具 ───────────────────────────────────────────────────────────────
+function toggleLog(){
+  logVisible=!logVisible;
+  document.getElementById('log').classList.toggle('show',logVisible);
+  document.querySelector('.log-toggle').textContent=(logVisible?'▼ ':'▶ ')+'顯示執行記錄';
+}
+function appendLog(t){
+  const el=document.getElementById('log');
+  el.textContent+=t+'\n'; el.scrollTop=el.scrollHeight;
+  if(!logVisible){logVisible=true;el.classList.add('show');document.querySelector('.log-toggle').textContent='▼ 顯示執行記錄';}
+}
+function setBub(n,s){
+  const el=document.getElementById('bub'+n);
+  el.className='bubble '+s;
+  el.textContent={idle:n,running:'⏳',done:'✓',error:'✗',waiting:'…'}[s]??n;
+}
+function setMsg(n,t,c){
+  const el=document.getElementById('msg'+n);
+  el.textContent=t; el.className='step-msg'+(c?' '+c:'');
+}
+function setActive(n){[1,2,3,4].forEach(i=>document.getElementById('step'+i).classList.toggle('active',i===n));}
+function resetAll(){
+  [1,2,3,4].forEach(i=>{setBub(i,'idle');setMsg(i,'');document.getElementById('step'+i).classList.remove('active');});
+  document.getElementById('btn1').disabled=true;
+  [2,3,4].forEach(i=>document.getElementById('btn'+i).disabled=true);
+  document.getElementById('csvCard').style.display='none';
+  document.getElementById('csvArea').value='';
+}
+
+// ── 檔案選擇 ──────────────────────────────────────────────────────────
+function onFileSelect(file){
+  if(!file) return;
+  if(!file.name.toLowerCase().endsWith('.docx')){alert('請選擇 .docx 檔案');return;}
+  selectedFile=file;
+  document.getElementById('dropZone').classList.add('has-file');
+  document.getElementById('dropLabel').textContent='📄 '+file.name;
+  docContent=''; csvFilename='';
+  resetAll();
+  document.getElementById('btn1').disabled=false;
+}
+function onDrop(ev){
+  ev.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file=ev.dataTransfer.files[0];
+  if(file) onFileSelect(file);
+}
+
+// ── 步驟 1：DOCX → 文字 ──────────────────────────────────────────────
+function parseFilename(name){
+  // 格式：112上_國八理化_一段_陽明國中_original
+  const m=name.match(/^(\d+)([上下])_([國][七八九])(\S+?)_([一二三]段)_(.+?)(?:_original|_clean|_teacher|_original_2|_clean_2)?$/);
+  if(!m) return null;
+  const [,year,sem,gradeRaw,,examRaw,school]=m;
+  const gradeMap={'國七':'七年級','國八':'八年級','國九':'九年級'};
+  const semMap={'上':'上學期','下':'下學期'};
+  const examMap={'一段':'第一次段考','二段':'第二次段考','三段':'第三次段考'};
+  const grade=gradeMap[gradeRaw]||gradeRaw;
+  const semester=semMap[sem]||sem;
+  const exam=examMap[examRaw]||examRaw;
+  const yearSemester=year+sem;
+  const examName=`${school}-${grade}-${yearSemester}-${exam}`;
+  return{school,grade,yearSemester,examName};
+}
+
+function fixQuestionStructure(text){
+  // 找真正題目（含 (A) 選項），重新編號
+  const lines=text.split('\n');
+  const out=[];
+  let qNum=0;
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    const m=line.match(/^(\d+)[.\s、。]+(.+)/);
+    if(m){
+      const rest=m[2].trim();
+      // 往後10行找 (A)
+      const lookahead=lines.slice(i,i+12).join('\n');
+      if(/\(A\)|（A）/.test(lookahead)){
+        if(/^(單選題|多選題|填充|計算)/.test(rest)){continue;}
+        qNum++;
+        out.push('');
+        out.push(`## 第 ${qNum} 題`);
+        out.push(rest);
+        continue;
+      }
+    }
+    // 移除行首殘留題號
+    const cleaned=qNum>0?line.replace(/^(\d+)(?=[一-鿿（【「\(A\)])/,''):line;
+    out.push(cleaned);
+  }
+  return out.join('\n');
+}
+
+async function step1(){
+  if(!selectedFile) return;
+  setBub(1,'running'); setMsg(1,'轉換中⋯'); setActive(1);
+  document.getElementById('btn1').disabled=true;
+  document.getElementById('btn2').disabled=true;
+
+  try{
+    const arrayBuffer=await selectedFile.arrayBuffer();
+
+    // mammoth.js 萃取純文字
+    const result=await mammoth.extractRawText({arrayBuffer});
+    const warnings=result.messages.filter(m=>m.type==='warning');
+    if(warnings.length) appendLog('警告：'+warnings.map(m=>m.message).join(', '));
+
+    const raw=result.value;
+    const processed=fixQuestionStructure(raw);
+    const basename=selectedFile.name.replace(/\.docx$/i,'');
+    docContent=`# ${basename}\n${processed}`;
+    csvFilename=basename;
+
+    const qCount=(docContent.match(/\n## 第/g)||[]).length;
+    appendLog(`${basename}：偵測到 ${qCount} 題`);
+    setBub(1,'done'); setMsg(1,`完成：偵測到 ${qCount} 題`,'ok');
+    setBub(2,'waiting'); document.getElementById('btn2').disabled=false; setActive(2);
+  }catch(e){
+    appendLog('錯誤：'+e.message);
+    setBub(1,'error'); setMsg(1,'轉換失敗，請看執行記錄','err');
+    document.getElementById('btn1').disabled=false;
+  }
+}
+
+// ── 步驟 2：複製 Prompt ──────────────────────────────────────────────
+function buildPrompt(){
+  const basename=csvFilename;
+  const info=parseFilename(basename);
+  const school=info?info.school:'（請從卷子封面判斷）';
+  const grade=info?info.grade:'（請從卷子判斷）';
+  const yearSemester=info?info.yearSemester:'（請從卷子判斷）';
+  const examName=info?info.examName:'（請從卷子判斷）';
+
+  return `請把以下國中自然科段考卷內容，逐題整理成 CSV，供我匯入題庫系統。
+
+【這份卷子的資訊】
+- 來源學校：${school}
+- 年級：${grade}
+- 年度（學期）：${yearSemester}
+- 考試名稱（格式：學校-年級-學期-段考次）：${examName}
+
+【CSV 欄位順序，務必照此 22 欄】
+年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,詳解,題組
+
+【B 課程對應：冊數/冊名/領域/大單元/子單元 只能對照下面這份「翰林版骨架」填，不可自創】
+（格式：冊數|冊名|領域|大單元|子單元；跨節用 ／ 隔開）
+B1|七上生物|生物|C1 生命世界與科學方法|1-1 多采多姿的生命世界
+B1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
+B1|七上生物|生物|C1 生命世界與科學方法|1-3 進入實驗室
+B1|七上生物|生物|C2 生物體的組成|2-1 生物體的基本單位
+B1|七上生物|生物|C2 生物體的組成|2-2 細胞的構造
+B1|七上生物|生物|C2 生物體的組成|2-3 物質進出細胞的方式
+B1|七上生物|生物|C3 生物體的營養|3-1 食物中的養分與能量
+B1|七上生物|生物|C3 生物體的營養|3-2 酵素
+B1|七上生物|生物|C3 生物體的營養|3-3 植物如何製造養分
+B1|七上生物|生物|C3 生物體的營養|3-4 人體如何獲得養分
+B1|七上生物|生物|C3 生物體的營養|3-5 生物獲得能量的方式
+B1|七上生物|生物|C4 生物體的運輸作用|4-1 植物的運輸構造
+B1|七上生物|生物|C4 生物體的運輸作用|4-2 植物體內物質的運輸
+B1|七上生物|生物|C4 生物體的運輸作用|4-3 人體心血管系統的組成
+B1|七上生物|生物|C4 生物體的運輸作用|4-4 人體的循環系統
+B1|七上生物|生物|C5 生物體的協調作用|5-1 刺激與反應
+B1|七上生物|生物|C5 生物體的協調作用|5-2 神經系統
+B1|七上生物|生物|C5 生物體的協調作用|5-3 內分泌系統
+B1|七上生物|生物|C5 生物體的協調作用|5-4 行為與感應
+B1|七上生物|生物|C6 生物體的恆定|6-1 呼吸與氣體的恆定
+B1|七上生物|生物|C6 生物體的恆定|6-2 排泄與水分的恆定
+B1|七上生物|生物|C6 生物體的恆定|6-3 體溫的恆定與血糖的恆定
+B2|七下生物|生物|C1 生殖|1-1 細胞的分裂
+B2|七下生物|生物|C1 生殖|1-2 無性生殖
+B2|七下生物|生物|C1 生殖|1-3 有性生殖
+B2|七下生物|生物|C2 遺傳|2-1 遺傳、染色體與基因
+B2|七下生物|生物|C2 遺傳|2-2 人類的遺傳
+B2|七下生物|生物|C2 遺傳|2-3 突變與遺傳疾病
+B2|七下生物|生物|C2 遺傳|2-4 生物技術
+B2|七下生物|生物|C3 生物的演化與分類|3-1 化石與演化
+B2|七下生物|生物|C3 生物的演化與分類|3-2 生物的命名與分類
+B2|七下生物|生物|C3 生物的演化與分類|3-3 原核、原生生物及真菌界
+B2|七下生物|生物|C3 生物的演化與分類|3-4 植物界
+B2|七下生物|生物|C3 生物的演化與分類|3-5 動物界
+B2|七下生物|生物|C4 生物與環境|4-1 族群、群集與演替
+B2|七下生物|生物|C4 生物與環境|4-2 生物間的互動關係
+B2|七下生物|生物|C4 生物與環境|4-3 生態系
+B2|七下生物|生物|C4 生物與環境|4-4 生態系的類型
+B2|七下生物|生物|C5 生物多樣性與保育|5-1 生物多樣性
+B2|七下生物|生物|C5 生物多樣性與保育|5-2 生物多樣性面臨的危機
+B2|七下生物|生物|C5 生物多樣性與保育|5-3 保育的落實
+B3|八上理化|理化|C1 基本測量|1-1 長度、質量與時間
+B3|八上理化|理化|C1 基本測量|1-2 測量與估計
+B3|八上理化|理化|C1 基本測量|1-3 體積與密度
+B3|八上理化|理化|C1 基本測量|跨科 尺度
+B3|八上理化|理化|C2 物質的世界|2-1 認識物質
+B3|八上理化|理化|C2 物質的世界|2-2 溶液與濃度
+B3|八上理化|理化|C2 物質的世界|2-3 混合物的分離
+B3|八上理化|理化|C2 物質的世界|2-3 空氣
+B3|八上理化|理化|C3 波動與聲音|3-1 波的傳播與特徵
+B3|八上理化|理化|C3 波動與聲音|3-2 聲音的形成
+B3|八上理化|理化|C3 波動與聲音|3-3 多變的聲音
+B3|八上理化|理化|C3 波動與聲音|3-4 聲波的傳播與應用
+B3|八上理化|理化|C4 光、影像與顏色|4-1 光的傳播
+B3|八上理化|理化|C4 光、影像與顏色|4-2 光的反射與面鏡成像
+B3|八上理化|理化|C4 光、影像與顏色|4-3 光的折射
+B3|八上理化|理化|C4 光、影像與顏色|4-4 透鏡成像
+B3|八上理化|理化|C4 光、影像與顏色|4-5 色散與顏色
+B3|八上理化|理化|C5 溫度與熱|5-1 溫度與溫度計
+B3|八上理化|理化|C5 溫度與熱|5-2 熱量
+B3|八上理化|理化|C5 溫度與熱|5-2 熱量與比熱
+B3|八上理化|理化|C5 溫度與熱|5-3 比熱
+B3|八上理化|理化|C5 溫度與熱|5-4 熱對物質的影響
+B3|八上理化|理化|C5 溫度與熱|5-5 熱的傳播方式
+B3|八上理化|理化|C6 物質的基本結構|6-1 元素與化合物
+B3|八上理化|理化|C6 物質的基本結構|6-2 生活中常見的元素
+B3|八上理化|理化|C6 物質的基本結構|6-3 原子結構
+B3|八上理化|理化|C6 物質的基本結構|6-4 週期表
+B3|八上理化|理化|C6 物質的基本結構|6-5 分子與化學式
+B4|八下理化|理化|C1 化學反應|1-1 質量守恆定律
+B4|八下理化|理化|C1 化學反應|1-2 反應式與化學計量
+B4|八下理化|理化|C2 氧化還原反應|2-1 氧化反應與活性
+B4|八下理化|理化|C2 氧化還原反應|2-2 氧化與還原反應
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-1 電解質
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-2 酸和鹼
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-3 酸鹼的強弱與 pH 值
+B4|八下理化|理化|C3 電解質與酸鹼鹽|3-4 酸鹼反應
+B4|八下理化|理化|C4 反應速率與平衡|4-1 反應速率
+B4|八下理化|理化|C4 反應速率與平衡|4-2 可逆反應與平衡
+B4|八下理化|理化|C5 有機化合物|5-1 有機化合物的組成
+B4|八下理化|理化|C5 有機化合物|5-2 常見的有機化合物
+B4|八下理化|理化|C5 有機化合物|5-3 聚合物與衣料纖維
+B4|八下理化|理化|C5 有機化合物|5-4 食品與清潔劑
+B4|八下理化|理化|C6 力與壓力|6-1 力與平衡
+B4|八下理化|理化|C6 力與壓力|6-2 摩擦力
+B4|八下理化|理化|C6 力與壓力|6-3 壓力
+B4|八下理化|理化|C6 力與壓力|6-4 浮力
+B5|九上理化|理化|C1 直線運動|1-1 位置、路徑長與位移
+B5|九上理化|理化|C1 直線運動|1-2 速率與速度
+B5|九上理化|理化|C1 直線運動|1-3 加速度運動
+B5|九上理化|理化|C1 直線運動|1-4 自由落體運動
+B5|九上理化|理化|C2 力與運動|2-1 慣性定律
+B5|九上理化|理化|C2 力與運動|2-2 運動定律
+B5|九上理化|理化|C2 力與運動|2-3 作用力與反作用力定律
+B5|九上理化|理化|C2 力與運動|2-4 圓周運動與萬有引力
+B5|九上理化|理化|C2 力與運動|2-5 力矩與槓桿原理
+B5|九上理化|理化|C3 功與能|3-1 功與功率
+B5|九上理化|理化|C3 功與能|3-2 動能
+B5|九上理化|理化|C3 功與能|3-3 位能、能量守恆定律與能源
+B5|九上理化|理化|C3 功與能|3-4 簡單機械
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-1 電荷與靜電現象
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-2 電流
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-3 電壓
+B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-4 歐姆定律與電阻
+B5|九上地科|地科|C5 地球的環境|5-1 我們的地球
+B5|九上地科|地科|C5 地球的環境|5-2 地表的改變與平衡
+B5|九上地科|地科|C5 地球的環境|5-3 岩石與礦物
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-1 地球的構造與板塊運動
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-2 板塊運動與內營力的影響
+B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-3 岩層的紀錄
+B5|九上地科|地科|C7 浩瀚的宇宙|7-1 宇宙與太陽系
+B5|九上地科|地科|C7 浩瀚的宇宙|7-2 晝夜與四季
+B5|九上地科|地科|C7 浩瀚的宇宙|7-3 日地月的相對運動
+B6|九下理化|理化|C1 電與生活|1-1 電流的熱效應
+B6|九下理化|理化|C1 電與生活|1-2 生活用電
+B6|九下理化|理化|C1 電與生活|1-3 電池
+B6|九下理化|理化|C1 電與生活|1-4 電流的化學效應
+B6|九下理化|理化|C2 電與磁|2-1 磁鐵與磁場
+B6|九下理化|理化|C2 電與磁|2-2 電流的磁效應
+B6|九下理化|理化|C2 電與磁|2-3 電流與磁場的交互作用
+B6|九下理化|理化|C2 電與磁|2-4 電磁感應
+B6|九下地科|地科|C3 變化莫測的天氣|3-1 地球的大氣
+B6|九下地科|地科|C3 變化莫測的天氣|3-2 天氣現象
+B6|九下地科|地科|C3 變化莫測的天氣|3-3 氣團與鋒面
+B6|九下地科|地科|C3 變化莫測的天氣|3-4 臺灣的災變天氣
+B6|九下地科|地科|C4 永續的地球|4-1 海洋與大氣的互動
+B6|九下地科|地科|C4 永續的地球|4-2 溫室效應與全球暖化
+B6|九下地科|地科|C4 永續的地球|4-3 人與自然的互動
+
+【C 分析標籤規則】
+- 題型：從以下 17 種挑一個代碼填（一題只填一個，複合題取主要考點）：
+  A1 概念辨識（A 觀念型）｜A2 概念推論（A 觀念型）｜A3 概念比較（A 觀念型）｜B1 圖表判讀（B 圖表型）｜B2 圖表推論（B 圖表型）｜B3 圖表計算（B 圖表型）｜C1 實驗操作（C 實驗型）｜C2 實驗設計（C 實驗型）｜C3 實驗結果推論（C 實驗型）｜D1 單步計算（D 計算型）｜D2 多步計算（D 計算型）｜D3 估算判斷（D 計算型）｜E1 情境判斷（E 素養情境型）｜E2 情境推論（E 素養情境型）｜E3 長文閱讀（E 素養情境型）｜填 填充（非選）（非選擇）｜計 計算（非選）（非選擇）
+- 三維度難度評分，各填 1～3 的數字：
+  步驟分：解題步驟 1步=1 / 2步=2 / 3步以上=3
+  記憶分：背過就能答=1 / 需理解才能用=2 / 需在陌生情境活用=3
+  概念分：用到 1 個概念=1 / 2 個=2 / 3個以上或跨章=3
+- 圖表類型：無 / 折線圖 / 長條圖 / 表格 / 示意圖 / 電路圖 / v-t圖 / 實驗裝置圖 等，沒有圖填「無」。
+- 判斷依據：分類有疑慮時簡述理由，否則留空。
+- 待確認：你沒把握的分類填 Y，否則留空。
+
+【其他欄位】
+- 題目：完整抄錄題幹文字＋所有選項（(A)(B)(C)(D)），一題一格，不要省略任何選項。
+- 詳解：**留空**。不要自行生成詳解，也不要填任何內容，除非卷子本身已附印詳解才原文抄入。
+- 答案：A/B/C/D；若卷子上看不到答案，留空即可。
+- 知識點：使用108課綱編碼+原文，多個用「、」隔開。
+  格式範例：Jd-Ⅳ-2 酸鹼強度與pH值的關係、Bb-Ⅳ-3 比熱定量描述
+  請從以下108課綱第四學習階段完整知識點清單中挑選（共208條）：
+  Aa-Ⅳ-1 原子模型的發展。Aa-Ⅳ-2 原子量與分子量是原子、分子之間的相對質量。Aa-Ⅳ-3 純物質包括元素與化合物。Aa-Ⅳ-4 元素的性質有規律性和週期性。Aa-Ⅳ-5 元素與化合物有特定的化學符號表示法。Ab-Ⅳ-1 物質的粒子模型與物質三態。Ab-Ⅳ-2 溫度會影響物質的狀態。Ab-Ⅳ-3 物質的物理性質與化學性質。Ab-Ⅳ-4 物質依是否可用物理方法分離，可分為純物質和混合物。Ba-Ⅳ-1 能量有不同形式，例如：動能、熱能、光能、電能、化學能等，而且彼此之間可以轉換。Ba-Ⅳ-2 孤立系統的總能量會維持定值。Ba-Ⅳ-3 光合作用是將光能轉換成化學能；呼吸作用是將化學能轉換成熱能。Ba-Ⅳ-4 化學反應中的能量改變，常以吸熱或放熱的形式發生。Ba-Ⅳ-5 電池是化學能轉變成電能的裝置。Ba-Ⅳ-6 力可以作功，作功可以改變物體的能量。Ba-Ⅳ-7 每單位時間對物體所做的功稱為功率。Bb-Ⅳ-1 熱具有從高溫處傳到低溫處的趨勢。Bb-Ⅳ-2 透過水升高溫度所吸收的熱能定義熱量單位。Bb-Ⅳ-3 不同物質受熱後，其溫度的變化可能不同，比熱就是此特性的定量化描述。Bb-Ⅳ-4 熱的傳播方式包含傳導、對流與輻射。Bb-Ⅳ-5 熱會改變物質形態，例如：狀態產生變化、體積發生脹縮。Bc-Ⅳ-1 生物經由酵素的催化進行新陳代謝，並以實驗活動探討影響酵素作用速率的因素。Bc-Ⅳ-2 細胞利用養分進行呼吸作用釋放能量，供生物生存所需。Bc-Ⅳ-3 植物利用葉綠體進行光合作用，將二氧化碳和水轉變成醣類養分，並釋出氧氣。Bc-Ⅳ-4 日光、二氧化碳和水分等因素會影響光合作用的進行，這些因素的影響可經由探究實驗來證實。Bd-Ⅳ-1 生態系中的能量來源是太陽，能量會經由食物鏈在不同生物間流轉。Bd-Ⅳ-2 在生態系中，碳元素會出現在不同的物質中，在生物與無生物間循環使用。Bd-Ⅳ-3 生態系中，生產者、消費者和分解者共同促成能量的流轉和物質的循環。Ca-Ⅳ-1 實驗分離混合物，例如：結晶法、過濾法及簡易濾紙色層分析法。Ca-Ⅳ-2 化合物可利用化學性質來鑑定。Cb-Ⅳ-1 分子與原子。Cb-Ⅳ-2 元素會因原子排列方式不同而有不同的特性。Cb-Ⅳ-3 分子式相同會因原子排列方式不同而形成不同的物質。Da-Ⅳ-1 使用適當的儀器可觀察到細胞的形態及細胞膜、細胞質、細胞核、細胞壁等基本構造。Da-Ⅳ-2 細胞是組成生物體的基本單位。Da-Ⅳ-3 多細胞個體具有細胞、組織、器官、器官系統等組成層次。Da-Ⅳ-4 細胞會進行細胞分裂，染色體在分裂過程中會發生變化。Db-Ⅳ-1 動物體（以人體為例）經由攝食、消化、吸收獲得所需的養分。Db-Ⅳ-2 動物體（以人體為例）的循環系統能將體內的物質運輸至各細胞處，並進行物質交換。Db-Ⅳ-3 動物體（以人體為例）藉由呼吸系統與外界交換氣體。Db-Ⅳ-4 生殖系統（以人體為例）能產生配子進行有性生殖，並且有分泌激素的功能。Db-Ⅳ-5 動植物體適應環境的構造常成為人類發展各種精密儀器的參考。Db-Ⅳ-6 植物體根、莖、葉、花、果實內的維管束具有運輸功能。Db-Ⅳ-7 花的構造中，雄蕊的花藥可產生花粉粒，花粉粒內有精細胞；雌蕊的子房內有胚珠，胚珠內有卵細胞。Db-Ⅳ-8 植物體的分布會影響水在地表的流動，也會影響氣溫和空氣品質。Dc-Ⅳ-1 人體的神經系統能察覺環境的變動並產生反應。Dc-Ⅳ-2 人體的內分泌系統能調節代謝作用，維持體內物質的恆定。Dc-Ⅳ-3 皮膚是人體的第一道防禦系統，能阻止外來物的侵入；而淋巴系統則可進一步產生免疫作用。Dc-Ⅳ-4 人體會藉由各系統的協調，使體內所含的物質以及各種狀態能維持在一定範圍內。Dc-Ⅳ-5 生物體能覺察外界環境變化、採取適當的反應以使體內環境維持恆定。Ea-Ⅳ-1 時間、長度、質量等為基本物理量，經由計算可得到密度、體積等衍伸物理量。Ea-Ⅳ-2 以適當的尺度量測或推估物理量，例如：奈米到光年、毫克到公噸等。Ea-Ⅳ-3 測量時可依工具的最小刻度進行估計。Eb-Ⅳ-1 力能引發物體的移動或轉動。Eb-Ⅳ-2 力矩會改變物體的轉動，槓桿是力矩的作用。Eb-Ⅳ-3 平衡的物體所受合力為零且合力矩為零。Eb-Ⅳ-4 摩擦力可分靜摩擦力與動摩擦力。Eb-Ⅳ-5 壓力的定義與帕斯卡原理。Eb-Ⅳ-6 物體在靜止液體中所受浮力，等於排開液體的重量。Eb-Ⅳ-7 簡單機械，例如：槓桿、滑輪、輪軸、齒輪、斜面，通常具有省時、省力，或者是改變作用力方向等功能。Eb-Ⅳ-8 距離、時間及方向等概念可用來描述物體的運動。Eb-Ⅳ-9 圓周運動是一種加速度運動。Eb-Ⅳ-10 物體不受力時，會保持原有的運動狀態。Eb-Ⅳ-11 物體做加速度運動時，必受力。以相同的力量作用相同的時間，則質量愈小的物體其受力後造成的速度改變愈大。Eb-Ⅳ-12 物體的質量決定其慣性大小。Eb-Ⅳ-13 對於每一作用力都有一個大小相等、方向相反的反作用力。Ec-Ⅳ-1 大氣壓力是因為大氣層中空氣的重量所造成。Ec-Ⅳ-2 定溫下，定量氣體在密閉容器內，其壓力與體積的定性關係。Ed-Ⅳ-1 星系是組成宇宙的基本單位。Ed-Ⅳ-2 我們所在的星系，稱為銀河系，主要是由恆星所組成；太陽是銀河系的成員之一。Fa-Ⅳ-1 地球具有大氣圈、水圈和岩石圈。Fa-Ⅳ-2 三大類岩石有不同的特徵和成因。Fa-Ⅳ-3 大氣的主要成分為氮氣和氧氣，並含有水氣、二氧化碳等變動氣體。Fa-Ⅳ-4 大氣可由溫度變化分層。Fa-Ⅳ-5 海水具有不同的成分及特性。Fb-Ⅳ-1 太陽系由太陽和行星組成，行星均繞太陽公轉。Fb-Ⅳ-2 類地行星的環境差異極大。Fb-Ⅳ-3 月球繞地球公轉；日、月、地在同一直線上會發生日月食。Fb-Ⅳ-4 月相變化具有規律性。Fc-Ⅳ-1 生物圈內含有不同的生態系。生態系的生物因子，其組成層次由低到高為個體、族群、群集。Fc-Ⅳ-2 組成生物體的基本層次是細胞，而細胞則由醣類、蛋白質及脂質等分子所組成。Ga-Ⅳ-1 生物的生殖可分為有性生殖與無性生殖，有性生殖產生的子代其性狀和親代差異較大。Ga-Ⅳ-2 人類的性別主要由性染色體決定。Ga-Ⅳ-3 人類的ABO血型是可遺傳的性狀。Ga-Ⅳ-4 遺傳物質會發生變異，其變異可能造成性狀的改變，若變異發生在生殖細胞可遺傳到後代。Ga-Ⅳ-5 生物技術的進步，有助於解決農業、食品、能源、醫藥，以及環境相關的問題，但也可能帶來新問題。Ga-Ⅳ-6 孟德爾遺傳研究的科學史。Gb-Ⅳ-1 從地層中發現的化石，可以知道地球上曾經存在許多的生物，但有些生物已經消失了。Gc-Ⅳ-1 依據生物形態與構造的特徵，可以將生物分類。Gc-Ⅳ-2 地球上有形形色色的生物，在生態系中擔任不同的角色，發揮不同的功能，有助於維持生態系的穩定。Gc-Ⅳ-3 人的體表和體內有許多微生物，有些微生物對人體有利，有些則有害。Gc-Ⅳ-4 人類文明發展中有許多利用微生物的例子，例如：早期的釀酒、近期的基因轉殖等。Hb-Ⅳ-1 研究岩層岩性與化石可幫助了解地球的歷史。Hb-Ⅳ-2 解讀地層、地質事件，可幫助了解當地的地層發展先後順序。Ia-Ⅳ-1 外營力及內營力的作用會改變地貌。Ia-Ⅳ-2 岩石圈可分為數個板塊。Ia-Ⅳ-3 板塊之間會相互分離或聚合，產生地震、火山和造山運動。Ia-Ⅳ-4 全球地震、火山分布在特定的地帶，且兩者相當吻合。Ib-Ⅳ-1 氣團是性質均勻的大型空氣團塊，性質各有不同。Ib-Ⅳ-2 氣壓差會造成空氣的流動而產生風。Ib-Ⅳ-3 由於地球自轉的關係會造成高、低氣壓空氣的旋轉。Ib-Ⅳ-4 鋒面是性質不同的氣團之交界面，會產生各種天氣變化。Ib-Ⅳ-5 臺灣的災變天氣包括颱風、梅雨、寒潮、乾旱等現象。Ib-Ⅳ-6 臺灣秋冬季受東北季風影響，夏季受西南季風影響，造成各地氣溫、風向和降水的季節性差異。Ic-Ⅳ-1 海水運動包含波浪、海流和潮汐，各有不同的運動方式。Ic-Ⅳ-2 海流對陸地的氣候會產生影響。Ic-Ⅳ-3 臺灣附近的海流隨季節有所不同。Ic-Ⅳ-4 潮汐變化具有規律性。Id-Ⅳ-1 夏季白天較長，冬季黑夜較長。Id-Ⅳ-2 陽光照射角度之變化，會造成地表單位面積土地吸收太陽能量的不同。Id-Ⅳ-3 地球的四季主要是因為地球自轉軸傾斜於地球公轉軌道面而造成。Ja-Ⅳ-1 化學反應中的質量守恆定律。Ja-Ⅳ-2 化學反應是原子重新排列。Ja-Ⅳ-3 化學反應中常伴隨沉澱、氣體、顏色及溫度變化等現象。Ja-Ⅳ-4 化學反應的表示法。Jb-Ⅳ-1 由水溶液導電的實驗認識電解質與非電解質。Jb-Ⅳ-2 電解質在水溶液中會解離出陰離子和陽離子而導電。Jb-Ⅳ-3 不同的離子在水溶液中可能會發生沉澱、酸鹼中和及氧化還原等反應。Jb-Ⅳ-4 溶液的概念及重量百分濃度（P%）、百萬分點的表示法（ppm）。Jc-Ⅳ-1 氧化與還原的狹義定義為：物質得到氧稱為氧化反應；失去氧稱為還原反應。Jc-Ⅳ-2 物質燃燒實驗認識氧化。Jc-Ⅳ-3 不同金屬元素燃燒實驗認識元素對氧氣的活性。Jc-Ⅳ-4 生活中常見的氧化還原反應與應用。Jc-Ⅳ-5 鋅銅電池實驗認識電池原理。Jc-Ⅳ-6 化學電池的放電與充電。Jc-Ⅳ-7 電解水與硫酸銅水溶液實驗認識電解原理。Jd-Ⅳ-1 金屬與非金屬氧化物在水溶液中的酸鹼性，及酸性溶液對金屬與大理石的反應。Jd-Ⅳ-2 酸鹼強度與pH值的關係。Jd-Ⅳ-3 實驗認識廣用指示劑及pH計。Jd-Ⅳ-4 水溶液中氫離子與氫氧根離子的關係。Jd-Ⅳ-5 酸、鹼、鹽類在日常生活中的應用與危險性。Jd-Ⅳ-6 實驗認識酸與鹼中和生成鹽和水，並可放出熱量而使溫度變化。Je-Ⅳ-1 實驗認識化學反應速率及影響反應速率的因素，例如：本性、溫度、濃度、接觸面積及催化劑。Je-Ⅳ-2 可逆反應。Je-Ⅳ-3 化學平衡及溫度、濃度如何影響化學平衡的因素。Jf-Ⅳ-1 有機化合物與無機化合物的重要特徵。Jf-Ⅳ-2 生活中常見的烷類、醇類、有機酸及酯類。Jf-Ⅳ-3 酯化與皂化反應。Jf-Ⅳ-4 常見的塑膠。Ka-Ⅳ-1 波的特徵，例如：波峰、波谷、波長、頻率、波速、振幅。Ka-Ⅳ-2 波傳播的類型，例如：橫波和縱波。Ka-Ⅳ-3 介質的種類、狀態、密度及溫度等因素會影響聲音傳播的速率。Ka-Ⅳ-4 聲波會反射，可以做為測量、傳播等用途。Ka-Ⅳ-5 耳朵可以分辨不同的聲音，例如：大小、高低及音色，但人耳聽不到超聲波。Ka-Ⅳ-6 由針孔成像、影子實驗驗證與說明光的直進性。Ka-Ⅳ-7 光速的大小和影響光速的因素。Ka-Ⅳ-8 透過實驗探討光的反射與折射規律。Ka-Ⅳ-9 生活中有許多運用光學原理的實例或儀器，例如：透鏡、面鏡、眼睛、眼鏡及顯微鏡等。Ka-Ⅳ-10 陽光經過三稜鏡可以分散成各種色光。Ka-Ⅳ-11 物體的顏色是光選擇性反射的結果。Kb-Ⅳ-1 物體在地球或月球等星體上因為星體的引力作用而具有重量；物體之質量與其重量是不同的物理量。Kb-Ⅳ-2 帶質量的兩物體之間有重力，此力大小與兩物體各自的質量成正比、與物體間距離的平方成反比。Kc-Ⅳ-1 摩擦可以產生靜電，電荷有正負之別。Kc-Ⅳ-2 靜止帶電物體之間有靜電力，同號電荷會相斥，異號電荷則會相吸。Kc-Ⅳ-3 磁場可以用磁力線表示，磁力線方向即為磁場方向，磁力線越密處磁場越大。Kc-Ⅳ-4 電流會產生磁場，其方向分布可以由安培右手定則求得。Kc-Ⅳ-5 載流導線在磁場會受力，並簡介電動機的運作原理。Kc-Ⅳ-6 環形導線內磁場變化，會產生感應電流。Kc-Ⅳ-7 電池連接導體形成通路時，多數導體通過的電流與其兩端電壓差成正比，其比值即為電阻。Kc-Ⅳ-8 電流通過帶有電阻物體時，能量會以發熱的形式逸散。La-Ⅳ-1 隨著生物間、生物與環境間的交互作用，生態系中的結構會隨時間改變，形成演替現象。Lb-Ⅳ-1 生態系中的非生物因子會影響生物的分布與生存，環境調查時常需檢測非生物因子的變化。Lb-Ⅳ-2 人類活動會改變環境，也可能影響其他生物的生存。Lb-Ⅳ-3 人類可採取行動來維持生物的生存環境，使生物能在自然環境中生長、繁殖、交互作用，以維持生態平衡。Lb-Ⅳ-4 生命科學的進步，有助於解決社會中發生的農業、食品、能源、醫藥，以及環境相關的問題。Lb-Ⅳ-5 保育工作不是只有科學家能夠處理，所有的公民都有權利及義務，共同研究、監控及維護生物多樣性。Ma-Ⅳ-1 不同的材料對生活及社會的影響。Ma-Ⅳ-2 各種發電方式與新興的能源科技對社會、經濟、環境及生態的影響。Ma-Ⅳ-3 各種本土科學知能（含原住民族科學與世界觀）對社會、經濟環境及生態保護之啟示。Ma-Ⅳ-4 生物技術的發展是為了因應人類需求，運用跨領域技術來改造生物。Ma-Ⅳ-5 科學史上重要發現的過程，以及不同性別、背景、族群者於其中的貢獻。Mb-Ⅳ-1 生物生長條件與機制在處理環境汙染物質的應用。Mb-Ⅳ-2 運用生物體的構造與功能，可改善人類生活。Mc-Ⅳ-1 生活中對各種材料進行加工與運用。Mc-Ⅳ-2 常見人造材料的特性、簡單的製造過程及在生活上的應用。Mc-Ⅳ-3 電力供應與輸送方式的概要。Mc-Ⅳ-4 用電安全常識，避免觸電和電線走火。Mc-Ⅳ-5 電器標示和電費計算。Mc-Ⅳ-6 生物保育知識與技能在防治天然災害的應用。Mc-Ⅳ-7 颱風主要發生在七至九月，並容易造成生命財產的損失。Md-Ⅳ-1 颱風主要發生在七至九月，並容易造成生命財產的損失。Md-Ⅳ-2 颱風會帶來狂風、豪雨及暴潮等災害。Md-Ⅳ-3 臺灣位處於板塊交界，因此地震頻仍，常造成災害。Md-Ⅳ-4 大雨過後和順向坡會加重山崩的威脅。Md-Ⅳ-5 環境汙染物對生物生長的影響及應用。Me-Ⅳ-1 環境汙染物對生物生長的影響及應用。Me-Ⅳ-2 家庭廢水的影響與再利用。Me-Ⅳ-3 空氣品質與空氣汙染的種類、來源及一般防治方法。Me-Ⅳ-4 溫室氣體與全球暖化。Me-Ⅳ-5 重金屬汙染的影響。Me-Ⅳ-6 環境汙染物與生物放大的關係。Me-Ⅳ-7 對聲音的特性做深入的研究可以幫助我們更確實防範噪音的汙染。Na-Ⅳ-1 利用生物資源會影響生物間相互依存的關係。Na-Ⅳ-2 生活中節約能源的方法。Na-Ⅳ-3 環境品質繫於資源的永續利用與維持生態平衡。Na-Ⅳ-4 資源使用的5R：減量、拒絕、重複使用、回收及再生。Na-Ⅳ-5 各種廢棄物對環境的影響，環境的承載能力與處理方法。Na-Ⅳ-6 人類社會的發展必須建立在保護地球自然環境的基礎上。Na-Ⅳ-7 為使地球永續發展，可以從減量、回收、再利用、綠能等做起。Nb-Ⅳ-1 全球暖化對生物的影響。Nb-Ⅳ-2 氣候變遷產生的衝擊有海平面上升、全球暖化、異常降水等現象。Nb-Ⅳ-3 因應氣候變遷的方法有減緩與調適。Nc-Ⅳ-1 生質能源的發展現況。Nc-Ⅳ-2 開發任何一種能源都有風險，應依據證據來評估與決策。Nc-Ⅳ-3 化石燃料的形成與特性。Nc-Ⅳ-4 新興能源的開發，例如：風能、太陽能、核融合發電、汽電共生、生質能、燃料電池等。Nc-Ⅳ-5 新興能源的科技，例如：油電混合動力車、太陽能飛機等。Nc-Ⅳ-6 臺灣能源的利用現況與未來展望。
+- 題目摘要：動詞＋對象，15 字內（如「判斷並聯電路電流大小」）。
+- 詳解：有答案時才寫，沒有答案則留空。格式固定為三段（使用全形括號，禁止用 ## 或 **）：
+  【解題關鍵】一句話點出核心觀念。
+  【詳解】選擇題每個選項格式：(X) 正確：解析 或 (X) 錯誤：解析。計算題只寫關鍵代入步驟。
+  【觀念補充】有教學價值時寫 1～2 句；沒必要則整段省略。
+  數學式與化學式用 $…$ 包住。不寫「故選(X)」或「本題答案為」。
+- 題目：完整題幹，選項放在同一格用換行分隔。
+  數學/化學式放入 $...$；單位與一般英文必須用 \\text{} 包住避免斜體。
+  含圖題：盡量以文字描述圖表內容；若圖太複雜無法描述，則在題目後標〔含圖〕。
+
+【輸出格式】
+- 第一列為標題列；每欄用雙引號包住，欄內雙引號用 "" 表示。
+- CSV 共 22 欄，第 21 欄為詳解，最後一欄為題組ID。
+
+【第 22 欄：題組ID 規則】
+- 若這題屬於題組（多題共用一段閱讀文字），此欄填入題組代號。
+- 同一題組的所有題目，此欄必須填入完全相同的代號。
+- 題組第一題的題目欄格式：先完整寫閱讀材料，換行後單獨一行寫「【題幹】」，再換行後寫題幹與選項。
+- 後續題目只填題幹與選項，不重複閱讀材料。
+- 非題組的獨立題目，此欄留空。
+- 題組ID 格式：學校名-G年級-學年-學期-第幾次段考-該題組的第一題題號
+  例：陽明國中-G8-112-2-1-29
+
+只輸出 CSV，不要其他說明文字。
+
+【以下為考卷內容】
+${docContent}`;
+}
+
+async function step2(){
+  if(!docContent) return;
+  setBub(2,'running'); setMsg(2,'準備中⋯'); setActive(2);
+  document.getElementById('btn2').disabled=true;
+
+  const prompt=buildPrompt();
+  try{
+    await navigator.clipboard.writeText(prompt);
+  }catch(_){
+    document.getElementById('promptFallback').value=prompt;
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+  setBub(2,'done'); setMsg(2,`已複製（${prompt.length.toLocaleString()} 字元）`,'ok');
+  setBub(3,'waiting'); document.getElementById('btn3').disabled=false; setActive(3);
+  setMsg(3,'請貼進 AI app，取得 CSV 後複製，再按右側按鈕','warn');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  setBub(3,'waiting'); document.getElementById('btn3').disabled=false; setActive(3);
+  setMsg(3,'請貼進 AI app，取得 CSV 後複製，再按右側按鈕','warn');
+}
+
+// ── 步驟 3 ──────────────────────────────────────────────────────────
+function step3(){
+  setBub(3,'done'); setMsg(3,'好的，請在下方貼上 CSV','ok');
+  document.getElementById('btn3').disabled=true;
+  setBub(4,'waiting'); document.getElementById('btn4').disabled=false;
+  document.getElementById('csvCard').style.display='block';
+  setActive(4);
+  setTimeout(()=>document.getElementById('csvArea').focus(),100);
+}
+
+// ── 步驟 4：下載 CSV ─────────────────────────────────────────────────
+function downloadCSV(){
+  const csv=document.getElementById('csvArea').value.trim();
+  if(!csv){setMsg(4,'請先貼上 CSV 內容','err');return;}
+  setBub(4,'running'); setMsg(4,'準備下載⋯');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=(csvFilename||'output')+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+  setBub(4,'done'); setMsg(4,'已下載！','ok');
+
+  setTimeout(()=>{
+    selectedFile=null; docContent=''; csvFilename='';
+    document.getElementById('dropZone').classList.remove('has-file');
+    document.getElementById('dropLabel').textContent='點擊選擇 .docx，或將檔案拖放到這裡';
+    document.getElementById('fileInput').value='';
+    resetAll();
+  },3000);
+}
+</script>
+</body>
+</html>

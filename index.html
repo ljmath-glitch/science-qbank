@@ -2358,6 +2358,7 @@ const TB_BUTTONS={
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
   daily:   ()=>`<a class="btn" href="daily.html" style="text-decoration:none">📅 每日一題</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
+  raw:     ()=>`<a class="btn" href="raw.html" style="text-decoration:none;background:#7b3f00;color:#fff;border-color:#7b3f00">📄 raw考卷前處理</a>`,
   selFilt: ()=>`<button class="btn sm" style="font-size:12px" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" style="font-size:12px" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
   batchSol:()=>`<span style="display:inline-flex;align-items:center;gap:4px"><select id="batchProvider" style="font-size:11px;padding:2px 4px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;max-width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid #93c5fd;border-radius:6px;background:#f0f7ff;color:#2563eb;font-family:system-ui,sans-serif;cursor:pointer;display:none;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button class="btn sm" style="font-size:12px;background:#f0f7ff;color:#2563eb;border-color:#93c5fd;white-space:nowrap" onclick="batchGenerateSol()">✨ 批次生成詳解</button><button class="btn sm" style="font-size:12px;white-space:nowrap" onclick="showSolPrompt()">📋 生成prompt</button></span>`,
@@ -2370,7 +2371,7 @@ const TB_BUTTONS={
 const TB_ROW_LABELS=['資料管理','功能工具','生成詳解','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
-  ['claude','report','kp','progress','daily','guide'],
+  ['claude','report','kp','progress','daily','guide','raw'],
   ['batchProvider','batchGeminiModel','batchGenBtn','solPromptBtn'],
   ['selFilt','selAll','stat'],
 ];
