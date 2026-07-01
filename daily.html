@@ -992,8 +992,7 @@ function renderCharacter(){
   for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
   document.getElementById('specCenterLabel').innerHTML=
-    `<div class="hist-dots-row"><span class="hist-label">近 7 題</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}</div>`+
-    (streakHtml?`<div class="hist-streak">${streakHtml}</div>`:'');
+    `<div class="hist-dots-row"><span class="hist-label">近 7 題</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
