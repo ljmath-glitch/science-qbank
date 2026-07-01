@@ -1063,7 +1063,8 @@ function newPracticeHistKey(){
   const KEY='dq_pk_'+dateStr(0);
   const n=parseInt(localStorage.getItem(KEY)||'0')+1;
   localStorage.setItem(KEY,n);
-  return dateStr(0)+'_a'+n;
+  // '_z' sorts after '_a','_p','_s' (legacy formats); zero-pad ensures _z002>'_z001'
+  return dateStr(0)+'_z'+String(n).padStart(3,'0');
 }
 
 function checkAbsenceReset(){
