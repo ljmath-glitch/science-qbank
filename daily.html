@@ -1026,10 +1026,7 @@ function renderQuestion(){
   }
 
   // body
-  const imgsHtml = (q.imgs||[]).map(im=>{
-    const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
-    return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
-  }).join('');
+  const imgsHtml = (q.imgs||[]).map(im=>`<img class="qimg" src="${im.src}">`).join('');
   document.getElementById('qBody').innerHTML=`<div class="q-stem">${mathToHtml(q.stem)}</div>${imgsHtml}`;
 
   // opts
