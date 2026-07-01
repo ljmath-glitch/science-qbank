@@ -699,7 +699,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 <div id="lockOverlay" class="report-overlay" style="display:none" onclick="closeLockModal()"></div>
 <div id="lockBox" class="report-box" style="display:none">
   <div class="report-title">🔒 請輸入密碼以返回題庫系統</div>
-  <input id="lockInput" class="report-input" style="height:auto" type="password" inputmode="numeric" placeholder="密碼" maxlength="20">
+  <input id="lockInput" class="report-input" style="height:auto" type="password" placeholder="密碼" maxlength="20">
   <div id="lockErr" class="lock-err">密碼錯誤，請再試一次</div>
   <div class="report-btns">
     <button class="report-cancel" onclick="closeLockModal()">取消</button>
@@ -1466,7 +1466,7 @@ function closeReport(){
 }
 
 // ── 返回題庫系統密碼鎖 ────────────────────────────────────────
-const LOCK_PASSWORD='0000';
+const LOCK_PASSWORD='LJ0970683519';
 function showDemotion(daysDiff,fromIdx){
   const fromLv=LEVELS[fromIdx];
   const toLv=LEVELS[fromIdx-1];
