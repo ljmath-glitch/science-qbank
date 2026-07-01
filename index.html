@@ -31,7 +31,7 @@
     color:var(--ink);line-height:1.7;padding:0 0 90px}
   header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative}
   header h1{font-size:24px;letter-spacing:3px;font-weight:700}
-  header .sub{font-size:12px;color:#b9c2d6;margin-top:4px;letter-spacing:1px;font-family:system-ui,sans-serif}
+  header .sub{font-size:12px;color:#b9c2d6;margin-top:4px;letter-spacing:1px;font-family:inherit}
   header .wrap{display:flex;align-items:center;gap:16px}
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
@@ -45,12 +45,12 @@
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
   .tb-item.dragging{opacity:.25;pointer-events:none}
   .tb-row.drag-over{background:rgba(184,134,11,.09)}
-  .tb-edit-toggle{position:absolute;top:8px;right:10px;font-size:11px;padding:3px 9px;background:transparent;border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--muted);font-family:system-ui,sans-serif;line-height:1.6}
+  .tb-edit-toggle{position:absolute;top:8px;right:10px;font-size:11px;padding:3px 9px;background:transparent;border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--muted);font-family:inherit;line-height:1.6}
   .tb-edit-toggle.on{background:var(--phy);color:#fff;border-color:var(--phy)}
   .editing .tb-item{cursor:grab;box-shadow:0 0 0 2px var(--phy);border-radius:7px}
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
-  .btn{font-family:system-ui,sans-serif;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
   .btn.green{background:var(--bio);color:#fff;border-color:var(--bio)}
@@ -58,20 +58,20 @@
   .btn.sm{padding:4px 11px;font-size:12px}
   .toolbar-outer .btn,.toolbar-outer .btn.sm{height:30px;padding:0 12px;box-sizing:border-box;white-space:nowrap;align-items:center}
   .toolbar-outer select{height:30px;box-sizing:border-box;vertical-align:middle}
-  .stat{font-family:system-ui,sans-serif;font-size:12px;color:var(--muted);margin-left:auto}
+  .stat{font-family:inherit;font-size:12px;color:var(--muted);margin-left:auto}
   .stat b{color:var(--accent);font-size:15px}
   .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px}
-  .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:system-ui,sans-serif;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:inherit;font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .filt{margin-bottom:11px}
-  .filt label{display:block;font-size:12px;font-family:system-ui,sans-serif;color:var(--muted);margin-bottom:4px;font-weight:600}
-  select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:system-ui,sans-serif;font-size:13px;background:#fff;color:var(--ink)}
-  textarea{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
+  .filt label{display:block;font-size:12px;font-family:inherit;color:var(--muted);margin-bottom:4px;font-weight:600}
+  select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink)}
+  textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
   .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
   .card.flag{background:#fffdf2}
-  .card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;font-family:system-ui,sans-serif}
+  .card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;font-family:inherit}
   .tag{font-size:11px;padding:2px 8px;border-radius:18px;font-weight:600;letter-spacing:.3px}
   .tag.book{background:#eef3ff;color:#3454b4}
   .tag.unit{background:#fdeeee;color:var(--accent)}
@@ -84,28 +84,28 @@
   .tag.d3{background:#fff0e0;color:#e8740c}
   .tag.d4{background:#ffebee;color:#c62828}
   .tag.flagtag{background:#fde7c9;color:#a5600a}
-  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif}
+  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
   .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
-  .summary{font-size:12px;color:var(--muted);font-family:system-ui,sans-serif;margin-top:6px}
+  .summary{font-size:12px;color:var(--muted);font-family:inherit;margin-top:6px}
   .pickbox{position:absolute;top:14px;right:14px}
   .pickbox input{width:19px;height:19px;cursor:pointer;accent-color:var(--accent)}
-  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:system-ui,sans-serif}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:inherit}
   .empty .big{font-size:46px;margin-bottom:10px;opacity:.4}
   dialog{border:none;border-radius:14px;padding:0;max-width:760px;width:95%;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
   dialog::backdrop{background:rgba(19,36,31,.55)}
   .dlg-head{background:var(--ink);color:#f4f1ea;padding:15px 20px;font-size:15px;letter-spacing:2px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .dlg-body{padding:20px;max-height:74vh;overflow:auto}
-  .dlg-body p{font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);margin-bottom:11px;line-height:1.6}
+  .dlg-body p{font-family:inherit;font-size:13px;color:var(--muted);margin-bottom:11px;line-height:1.6}
   .field{margin-bottom:11px}
-  .field label{display:block;font-size:12px;font-family:system-ui,sans-serif;font-weight:600;color:var(--muted);margin-bottom:3px}
+  .field label{display:block;font-size:12px;font-family:inherit;font-weight:600;color:var(--muted);margin-bottom:3px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
   .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
-  .sectionhead{font-family:system-ui,sans-serif;font-size:12px;font-weight:700;color:var(--accent);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);letter-spacing:1px}
+  .sectionhead{font-family:inherit;font-size:12px;font-weight:700;color:var(--accent);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);letter-spacing:1px}
   .dlg-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:#faf8f3;flex-wrap:wrap}
   .x{cursor:pointer;font-size:20px;line-height:1;background:none;border:none;color:#f4f1ea}
-  .diffbox{background:#f7f4ec;border:1px solid var(--line);border-radius:8px;padding:11px;font-family:system-ui,sans-serif}
+  .diffbox{background:#f7f4ec;border:1px solid var(--line);border-radius:8px;padding:11px;font-family:inherit}
   .diffbox .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
   .diffbox .row span:first-child{flex:1}
   .diffbox .seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
@@ -113,12 +113,12 @@
   .diffbox .seg button.on{background:var(--phy);color:#fff;font-weight:700}
   .diffresult{margin-top:6px;padding:7px 10px;border-radius:6px;font-weight:700;text-align:center;font-size:14px}
   .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
-  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:50;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:system-ui,sans-serif;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
+  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:50;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
   .kbd{font-family:ui-monospace,monospace;background:#2a3550;color:#fff;padding:1px 6px;border-radius:4px;font-size:12px}
-  .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:system-ui,sans-serif;cursor:pointer}
-  .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:system-ui,sans-serif}
+  .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:inherit;cursor:pointer}
+  .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:inherit}
   .typegrid label{font-size:12px;background:#f4f1ea;padding:4px 8px;border-radius:6px;cursor:pointer;display:flex;gap:5px;align-items:center}
   .paperview{display:none;position:fixed;inset:0;background:#c8c8c8;z-index:200;overflow:auto}
   .paperview.show{display:block}
@@ -134,12 +134,12 @@
   @media print{.pvimg-corner{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
-  .pv-sheet{font-family:'DFPYuanMedium-B5','HuaKang',"Songti SC","Noto Serif TC",serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
+  .pv-sheet{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
   .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
   .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
   .exam-hdr-logo img{height:56px;width:auto}
-  .exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
+  .exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:inherit}
   .exam-hdr-body{flex:1;display:flex;align-items:stretch;background:linear-gradient(to right,#fff,#d4d4d4)}
   .exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:transparent}
   .exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
@@ -151,20 +151,20 @@
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
   .pv-sheet .sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
   .statbar{height:14px;background:var(--phy);border-radius:3px}
-  table.report{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:13px}
+  table.report{width:100%;border-collapse:collapse;font-family:inherit;font-size:13px}
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
-  @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'HuaKang',"Songti SC",serif}}
+  @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
   @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
   @media(max-width:860px){.layout{grid-template-columns:1fr}}
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
-  .bell-badge{display:none;position:absolute;top:-2px;right:-2px;background:#e53935;color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 3px;font-family:system-ui,sans-serif;pointer-events:none}
+  .bell-badge{display:none;position:absolute;top:-2px;right:-2px;background:#e53935;color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 3px;font-family:inherit;pointer-events:none}
   .bell-panel{display:none;position:fixed;width:360px;max-height:440px;background:#fff;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);z-index:9999;overflow:hidden;border:1px solid #e0e0e0}
-  .bell-panel-hdr{padding:12px 16px;background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;font-family:system-ui,sans-serif;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .bell-panel-hdr{padding:12px 16px;background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;font-family:inherit;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
   .bell-panel-hdr button{background:none;border:none;color:#b9c2d6;cursor:pointer;font-size:20px;line-height:1}
   .bell-list{overflow-y:auto;max-height:380px}
-  .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:system-ui,sans-serif}
+  .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:inherit}
   .bell-item:last-child{border-bottom:none}
   .bell-item-title{font-size:13px;color:#222;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bell-item-meta{font-size:11px;color:#888;margin-bottom:4px}
@@ -258,7 +258,7 @@
     <p>20 欄順序（建議直接用「📋 Claude 指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
-    <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:system-ui,sans-serif;font-size:13px">
+    <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="csvArea" style="min-height:200px"></textarea>
   </div>
   <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
@@ -283,7 +283,7 @@
       <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-九年級-112上-第一次段考-7" oninput="onGroupIdChange()"></div>
     </div>
     <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
-      <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:system-ui,sans-serif;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
+      <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:inherit;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
       <div class="field"><textarea id="ePassage" rows="5" placeholder="輸入共用閱讀材料…" style="font-family:inherit"></textarea></div>
       <div class="imgprev" id="ePassageImgPrev"></div>
     </div>
@@ -320,11 +320,11 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:system-ui,sans-serif;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:system-ui,sans-serif" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
-      <span id="imgTargetWrap" style="display:none;font-family:system-ui,sans-serif;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
+      <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
-      <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:system-ui,sans-serif;font-size:13px">
+      <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:inherit;font-size:13px">
       <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
     </div>
   </div>
@@ -356,7 +356,7 @@
       </div>
     </div>
     <div class="field"><label>輸出格式</label>
-      <div style="display:flex;flex-direction:column;gap:6px;font-family:system-ui,sans-serif;font-size:13px">
+      <div style="display:flex;flex-direction:column;gap:6px;font-family:inherit;font-size:13px">
         <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:2px">📄 題目卷</div>
         <label class="chk"><input type="radio" name="pAns" value="none" checked> 純題目（不附答案）</label>
         <label class="chk"><input type="radio" name="pAns" value="end"> 純題目＋卷末附答案</label>
@@ -369,7 +369,7 @@
       </div>
     </div>
     <div class="field"><label>其他</label>
-      <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:system-ui,sans-serif;font-size:13px">
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:inherit;font-size:13px">
         <label class="chk"><input type="checkbox" id="pShowMeta" checked> 班級/姓名欄</label>
         <label class="chk"><input type="checkbox" id="pShowTag"> 每題顯示章節/題型標籤</label>
         <label class="chk"><input type="checkbox" id="pShowSource"> 每題顯示出處（如 113百齡二段）</label>
@@ -1027,7 +1027,7 @@ async function batchCompressImgs(){
   if(!requireCloud())return;
   if(!confirm('將重新壓縮雲端所有題目的圖片，以 WebP/PNG/JPEG 三者取最小格式儲存。\n此操作不可還原，確定？'))return;
   const prog=document.createElement('div');
-  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:inherit;font-size:14px;z-index:9999;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
   prog.textContent='🗜 載入題目中…';
   document.body.appendChild(prog);
   const {data,error}=await supabase.from('questions').select('id,imgs');
@@ -1080,7 +1080,7 @@ async function addImages(e){
 async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
-  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
+  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:inherit;font-size:12px;flex-wrap:wrap">
     <button class="btn sm" onclick="setImg(${i},'width',45)">小</button>
     <button class="btn sm" onclick="setImg(${i},'width',65)">中</button>
     <button class="btn sm" onclick="setImg(${i},'width',85)">大</button>
@@ -1096,7 +1096,7 @@ function renderPassageImgPrev(){
   const el=document.getElementById('ePassageImgPrev');if(!el)return;
   el.innerHTML=curPassageImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
-  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:system-ui,sans-serif;font-size:12px;flex-wrap:wrap">
+  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:inherit;font-size:12px;flex-wrap:wrap">
     <button class="btn sm" onclick="setPassageImg(${i},'width',45)">小</button>
     <button class="btn sm" onclick="setPassageImg(${i},'width',65)">中</button>
     <button class="btn sm" onclick="setPassageImg(${i},'width',85)">大</button>
@@ -1239,7 +1239,7 @@ async function bellResolve(id){
 function renderBellList(items){
   const el=document.getElementById('bellList');
   if(!items||!items.length){
-    el.innerHTML='<div style="padding:24px;text-align:center;color:#999;font-family:system-ui,sans-serif;font-size:13px">目前沒有待確認的題目 ✓</div>';
+    el.innerHTML='<div style="padding:24px;text-align:center;color:#999;font-family:inherit;font-size:13px">目前沒有待確認的題目 ✓</div>';
     return;
   }
   el.innerHTML=items.map(it=>{
@@ -1494,7 +1494,7 @@ function renderPage(list,shown,page){
       const _ps=PASSAGES[_gid];
       const _pImgs=(_ps.imgs||[]).map(imgHtml).join('');
       const _pText=esc(fixLatex(_ps.q||'')).replace(/\n/g,'<br>');
-      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'Songti SC','STSong','Noto Serif TC',Georgia,serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
+      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'GenSenRounded','Noto Sans TC',system-ui,sans-serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
     }
     const d=calcDiff(it.step,it.mem,it.con);
     const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
@@ -1520,7 +1520,7 @@ function renderPage(list,shown,page){
       </div>
       <div class="qbody">${it.summary?`<b>${esc(it.summary)}</b><br>`:''}${optEsc}${imgs}${ansHtml}${solHtml}</div>
       ${it.exam||it.no?`<div class="summary">${esc(it.exam||'')} ${it.no?'第'+esc(it.no)+'題':''}${it.basis?' · 依據：'+esc(it.basis):''}</div>`:''}
-      <div style="margin-top:9px;display:flex;gap:7px;font-family:system-ui,sans-serif">
+      <div style="margin-top:9px;display:flex;gap:7px;font-family:inherit">
         <button class="btn sm" onclick="openEdit('${it.id}')">編輯</button>
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
@@ -1529,7 +1529,7 @@ function renderPage(list,shown,page){
   if(shown.length>PAGE_SIZE){
     const totalPages=Math.ceil(shown.length/PAGE_SIZE);
     const nav=document.createElement('div');
-    nav.style.cssText='display:flex;align-items:center;gap:8px;padding:14px 0;font-family:system-ui,sans-serif;font-size:13px;justify-content:center';
+    nav.style.cssText='display:flex;align-items:center;gap:8px;padding:14px 0;font-family:inherit;font-size:13px;justify-content:center';
     nav.innerHTML=`<button class="btn sm" ${page===0?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page-1});window.scrollTo(0,0)">◀ 上一頁</button><span style="color:var(--muted)">第 ${page+1} / ${totalPages} 頁（共 ${shown.length} 題）</span><button class="btn sm" ${end>=shown.length?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page+1});window.scrollTo(0,0)">下一頁 ▶</button>`;
     list.appendChild(nav);
   }
@@ -1637,8 +1637,8 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   let qNum=0;
   const answers=[];
   const bodyParts=sorted.map(it=>{
-    const tag=showTag?`<div style="font-size:12px;color:#999;font-family:sans-serif">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
-    const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:sans-serif">[${esc(getSource(it))}]</span>`:'';
+    const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
+    const src=showSource&&getSource(it)?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(getSource(it))}]</span>`:'';
     const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
@@ -1671,15 +1671,16 @@ function showPaperPreview(){if(!PICKS.size)return;
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
-<style>@font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('https://science-qbank.vercel.app/fonts/HuaKang.ttc') format('truetype');}
-body{font-family:'HuaKang',"Songti SC","Noto Serif TC",serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
+<style>@font-face{font-family:'GenSenRounded';font-weight:400;src:url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
+@font-face{font-family:'GenSenRounded';font-weight:700;src:url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
+body{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
 .q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
 .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
 .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
 .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
 .exam-hdr-logo img{height:56px;width:auto}
-.exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:sans-serif}
+.exam-hdr-brand{font-size:8pt;letter-spacing:2px;color:#999;margin-top:4px;font-family:inherit}
 .exam-hdr-body{flex:1;display:flex;align-items:stretch;background:linear-gradient(to right,#fff,#d4d4d4)}
 .exam-hdr-left{padding:14px 20px;display:flex;align-items:center;flex-shrink:0;background:transparent}
 .exam-hdr-gs{font-size:20pt;font-weight:bold;color:#252525;letter-spacing:3px}
@@ -1707,7 +1708,7 @@ function openReport(){
   html+=`<div class="sectionhead">題型分布</div><table class="report"><tr><th>題型</th><th>題數</th><th>分布</th></tr>`+
     QTYPES.map(t=>`<tr><td>${t.code} ${t.name}</td><td>${typeCount[t.code]||0}</td><td><div class="statbar" style="width:${(typeCount[t.code]||0)/max*100}%"></div></td></tr>`).join('')+`</table>`;
   html+=`<div class="sectionhead">尚無題目的子單元（缺口，共 ${zero.length} 個）</div>`;
-  html+=zero.length?`<div style="font-family:system-ui,sans-serif;font-size:12px;line-height:1.9">${zero.map(z=>`<div>· ${esc(z)}</div>`).join('')}</div>`:'<p>太棒了，所有子單元都有題目！</p>';
+  html+=zero.length?`<div style="font-family:inherit;font-size:12px;line-height:1.9">${zero.map(z=>`<div>· ${esc(z)}</div>`).join('')}</div>`:'<p>太棒了，所有子單元都有題目！</p>';
   reportBody.innerHTML=html;reportDlg.showModal()}
 
 /* ===== 備份/還原 ===== */
@@ -2417,7 +2418,7 @@ async function batchGenerateSol(){
   if(!targets.length){alert('沒有需要生成詳解的題目。');return;}
   if(!confirm(`即將為 ${targets.length} 題批次生成詳解（${provider}），可能需要一段時間，繼續？`))return;
   const prog=document.createElement('div');
-  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:inherit;font-size:14px;z-index:9999;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
   document.body.appendChild(prog);
   let done=0,failed=0;
   const updProg=()=>{prog.textContent=`✨ 批次生成中：${done+failed}/${targets.length} 題（失敗 ${failed}）`;};
@@ -2487,12 +2488,12 @@ const TB_BUTTONS={
   kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
-  raw:     ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><a class="btn green" href="raw.html" style="text-decoration:none">📄 raw考卷前處理</a><span style="font-size:9px;color:#dc2626;font-family:system-ui,sans-serif;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
+  raw:     ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><a class="btn green" href="raw.html" style="text-decoration:none">📄 raw考卷前處理</a><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
   selFilt: ()=>`<button class="btn sm" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn sm" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:system-ui,sans-serif;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select>`,
-  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:system-ui,sans-serif;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
-  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:system-ui,sans-serif;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
+  batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option></select>`,
+  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
+  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 生成prompt</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
@@ -2650,7 +2651,7 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
       <span style="font-size:14px;font-weight:700">📋 AI 指令（Claude / ChatGPT / Gemini）</span>
       <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
     </div>
-    <div style="padding:10px;flex-shrink:0;font-size:12px;color:#555;font-family:system-ui">
+    <div style="padding:10px;flex-shrink:0;font-size:12px;color:#555;font-family:inherit">
       ① 點「全選複製」② 開新 AI 對話 ③ 上傳段考卷 ④ 貼上指令並填年度學校考試名稱 ⑤ 把 CSV 用「匯入題目」貼回來
     </div>
     <textarea id="promptTA" readonly style="flex:1;margin:0 10px 10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none"></textarea>
@@ -2937,11 +2938,11 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
   var hasHdr=g||s||sc||en;
   var css='<style>'+
     '@page{margin:2.54cm}'+
-    'body{font-family:標楷體,DFKai-SB,serif;font-size:12pt;line-height:1.8;margin:0}'+
+    'body{font-family:GenSenRounded,"Noto Sans TC",system-ui,sans-serif;font-size:12pt;line-height:1.8;margin:0}'+
     'h1{text-align:center;font-size:18pt;margin-bottom:6pt}'+
     '.meta{text-align:right;color:#888;font-size:10pt;margin-bottom:24pt}'+
     '.tag{color:#999;font-size:9pt;font-style:italic;margin-bottom:2pt}'+
-    '.src{font-size:9pt;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;font-family:sans-serif}'+
+    '.src{font-size:9pt;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;font-family:inherit}'+
     '.q{margin-bottom:14pt}'+
     '.qtext{font-size:12pt}'+
     '.ans{color:#c0392b;font-size:10pt;margin-top:2pt}'+
@@ -2957,7 +2958,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
     body+='<table width="100%" border="1" bordercolor="#bbbbbb" cellspacing="0" cellpadding="0" style="margin-bottom:18pt;border-collapse:collapse"><tr>';
     body+='<td align="center" valign="middle" bgcolor="#ffffff" width="70" style="padding:8pt 10pt;border-right:1pt solid #cccccc">';
     body+='<img src="logo.png" width="52" height="52" style="height:52pt;width:auto"><br>';
-    body+='<span style="font-size:7pt;letter-spacing:2pt;color:#999999;font-family:Arial,sans-serif">TZU TZU</span></td>';
+    body+='<span style="font-size:7pt;letter-spacing:2pt;color:#999999;font-family:inherit">TZU TZU</span></td>';
     body+='<td valign="middle" bgcolor="#f2f2f2" style="padding:10pt 16pt;font-size:20pt;font-weight:bold;letter-spacing:3pt">'+esc(leftText)+'</td>';
     if(en){
       body+='<td bgcolor="#999999" width="3" style="padding:0;width:3pt"></td>';
@@ -3021,7 +3022,7 @@ function _imgSize(src){
 }
 async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr){
   const prog=document.createElement('div');
-  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999';
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:inherit;font-size:14px;z-index:9999';
   prog.textContent='📝 正在產生 .docx 檔案…';document.body.appendChild(prog);
   try{
     await _ensureDocxLib();
