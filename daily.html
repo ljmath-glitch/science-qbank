@@ -648,7 +648,7 @@ function mathToHtml(text){
   }
   if(last<text.length) segs.push({t:'txt',v:text.slice(last)});
   return segs.map(s=>{
-    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>');
+    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>').replace(/錯誤/g,'<span style="text-decoration:underline double">錯誤</span>');
     if(typeof katex==='undefined') return esc(s.v);
     try{return katex.renderToString(s.v,{throwOnError:false,displayMode:s.disp});}
     catch(e){return esc(s.v);}
