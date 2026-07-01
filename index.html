@@ -28,7 +28,7 @@
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
-  .toolbar-outer{margin:20px 0;padding:10px 14px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}
+  .toolbar-outer{margin:20px 0;padding:10px 14px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100;transition:top .28s cubic-bezier(.4,0,.2,1)}
   .tb-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
@@ -2467,6 +2467,20 @@ function resetTbLayout(){
   renderToolbar();
 }
 renderToolbar();
+;(function(){
+  const tb=document.getElementById('tbOuter');
+  let lastY=0;
+  function tbHide(){tb.style.top='-'+(tb.offsetHeight+24)+'px';}
+  function tbShow(){tb.style.top='0';}
+  window.addEventListener('scroll',function(){
+    const y=window.scrollY;
+    if(y>80&&y>lastY)tbHide();
+    lastY=y;
+  },{passive:true});
+  document.addEventListener('mousemove',function(e){
+    if(e.clientY<20)tbShow();
+  });
+})();
 
 /* ===== 啟動 ===== */
 document.addEventListener('paste',pasteImage);
