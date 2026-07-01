@@ -28,7 +28,10 @@
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
-  .toolbar-outer{margin:20px 0;padding:10px 14px 8px;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100;transition:top .28s cubic-bezier(.4,0,.2,1)}
+  .toolbar-outer{margin:20px 0;padding:10px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100;transition:top .28s cubic-bezier(.4,0,.2,1)}
+  #tbCollapseBar{margin-top:8px;border-top:1px solid var(--line);padding:3px 0;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);border-radius:0 0 10px 10px;transition:background .15s;user-select:none}
+  #tbCollapseBar:hover{background:rgba(0,0,0,.04)}
+  #tbCollapseBar.tb-floating{position:fixed;top:0;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:3px 24px;box-shadow:0 3px 8px rgba(0,0,0,.12);z-index:200;margin:0}
   .tb-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
@@ -176,6 +179,7 @@
       <div class="tb-row" data-row="3"></div>
       <div class="tb-row" data-row="4"></div>
     </div>
+    <div id="tbCollapseBar">▲ 收起工具列</div>
   </div>
 
   <div class="layout">
@@ -2474,9 +2478,22 @@ function resetTbLayout(){
 renderToolbar();
 ;(function(){
   const tb=document.getElementById('tbOuter');
-  let lastY=0;
-  function tbHide(){tb.style.top='-'+(tb.offsetHeight+24)+'px';}
-  function tbShow(){tb.style.top='0';}
+  const bar=document.getElementById('tbCollapseBar');
+  let collapsed=false,lastY=0;
+  function tbHide(){
+    if(collapsed)return;
+    collapsed=true;
+    tb.style.top='-'+(tb.offsetHeight+4)+'px';
+    bar.textContent='▼ 展開工具列';
+    bar.classList.add('tb-floating');
+  }
+  function tbShow(){
+    collapsed=false;
+    tb.style.top='0';
+    bar.textContent='▲ 收起工具列';
+    bar.classList.remove('tb-floating');
+  }
+  bar.addEventListener('click',()=>collapsed?tbShow():tbHide());
   window.addEventListener('scroll',function(){
     const y=window.scrollY;
     if(y>80&&y>lastY)tbHide();
