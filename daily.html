@@ -681,9 +681,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <p>✅ <strong>答對</strong>（不重複）→ 升階進度 <span style="color:#1f6f5c;font-weight:700">+1</span></p>
     <p>❌ <strong>答錯單題</strong> → 不扣分</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
-    <p>🔄 <strong>累計答錯計數器</strong></p>
-    <p style="padding-left:16px;color:#555">答錯累計達 <strong>3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span>，計數器歸零重新累計</p>
-    <p style="padding-left:16px;color:#555">答對不影響計數器</p>
+    <p>🔄 <strong>每 5 題為一個循環</strong></p>
+    <p style="padding-left:16px;color:#555">循環中答錯 <strong>≥ 3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span>，立即重置循環</p>
+    <p style="padding-left:16px;color:#555">答滿 5 題自動重置，不扣分</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
     <p>😴 <strong>連續 3 天未上線</strong> → <span style="color:#c0392b;font-weight:700">降一個等級</span>（已是最低則不變）</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
@@ -1065,21 +1065,27 @@ let sessionIdx=0;
 let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
-// UPGRADE SCORE（答對 +1；累計答錯 3 題即扣 1 並重置計數）
+// UPGRADE SCORE（每5題一循環；循環中答錯≥3即扣1並重置；滿5題自動重置）
 // ═══════════════════════════════════════════════════════════════
 function calcUpgradeScore(hist,skipDebt=false){
   const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
-  let deductions=0,cycleWrong=0,cycleStart=0;
+  let deductions=0,cycleCount=0,cycleWrong=0,cycleStart=0;
   for(let i=0;i<entries.length;i++){
-    if(!entries[i][1].correct){
-      cycleWrong++;
-      if(cycleWrong>=3){deductions++;cycleWrong=0;cycleStart=i+1;}
+    cycleCount++;
+    if(!entries[i][1].correct) cycleWrong++;
+    if(cycleWrong>=3){
+      // 答錯3題：扣1分，立即重置
+      deductions++;
+      cycleStart=i+1; cycleCount=0; cycleWrong=0;
+    } else if(cycleCount>=5){
+      // 滿5題：自然重置，不扣分
+      cycleStart=i+1; cycleCount=0; cycleWrong=0;
     }
   }
   const debt=skipDebt?0:parseInt(localStorage.getItem(KEY_DEBT)||'0');
   const currentCycle=entries.slice(cycleStart);
-  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions-debt),deductions,cycleWrong,currentCycle};
+  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions-debt),deductions,cycleWrong,cycleCount,currentCycle};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1087,7 +1093,7 @@ function calcUpgradeScore(hist,skipDebt=false){
 // ═══════════════════════════════════════════════════════════════
 function renderCharacter(){
   const hist=getHistory();
-  const{totalCorrect,upgradeScore,deductions,cycleWrong,currentCycle}=calcUpgradeScore(hist);
+  const{totalCorrect,upgradeScore,deductions,cycleWrong,cycleCount,currentCycle}=calcUpgradeScore(hist);
   const lv=getLevel(upgradeScore);
   const nextLv=LEVELS[lv.index+1];
   const avatar=document.getElementById('charAvatar');
@@ -1119,16 +1125,17 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 累積錯題點點 → spec-center-label（最多顯示 5 題，本輪錯 N/3）
-  const cycleSlice=currentCycle.slice(-5);
-  const dots=Array.from({length:5},(_,i)=>i<cycleSlice.length?(cycleSlice[i][1].correct?'correct':'wrong'):'empty');
-  let streak=0;
+  // 5題循環點點 → spec-center-label
+  const dots=Array.from({length:5},(_,i)=>{
+    if(i<currentCycle.length) return currentCycle[i][1].correct?'correct':'wrong';
+    return 'empty';
+  });
   const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  let streak=0;
   for(let i=allEntries.length-1;i>=0;i--){if(allEntries[i][1].correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
-  const wrongColor=cycleWrong>=2?'rgba(192,57,43,.9)':'rgba(244,241,234,.5)';
   document.getElementById('specCenterLabel').innerHTML=
-    `<div class="hist-dots-row"><span class="hist-label" style="color:${wrongColor}">本輪錯 ${cycleWrong}/3</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
+    `<div class="hist-dots-row">${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
