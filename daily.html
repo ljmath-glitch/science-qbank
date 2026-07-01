@@ -203,7 +203,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 .q-body{padding:16px 16px 4px;font-size:16px;line-height:1.85}
 .q-stem{margin-bottom:12px}
-.qimg{display:block;max-width:100%;border:1px solid var(--line);border-radius:8px;margin:8px 0;cursor:zoom-in}
+.qimg{display:block;width:100%;border:1px solid var(--line);border-radius:8px;margin:8px 0;cursor:zoom-in}
 .passage-box{background:#f8f6f0;border:1px solid var(--line);border-left:4px solid var(--earth);border-radius:12px;margin:12px 16px 4px;overflow:hidden}
 .passage-head{padding:8px 14px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;color:var(--earth);letter-spacing:1px}
 .passage-body{padding:4px 14px 12px;font-size:14px;line-height:1.9}
@@ -1013,7 +1013,7 @@ function renderQuestion(){
     function toImgHtml(imgs){
       return (imgs||[]).map(im=>{
         const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
-        return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
+        return `<img class="qimg" src="${im.src}">`;
       }).join('');
     }
     passageHead.textContent = q.passage.isContext ? '📋 承上題情境' : '📄 閱讀題組';
