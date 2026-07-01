@@ -101,11 +101,12 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 }
 /* 光譜區 */
 .spec-center-label{
-  display:flex;align-items:center;justify-content:center;gap:8px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;
   padding:8px 18px 0;
 }
+.spec-center-label .hist-dots-row{display:flex;align-items:center;justify-content:center;gap:6px}
 .spec-center-label .hist-label{font-family:system-ui,sans-serif;font-size:10px;color:rgba(244,241,234,.35)}
-.spec-center-label .hist-streak{font-family:system-ui,sans-serif;font-size:11px;color:rgba(244,241,234,.55)}
+.spec-center-label .hist-streak{font-family:system-ui,sans-serif;font-size:11px;color:rgba(244,241,234,.55);text-align:center}
 .spec-center-label .hist-streak b{color:#d4a017}
 .char-progress{display:none}
 .level-spectrum{padding:10px 0 12px;position:relative}
@@ -131,8 +132,8 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .spec-node.current .spec-emoji{font-size:27px}
 .spec-name{position:absolute;top:28px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
 .spec-node.current .spec-name{color:rgba(212,160,23,.95);font-weight:700;top:28px}
-.spec-num{position:absolute;top:-30px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(244,241,234,.3);font-family:system-ui,sans-serif}
-.spec-node.current .spec-num{top:-36px;color:rgba(212,160,23,.6)}
+.spec-num{position:absolute;top:-30px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:12px;color:rgba(244,241,234,.4);font-family:system-ui,sans-serif;font-weight:600}
+.spec-node.current .spec-num{top:-36px;color:rgba(212,160,23,.75)}
 .spec-emoji.current-glow{filter:drop-shadow(0 0 8px rgba(212,160,23,.9)) drop-shadow(0 0 3px rgba(255,220,80,.7))}
 /* 近期作答紀錄 */
 .char-history{
@@ -150,7 +151,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .hist-streak b{color:#d4a017}
 /* 底部提示 */
 .char-condition{
-  margin:0 18px 14px;border-radius:12px;
+  margin:10px 18px 14px;border-radius:12px;
   padding:8px 12px;font-family:system-ui,sans-serif;font-size:12px;
   color:rgba(244,241,234,.65);display:flex;align-items:center;gap:8px;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
@@ -991,9 +992,8 @@ function renderCharacter(){
   for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
   document.getElementById('specCenterLabel').innerHTML=
-    `<span class="hist-label">近 7 題</span>`+
-    `<div class="hist-dots">${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}</div>`+
-    (streakHtml?`<span class="hist-streak">${streakHtml}</span>`:'');
+    `<div class="hist-dots-row"><span class="hist-label">近 7 題</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}</div>`+
+    (streakHtml?`<div class="hist-streak">${streakHtml}</div>`:'');
 }
 
 // ═══════════════════════════════════════════════════════════════
