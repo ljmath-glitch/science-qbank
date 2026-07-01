@@ -980,19 +980,56 @@ function compress(d,maxW){
   return new Promise(function(res,rej){
     var img=new Image();
     img.onload=function(){
-      var sc=Math.min(1,maxW/img.width,maxW/img.height);  // 寬高都不超過 maxW
+      var sc=Math.min(1,maxW/img.width,maxW/img.height);
       var cv=document.createElement('canvas');
       cv.width=Math.round(img.width*sc);
       cv.height=Math.round(img.height*sc);
       cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-      // 清晰優先：同時輸出無損 PNG（線條圖/化學式/文字銳利）與高品質 JPEG（照片較小），取較小者
+      var webp=cv.toDataURL('image/webp',0.80);
       var png=cv.toDataURL('image/png');
-      var jpg=cv.toDataURL('image/jpeg',0.92);
-      res(png.length<=jpg.length?png:jpg);
+      var jpg=cv.toDataURL('image/jpeg',0.85);
+      // 三種格式取最小：WebP 通常比 PNG/JPEG 小 25-40%
+      res([webp,png,jpg].reduce(function(a,b){return a.length<=b.length?a:b;}));
     };
     img.onerror=function(){rej(new Error('圖片載入失敗'));}
     img.src=d;
   });
+}
+async function batchCompressImgs(){
+  if(!requireCloud())return;
+  if(!confirm('將重新壓縮雲端所有題目的圖片，以 WebP/PNG/JPEG 三者取最小格式儲存。\n此操作不可還原，確定？'))return;
+  const prog=document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:system-ui,sans-serif;font-size:14px;z-index:9999;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+  prog.textContent='🗜 載入題目中…';
+  document.body.appendChild(prog);
+  const {data,error}=await supabase.from('questions').select('id,imgs');
+  if(error){prog.remove();alert('載入失敗：'+error.message);return;}
+  const targets=(data||[]).filter(q=>q.imgs&&q.imgs.length>0);
+  if(!targets.length){prog.remove();alert('沒有找到含圖的題目');return;}
+  let done=0,skipped=0,failed=0,savedBytes=0;
+  const upd=()=>{prog.textContent=`🗜 重壓縮中：${done+skipped+failed}/${targets.length}　節省 ${savedBytes>1048576?(savedBytes/1048576).toFixed(1)+'MB':(savedBytes/1024).toFixed(0)+'KB'}`;};
+  upd();
+  for(const q of targets){
+    try{
+      let changed=false;
+      const newImgs=[];
+      for(const im of q.imgs){
+        const c=await compress(im.src,IMG_MAXW);
+        if(c.length<im.src.length){savedBytes+=im.src.length-c.length;newImgs.push({...im,src:c});changed=true;}
+        else newImgs.push(im);
+      }
+      if(changed){
+        const {error:e}=await supabase.from('questions').update({imgs:newImgs}).eq('id',q.id);
+        if(e)throw e;
+        done++;
+      }else{skipped++;}
+    }catch(e){failed++;}
+    upd();
+  }
+  prog.remove();
+  const saved=savedBytes>1048576?(savedBytes/1048576).toFixed(1)+' MB':(savedBytes/1024).toFixed(0)+' KB';
+  alert(`完成！\n更新 ${done} 題　已是最小 ${skipped} 題　失敗 ${failed} 題\n節省約 ${saved}`);
+  await load();render();
 }
 function _imgTargetIsPassage(){const el=document.getElementById('imgTarget');return el&&el.value==='p';}
 async function addImages(e){
@@ -2416,6 +2453,7 @@ const TB_BUTTONS={
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
+  compressImgs: ()=>`<button class="btn" onclick="batchCompressImgs()">🗜 壓縮圖片</button>`,
   claude:  ()=>`<button class="btn gold" onclick="showPrompt()">📋 AI轉檔指令</button>`,
   report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
   kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
@@ -2433,7 +2471,7 @@ const TB_BUTTONS={
 const TB_VER='6';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
-  ['import','add','reload','backup','restore'],
+  ['import','add','reload','backup','restore','compressImgs'],
   ['claude','report','kp','progress'],
   ['guide','raw'],
   ['batchProvider','batchGeminiModel','batchGenBtn','solPromptBtn'],
