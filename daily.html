@@ -50,19 +50,19 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 .char-card{
-  background:linear-gradient(150deg,#1c1208 0%,#261b0c 55%,#1c1208 100%);
+  background:linear-gradient(145deg,#111d10 0%,#172218 55%,#0e1a0d 100%);
   border-radius:20px;margin-bottom:14px;
   color:#f4f1ea;position:relative;overflow:hidden;
 }
 .char-card::before{
-  content:'';position:absolute;width:240px;height:240px;border-radius:50%;
-  background:radial-gradient(circle,rgba(184,134,11,.22),transparent 70%);
-  top:-70px;right:-50px;pointer-events:none;
+  content:'';position:absolute;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,rgba(31,111,92,.2),transparent 70%);
+  top:-80px;right:-60px;pointer-events:none;
 }
 .char-card::after{
-  content:'';position:absolute;width:180px;height:180px;border-radius:50%;
-  background:radial-gradient(circle,rgba(184,134,11,.1),transparent 70%);
-  bottom:-60px;left:-40px;pointer-events:none;
+  content:'';position:absolute;width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(184,134,11,.13),transparent 70%);
+  bottom:-70px;left:-50px;pointer-events:none;
 }
 /* 身份區 */
 .char-body{padding:24px 24px 22px;position:relative}
@@ -81,10 +81,10 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   color:rgba(244,241,234,.5);margin-top:7px;line-height:1.4}
 .char-lv{
   position:absolute;top:20px;right:20px;
-  background:linear-gradient(135deg,#6366f1,#8b5cf6);
+  background:linear-gradient(135deg,#b8860b,#d4a017);
   color:#fff;border-radius:20px;padding:5px 13px;
   font-size:13px;font-weight:800;font-family:system-ui,sans-serif;letter-spacing:.5px;
-  box-shadow:0 2px 10px rgba(99,102,241,.4);
+  box-shadow:0 2px 10px rgba(184,134,11,.45);
 }
 /* 分隔線 */
 .char-divider{
@@ -94,45 +94,41 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 /* 光譜區 */
 .char-progress{display:none}
 .level-spectrum{padding:20px 40px 22px;position:relative}
-.spec-track-label{
-  font-family:system-ui,sans-serif;font-size:9px;font-weight:700;
-  letter-spacing:2.5px;text-transform:uppercase;
-  color:rgba(244,241,234,.25);margin-bottom:0;text-align:center;
-}
-.spec-track{position:relative;height:8px;background:rgba(255,255,255,.08);border-radius:99px;margin:32px 0 58px}
-.spec-fill{height:100%;background:linear-gradient(90deg,rgba(184,134,11,.6),#d4a017);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.spec-track{position:relative;height:8px;background:rgba(255,255,255,.08);border-radius:99px;margin:36px 0 66px}
+.spec-fill{height:100%;background:linear-gradient(90deg,#1f6f5c,#b8860b);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
 .spec-node{position:absolute;top:50%;transform:translate(-50%,-50%)}
 .spec-node:first-child{transform:translate(0,-50%)}
 .spec-node:last-child{transform:translate(-100%,-50%)}
 .spec-dot{display:none}
-/* liquid glass 圓底 */
+/* liquid glass 圓底 — 放大 30% → 52 / 68 px */
 .spec-glass{
   position:absolute;top:0;left:0;
   transform:translate(-50%,-50%);
-  width:40px;height:40px;border-radius:50%;
-  background:rgba(255,255,255,.08);
-  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 2px 10px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.15);
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,.07);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 2px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.14);
   display:flex;align-items:center;justify-content:center;
   transition:all .35s;
 }
 .spec-node.done .spec-glass{
-  background:rgba(184,134,11,.15);
-  border-color:rgba(184,134,11,.4);
-  box-shadow:0 0 10px rgba(184,134,11,.3),inset 0 1px 0 rgba(255,220,100,.2);
+  background:rgba(31,111,92,.18);
+  border-color:rgba(31,111,92,.45);
+  box-shadow:0 0 10px rgba(31,111,92,.3),inset 0 1px 0 rgba(100,200,160,.2);
 }
 .spec-node.current .spec-glass{
-  width:52px;height:52px;
-  background:rgba(212,160,23,.18);
-  border-color:rgba(255,220,100,.55);
-  box-shadow:0 0 0 4px rgba(184,134,11,.2),0 0 22px rgba(212,160,23,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  width:68px;height:68px;
+  background:rgba(184,134,11,.2);
+  border-color:rgba(212,160,23,.6);
+  box-shadow:0 0 0 5px rgba(184,134,11,.18),0 0 26px rgba(184,134,11,.45),inset 0 1px 0 rgba(255,255,255,.22);
 }
-.spec-emoji{font-size:20px;line-height:1;position:relative}
-.spec-node.current .spec-emoji{font-size:26px}
-.spec-name{position:absolute;top:28px;left:0;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
-.spec-node.current .spec-name{color:rgba(255,220,100,.9);font-weight:700}
-.spec-num{position:absolute;top:42px;left:0;transform:translateX(-50%);font-size:9px;color:rgba(244,241,234,.2);font-family:system-ui,sans-serif}
+.spec-emoji{font-size:26px;line-height:1;position:relative}
+.spec-node.current .spec-emoji{font-size:34px}
+.spec-name{position:absolute;top:34px;left:0;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
+.spec-node.current .spec-name{color:rgba(212,160,23,.95);font-weight:700;top:42px}
+.spec-num{position:absolute;top:47px;left:0;transform:translateX(-50%);font-size:9px;color:rgba(244,241,234,.2);font-family:system-ui,sans-serif}
+.spec-node.current .spec-num{top:56px}
 /* 底部提示 */
 .char-condition{
   margin:0 24px 22px;border-radius:12px;
@@ -141,7 +137,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);
 }
 .char-condition .cond-icon{font-size:15px;flex-shrink:0}
-.char-condition b{color:#a5b4fc}
+.char-condition b{color:#d4a017}
 
 /* ══ STATS ROW ═══════════════════════════════════════════════ */
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
@@ -968,7 +964,7 @@ function renderCharacter(){
     </div>`;
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
-    `<div class="spec-track-label">等級光譜</div><div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
+    `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
