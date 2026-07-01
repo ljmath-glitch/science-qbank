@@ -50,26 +50,31 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 .char-card{
-  background:linear-gradient(145deg,#111d10 0%,#172218 55%,#0e1a0d 100%);
+  background:linear-gradient(135deg,#13241f 0%,#1a2238 100%);
   border-radius:20px;margin-bottom:14px;
   color:#f4f1ea;position:relative;overflow:hidden;
 }
 .char-card::before{
   content:'';position:absolute;width:260px;height:260px;border-radius:50%;
-  background:radial-gradient(circle,rgba(31,111,92,.2),transparent 70%);
+  background:radial-gradient(circle,rgba(31,111,92,.22),transparent 70%);
   top:-80px;right:-60px;pointer-events:none;
 }
 .char-card::after{
   content:'';position:absolute;width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(184,134,11,.13),transparent 70%);
+  background:radial-gradient(circle,rgba(52,84,180,.18),transparent 70%);
   bottom:-70px;left:-50px;pointer-events:none;
 }
-/* 身份區 */
-.char-body{padding:24px 24px 22px;position:relative}
+/* 身份區 — liquid glass 面板 */
+.char-body{
+  padding:24px 24px 22px;position:relative;
+  background:linear-gradient(180deg,rgba(255,255,255,.13) 0%,rgba(255,255,255,.07) 60%,rgba(240,238,230,.16) 100%);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-radius:20px 20px 0 0;
+}
 .char-top{display:flex;align-items:center;gap:20px}
 .char-avatar{
   width:82px;height:82px;border-radius:50%;
-  background:rgba(255,255,255,.08);
+  background:rgba(255,255,255,.1);
   display:flex;align-items:center;justify-content:center;font-size:42px;
   flex-shrink:0;transition:box-shadow .4s;
 }
@@ -88,40 +93,40 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 }
 /* 分隔線 */
 .char-divider{
-  height:1px;margin:0 24px;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12) 30%,rgba(255,255,255,.12) 70%,transparent);
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25) 30%,rgba(255,255,255,.25) 70%,transparent);
 }
 /* 光譜區 */
 .char-progress{display:none}
 .level-spectrum{padding:20px 0 22px;position:relative}
-.spec-track{position:relative;height:13px;max-width:70%;margin:36px auto 66px;background:rgba(255,255,255,.08);border-radius:99px}
+.spec-track{position:relative;height:13px;max-width:80%;margin:36px auto 66px;background:rgba(255,255,255,.08);border-radius:99px}
 .spec-fill{height:100%;background:linear-gradient(90deg,#1f6f5c,#b8860b);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
 .spec-node{position:absolute;top:50%;transform:translate(-50%,-50%)}
 .spec-node:first-child{transform:translate(0,-50%)}
 .spec-node:last-child{transform:translate(-100%,-50%)}
 .spec-dot{display:none}
-/* liquid glass 圓底 — 放大 30% → 52 / 68 px */
+/* liquid glass 圓底 */
 .spec-glass{
   position:absolute;top:0;left:0;
   transform:translate(-50%,-50%);
   width:52px;height:52px;border-radius:50%;
-  background:rgba(240,238,234,.22);
+  background:linear-gradient(180deg,rgba(255,255,255,.35) 0%,rgba(240,238,234,.55) 100%);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.5);
-  box-shadow:0 3px 14px rgba(0,0,0,.22),inset 0 1.5px 0 rgba(255,255,255,.65),inset 0 -1px 0 rgba(0,0,0,.08);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:0 3px 14px rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.06);
   display:flex;align-items:center;justify-content:center;
   transition:all .35s;
 }
 .spec-node.done .spec-glass{
-  background:rgba(200,232,220,.22);
-  border-color:rgba(100,200,160,.55);
-  box-shadow:0 0 12px rgba(31,111,92,.25),inset 0 1.5px 0 rgba(255,255,255,.6),inset 0 -1px 0 rgba(0,0,0,.06);
+  background:linear-gradient(180deg,rgba(200,240,225,.45) 0%,rgba(210,245,230,.6) 100%);
+  border-color:rgba(100,200,160,.7);
+  box-shadow:0 0 12px rgba(31,111,92,.2),inset 0 2px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(0,0,0,.05);
 }
 .spec-node.current .spec-glass{
   width:68px;height:68px;
-  background:rgba(255,242,200,.24);
-  border-color:rgba(212,160,23,.65);
-  box-shadow:0 0 0 5px rgba(184,134,11,.18),0 0 26px rgba(184,134,11,.45),inset 0 1.5px 0 rgba(255,255,255,.7),inset 0 -1px 0 rgba(0,0,0,.06);
+  background:linear-gradient(180deg,rgba(255,245,210,.45) 0%,rgba(255,238,180,.6) 100%);
+  border-color:rgba(212,160,23,.75);
+  box-shadow:0 0 0 5px rgba(184,134,11,.18),0 0 26px rgba(184,134,11,.4),inset 0 2px 0 rgba(255,255,255,.85),inset 0 -1px 0 rgba(0,0,0,.05);
 }
 .spec-emoji{font-size:26px;line-height:1;position:relative}
 .spec-node.current .spec-emoji{font-size:34px}
@@ -134,7 +139,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   margin:0 24px 22px;border-radius:12px;
   padding:10px 14px;font-family:system-ui,sans-serif;font-size:12px;
   color:rgba(244,241,234,.65);display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
 }
 .char-condition .cond-icon{font-size:15px;flex-shrink:0}
 .char-condition b{color:#d4a017}
