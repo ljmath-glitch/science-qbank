@@ -624,7 +624,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <p style="padding-left:16px;color:#555">循環內答錯 <strong>≥ 3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span></p>
     <p style="padding-left:16px;color:#555">第 6 題自動開始新循環，圈圈重置</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
-    <p>😴 <strong>連續 3 天未上線</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">歸零</span>，從菜雞重新開始</p>
+    <p>😴 <strong>連續 3 天未上線</strong> → <span style="color:#c0392b;font-weight:700">降一個等級</span>（已是最低則不變）</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
     <p>🏆 <strong>升階門檻</strong></p>
     <p style="padding-left:16px;color:#555">🐔 菜雞 → 🤖 NPC（15 分）</p>
@@ -980,14 +980,20 @@ function checkAbsenceReset(){
     if(daysDiff>=3){
       const hist=getHistory();
       const{upgradeScore}=calcUpgradeScore(hist,true);
-      const debt=parseInt(localStorage.getItem(KEY_DEBT)||'0');
-      localStorage.setItem(KEY_DEBT,debt+upgradeScore);
+      const curLv=getLevel(upgradeScore);
+      // 降一等級：目標分數為上一等級門檻；已是最低則不動
+      const targetScore=curLv.index>0?LEVELS[curLv.index-1].threshold:upgradeScore;
+      const drop=Math.max(0,upgradeScore-targetScore);
+      if(drop>0){
+        const debt=parseInt(localStorage.getItem(KEY_DEBT)||'0');
+        localStorage.setItem(KEY_DEBT,debt+drop);
+      }
       localStorage.setItem(KEY_VISIT,today);
-      return daysDiff;
+      return{daysDiff,droppedFrom:curLv.index,dropped:drop>0};
     }
   }
   localStorage.setItem(KEY_VISIT,today);
-  return 0;
+  return{daysDiff:0,dropped:false};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1498,12 +1504,14 @@ function showToast(lvIdx){
 {
   const absent=checkAbsenceReset();
   renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
-  if(absent>=3){
+  if(absent.dropped){
     setTimeout(()=>{
-      document.getElementById('toastEmoji').textContent='🐔';
-      document.getElementById('toastMsg').textContent=`離開 ${absent} 天，從菜雞重新開始！`;
+      const fromLv=LEVELS[absent.droppedFrom];
+      const toLv=LEVELS[absent.droppedFrom-1];
+      document.getElementById('toastEmoji').textContent='😴';
+      document.getElementById('toastMsg').textContent=`${absent.daysDiff} 天沒上線，從「${fromLv.name}」降級為「${toLv.name}」`;
       const t=document.getElementById('toast'); t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'),4000);
+      setTimeout(()=>t.classList.remove('show'),4500);
     },800);
   }
 }
