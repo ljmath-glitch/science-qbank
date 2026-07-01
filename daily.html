@@ -695,6 +695,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <div class="report-btns" style="margin-top:16px">
     <button class="report-submit" onclick="closeRules()">了解了</button>
   </div>
+  <div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;text-align:center">
+    <button onclick="resetHistory()" style="font-size:12px;color:#999;background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;cursor:pointer;font-family:inherit">🗑 清除所有答題記錄（重新開始）</button>
+  </div>
 </div>
 
 <!-- Lock Modal -->
@@ -1521,6 +1524,18 @@ function openRules(){
 function closeRules(){
   document.getElementById('rulesOverlay').style.display='none';
   document.getElementById('rulesBox').style.display='none';
+}
+function resetHistory(){
+  if(!confirm('確定要清除所有答題記錄嗎？等級和進度會歸零，無法復原。')) return;
+  const toRemove=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&(k==='dq_history'||k==='dq_reset_debt'||k==='dq_practice_seen'||k.startsWith('dq_pk_')||k.startsWith('dq_pin_')))
+      toRemove.push(k);
+  }
+  toRemove.forEach(k=>localStorage.removeItem(k));
+  closeRules();
+  location.reload();
 }
 function openLockModal(){
   document.getElementById('lockInput').value='';
