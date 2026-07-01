@@ -483,7 +483,6 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       <h1>每日一題</h1>
       <div class="sub">每天一道，穩紮穩打 · 福大自然</div>
     </div>
-    <button onclick="openRules()" style="margin-top:4px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#f4f1ea;font-size:12px;font-family:system-ui,sans-serif;cursor:pointer;white-space:nowrap">📋 規則</button>
   </div>
 </header>
 
@@ -491,7 +490,6 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
   <!-- ① 角色卡 -->
   <div class="char-card" id="charCard">
-    <button onclick="openRules()" title="計分規則" style="position:absolute;top:10px;right:10px;z-index:2;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:rgba(244,241,234,.8);font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">?</button>
     <div class="char-body">
       <div class="char-top">
         <div class="char-avatar" id="charAvatar"></div>
@@ -502,6 +500,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
         </div>
       </div>
       <div class="char-lv" id="charLv"></div>
+      <button onclick="openRules()" title="計分規則" style="margin-top:6px;padding:3px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:rgba(244,241,234,.6);font-size:11px;font-family:system-ui,sans-serif;cursor:pointer">？計分規則</button>
     </div>
     <div class="char-divider"></div>
     <div class="spec-center-label" id="specCenterLabel"></div>
