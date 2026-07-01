@@ -678,9 +678,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <p>✅ <strong>答對</strong>（不重複）→ 升階進度 <span style="color:#1f6f5c;font-weight:700">+1</span></p>
     <p>❌ <strong>答錯單題</strong> → 不扣分</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
-    <p>🔄 <strong>每 5 題為一個循環</strong></p>
-    <p style="padding-left:16px;color:#555">循環內答錯 <strong>≥ 3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span></p>
-    <p style="padding-left:16px;color:#555">第 6 題自動開始新循環，圈圈重置</p>
+    <p>🔄 <strong>累計答錯計數器</strong></p>
+    <p style="padding-left:16px;color:#555">答錯累計達 <strong>3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span>，計數器歸零重新累計</p>
+    <p style="padding-left:16px;color:#555">答對不影響計數器</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
     <p>😴 <strong>連續 3 天未上線</strong> → <span style="color:#c0392b;font-weight:700">降一個等級</span>（已是最低則不變）</p>
     <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
@@ -1062,24 +1062,21 @@ let sessionIdx=0;
 let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
-// UPGRADE SCORE（答對 +1，每5題循環錯≥3 扣1）
+// UPGRADE SCORE（答對 +1；累計答錯 3 題即扣 1 並重置計數）
 // ═══════════════════════════════════════════════════════════════
 function calcUpgradeScore(hist,skipDebt=false){
   const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
-  let deductions=0;
-  for(let i=0;i+5<=entries.length;i+=5){
-    const wrong=entries.slice(i,i+5).filter(([,r])=>!r.correct).length;
-    if(wrong>=3) deductions++;
+  let deductions=0,cycleWrong=0,cycleStart=0;
+  for(let i=0;i<entries.length;i++){
+    if(!entries[i][1].correct){
+      cycleWrong++;
+      if(cycleWrong>=3){deductions++;cycleWrong=0;cycleStart=i+1;}
+    }
   }
   const debt=skipDebt?0:parseInt(localStorage.getItem(KEY_DEBT)||'0');
-  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions-debt),deductions};
-}
-function getCycleDots(hist){
-  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
-  const start=Math.floor(entries.length/5)*5;
-  const cycle=entries.slice(start);
-  return Array.from({length:5},(_,i)=>i<cycle.length?(cycle[i][1].correct?'correct':'wrong'):'empty');
+  const currentCycle=entries.slice(cycleStart);
+  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions-debt),deductions,cycleWrong,currentCycle};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1087,7 +1084,7 @@ function getCycleDots(hist){
 // ═══════════════════════════════════════════════════════════════
 function renderCharacter(){
   const hist=getHistory();
-  const{totalCorrect,upgradeScore,deductions}=calcUpgradeScore(hist);
+  const{totalCorrect,upgradeScore,deductions,cycleWrong,currentCycle}=calcUpgradeScore(hist);
   const lv=getLevel(upgradeScore);
   const nextLv=LEVELS[lv.index+1];
   const avatar=document.getElementById('charAvatar');
@@ -1119,17 +1116,15 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 5題循環點點 → spec-center-label
-  const dots=getCycleDots(hist);
-  const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
-  const cycleNum=Math.floor(allEntries.length/5)+1;
-  const cyclePos=allEntries.length%5;
+  // 累積錯題點點 → spec-center-label（最多顯示 5 題，本輪錯 N/3）
+  const cycleSlice=currentCycle.slice(-5);
+  const dots=Array.from({length:5},(_,i)=>i<cycleSlice.length?(cycleSlice[i][1].correct?'correct':'wrong'):'empty');
   let streak=0;
   for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
-  const deductWarn=deductions>0?`<span style="font-size:10px;color:rgba(192,57,43,.7);margin-left:4px">-${deductions}</span>`:'';
+  const wrongColor=cycleWrong>=2?'rgba(192,57,43,.9)':'rgba(244,241,234,.5)';
   document.getElementById('specCenterLabel').innerHTML=
-    `<div class="hist-dots-row"><span class="hist-label">循環 ${cycleNum}（${cyclePos}/5）</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${deductWarn}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
+    `<div class="hist-dots-row"><span class="hist-label" style="color:${wrongColor}">本輪錯 ${cycleWrong}/3</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
