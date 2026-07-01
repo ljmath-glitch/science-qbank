@@ -961,7 +961,7 @@ async function loadDailyQuestion(offset, sidx=0){
     let row;
     if(sidx === 0){
       // 每日一題：依日期固定 offset，pin 確保刷新不變
-      const pinKey = 'dq_pin_' + getHistKey(offset, 0);
+      const pinKey = 'dq_pin_' + getHistKey(offset);
       const pinned = localStorage.getItem(pinKey);
       let qOffset;
       if(pinned !== null){ qOffset = parseInt(pinned,10); }
@@ -1058,7 +1058,13 @@ const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
 function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
-function getHistKey(offset,sidx,qid){return sidx===0?dateStr(offset):dateStr(offset)+'_p'+qid;}
+function getHistKey(offset){return dateStr(offset);}
+function newPracticeHistKey(){
+  const KEY='dq_pk_'+dateStr(0);
+  const n=parseInt(localStorage.getItem(KEY)||'0')+1;
+  localStorage.setItem(KEY,n);
+  return dateStr(0)+'_a'+n;
+}
 
 function checkAbsenceReset(){
   const today=dateStr(0);
@@ -1249,13 +1255,16 @@ const DIFF_CSS={簡單:'d1',中等:'d2',困難:'d3',極難:'d4'};
 function renderQuestion(){
   const q=currentQuestion;
   if(!q) return;
-  const hist=getHistory();
-  const key=getHistKey(currentOffset,sessionIdx,q.id);
-  let rec=hist[key];
-  // Discard stale record if it belongs to a different question (qid mismatch)
-  if(rec && rec.qid && rec.qid !== q.id) rec = null;
-  selectedOpt=rec?rec.selected:null;
-  revealed=!!rec;
+  if(sessionIdx===0){
+    // 每日一題：從 localStorage 恢復已答狀態
+    const hist=getHistory();
+    const key=getHistKey(currentOffset);
+    let rec=hist[key];
+    if(rec && rec.qid && rec.qid !== q.id) rec=null;
+    selectedOpt=rec?rec.selected:null;
+    revealed=!!rec;
+  }
+  // 練習模式：用 module-level revealed/selectedOpt（由 nextQuestion() 重置）
 
   // session counter in date sub
   if(sessionIdx>0){
@@ -1427,7 +1436,7 @@ function selectOpt(i){
 
 function reveal(){
   const q=currentQuestion; if(!q) return;
-  const key=getHistKey(currentOffset,sessionIdx,q.id);
+  const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
   hist[key]={selected:selectedOpt,correct,qid:q.id};
