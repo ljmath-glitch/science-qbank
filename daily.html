@@ -1158,13 +1158,10 @@ function renderCharacter(){
     if(i<currentCycle.length) return currentCycle[i][1].correct?'correct':'wrong';
     return 'empty';
   });
-  // streak：只算每日一題；今天答錯→0；今天未答→從昨天算；今天答對→從今天算
-  const _todayRec=hist[dateStr(0)];
+  // streak：每日一題＋練習模式都算，從最近一筆往回數，遇到第一個錯就停
+  const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   let streak=0;
-  if(!(_todayRec&&!_todayRec.correct)){
-    const _start=_todayRec?.correct?0:-1;
-    for(let i=_start;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
-  }
+  for(let i=allEntries.length-1;i>=0;i--){if(allEntries[i][1].correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
   document.getElementById('specCenterLabel').innerHTML=
     `<div class="hist-dots-row">${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
