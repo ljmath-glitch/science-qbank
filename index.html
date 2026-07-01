@@ -898,9 +898,9 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
-      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19),
+      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19).replace(/承第\s*\d+\s*題/g,'承上題'),
       sol:r.length>=22?g(20):'',
-      _passage:is23?g(21):'',
+      _passage:is23?g(21).replace(/承第\s*\d+\s*題/g,'承上題'):'',
       groupId:is23?(g(22)||''):r.length>=22?(g(21)||''):(g(20)||''),
       imgs:[]};
     if(!it.q&&!it.summary)continue;adds.push(it)}
@@ -1972,6 +1972,7 @@ ${syl}
 【輸出格式】
 - 第一列為標題列；每欄用雙引號包住，欄內雙引號用 "" 表示。
 - CSV 共 23 欄，第 20 欄為題目，第 21 欄為詳解，第 22 欄為題組文章，最後一欄（第 23 欄）為題組ID。
+- 題目文字中若出現「承第 N 題」、「承第N題」等字樣（N 為任意數字），一律改寫為「承上題」。
 
 【第 20 欄（題目欄）】
 - 只填題幹與選項，不要放閱讀材料進來。
