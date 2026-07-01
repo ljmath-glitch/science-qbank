@@ -648,7 +648,7 @@ function mathToHtml(text){
   }
   if(last<text.length) segs.push({t:'txt',v:text.slice(last)});
   return segs.map(s=>{
-    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>').replace(/錯誤/g,'<span style="text-decoration:underline double">錯誤</span>');
+    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>').replace(/錯誤|無法|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非|非(?!常)/g,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');
     if(typeof katex==='undefined') return esc(s.v);
     try{return katex.renderToString(s.v,{throwOnError:false,displayMode:s.disp});}
     catch(e){return esc(s.v);}
