@@ -73,14 +73,21 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   background:var(--phy);color:#fff;border-radius:20px;
   padding:3px 10px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;
 }
-.char-progress{margin-top:14px;position:relative}
-.char-progress-label{
-  display:flex;justify-content:space-between;
-  font-family:system-ui,sans-serif;font-size:11px;
-  color:rgba(244,241,234,.6);margin-bottom:5px;
-}
-.prog-bar{height:8px;background:rgba(255,255,255,.12);border-radius:99px;overflow:hidden}
-.prog-fill{height:100%;background:linear-gradient(90deg,var(--bio),var(--phy));border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.char-progress{display:none}
+.level-spectrum{margin-top:18px}
+.spec-track{position:relative;height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin:32px 0 28px}
+.spec-fill{height:100%;background:linear-gradient(90deg,var(--bio),var(--phy));border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.spec-node{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
+.spec-node:first-child{transform:translate(0,-50%)}
+.spec-node:last-child{transform:translate(-100%,-50%)}
+.spec-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.25);transition:.3s}
+.spec-node.done .spec-dot{background:var(--bio);border-color:var(--bio)}
+.spec-node.current .spec-dot{width:16px;height:16px;background:#fff;border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.22)}
+.spec-emoji{position:absolute;top:-28px;font-size:18px;line-height:1;transition:font-size .3s}
+.spec-node.current .spec-emoji{font-size:24px;top:-33px}
+.spec-name{position:absolute;bottom:-18px;font-size:9px;color:rgba(244,241,234,.45);white-space:nowrap;font-family:system-ui,sans-serif}
+.spec-node.current .spec-name{color:rgba(244,241,234,.9);font-weight:700}
+.spec-num{position:absolute;bottom:-28px;font-size:8px;color:rgba(244,241,234,.25);font-family:system-ui,sans-serif}
 .char-condition{
   margin-top:10px;background:rgba(255,255,255,.07);border-radius:10px;
   padding:9px 12px;font-family:system-ui,sans-serif;font-size:12px;
@@ -390,13 +397,8 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       </div>
       <div class="char-lv" id="charLv"></div>
     </div>
-    <div class="char-progress">
-      <div class="char-progress-label">
-        <span>升階進度</span>
-        <span id="charProgText"></span>
-      </div>
-      <div class="prog-bar"><div class="prog-fill" id="charProgFill" style="width:0%"></div></div>
-    </div>
+    <div class="char-progress"><!-- legacy, hidden --></div>
+    <div class="level-spectrum" id="levelSpectrum"></div>
     <div class="char-condition">
       <span class="cond-icon">⚡</span>
       <span id="charCondText"></span>
@@ -894,18 +896,28 @@ function renderCharacter(){
   document.getElementById('charName').textContent=lv.name;
   document.getElementById('charLv').textContent=`Lv.${lv.index+1}`;
   if(nextLv){
-    const cur=totalCorrect-lv.threshold,need=nextLv.threshold-lv.threshold;
     document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
-    document.getElementById('charProgText').textContent=`${cur} / ${need}`;
-    document.getElementById('charProgFill').style.width=Math.min(100,Math.round(cur/need*100))+'%';
     document.getElementById('charCondText').innerHTML=
       `不重複答對 <b>還差 ${nextLv.threshold-totalCorrect} 題</b> 即可進化為「${nextLv.name}」`;
   }else{
     document.getElementById('charNext').textContent='已達最高階段 🎉';
-    document.getElementById('charProgFill').style.width='100%';
-    document.getElementById('charProgText').textContent='滿級';
     document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
   }
+  // 等級光譜
+  const maxT=LEVELS[LEVELS.length-1].threshold;
+  const fillPct=Math.min(100,totalCorrect/maxT*100);
+  const nodes=LEVELS.map((l,i)=>{
+    const pos=l.threshold/maxT*100;
+    const cls=i<lv.index?'done':i===lv.index?'current':'';
+    return `<div class="spec-node ${cls}" style="left:${pos}%">
+      <span class="spec-emoji">${l.emoji}</span>
+      <div class="spec-dot"></div>
+      <span class="spec-name">${l.name}</span>
+      <span class="spec-num">${l.threshold}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('levelSpectrum').innerHTML=
+    `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
