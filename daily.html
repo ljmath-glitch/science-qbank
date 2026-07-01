@@ -1095,8 +1095,7 @@ let explanationRead=false;
 // UPGRADE SCORE（每5題一循環；循環中答錯≥3即扣1並重置；滿5題自動重置）
 // ═══════════════════════════════════════════════════════════════
 function calcUpgradeScore(hist,skipDebt=false){
-  // 只計算每日一題（排除練習模式 _s1, _s2... 的 key）
-  const entries=Object.entries(hist).filter(([k])=>!k.includes('_s')).sort(([a],[b])=>a.localeCompare(b));
+  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
   let deductions=0,cycleCount=0,cycleWrong=0,cycleStart=0;
   for(let i=0;i<entries.length;i++){
