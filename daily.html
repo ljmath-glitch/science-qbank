@@ -455,6 +455,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
   <!-- ① 角色卡 -->
   <div class="char-card" id="charCard">
+    <button onclick="openRules()" title="計分規則" style="position:absolute;top:10px;right:10px;z-index:2;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:rgba(244,241,234,.8);font-size:13px;font-weight:700;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center">?</button>
     <div class="char-body">
       <div class="char-top">
         <div class="char-avatar" id="charAvatar"></div>
@@ -614,15 +615,21 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 <!-- Rules Modal -->
 <div id="rulesOverlay" class="report-overlay" style="display:none" onclick="closeRules()"></div>
 <div id="rulesBox" class="report-box" style="display:none">
-  <div class="report-title">📋 升階規則</div>
-  <div style="font-size:14px;line-height:1.9;font-family:system-ui,sans-serif;color:#333">
-    <p>✅ <strong>答對</strong>（不重複）→ 升階進度 +1</p>
+  <div class="report-title">📋 計分規則</div>
+  <div style="font-size:14px;line-height:2;font-family:system-ui,sans-serif;color:#333">
+    <p>✅ <strong>答對</strong>（不重複）→ 升階進度 <span style="color:#1f6f5c;font-weight:700">+1</span></p>
     <p>❌ <strong>答錯單題</strong> → 不扣分</p>
-    <p style="margin-top:10px">🔄 <strong>每 5 題為一個循環</strong></p>
-    <p style="padding-left:16px;color:#666">循環內答錯 ≥ 3 題 → 升階進度 −1</p>
-    <p style="padding-left:16px;color:#666">第 6 題開始新循環，圈圈重置</p>
-    <p style="margin-top:10px">🏆 <strong>升階門檻</strong></p>
-    <p style="padding-left:16px;color:#666">菜雞 → NPC（15分）→ 人上人（40分）→ 天才兒童（80分）</p>
+    <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
+    <p>🔄 <strong>每 5 題為一個循環</strong></p>
+    <p style="padding-left:16px;color:#555">循環內答錯 <strong>≥ 3 題</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">−1</span></p>
+    <p style="padding-left:16px;color:#555">第 6 題自動開始新循環，圈圈重置</p>
+    <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
+    <p>😴 <strong>連續 3 天未上線</strong> → 升階進度 <span style="color:#c0392b;font-weight:700">歸零</span>，從菜雞重新開始</p>
+    <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
+    <p>🏆 <strong>升階門檻</strong></p>
+    <p style="padding-left:16px;color:#555">🐔 菜雞 → 🤖 NPC（15 分）</p>
+    <p style="padding-left:16px;color:#555">🤖 NPC → 😎 人上人（40 分）</p>
+    <p style="padding-left:16px;color:#555">😎 人上人 → 🧠 天才兒童（80 分）</p>
   </div>
   <div class="report-btns" style="margin-top:16px">
     <button class="report-submit" onclick="closeRules()">了解了</button>
