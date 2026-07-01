@@ -651,7 +651,7 @@ function mathToHtml(text,hlNeg=true){
   return segs.map(s=>{
     if(s.t==='txt'){
       _NEG_KW.lastIndex=0;
-      let t=esc(s.v).replace(/\n/g,'<br>');
+      let t=esc(s.v).replace(/承第\s*\d+\s*題/g,'承上題').replace(/\n/g,'<br>');
       if(hlNeg) t=t.replace(_NEG_KW,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');
       return t;
     }
