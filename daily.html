@@ -1305,7 +1305,7 @@ function renderQuestion(){
   const btnReveal=document.getElementById('btnReveal');
   if(revealed){
     btnReveal.style.display='none';
-    document.getElementById('btnReadDone').style.display=(inPractice&&!explanationRead)?'':'none';
+    document.getElementById('btnReadDone').style.display=explanationRead?'none':'';
   } else {
     btnReveal.style.display='';
     if(q.hasOpts){
