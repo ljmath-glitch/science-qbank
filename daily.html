@@ -74,20 +74,20 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   padding:3px 10px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;
 }
 .char-progress{display:none}
-.level-spectrum{margin-top:18px}
-.spec-track{position:relative;height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin:32px 0 28px}
+.level-spectrum{margin-top:22px}
+.spec-track{position:relative;height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin:44px 0 38px}
 .spec-fill{height:100%;background:linear-gradient(90deg,var(--bio),var(--phy));border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .spec-node{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
 .spec-node:first-child{transform:translate(0,-50%)}
 .spec-node:last-child{transform:translate(-100%,-50%)}
-.spec-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.25);transition:.3s}
+.spec-dot{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.25);transition:.3s}
 .spec-node.done .spec-dot{background:var(--bio);border-color:var(--bio)}
-.spec-node.current .spec-dot{width:16px;height:16px;background:#fff;border-color:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.22)}
-.spec-emoji{position:absolute;top:-28px;font-size:18px;line-height:1;transition:font-size .3s}
-.spec-node.current .spec-emoji{font-size:24px;top:-33px}
-.spec-name{position:absolute;bottom:-18px;font-size:9px;color:rgba(244,241,234,.45);white-space:nowrap;font-family:system-ui,sans-serif}
+.spec-node.current .spec-dot{width:18px;height:18px;background:#fff;border-color:#fff;box-shadow:0 0 0 5px rgba(255,255,255,.22)}
+.spec-emoji{position:absolute;top:-36px;font-size:22px;line-height:1;transition:font-size .3s}
+.spec-node.current .spec-emoji{font-size:28px;top:-42px}
+.spec-name{position:absolute;bottom:-22px;font-size:10px;color:rgba(244,241,234,.45);white-space:nowrap;font-family:system-ui,sans-serif}
 .spec-node.current .spec-name{color:rgba(244,241,234,.9);font-weight:700}
-.spec-num{position:absolute;bottom:-28px;font-size:8px;color:rgba(244,241,234,.25);font-family:system-ui,sans-serif}
+.spec-num{position:absolute;bottom:-34px;font-size:9px;color:rgba(244,241,234,.25);font-family:system-ui,sans-serif}
 .char-condition{
   margin-top:10px;background:rgba(255,255,255,.07);border-radius:10px;
   padding:9px 12px;font-family:system-ui,sans-serif;font-size:12px;
