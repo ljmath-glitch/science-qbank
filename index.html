@@ -2413,6 +2413,11 @@ function renderToolbar(){
   requestAnimationFrame(()=>{
     const h=document.getElementById('tbOuter').offsetHeight;
     document.documentElement.style.setProperty('--tb-h',(h+8)+'px');
+    // equalize all toolbar buttons to the width of the widest one
+    const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
+    btns.forEach(b=>b.style.width='');
+    const maxW=Math.max(...btns.map(b=>b.offsetWidth));
+    if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
   });
 }
 function setupTbDrag(){
