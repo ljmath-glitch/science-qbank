@@ -113,24 +113,13 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   position:absolute;top:0;left:0;
   transform:translate(-50%,-50%);
   width:42px;height:42px;border-radius:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.35) 0%,rgba(240,238,234,.55) 100%);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border:1px solid rgba(255,255,255,.7);
-  box-shadow:0 3px 14px rgba(0,0,0,.2),inset 0 2px 0 rgba(255,255,255,.8),inset 0 -1px 0 rgba(0,0,0,.06);
+  background:none;border:none;box-shadow:none;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
   display:flex;align-items:center;justify-content:center;
   transition:all .35s;
 }
-.spec-node.done .spec-glass{
-  background:linear-gradient(180deg,rgba(200,240,225,.45) 0%,rgba(210,245,230,.6) 100%);
-  border-color:rgba(100,200,160,.7);
-  box-shadow:0 0 12px rgba(31,111,92,.2),inset 0 2px 0 rgba(255,255,255,.75),inset 0 -1px 0 rgba(0,0,0,.05);
-}
-.spec-node.current .spec-glass{
-  width:54px;height:54px;
-  background:linear-gradient(180deg,rgba(255,245,210,.45) 0%,rgba(255,238,180,.6) 100%);
-  border-color:rgba(212,160,23,.75);
-  box-shadow:0 0 0 4px rgba(184,134,11,.18),0 0 21px rgba(184,134,11,.4),inset 0 2px 0 rgba(255,255,255,.85),inset 0 -1px 0 rgba(0,0,0,.05);
-}
+.spec-node.done .spec-glass{}
+.spec-node.current .spec-glass{width:54px;height:54px;}
 .spec-emoji{font-size:21px;line-height:1;position:relative}
 .spec-node.current .spec-emoji{font-size:27px}
 .spec-name{position:absolute;top:27px;left:0;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
