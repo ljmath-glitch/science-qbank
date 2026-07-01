@@ -1,0 +1,11 @@
+{
+  "name": "茲茲文教題庫",
+  "short_name": "茲茲題庫",
+  "start_url": "/daily.html",
+  "display": "standalone",
+  "background_color": "#13241f",
+  "theme_color": "#b8860b",
+  "icons": [
+    { "src": "/logo.png", "sizes": "any", "type": "image/png" }
+  ]
+}
