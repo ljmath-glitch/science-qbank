@@ -252,7 +252,7 @@
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
-      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-G9-114-1-1-29" oninput="onGroupIdChange()"></div>
+      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-九年級-112上-第一次段考-7" oninput="onGroupIdChange()"></div>
     </div>
     <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
       <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:system-ui,sans-serif;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
@@ -2014,20 +2014,25 @@ ${syl}
 
 【第 23 欄（題組ID 欄）】
 ⚠️ 此欄只填題組代號字串，絕對不要填題目文字或閱讀材料。
-⚠️ 題目若包含「承上題」，此欄題組ID絕對不可留空，必須填入正確格式的代號。
-- 若這題屬於題組，此欄填入題組代號；同一題組所有題目填入完全相同的代號。
-- 非題組的獨立題目，此欄留空（空字串）。
+- 需要填題組ID的情況（符合任一即填）：
+  1. 題目出現「承上題」或「承第X題」等字樣
+  2. 多題共用同一段閱讀材料或情境（題組題）
+- 獨立題目（無上述情況）：此欄留空（空字串）。
+- 同一題組所有小題填入完全相同的代號。
 
 【題組ID 格式規則】
-▸ 會考題：會考-年份-起始題號
-  例：會考-114-42（114 年會考，第 42 題開始的題組）
+格式：學校全名-年級-學年學期-考試名稱-該題組第一題題號
+最後的數字是該題組中題號最小（第一題）的題號。
 
-▸ 段考題：學校名-G年級-學年-學期-第幾次段考-該題組的第一題題號
-  年級從冊數推算：B1/B2 → G7、B3/B4 → G8、B5/B6 → G9
-  學校名從「來源學校」欄位取得（如 百齡國中、陽明國中）
-  學年、學期、第幾次段考從「年度」和「考試名稱」欄位推算
-  例：百齡國中-G9-114-1-1-29（百齡國中九年級、114學年上學期第一次段考、第29題起的題組）
-  例：百齡國中-G8-112-2-3-15（百齡國中八年級、112學年下學期第三次段考、第15題起的題組）
+▸ 段考題格式：學校全名-年級-學年學期-考試名稱-第一題題號
+  年級寫全名：七年級／八年級／九年級（從冊數推算：B1/B2→七年級、B3/B4→八年級、B5/B6→九年級）
+  學年學期：如 112上、113下（學年+上/下）
+  考試名稱：如 第一次段考、第二次段考、期末考
+  例：百齡國中-九年級-112上-第一次段考-7（百齡國中九年級、112學年上學期第一次段考，題組從第7題開始）
+  例：士林國中-八年級-113下-第二次段考-22
+
+▸ 會考題格式：會考-年份-起始題號
+  例：會考-114-42（114 年會考，第 42 題開始的題組）
 - 只輸出 CSV，不要其他說明文字。`}
 function openPromptWindow(){
   var p = buildPrompt();
