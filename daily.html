@@ -440,10 +440,13 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 <body>
 
 <header>
-  <div>
-    <a class="hdr-back" href="javascript:void(0)" onclick="openLockModal()">🔒 返回題庫系統</a>
-    <h1>每日一題</h1>
-    <div class="sub">每天一道，穩紮穩打 · 福大自然</div>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between">
+    <div>
+      <a class="hdr-back" href="javascript:void(0)" onclick="openLockModal()">🔒 返回題庫系統</a>
+      <h1>每日一題</h1>
+      <div class="sub">每天一道，穩紮穩打 · 福大自然</div>
+    </div>
+    <button onclick="openRules()" style="margin-top:4px;padding:5px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#f4f1ea;font-size:12px;font-family:system-ui,sans-serif;cursor:pointer;white-space:nowrap">📋 規則</button>
   </div>
 </header>
 
@@ -604,6 +607,24 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <div class="report-btns">
     <button class="report-cancel" onclick="closeReport()">取消</button>
     <button class="report-submit" onclick="submitReport()">送出回報</button>
+  </div>
+</div>
+
+<!-- Rules Modal -->
+<div id="rulesOverlay" class="report-overlay" style="display:none" onclick="closeRules()"></div>
+<div id="rulesBox" class="report-box" style="display:none">
+  <div class="report-title">📋 升階規則</div>
+  <div style="font-size:14px;line-height:1.9;font-family:system-ui,sans-serif;color:#333">
+    <p>✅ <strong>答對</strong>（不重複）→ 升階進度 +1</p>
+    <p>❌ <strong>答錯單題</strong> → 不扣分</p>
+    <p style="margin-top:10px">🔄 <strong>每 5 題為一個循環</strong></p>
+    <p style="padding-left:16px;color:#666">循環內答錯 ≥ 3 題 → 升階進度 −1</p>
+    <p style="padding-left:16px;color:#666">第 6 題開始新循環，圈圈重置</p>
+    <p style="margin-top:10px">🏆 <strong>升階門檻</strong></p>
+    <p style="padding-left:16px;color:#666">菜雞 → NPC（15分）→ 人上人（40分）→ 天才兒童（80分）</p>
+  </div>
+  <div class="report-btns" style="margin-top:16px">
+    <button class="report-submit" onclick="closeRules()">了解了</button>
   </div>
 </div>
 
@@ -949,12 +970,32 @@ let sessionIdx=0;
 let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
+// UPGRADE SCORE（答對 +1，每5題循環錯≥3 扣1）
+// ═══════════════════════════════════════════════════════════════
+function calcUpgradeScore(hist){
+  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  const totalCorrect=entries.filter(([,r])=>r.correct).length;
+  let deductions=0;
+  for(let i=0;i+5<=entries.length;i+=5){
+    const wrong=entries.slice(i,i+5).filter(([,r])=>!r.correct).length;
+    if(wrong>=3) deductions++;
+  }
+  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions),deductions};
+}
+function getCycleDots(hist){
+  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  const start=Math.floor(entries.length/5)*5;
+  const cycle=entries.slice(start);
+  return Array.from({length:5},(_,i)=>i<cycle.length?(cycle[i][1].correct?'correct':'wrong'):'empty');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // RENDER CHARACTER
 // ═══════════════════════════════════════════════════════════════
 function renderCharacter(){
   const hist=getHistory();
-  const totalCorrect=Object.values(hist).filter(r=>r.correct).length;
-  const lv=getLevel(totalCorrect);
+  const{totalCorrect,upgradeScore,deductions}=calcUpgradeScore(hist);
+  const lv=getLevel(upgradeScore);
   const nextLv=LEVELS[lv.index+1];
   const avatar=document.getElementById('charAvatar');
   avatar.textContent=lv.emoji;
@@ -965,14 +1006,14 @@ function renderCharacter(){
   if(nextLv){
     document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
     document.getElementById('charCondText').innerHTML=
-      `不重複答對 <b>還差 ${nextLv.threshold-totalCorrect} 題</b> 即可進化為「${nextLv.name}」`;
+      `不重複答對 <b>還差 ${nextLv.threshold-upgradeScore} 題</b> 即可進化為「${nextLv.name}」`;
   }else{
     document.getElementById('charNext').textContent='已達最高階段 🎉';
     document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
   }
   // 等級光譜
   const maxT=LEVELS[LEVELS.length-1].threshold;
-  const fillPct=Math.min(100,totalCorrect/maxT*100);
+  const fillPct=Math.min(100,upgradeScore/maxT*100);
   const nodes=LEVELS.map((l,i)=>{
     const pos=l.threshold/maxT*100;
     const cls=i<lv.index?'done':i===lv.index?'current':'';
@@ -985,14 +1026,17 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 近7題點點 → spec-center-label
-  const dots=[];
-  for(let i=-6;i<=0;i++){const r=hist[dateStr(i)];dots.push(r?(r.correct?'correct':'wrong'):'empty');}
+  // 5題循環點點 → spec-center-label
+  const dots=getCycleDots(hist);
+  const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  const cycleNum=Math.floor(allEntries.length/5)+1;
+  const cyclePos=allEntries.length%5;
   let streak=0;
   for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
+  const deductWarn=deductions>0?`<span style="font-size:10px;color:rgba(192,57,43,.7);margin-left:4px">-${deductions}</span>`:'';
   document.getElementById('specCenterLabel').innerHTML=
-    `<div class="hist-dots-row"><span class="hist-label">近 7 題</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
+    `<div class="hist-dots-row"><span class="hist-label">循環 ${cycleNum}（${cyclePos}/5）</span>${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${deductWarn}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1328,6 +1372,14 @@ function closeReport(){
 
 // ── 返回題庫系統密碼鎖 ────────────────────────────────────────
 const LOCK_PASSWORD='0000';
+function openRules(){
+  document.getElementById('rulesOverlay').style.display='';
+  document.getElementById('rulesBox').style.display='';
+}
+function closeRules(){
+  document.getElementById('rulesOverlay').style.display='none';
+  document.getElementById('rulesBox').style.display='none';
+}
 function openLockModal(){
   document.getElementById('lockInput').value='';
   document.getElementById('lockErr').style.display='none';
