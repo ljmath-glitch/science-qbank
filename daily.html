@@ -621,7 +621,6 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="action-row">
       <button class="btn-reveal" id="btnReveal" onclick="reveal()" disabled>請先選擇答案</button>
 
-      <button class="btn-next" id="btnNextQ" onclick="nextQuestion()" style="display:none">下一題 →</button>
     </div>
     <button class="btn-flag" id="btnFlag" onclick="openReport()" style="display:none">🚩 回報錯誤</button>
   </div>
@@ -1304,21 +1303,11 @@ function renderQuestion(){
 
   // buttons
   const btnReveal=document.getElementById('btnReveal');
-  const btnNextQ=document.getElementById('btnNextQ');
   if(revealed){
     btnReveal.style.display='none';
-    btnNextQ.style.display='block';
-    if(inPractice&&!explanationRead){
-      btnNextQ.disabled=true;
-      btnNextQ.textContent='請先閱讀詳解 ↓';
-    } else {
-      btnNextQ.disabled=false;
-      btnNextQ.textContent='下一題 →';
-    }
     document.getElementById('btnReadDone').style.display=(inPractice&&!explanationRead)?'':'none';
   } else {
     btnReveal.style.display='';
-    btnNextQ.style.display='none';
     if(q.hasOpts){
       btnReveal.disabled=selectedOpt===null;
       btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
@@ -1388,7 +1377,6 @@ async function loadAndRender(){
     document.getElementById('qOpts').innerHTML='';
     document.getElementById('resultBadge').className='result-badge';
     document.getElementById('btnReveal').style.display='none';
-    document.getElementById('btnNextQ').style.display='none';
     document.getElementById('btnFlag').style.display='none';
     document.getElementById('explainCard').classList.remove('show');
     return;
@@ -1448,9 +1436,7 @@ function nextQuestion(){
 function markExplanationRead(){
   explanationRead=true;
   document.getElementById('btnReadDone').style.display='none';
-  const btn=document.getElementById('btnNextQ');
-  btn.disabled=false;
-  btn.textContent='下一題 →';
+  nextQuestion();
 }
 
 // ── 報錯 ──────────────────────────────────────────────────────
