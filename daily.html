@@ -50,14 +50,14 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 .char-card{
   background:linear-gradient(135deg,#13241f,#1e3050);
-  border-radius:16px;padding:18px 18px 16px;margin-bottom:14px;
+  border-radius:16px;padding:22px 22px 20px;margin-bottom:14px;
   color:#f4f1ea;position:relative;overflow:hidden;
 }
 .char-card::before{
   content:'';position:absolute;inset:0;
   background:radial-gradient(circle at 80% 20%,rgba(184,134,11,.15),transparent 55%);
 }
-.char-top{display:flex;align-items:center;gap:14px;position:relative}
+.char-top{display:flex;align-items:center;gap:18px;position:relative}
 .char-avatar{
   width:64px;height:64px;border-radius:50%;
   background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);
@@ -74,8 +74,8 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   padding:3px 10px;font-size:12px;font-weight:700;font-family:system-ui,sans-serif;
 }
 .char-progress{display:none}
-.level-spectrum{margin-top:22px}
-.spec-track{position:relative;height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin:44px 0 38px}
+.level-spectrum{margin-top:28px}
+.spec-track{position:relative;height:6px;background:rgba(255,255,255,.15);border-radius:99px;margin:48px 0 42px}
 .spec-fill{height:100%;background:linear-gradient(90deg,var(--bio),var(--phy));border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 .spec-node{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
 .spec-node:first-child{transform:translate(0,-50%)}
@@ -89,8 +89,8 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .spec-node.current .spec-name{color:rgba(244,241,234,.9);font-weight:700}
 .spec-num{position:absolute;bottom:-34px;font-size:9px;color:rgba(244,241,234,.25);font-family:system-ui,sans-serif}
 .char-condition{
-  margin-top:10px;background:rgba(255,255,255,.07);border-radius:10px;
-  padding:9px 12px;font-family:system-ui,sans-serif;font-size:12px;
+  margin-top:16px;background:rgba(255,255,255,.07);border-radius:10px;
+  padding:10px 14px;font-family:system-ui,sans-serif;font-size:12px;
   color:rgba(244,241,234,.8);display:flex;align-items:center;gap:8px;
 }
 .char-condition .cond-icon{font-size:16px}
