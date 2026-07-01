@@ -337,6 +337,42 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 
 /* ── Report Modal ── */
 .report-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9997}
+/* 降級全屏公告 */
+.demotion-screen{
+  position:fixed;inset:0;z-index:10000;
+  background:linear-gradient(160deg,#13241f 0%,#1a1a2e 60%,#2d1b1b 100%);
+  display:flex;align-items:center;justify-content:center;
+  animation:demotionFadeIn .4s ease;
+}
+@keyframes demotionFadeIn{from{opacity:0}to{opacity:1}}
+.demotion-box{
+  text-align:center;color:#f4f1ea;padding:36px 32px;max-width:340px;width:90%;
+}
+.demotion-icon{font-size:72px;display:block;margin-bottom:16px;animation:demotionShake .6s .3s ease both}
+@keyframes demotionShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-5deg)}80%{transform:rotate(5deg)}}
+.demotion-title{font-size:13px;letter-spacing:3px;color:rgba(244,241,234,.45);margin-bottom:8px;text-transform:uppercase}
+.demotion-absent{font-size:28px;font-weight:800;margin-bottom:6px;color:#e8c97a}
+.demotion-desc{font-size:15px;color:rgba(244,241,234,.65);margin-bottom:28px;line-height:1.6}
+.demotion-lv{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-bottom:32px;
+}
+.demotion-lv-item{text-align:center}
+.demotion-lv-emoji{font-size:40px;display:block}
+.demotion-lv-name{font-size:12px;margin-top:4px;color:rgba(244,241,234,.55)}
+.demotion-arrow{font-size:22px;color:rgba(192,57,43,.8)}
+.demotion-now{
+  font-size:14px;color:rgba(244,241,234,.5);margin-bottom:20px;
+}
+.demotion-now strong{color:#f4f1ea;font-size:16px}
+.demotion-btn{
+  width:100%;padding:14px;border-radius:14px;border:none;
+  background:rgba(255,255,255,.12);color:#f4f1ea;
+  font-size:15px;font-weight:700;cursor:pointer;
+  border:1.5px solid rgba(255,255,255,.2);
+  transition:background .2s;
+}
+.demotion-btn:active{background:rgba(255,255,255,.22)}
 .report-box{
   position:fixed;bottom:0;left:50%;transform:translateX(-50%);
   width:100%;max-width:640px;background:#fff;border-radius:18px 18px 0 0;
@@ -609,6 +645,29 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <div class="report-btns">
     <button class="report-cancel" onclick="closeReport()">取消</button>
     <button class="report-submit" onclick="submitReport()">送出回報</button>
+  </div>
+</div>
+
+<!-- Demotion Screen -->
+<div id="demotionScreen" class="demotion-screen" style="display:none">
+  <div class="demotion-box">
+    <span class="demotion-icon">😴</span>
+    <div class="demotion-title">警告</div>
+    <div class="demotion-absent" id="demotionAbsent"></div>
+    <div class="demotion-desc">你的等級因此下降了</div>
+    <div class="demotion-lv">
+      <div class="demotion-lv-item">
+        <span class="demotion-lv-emoji" id="demotionFromEmoji"></span>
+        <div class="demotion-lv-name" id="demotionFromName"></div>
+      </div>
+      <div class="demotion-arrow">→</div>
+      <div class="demotion-lv-item">
+        <span class="demotion-lv-emoji" id="demotionToEmoji"></span>
+        <div class="demotion-lv-name" id="demotionToName"></div>
+      </div>
+    </div>
+    <div class="demotion-now">目前是 <strong id="demotionNow"></strong></div>
+    <button class="demotion-btn" onclick="closeDemotion()">繼續答題</button>
   </div>
 </div>
 
@@ -1408,6 +1467,20 @@ function closeReport(){
 
 // ── 返回題庫系統密碼鎖 ────────────────────────────────────────
 const LOCK_PASSWORD='0000';
+function showDemotion(daysDiff,fromIdx){
+  const fromLv=LEVELS[fromIdx];
+  const toLv=LEVELS[fromIdx-1];
+  document.getElementById('demotionAbsent').textContent=`已失聯 ${daysDiff} 天`;
+  document.getElementById('demotionFromEmoji').textContent=fromLv.emoji;
+  document.getElementById('demotionFromName').textContent=fromLv.name;
+  document.getElementById('demotionToEmoji').textContent=toLv.emoji;
+  document.getElementById('demotionToName').textContent=toLv.name;
+  document.getElementById('demotionNow').textContent=`${toLv.emoji} ${toLv.name}`;
+  document.getElementById('demotionScreen').style.display='flex';
+}
+function closeDemotion(){
+  document.getElementById('demotionScreen').style.display='none';
+}
 function openRules(){
   document.getElementById('rulesOverlay').style.display='';
   document.getElementById('rulesBox').style.display='';
@@ -1505,14 +1578,7 @@ function showToast(lvIdx){
   const absent=checkAbsenceReset();
   renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
   if(absent.dropped){
-    setTimeout(()=>{
-      const fromLv=LEVELS[absent.droppedFrom];
-      const toLv=LEVELS[absent.droppedFrom-1];
-      document.getElementById('toastEmoji').textContent='😴';
-      document.getElementById('toastMsg').textContent=`${absent.daysDiff} 天沒上線，從「${fromLv.name}」降級為「${toLv.name}」`;
-      const t=document.getElementById('toast'); t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'),4500);
-    },800);
+    setTimeout(()=>showDemotion(absent.daysDiff,absent.droppedFrom),400);
   }
 }
 applyFilter();
