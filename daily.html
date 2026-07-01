@@ -1070,7 +1070,8 @@ let explanationRead=false;
 // UPGRADE SCORE（答對 +1；累計答錯 3 題即扣 1 並重置計數）
 // ═══════════════════════════════════════════════════════════════
 function calcUpgradeScore(hist,skipDebt=false){
-  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  // 只計算每日一題（排除練習模式 _s 後綴）
+  const entries=Object.entries(hist).filter(([k])=>!/\_s\d/.test(k)).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
   let deductions=0,cycleWrong=0,cycleStart=0;
   for(let i=0;i<entries.length;i++){
