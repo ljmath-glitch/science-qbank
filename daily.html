@@ -635,7 +635,8 @@ async function sbFetchPassage(groupId){
 // HELPERS (ported from index.html)
 // ═══════════════════════════════════════════════════════════════
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-function mathToHtml(text){
+const _NEG_KW=/錯誤|無法|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非|非(?!常)/g;
+function mathToHtml(text,hlNeg=true){
   if(!text) return '';
   const segs=[];
   const pat=/\$\$([^$]+)\$\$|\$([^$]+)\$/g;
@@ -648,7 +649,12 @@ function mathToHtml(text){
   }
   if(last<text.length) segs.push({t:'txt',v:text.slice(last)});
   return segs.map(s=>{
-    if(s.t==='txt') return esc(s.v).replace(/\n/g,'<br>').replace(/錯誤|無法|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非|非(?!常)/g,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');
+    if(s.t==='txt'){
+      _NEG_KW.lastIndex=0;
+      let t=esc(s.v).replace(/\n/g,'<br>');
+      if(hlNeg) t=t.replace(_NEG_KW,'<span style="text-decoration-line:underline;text-decoration-style:double">$&</span>');
+      return t;
+    }
     if(typeof katex==='undefined') return esc(s.v);
     try{return katex.renderToString(s.v,{throwOnError:false,displayMode:s.disp});}
     catch(e){return esc(s.v);}
@@ -1110,7 +1116,7 @@ function renderExplanation(q){
   html+=`<div class="step"><div class="step-title">正確答案</div>`;
   html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx]):''}</div></div>`;
   if(q.sol){
-    html+=`<div class="step"><div class="step-title">詳解</div><div>${mathToHtml(q.sol)}</div></div>`;
+    html+=`<div class="step"><div class="step-title">詳解</div><div>${mathToHtml(q.sol,false)}</div></div>`;
   }
   document.getElementById('explainBody').innerHTML=html;
 
