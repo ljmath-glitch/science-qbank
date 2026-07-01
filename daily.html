@@ -806,10 +806,13 @@ async function loadDailyQuestion(offset, sidx=0){
             imgs: Array.isArray(passageRow.imgs) ? passageRow.imgs : [],
           };
         } else if(firstSubRow && (parseInt(firstSubRow.no)||0) !== (parseInt(row.no)||0)){
-          // 沒有獨立題組文章且本題不是第一題：以第一題的文字與圖片作為題組文章
+          // 沒有獨立題組文章且本題不是第一題：以第一題的題幹（不含選項）作為情境
+          const rawFirstQ = fixLatex(firstSubRow.q||'');
+          const parsedFirst = parseOptions(rawFirstQ);
           q.passage = {
-            text: fixLatex(firstSubRow.q||''),
+            text: parsedFirst ? parsedFirst.stem : rawFirstQ,
             imgs: Array.isArray(firstSubRow.imgs) ? firstSubRow.imgs : [],
+            isContext: true,
           };
         }
       }catch(pe){ console.warn('passage fetch failed',pe); }
@@ -1007,16 +1010,18 @@ function renderQuestion(){
     <span class="q-num">${srcLabel}</span>
     ${q.source?`<div class="q-source">${esc(q.source)}</div>`:''}`;
 
-  // passage (題組文章)
+  // passage (題組文章 / 承上題情境)
   const passageBox = document.getElementById('passageBox');
+  const passageHead = passageBox.querySelector('.passage-head');
   const passageBody = document.getElementById('passageBody');
-  if(q.passage){
+  if(q.passage && (q.passage.text || (q.passage.imgs && q.passage.imgs.length))){
     function toImgHtml(imgs){
       return (imgs||[]).map(im=>{
         const m = im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';
         return `<img class="qimg" src="${im.src}" style="width:${im.width||65}%;margin:${m}">`;
       }).join('');
     }
+    passageHead.textContent = q.passage.isContext ? '📋 承上題情境' : '📄 閱讀題組';
     let html = toImgHtml(q.passage.imgs);
     if(q.passage.text) html += `<div>${mathToHtml(q.passage.text)}</div>`;
     passageBody.innerHTML = html;
