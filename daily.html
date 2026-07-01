@@ -776,6 +776,33 @@ async function sbFetchRow(offset){
   return data[0]||null;
 }
 
+async function sbFetchPracticeRow(){
+  let seenIds = getSeenIds();
+  for(let attempt=0; attempt<2; attempt++){
+    const excl = seenIds.length>0 ? `&id=not.in.(${seenIds.join(',')})` : '';
+    // Count unseen
+    const cr_res = await fetch(
+      `${SUPABASE_URL}/rest/v1/questions?select=id&${filterQS()}${excl}&limit=1`,
+      {headers:{...SB_HDR,'Prefer':'count=exact'}}
+    );
+    const cr = cr_res.headers.get('content-range');
+    const cnt = parseInt((cr?.split('/')[1]||'0'),10)||0;
+    if(cnt === 0){
+      // 全部看過，重置 seen 清單再試一次
+      localStorage.removeItem(KEY_SEEN); seenIds=[];
+      continue;
+    }
+    const off = Math.floor(Math.random()*cnt);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/questions?select=*&${filterQS()}${excl}&order=id&offset=${off}&limit=1`,
+      {headers:SB_HDR}
+    );
+    const data = await res.json();
+    return data[0]||null;
+  }
+  return null;
+}
+
 async function sbFetchPassage(groupId){
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/questions?select=id,no,q,imgs,type&group_id=eq.${encodeURIComponent(groupId)}&limit=50`,
@@ -931,27 +958,21 @@ async function loadDailyQuestion(offset, sidx=0){
     const d = new Date(); d.setDate(d.getDate()+offset);
     const dayEpoch = Math.floor(d.getTime()/86400000);
 
-    // Pin offset per question slot so refresh always returns the same question
-    let qOffset;
-    const pinKey = 'dq_pin_' + getHistKey(offset, sidx);
-    const pinned = localStorage.getItem(pinKey);
-    if(pinned !== null){
-      qOffset = parseInt(pinned, 10);
+    let row;
+    if(sidx === 0){
+      // 每日一題：依日期固定 offset，pin 確保刷新不變
+      const pinKey = 'dq_pin_' + getHistKey(offset, 0);
+      const pinned = localStorage.getItem(pinKey);
+      let qOffset;
+      if(pinned !== null){ qOffset = parseInt(pinned,10); }
+      else { qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount; localStorage.setItem(pinKey, String(qOffset)); }
+      _usedOffsets.add(qOffset);
+      row = await sbFetchRow(qOffset);
     } else {
-      if(sidx === 0){
-        qOffset = ((dayEpoch % _totalCount) + _totalCount) % _totalCount;
-      } else {
-        let attempts = 0;
-        do {
-          qOffset = Math.floor(Math.random() * _totalCount);
-          attempts++;
-        } while(_usedOffsets.has(qOffset) && attempts < 20);
-      }
-      localStorage.setItem(pinKey, String(qOffset));
+      // 練習模式：每次隨機抽未看過的題目（不 pin）
+      row = await sbFetchPracticeRow();
+      if(row) addSeenId(row.id);
     }
-    _usedOffsets.add(qOffset);
-
-    const row = await sbFetchRow(qOffset);
     if(!row) throw new Error('no data');
 
     const q = normalizeRow(row);
@@ -1027,6 +1048,12 @@ function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].thr
 const KEY_HIST='dq_history';
 const KEY_VISIT='dq_last_visit';
 const KEY_DEBT='dq_reset_debt';
+const KEY_SEEN='dq_practice_seen';
+function getSeenIds(){try{return JSON.parse(localStorage.getItem(KEY_SEEN)||'[]');}catch{return[];}}
+function addSeenId(id){
+  const s=getSeenIds(); const sid=String(id);
+  if(!s.includes(sid)){s.push(sid); if(s.length>150)s.shift(); localStorage.setItem(KEY_SEEN,JSON.stringify(s));}
+}
 const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
