@@ -1058,7 +1058,7 @@ const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
 function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
-function getHistKey(offset,sidx){return sidx===0?dateStr(offset):dateStr(offset)+'_s'+sidx;}
+function getHistKey(offset,sidx,qid){return sidx===0?dateStr(offset):dateStr(offset)+'_p'+qid;}
 
 function checkAbsenceReset(){
   const today=dateStr(0);
@@ -1250,7 +1250,7 @@ function renderQuestion(){
   const q=currentQuestion;
   if(!q) return;
   const hist=getHistory();
-  const key=getHistKey(currentOffset,sessionIdx);
+  const key=getHistKey(currentOffset,sessionIdx,q.id);
   let rec=hist[key];
   // Discard stale record if it belongs to a different question (qid mismatch)
   if(rec && rec.qid && rec.qid !== q.id) rec = null;
@@ -1427,7 +1427,7 @@ function selectOpt(i){
 
 function reveal(){
   const q=currentQuestion; if(!q) return;
-  const key=getHistKey(currentOffset,sessionIdx);
+  const key=getHistKey(currentOffset,sessionIdx,q.id);
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
   hist[key]={selected:selectedOpt,correct,qid:q.id};
