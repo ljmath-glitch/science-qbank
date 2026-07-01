@@ -65,7 +65,7 @@
 <header>
   <div class="wrap">
     <h1>茲茲文教自然科題庫系統</h1>
-    <div class="sub">TZUTZU · 使用說明書 · 2026年6月版</div>
+    <div class="sub">TZUTZU · 使用說明書 · 2026年7月版</div>
   </div>
 </header>
 
@@ -80,6 +80,7 @@
     <a href="#pick">選題</a>
     <a href="#export">匯出考卷</a>
     <a href="#backup">備份還原</a>
+    <a href="#daily">每日一題</a>
     <a href="#faq">常見問題</a>
   </div>
 </nav>
@@ -90,7 +91,7 @@
   <h3>目錄</h3>
   <ol>
     <li><a href="#intro">系統簡介</a></li>
-    <li><a href="#interface">介面說明</a></li>
+    <li><a href="#interface">介面說明（題庫系統）</a></li>
     <li><a href="#import">匯入題目（AI 指令流程）</a></li>
     <li><a href="#edit">手動新增與編輯題目</a></li>
     <li><a href="#filter">篩選與搜尋</a></li>
@@ -99,6 +100,7 @@
     <li><a href="#report">知識點分析報表</a></li>
     <li><a href="#backup">備份與還原</a></li>
     <li><a href="#chapter">章節清單管理</a></li>
+    <li><a href="#daily">每日一題系統</a></li>
     <li><a href="#faq">常見問題 FAQ</a></li>
   </ol>
 </div>
@@ -112,6 +114,12 @@
   <b>網站位置</b>：<code>https://science-qbank.vercel.app</code><br>
   <b>資料儲存</b>：Supabase 雲端資料庫（多人共用，即時同步）<br>
   <b>適用科目</b>：國中生物、理化、地科（翰林版 B1～B6）
+</div>
+
+<div class="card warn">
+  <b>系統入口需要密碼</b><br>
+  題庫系統（<code>index.html</code>）和每日一題（<code>daily.html</code>）的「返回題庫系統」按鈕皆設有密碼鎖定畫面。<br>
+  提示：<b>士林茲茲 Gmail 密碼</b>（請向主管確認）。
 </div>
 
 <h3>系統主要功能</h3>
@@ -462,8 +470,92 @@
   點「回復預設」可恢復成翰林版原始骨架。修改後點「儲存」會同步到雲端，主管和老師都會看到更新後的章節。
 </div>
 
+<!-- ===== 每日一題 ===== -->
+<h2 id="daily">十一、每日一題系統</h2>
+
+<p>每日一題（<code>daily.html</code>）是提供學生每天練習的刷題介面，與題庫系統（index.html）相互獨立。學生透過答題累積升等分數，系統會自動追蹤學習狀態。</p>
+
+<div class="card info">
+  <b>入口</b>：<code>https://science-qbank.vercel.app/daily.html</code><br>
+  <b>建議加入 Safari / Chrome 桌面捷徑（見下方 PWA 說明）</b>
+</div>
+
+<h3>每日一題 vs 練習模式</h3>
+<table>
+  <tr><th>模式</th><th>說明</th></tr>
+  <tr><td>每日一題</td><td>系統根據日期自動出一道固定題目，每天換新</td></tr>
+  <tr><td>練習模式</td><td>自訂篩選條件（領域、難度等），系統隨機出未看過的題目；答完可繼續按「繼續練習下一題」</td></tr>
+</table>
+
+<h3>題目功能</h3>
+<ul>
+  <li>選擇題：點選選項後點「揭曉答案」</li>
+  <li>問答題（非選擇）：直接點「揭曉答案」看解說</li>
+  <li>圖片：點圖片可放大至全螢幕（再點一次關閉）</li>
+  <li>題目中若出現「<u style="text-decoration:underline double #c0392b;font-weight:700">不正確</u>」「<u style="text-decoration:underline double #c0392b;font-weight:700">錯誤</u>」等否定關鍵字，系統會自動加上紅色雙底線提醒注意</li>
+  <li>看完詳解後點「✓ 已看懂詳解，繼續下一題」才能前進</li>
+</ul>
+
+<h3 id="daily-level">等級制度</h3>
+
+<table>
+  <tr><th>等級</th><th>名稱</th><th>升等所需升階進度</th></tr>
+  <tr><td>Lv.0</td><td>菜雞</td><td>起點</td></tr>
+  <tr><td>Lv.1</td><td>努力中</td><td>升階進度達 5</td></tr>
+  <tr><td>Lv.2</td><td>初窺門徑</td><td>升階進度達 12</td></tr>
+  <tr><td>Lv.3</td><td>漸入佳境</td><td>升階進度達 22</td></tr>
+  <tr><td>Lv.4</td><td>駕輕就熟</td><td>升階進度達 35</td></tr>
+  <tr><td>Lv.5</td><td>爐火純青</td><td>升階進度達 50</td></tr>
+</table>
+
+<p>右上角顯示當前等級徽章（Lv.X 角色圖示），點「？計分規則」可隨時查看詳細規則說明。</p>
+
+<h3 id="daily-scoring">循環計分（5 題一循環）</h3>
+
+<p>升階進度的計算方式：</p>
+<div class="card info">
+  <b>計分邏輯</b>：<br>
+  ① 每 5 題為一個循環，答題記錄依序累積<br>
+  ② 循環內答錯 ≥ 3 題 → 立即扣 1 分（從升階進度扣），並重新開始新的循環<br>
+  ③ 滿 5 題自動重新開始新的循環（不管對錯幾題）<br>
+  ④ <b>升階進度 = 總答對數 − 被扣分數</b><br><br>
+  <b>中間五格圖示</b>（角色卡片中間的點）代表當前循環的答題狀況：
+  <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#2ecc71;vertical-align:middle;margin:0 2px"></span> 綠＝答對 ／
+  <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#e74c3c;vertical-align:middle;margin:0 2px"></span> 紅＝答錯 ／
+  <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:#ddd;border:1px solid #aaa;vertical-align:middle;margin:0 2px"></span> 灰＝尚未作答<br><br>
+  每循環結束後，五格會重置為灰色，重新計算。
+</div>
+
+<div class="card tip">
+  <b>練習模式也算分</b>：練習模式的答題記錄同樣納入循環計分，不限定只有每日一題才算。
+</div>
+
+<h3>失聯降級規則</h3>
+
+<div class="card warn">
+  <b>連續 3 天未登入</b>：系統偵測到 3 天以上未打開每日一題，下次登入時會自動降一個等級，並顯示全螢幕提示。<br><br>
+  例如目前 Lv.3（漸入佳境），失聯 3 天後降為 Lv.2（初窺門徑）；已是 Lv.0（菜雞）則不再降。<br><br>
+  <b>降等不會清除歷史紀錄</b>，而是在升階進度上加上「扣分」，讓分數落回前一等級的門檻以下。
+</div>
+
+<h3>加入桌面捷徑（PWA）</h3>
+
+<p>iPhone / iPad（Safari）：</p>
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  在 Safari 開啟 <code>daily.html</code>（或 <code>index.html</code>）
+</div></div>
+<div class="step"><div class="step-num">2</div><div class="step-body">
+  點底部的「分享」按鈕（方塊加箭頭圖示）
+</div></div>
+<div class="step"><div class="step-num">3</div><div class="step-body">
+  選「加入主畫面」，點「新增」
+</div></div>
+<p>加入後，從主畫面開啟會以全螢幕 App 模式顯示，不會顯示瀏覽器工具列。</p>
+
+<p>Android（Chrome）：點選網址列右邊的「⋮」選單 → 「新增至主畫面」。</p>
+
 <!-- ===== FAQ ===== -->
-<h2 id="faq">十一、常見問題 FAQ</h2>
+<h2 id="faq">十二、常見問題 FAQ</h2>
 
 <h3>Q：題目儲存後，重新整理就消失了？</h3>
 <p>請確認 Supabase 連線設定正確（SUPABASE_URL 和 SUPABASE_ANON_KEY 已填好）。若顯示「尚未連線雲端」表示設定有問題。</p>
@@ -493,7 +585,7 @@
 
 <div class="card" style="margin-top:30px;text-align:center;font-family:system-ui,sans-serif;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  版本：v2.2 · 2026年6月 · 僅供內部使用
+  版本：v2.5 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
