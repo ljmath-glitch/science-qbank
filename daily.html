@@ -957,11 +957,31 @@ function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].thr
 // STORAGE
 // ═══════════════════════════════════════════════════════════════
 const KEY_HIST='dq_history';
+const KEY_VISIT='dq_last_visit';
+const KEY_DEBT='dq_reset_debt';
 const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
 function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
 function getHistKey(offset,sidx){return sidx===0?dateStr(offset):dateStr(offset)+'_s'+sidx;}
+
+function checkAbsenceReset(){
+  const today=dateStr(0);
+  const last=localStorage.getItem(KEY_VISIT);
+  if(last&&last!==today){
+    const daysDiff=Math.round((new Date(today)-new Date(last))/86400000);
+    if(daysDiff>=3){
+      const hist=getHistory();
+      const{upgradeScore}=calcUpgradeScore(hist,true);
+      const debt=parseInt(localStorage.getItem(KEY_DEBT)||'0');
+      localStorage.setItem(KEY_DEBT,debt+upgradeScore);
+      localStorage.setItem(KEY_VISIT,today);
+      return daysDiff;
+    }
+  }
+  localStorage.setItem(KEY_VISIT,today);
+  return 0;
+}
 
 // ═══════════════════════════════════════════════════════════════
 // STATE
@@ -973,7 +993,7 @@ let explanationRead=false;
 // ═══════════════════════════════════════════════════════════════
 // UPGRADE SCORE（答對 +1，每5題循環錯≥3 扣1）
 // ═══════════════════════════════════════════════════════════════
-function calcUpgradeScore(hist){
+function calcUpgradeScore(hist,skipDebt=false){
   const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
   let deductions=0;
@@ -981,7 +1001,8 @@ function calcUpgradeScore(hist){
     const wrong=entries.slice(i,i+5).filter(([,r])=>!r.correct).length;
     if(wrong>=3) deductions++;
   }
-  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions),deductions};
+  const debt=skipDebt?0:parseInt(localStorage.getItem(KEY_DEBT)||'0');
+  return{totalCorrect,upgradeScore:Math.max(0,totalCorrect-deductions-debt),deductions};
 }
 function getCycleDots(hist){
   const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
@@ -1322,9 +1343,10 @@ function reveal(){
   hist[key]={selected:selectedOpt,correct,qid:q.id};
   saveHistory(hist);
 
-  const before=Object.values(getHistory()).filter(r=>r.correct).length-(correct?1:0);
-  const after=before+(correct?1:0);
-  const lvBefore=getLevel(before).index, lvAfter=getLevel(after).index;
+  const histAfter=getHistory();
+  const{upgradeScore:scoreAfter}=calcUpgradeScore(histAfter);
+  const{upgradeScore:scoreBefore}=calcUpgradeScore(Object.fromEntries(Object.entries(histAfter).filter(([k])=>k!==key)));
+  const lvBefore=getLevel(scoreBefore).index, lvAfter=getLevel(scoreAfter).index;
 
   revealed=true;
   renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
@@ -1466,7 +1488,18 @@ function showToast(lvIdx){
 // ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
-renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
+{
+  const absent=checkAbsenceReset();
+  renderCharacter(); renderStats(); renderTasks(); renderWeekDots(); renderDate();
+  if(absent>=3){
+    setTimeout(()=>{
+      document.getElementById('toastEmoji').textContent='🐔';
+      document.getElementById('toastMsg').textContent=`離開 ${absent} 天，從菜雞重新開始！`;
+      const t=document.getElementById('toast'); t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),4000);
+    },800);
+  }
+}
 applyFilter();
 </script>
 </body>
