@@ -8,6 +8,9 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <style>
+@font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
+@font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
+@font-face{font-family:'GenSenRounded';font-weight:800;font-display:swap;src:local('GenSenRounded-H'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-H.ttc') format('truetype');}
 :root{
   --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
   --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
@@ -17,7 +20,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;
+  font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
   background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.07),transparent 40%),
              radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),
              var(--paper);
@@ -736,20 +739,18 @@ function fieldSubject(f){
 // ─── parse options embedded in q text ───────────────────────
 // Supports: (A)... (B)... or （A）...（B）... or newline-separated
 function parseOptions(qText){
-  // try full-width brackets
-  let m = qText.match(/[（(][Ａ-Ｄ][）)]/);
   const text = qText.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
-  // match (A) / （A）
-  const pat = /[（(][A-Da-d][）)]\s*/g;
+  // match (A) / （A）/ [A]
+  const pat = /[（(][A-Da-d][）)]\s*|\[[A-Da-d]\]\s*/g;
   const positions = [];
   let r;
-  while((r=pat.exec(text))!==null) positions.push(r.index);
-  if(positions.length < 2) return null; // can't parse
+  while((r=pat.exec(text))!==null) positions.push({idx:r.index,len:r[0].length});
+  if(positions.length < 2) return null;
 
-  const stem = text.slice(0, positions[0]).trim();
-  const opts = positions.map((pos,i)=>{
-    const start = pos + text.slice(pos).match(/^[（(][A-Da-d][）)]\s*/)[0].length;
-    const end   = i+1 < positions.length ? positions[i+1] : text.length;
+  const stem = text.slice(0, positions[0].idx).trim();
+  const opts = positions.map((p,i)=>{
+    const start = p.idx + p.len;
+    const end   = i+1 < positions.length ? positions[i+1].idx : text.length;
     return text.slice(start, end).trim().replace(/\n.*$/s,'').trim();
   });
   return {stem, opts};
@@ -998,7 +999,12 @@ function renderTasks(){
   warmBadge.className=todayRec?'task-badge done-badge':'task-badge todo-badge';
 
   let streak=0;
-  for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
+  const _todayRec=hist[dateStr(0)];
+  // 今天答錯 → streak = 0；今天未答 → 從昨天算起；今天答對 → 從今天算起
+  if(!(_todayRec&&!_todayRec.correct)){
+    const _start=_todayRec?.correct?0:-1;
+    for(let i=_start;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
+  }
   const STREAK_GOAL=7;
   document.getElementById('challengeFill').style.width=Math.min(100,Math.round(streak/STREAK_GOAL*100))+'%';
   document.getElementById('challengeBadge').textContent=streak+' 連勝';
@@ -1185,8 +1191,7 @@ function renderExplanation(q){
   document.getElementById('explainBody').innerHTML=html;
 
   document.getElementById('kpRow').innerHTML=
-    (q.keywords.length?'<span class="kp-label">知識點：</span>'+
-    q.keywords.map(k=>`<span class="kp-tag">${esc(k)}</span>`).join(''):'');
+    q.kp?`<span class="kp-label">知識點：</span><span class="kp-tag" style="white-space:nowrap">${esc(q.kp)}</span>`:'';
 }
 
 function renderMath(){

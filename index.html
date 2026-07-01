@@ -11,6 +11,9 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <style>
   @font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
+  @font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
+  @font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
+  @font-face{font-family:'GenSenRounded';font-weight:800;font-display:swap;src:local('GenSenRounded-H'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-H.ttc') format('truetype');}
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
     --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
@@ -18,7 +21,7 @@
     --shadow:0 2px 0 #e8e2d4, 0 8px 24px -12px rgba(26,34,56,.25);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:"Songti SC","STSong","Noto Serif TC",Georgia,serif;
+  body{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
     background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
   header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative}
@@ -903,7 +906,10 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       _passage:is23?g(21).replace(/承第\s*\d+\s*題/g,'承上題'):'',
       groupId:is23?(g(22)||''):r.length>=22?(g(21)||''):(g(20)||''),
       imgs:[]};
-    if(!it.q&&!it.summary)continue;adds.push(it)}
+    if(!it.q&&!it.summary)continue;
+    // 承上題 必須有 groupId
+    if(/承上題/.test(it.q)&&!it.groupId){it.flag=true;if(!it.basis)it.basis='[回報] 承上題但缺少題組ID，請補填';}
+    adds.push(it)}
   // 題組文章處理：優先用 col 21（新格式），fallback 到【題幹】分隔（舊格式）
   const SEP='【題幹】';
   const passageAdds=[];const seenGids=new Set();
@@ -1071,7 +1077,9 @@ async function saveEdit(){
   const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
     book:eBook.value,bookName:(SYL.find(k=>k.book===eBook.value)||{}).bookName||'',field:(SYL.find(k=>k.book===eBook.value)||{}).field||'',
     unit:eUnit.value,sub:eSub.value,kp:eKp.value.trim(),summary:eSummary.value.trim(),type:eType.value,
-    step:diff.step,mem:diff.mem,con:diff.con,chart:eChart.value.trim(),basis:eBasis.value.trim(),flag:eFlag.checked,
+    step:diff.step,mem:diff.mem,con:diff.con,chart:eChart.value.trim(),
+    basis:(()=>{let b=eBasis.value.trim();if(eFlag.checked&&b&&!b.startsWith('[回報]'))b='[回報] '+b;return b;})(),
+    flag:eFlag.checked,
     groupId:eGroupId.value.trim(),
     q:eQ.value.trim(),sol:eSol.value.trim(),imgs:curImgs};
   if(!data.q&&!data.summary){alert('題目或摘要至少填一個');return}
@@ -1118,8 +1126,9 @@ async function updateBell(){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     const items=Array.isArray(data)?data:[];
+    const reported=items.filter(x=>x.basis&&x.basis.startsWith('[回報]'));
     const badge=document.getElementById('bellBadge');
-    if(items.length){badge.textContent=items.length>99?'99+':String(items.length);badge.style.display='inline-block';}
+    if(reported.length){badge.textContent=reported.length>99?'99+':String(reported.length);badge.style.display='inline-block';}
     else{badge.style.display='none';}
     if(_bellOpen)renderBellList(items);
   }catch(e){console.warn('bell error',e);}
@@ -1428,7 +1437,7 @@ function renderPage(list,shown,page){
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
-    const kps=(it.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean).map(k=>`<span class="tag kp">${esc(k)}</span>`).join('');
+    const kps=it.kp?`<span class="tag kp" style="white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(it.kp)}">${esc(it.kp)}</span>`:'';
     return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
       <div class="tags">
@@ -1718,7 +1727,14 @@ ${syl}
 - 待確認：你沒把握的分類填 Y，否則留空。
 
 【其他欄位】
-- 題目：完整抄錄題幹文字＋所有選項（(A)(B)(C)(D)），一題一格，不要省略任何選項。
+- 題目：完整抄錄題幹文字，選項各自換行，格式固定為 [A] [B] [C] [D]，不要省略任何選項。
+  例：
+  這是題幹文字。
+  [A] 選項一
+  [B] 選項二
+  [C] 選項三
+  [D] 選項四
+  數學/化學式放入 $...$（如 $v=\frac{d}{t}$）；單位用 \\text{}（如 $30\\,\\text{m/s}$）。
 - 詳解（第 21 欄）：有答案時必須撰寫，沒有答案則留空。
   格式固定三段，使用全形括號，禁止 ## 或 **：
   【解題關鍵】一句話點出核心觀念或切入點。
@@ -1951,8 +1967,8 @@ ${syl}
   【解題關鍵】氧化數下降代表得電子，得電子的物質即為氧化劑。
   【詳解】(A) 錯誤：Zn 氧化數 0 → +2，失電子，為還原劑。(B) 正確：$Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。...
   【觀念補充】氧化劑自身被還原，還原劑自身被氧化。
-- 題目：完整題幹，選項放在同一格用換行分隔。
-  數學/化學式放入 $...$；單位與一般英文必須用 \\text{} 包住避免斜體。
+- 題目：完整題幹，選項各自換行，格式固定為 [A] [B] [C] [D]（方括號，不用圓括號）；含承上題文字時第 23 欄題組ID必須填入，不可留空。
+  數學/化學式放入 $...$（KaTeX語法，必須出現於所有數式）；單位與一般英文必須用 \\text{} 包住避免斜體。
   【LaTeX 單位寫法——請嚴格遵守，指令是 \\text 不是 \\ext】
   正確範例：
     $60\\,\\text{s}$　← 60秒
@@ -1998,6 +2014,7 @@ ${syl}
 
 【第 23 欄（題組ID 欄）】
 ⚠️ 此欄只填題組代號字串，絕對不要填題目文字或閱讀材料。
+⚠️ 題目若包含「承上題」，此欄題組ID絕對不可留空，必須填入正確格式的代號。
 - 若這題屬於題組，此欄填入題組代號；同一題組所有題目填入完全相同的代號。
 - 非題組的獨立題目，此欄留空（空字串）。
 
