@@ -1095,7 +1095,8 @@ let explanationRead=false;
 // UPGRADE SCORE（每5題一循環；循環中答錯≥3即扣1並重置；滿5題自動重置）
 // ═══════════════════════════════════════════════════════════════
 function calcUpgradeScore(hist,skipDebt=false){
-  const entries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  // 只計算每日一題（排除練習模式 _s1, _s2... 的 key）
+  const entries=Object.entries(hist).filter(([k])=>!k.includes('_s')).sort(([a],[b])=>a.localeCompare(b));
   const totalCorrect=entries.filter(([,r])=>r.correct).length;
   let deductions=0,cycleCount=0,cycleWrong=0,cycleStart=0;
   for(let i=0;i<entries.length;i++){
@@ -1152,14 +1153,18 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 5題循環點點 → spec-center-label
+  // 5題循環點點 → spec-center-label（只顯示每日一題，不含練習）
   const dots=Array.from({length:5},(_,i)=>{
     if(i<currentCycle.length) return currentCycle[i][1].correct?'correct':'wrong';
     return 'empty';
   });
-  const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
+  // streak：只算每日一題；今天答錯→0；今天未答→從昨天算；今天答對→從今天算
+  const _todayRec=hist[dateStr(0)];
   let streak=0;
-  for(let i=allEntries.length-1;i>=0;i--){if(allEntries[i][1].correct)streak++;else break;}
+  if(!(_todayRec&&!_todayRec.correct)){
+    const _start=_todayRec?.correct?0:-1;
+    for(let i=_start;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
+  }
   const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
   document.getElementById('specCenterLabel').innerHTML=
     `<div class="hist-dots-row">${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}${streakHtml?`<span class="hist-streak">${streakHtml}</span>`:''}</div>`;
