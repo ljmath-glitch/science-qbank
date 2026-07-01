@@ -290,12 +290,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 }
 .btn-reveal:hover{background:#185f4e;transform:translateY(-1px);box-shadow:0 6px 16px -6px rgba(31,111,92,.5)}
 .btn-reveal:disabled{background:#a0c4bb;cursor:not-allowed;transform:none;box-shadow:none}
-.btn-again{
-  padding:13px 16px;border-radius:10px;border:1.5px solid var(--line);
-  background:#fff;color:var(--muted);font-size:13px;font-weight:600;
-  font-family:system-ui,sans-serif;cursor:pointer;transition:.18s;
-}
-.btn-again:hover{border-color:var(--muted);color:var(--ink)}
+
 .btn-next{
   padding:13px 16px;border-radius:10px;border:none;
   background:var(--green2);color:#fff;font-size:14px;font-weight:700;
@@ -515,7 +510,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="result-badge" id="resultBadge"></div>
     <div class="action-row">
       <button class="btn-reveal" id="btnReveal" onclick="reveal()" disabled>請先選擇答案</button>
-      <button class="btn-again" id="btnAgain" onclick="resetAnswer()" style="display:none">重做</button>
+
       <button class="btn-next" id="btnNextQ" onclick="nextQuestion()" style="display:none">下一題 →</button>
     </div>
     <button class="btn-flag" id="btnFlag" onclick="openReport()" style="display:none">🚩 回報錯誤</button>
@@ -1076,11 +1071,9 @@ function renderQuestion(){
 
   // buttons
   const btnReveal=document.getElementById('btnReveal');
-  const btnAgain=document.getElementById('btnAgain');
   const btnNextQ=document.getElementById('btnNextQ');
   if(revealed){
     btnReveal.style.display='none';
-    btnAgain.style.display='block';
     btnNextQ.style.display='block';
     if(inPractice&&!explanationRead){
       btnNextQ.disabled=true;
@@ -1092,7 +1085,6 @@ function renderQuestion(){
     document.getElementById('btnReadDone').style.display=(inPractice&&!explanationRead)?'':'none';
   } else {
     btnReveal.style.display='';
-    btnAgain.style.display='none';
     btnNextQ.style.display='none';
     if(q.hasOpts){
       btnReveal.disabled=selectedOpt===null;
@@ -1164,7 +1156,6 @@ async function loadAndRender(){
     document.getElementById('qOpts').innerHTML='';
     document.getElementById('resultBadge').className='result-badge';
     document.getElementById('btnReveal').style.display='none';
-    document.getElementById('btnAgain').style.display='none';
     document.getElementById('btnNextQ').style.display='none';
     document.getElementById('btnFlag').style.display='none';
     document.getElementById('explainCard').classList.remove('show');
@@ -1202,11 +1193,6 @@ function reveal(){
   setTimeout(()=>{document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'});},200);
 }
 
-function resetAnswer(){
-  const key=getHistKey(currentOffset,sessionIdx);
-  const hist=getHistory(); delete hist[key]; saveHistory(hist);
-  renderQuestion(); renderWeekDots(); renderStats(); renderTasks(); renderCharacter();
-}
 
 function navigate(dir){
   if(sessionIdx>0) return;
