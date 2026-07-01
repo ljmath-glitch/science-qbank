@@ -101,10 +101,12 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 }
 /* 光譜區 */
 .spec-center-label{
-  text-align:center;padding:8px 0 0;
-  font-family:system-ui,sans-serif;font-size:12px;color:rgba(244,241,234,.55);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:8px 18px 0;
 }
-.spec-center-label b{color:#d4a017;font-size:13px}
+.spec-center-label .hist-label{font-family:system-ui,sans-serif;font-size:10px;color:rgba(244,241,234,.35)}
+.spec-center-label .hist-streak{font-family:system-ui,sans-serif;font-size:11px;color:rgba(244,241,234,.55)}
+.spec-center-label .hist-streak b{color:#d4a017}
 .char-progress{display:none}
 .level-spectrum{padding:10px 0 12px;position:relative}
 .spec-track{position:relative;height:8px;max-width:80%;margin:40px auto 28px;background:rgba(255,255,255,.08);border-radius:99px}
@@ -463,7 +465,10 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
     <div class="spec-center-label" id="specCenterLabel"></div>
     <div class="char-progress"><!-- legacy, hidden --></div>
     <div class="level-spectrum" id="levelSpectrum"></div>
-    <div class="char-history" id="charHistory"></div>
+    <div class="char-condition">
+      <span class="cond-icon">⚡</span>
+      <span id="charCondText"></span>
+    </div>
   </div>
 
   <!-- ② 統計三欄 -->
@@ -958,11 +963,11 @@ function renderCharacter(){
   document.getElementById('charLv').textContent=`Lv.${lv.index+1}`;
   if(nextLv){
     document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
-    document.getElementById('specCenterLabel').innerHTML=
-      `再答對 <b>${nextLv.threshold-totalCorrect} 題</b> 升階 ${nextLv.emoji}`;
+    document.getElementById('charCondText').innerHTML=
+      `不重複答對 <b>還差 ${nextLv.threshold-totalCorrect} 題</b> 即可進化為「${nextLv.name}」`;
   }else{
     document.getElementById('charNext').textContent='已達最高階段 🎉';
-    document.getElementById('specCenterLabel').textContent='已達最高階段 🎉';
+    document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
   }
   // 等級光譜
   const maxT=LEVELS[LEVELS.length-1].threshold;
@@ -979,16 +984,16 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 近7題作答紀錄
+  // 近7題點點 → spec-center-label
   const dots=[];
   for(let i=-6;i<=0;i++){const r=hist[dateStr(i)];dots.push(r?(r.correct?'correct':'wrong'):'empty');}
   let streak=0;
   for(let i=0;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
-  const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'繼續加油 💪';
-  document.getElementById('charHistory').innerHTML=
+  const streakHtml=streak>0?`🔥 <b>${streak}</b> 連勝`:'';
+  document.getElementById('specCenterLabel').innerHTML=
     `<span class="hist-label">近 7 題</span>`+
     `<div class="hist-dots">${dots.map(c=>`<div class="hist-dot ${c}"></div>`).join('')}</div>`+
-    `<span class="hist-streak">${streakHtml}</span>`;
+    (streakHtml?`<span class="hist-streak">${streakHtml}</span>`:'');
 }
 
 // ═══════════════════════════════════════════════════════════════
