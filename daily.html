@@ -99,19 +99,17 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   letter-spacing:2.5px;text-transform:uppercase;
   color:rgba(244,241,234,.28);margin-bottom:0;
 }
-.spec-track{position:relative;height:10px;background:rgba(255,255,255,.1);border-radius:99px;margin:86px 0 30px}
+.spec-track{position:relative;height:10px;background:rgba(255,255,255,.1);border-radius:99px;margin:20px 0 52px}
 .spec-fill{height:100%;background:linear-gradient(90deg,rgba(184,134,11,.5),#b8860b);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)}
-.spec-node{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
+.spec-node{position:absolute;top:50%;transform:translate(-50%,-50%)}
 .spec-node:first-child{transform:translate(0,-50%)}
 .spec-node:last-child{transform:translate(-100%,-50%)}
-.spec-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.15);border:2.5px solid rgba(255,255,255,.2);transition:.3s}
-.spec-node.done .spec-dot{background:#b8860b;border-color:#b8860b;box-shadow:0 0 8px rgba(184,134,11,.6)}
-.spec-node.current .spec-dot{width:20px;height:20px;background:#fff;border-color:#fff;box-shadow:0 0 0 5px rgba(184,134,11,.25),0 0 16px rgba(184,134,11,.4)}
-.spec-emoji{position:absolute;top:-72px;font-size:30px;line-height:1}
-.spec-node.current .spec-emoji{font-size:38px;top:-80px;filter:drop-shadow(0 0 8px rgba(255,220,100,.5))}
-.spec-name{position:absolute;top:-32px;font-size:10px;color:rgba(244,241,234,.4);white-space:nowrap;font-family:system-ui,sans-serif}
+.spec-dot{display:none}
+.spec-emoji{position:absolute;top:0;transform:translateY(-50%);font-size:26px;line-height:1}
+.spec-node.current .spec-emoji{font-size:34px;filter:drop-shadow(0 0 8px rgba(255,220,100,.6))}
+.spec-name{position:absolute;top:18px;font-size:10px;color:rgba(244,241,234,.4);white-space:nowrap;font-family:system-ui,sans-serif}
 .spec-node.current .spec-name{color:rgba(255,220,100,.95);font-weight:700}
-.spec-num{position:absolute;bottom:-20px;font-size:9px;color:rgba(244,241,234,.22);font-family:system-ui,sans-serif}
+.spec-num{position:absolute;top:30px;font-size:9px;color:rgba(244,241,234,.22);font-family:system-ui,sans-serif}
 /* 底部提示 */
 .char-condition{
   margin:0 24px 22px;border-radius:12px;
