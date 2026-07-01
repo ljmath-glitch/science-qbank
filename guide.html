@@ -152,8 +152,8 @@
   <tr><td><span class="badge gray">手動新增</span></td><td>逐欄填寫，新增單一題目</td></tr>
   <tr><td><span class="badge gray">🔄 重新整理</span></td><td>重新從雲端載入最新題目</td></tr>
   <tr><td><span class="badge green">⬇ 備份</span></td><td>下載完整題庫為 JSON 檔</td></tr>
-  <tr><td><span class="badge gray">⬆ 匯入備份到雲端</span></td><td>把 JSON 備份還原到雲端</td></tr>
-  <tr><td><span class="badge gold">📋 Claude 指令</span></td><td>顯示給 AI 的完整指令，用來把段考卷轉成 CSV</td></tr>
+  <tr><td><span class="badge gray">⬆ 匯入備份</span></td><td>把 JSON 備份還原到雲端</td></tr>
+  <tr><td><span class="badge gold">📋 AI轉檔指令</span></td><td>顯示給 AI 的完整指令，用來把段考卷轉成 CSV</td></tr>
   <tr><td><span class="badge gray">📊 知識點分析</span></td><td>查看題庫難度分布、題型分布、缺口子單元</td></tr>
   <tr><td><span class="badge gray">🏷 章節清單</span></td><td>編輯翰林版課程骨架</td></tr>
 </table>
@@ -167,7 +167,7 @@
 
 <div class="step"><div class="step-num">1</div><div class="step-body">
   <b>取得 AI 指令</b><br>
-  點工具列的 <span class="badge gold">📋 Claude 指令</span>，在彈出視窗中點「全選並複製」，把指令複製起來。
+  點工具列的 <span class="badge gold">📋 AI轉檔指令</span>，在彈出視窗中點「全選並複製」，把指令複製起來。
 </div></div>
 
 <div class="step"><div class="step-num">2</div><div class="step-body">
@@ -189,7 +189,7 @@
 
 <div class="step"><div class="step-num">4</div><div class="step-body">
   <b>取得 CSV</b><br>
-  AI 會回傳一份 21 欄的 CSV。全選複製 AI 回傳的 CSV 內容。
+  AI 會回傳一份 23 欄的 CSV。全選複製 AI 回傳的 CSV 內容。
 </div></div>
 
 <div class="step"><div class="step-num">5</div><div class="step-body">
@@ -205,7 +205,7 @@
   <b>小提示</b>：匯入前建議先確認「冊數」欄是否正確（B1～B6），「領域」是否是「生物」「理化」或「地科」。冊數也是「年級」篩選的依據（B1/B2→七年級、B3/B4→八年級、B5/B6→九年級），填錯會影響篩選結果。
 </div>
 
-<h3>CSV 欄位說明（共 21 欄）</h3>
+<h3>CSV 欄位說明（共 23 欄）</h3>
 <table>
   <tr><th>#</th><th>欄位名稱</th><th>說明</th></tr>
   <tr><td>1</td><td>年度</td><td>如 113、114</td></tr>
@@ -228,7 +228,9 @@
   <tr><td>18</td><td>判斷依據</td><td>分類有疑問時填</td></tr>
   <tr><td>19</td><td>待確認</td><td>有疑問填 Y，否則留空</td></tr>
   <tr><td>20</td><td>題目</td><td>完整題幹，選項換行分隔</td></tr>
-  <tr><td>21</td><td>題組ID</td><td>同一大題的小題填相同代號</td></tr>
+  <tr><td>21</td><td>詳解</td><td>解題說明；AI 生成或手動填寫，可含換行</td></tr>
+  <tr><td>22</td><td>題組文章</td><td>題組的共用情境段落（非題組題目留空）</td></tr>
+  <tr><td>23</td><td>題組ID</td><td>同一大題的小題填相同代號</td></tr>
 </table>
 
 <!-- ===== 新增/編輯 ===== -->
@@ -335,9 +337,11 @@
   <tr><td>知識點</td><td>選特定 108 課綱知識點代碼</td></tr>
   <tr><td>題型</td><td>選 A1～E3 等題型</td></tr>
   <tr><td>難度</td><td>簡單 / 中等 / 困難 / 極難</td></tr>
-  <tr><td>年度</td><td>選特定年度的題目</td></tr>
-  <tr><td>來源學校</td><td>選特定學校的題目</td></tr>
-  <tr><td>段考次</td><td>從考試名稱自動判斷，固定三個選項：第一次段考 / 第二次段考 / 第三次段考</td></tr>
+  <tr><td>學年</td><td>選特定學年（如 113、114）的題目</td></tr>
+  <tr><td>學期</td><td>上 / 下，依考試名稱自動判斷</td></tr>
+  <tr><td>學校／考試主辦</td><td>選特定學校或「會考」的題目</td></tr>
+  <tr><td>考試種類</td><td>段考 / 模擬考 / 會考</td></tr>
+  <tr><td>第幾次</td><td>第一次 / 第二次 / 第三次（選「段考」或「模擬考」後才顯示）</td></tr>
   <tr><td>年級</td><td>依冊數自動推算：七年級（B1/B2）、八年級（B3/B4）、九年級（B5/B6）</td></tr>
   <tr><td>圖表類型</td><td>選含特定圖表的題目</td></tr>
   <tr><td>只看待確認</td><td>勾選後只顯示標記「待確認」的題目</td></tr>
@@ -411,16 +415,17 @@
   系統根據「年度」「來源學校」「考試名稱」自動產生出處標籤：<br><br>
   <table>
     <tr><th>資料</th><th>顯示出處</th></tr>
-    <tr><td>年度113、學校=百齡、第二次段考</td><td>[113百齡二段]</td></tr>
-    <tr><td>年度111、學校=會考</td><td>[111會考]</td></tr>
-    <tr><td>年度114、學校=石牌、期末考</td><td>[114石牌期末]</td></tr>
+    <tr><td>年度113、學校=百齡國中</td><td>113百齡國中</td></tr>
+    <tr><td>年度111、考試名稱含「會考」</td><td>111會考</td></tr>
+    <tr><td>年度114、學校=石牌國中</td><td>114石牌國中</td></tr>
   </table>
+  格式為「年度＋學校名稱」，若為會考題則顯示「年度＋會考」。
 </div>
 
 <h3>三個匯出按鈕</h3>
 <table>
   <tr><th>按鈕</th><th>說明</th></tr>
-  <tr><td><span class="badge green">⬇ 下載 CSV</span></td><td>下載選題資料（含所有21欄資訊），可用 Excel 開啟</td></tr>
+  <tr><td><span class="badge green">⬇ 下載 CSV</span></td><td>下載選題資料（含所有23欄資訊），可用 Excel 開啟</td></tr>
   <tr><td><span class="badge blue">📝 下載 Word</span></td><td>下載 .doc 格式考卷，可用 Word 開啟編輯</td></tr>
   <tr><td><span class="badge gold">📄 預覽考卷</span></td><td>在瀏覽器中預覽排版，可直接列印或存成 PDF</td></tr>
 </table>
@@ -453,7 +458,7 @@
 <p>點工具列的「⬇ 備份」，下載一個 JSON 檔。這個檔案包含所有題目資料，建議定期備份。</p>
 
 <h3>還原</h3>
-<p>點「⬆ 匯入備份到雲端」，選擇之前下載的 JSON 備份檔。</p>
+<p>點「⬆ 匯入備份」，選擇之前下載的 JSON 備份檔。</p>
 <div class="card warn">
   <b>注意</b>：還原時，備份中的題目會逐筆匯入雲端。相同 ID 的題目會更新，但<b>不會刪除</b>雲端上其他題目。若想完全還原，需要先到 Supabase 後台手動清空題庫。
 </div>
