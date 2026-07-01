@@ -1191,17 +1191,13 @@ function renderTasks(){
   warmBadge.textContent=todayRec?'✓ 完成':'0 / 1 題';
   warmBadge.className=todayRec?'task-badge done-badge':'task-badge todo-badge';
 
-  let streak=0;
-  const _todayRec=hist[dateStr(0)];
-  // 今天答錯 → streak = 0；今天未答 → 從昨天算起；今天答對 → 從今天算起
-  if(!(_todayRec&&!_todayRec.correct)){
-    const _start=_todayRec?.correct?0:-1;
-    for(let i=_start;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
-  }
-  const STREAK_GOAL=7;
-  document.getElementById('challengeFill').style.width=Math.min(100,Math.round(streak/STREAK_GOAL*100))+'%';
-  document.getElementById('challengeBadge').textContent=streak+' 連勝';
-  document.getElementById('challengeDesc').textContent=`目標：${STREAK_GOAL} 連勝（再答對 ${Math.max(0,STREAK_GOAL-streak)} 題）`;
+  let weekCorrect=0;
+  for(let i=-6;i<=0;i++){const r=hist[dateStr(i)];if(r&&r.correct)weekCorrect++;}
+  const WEEK_GOAL=7;
+  document.getElementById('challengeFill').style.width=Math.min(100,Math.round(weekCorrect/WEEK_GOAL*100))+'%';
+  document.getElementById('challengeBadge').textContent=`${weekCorrect} / ${WEEK_GOAL}`;
+  document.getElementById('challengeBadge').className=weekCorrect>=WEEK_GOAL?'task-badge done-badge':'task-badge todo-badge';
+  document.getElementById('challengeDesc').textContent=`本週每日一題答對 ${weekCorrect} 天，目標 ${WEEK_GOAL} 天`;
 
   let weekDone=0;
   for(let i=-6;i<=0;i++)if(hist[dateStr(i)])weekDone++;
