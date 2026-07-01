@@ -100,6 +100,11 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   background:linear-gradient(90deg,transparent,rgba(255,255,255,.25) 30%,rgba(255,255,255,.25) 70%,transparent);
 }
 /* 光譜區 */
+.spec-center-label{
+  text-align:center;padding:8px 0 0;
+  font-family:system-ui,sans-serif;font-size:12px;color:rgba(244,241,234,.55);
+}
+.spec-center-label b{color:#d4a017;font-size:13px}
 .char-progress{display:none}
 .level-spectrum{padding:10px 0 12px;position:relative}
 .spec-track{position:relative;height:8px;max-width:80%;margin:20px auto 40px;background:rgba(255,255,255,.08);border-radius:99px}
@@ -122,10 +127,11 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 .spec-node.current .spec-glass{width:54px;height:54px;}
 .spec-emoji{font-size:21px;line-height:1;position:relative}
 .spec-node.current .spec-emoji{font-size:27px}
-.spec-name{position:absolute;top:27px;left:0;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
+.spec-name{position:absolute;top:27px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(244,241,234,.38);white-space:nowrap;font-family:system-ui,sans-serif}
 .spec-node.current .spec-name{color:rgba(212,160,23,.95);font-weight:700;top:34px}
-.spec-num{position:absolute;top:38px;left:0;transform:translateX(-50%);font-size:9px;color:rgba(244,241,234,.2);font-family:system-ui,sans-serif}
+.spec-num{position:absolute;top:38px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:9px;color:rgba(244,241,234,.2);font-family:system-ui,sans-serif}
 .spec-node.current .spec-num{top:45px}
+.spec-emoji.current-glow{filter:drop-shadow(0 0 8px rgba(212,160,23,.9)) drop-shadow(0 0 3px rgba(255,220,80,.7))}
 /* 底部提示 */
 .char-condition{
   margin:0 18px 14px;border-radius:12px;
@@ -440,6 +446,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
       <div class="char-lv" id="charLv"></div>
     </div>
     <div class="char-divider"></div>
+    <div class="spec-center-label" id="specCenterLabel"></div>
     <div class="char-progress"><!-- legacy, hidden --></div>
     <div class="level-spectrum" id="levelSpectrum"></div>
     <div class="char-condition">
@@ -942,9 +949,12 @@ function renderCharacter(){
     document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
     document.getElementById('charCondText').innerHTML=
       `不重複答對 <b>還差 ${nextLv.threshold-totalCorrect} 題</b> 即可進化為「${nextLv.name}」`;
+    document.getElementById('specCenterLabel').innerHTML=
+      `再答對 <b>${nextLv.threshold-totalCorrect} 題</b> 升階 ${nextLv.emoji}`;
   }else{
     document.getElementById('charNext').textContent='已達最高階段 🎉';
     document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
+    document.getElementById('specCenterLabel').textContent='已達最高階段 🎉';
   }
   // 等級光譜
   const maxT=LEVELS[LEVELS.length-1].threshold;
@@ -952,8 +962,9 @@ function renderCharacter(){
   const nodes=LEVELS.map((l,i)=>{
     const pos=l.threshold/maxT*100;
     const cls=i<lv.index?'done':i===lv.index?'current':'';
+    const glowCls=i===lv.index?' current-glow':'';
     return `<div class="spec-node ${cls}" style="left:${pos}%">
-      <div class="spec-glass"><span class="spec-emoji">${l.emoji}</span></div>
+      <div class="spec-glass"><span class="spec-emoji${glowCls}">${l.emoji}</span></div>
       <span class="spec-name">${l.name}</span>
       <span class="spec-num">${l.threshold}</span>
     </div>`;
