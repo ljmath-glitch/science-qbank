@@ -1095,6 +1095,7 @@ function checkAbsenceReset(){
 // ═══════════════════════════════════════════════════════════════
 let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
 let sessionIdx=0;
+let _lastRevealRec=null; // practice mode: stores the just-revealed record for badge rendering
 let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
@@ -1255,16 +1256,19 @@ const DIFF_CSS={簡單:'d1',中等:'d2',困難:'d3',極難:'d4'};
 function renderQuestion(){
   const q=currentQuestion;
   if(!q) return;
+  let rec=null;
   if(sessionIdx===0){
     // 每日一題：從 localStorage 恢復已答狀態
     const hist=getHistory();
     const key=getHistKey(currentOffset);
-    let rec=hist[key];
+    rec=hist[key];
     if(rec && rec.qid && rec.qid !== q.id) rec=null;
     selectedOpt=rec?rec.selected:null;
     revealed=!!rec;
+  } else if(revealed){
+    // 練習模式已揭曉：用 reveal() 儲存的 record 顯示徽章
+    rec=_lastRevealRec;
   }
-  // 練習模式：用 module-level revealed/selectedOpt（由 nextQuestion() 重置）
 
   // session counter in date sub
   if(sessionIdx>0){
@@ -1439,8 +1443,10 @@ function reveal(){
   const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
-  hist[key]={selected:selectedOpt,correct,qid:q.id};
+  const histRec={selected:selectedOpt,correct,qid:q.id};
+  hist[key]=histRec;
   saveHistory(hist);
+  if(sessionIdx>0) _lastRevealRec=histRec;
 
   const histAfter=getHistory();
   const{upgradeScore:scoreAfter}=calcUpgradeScore(histAfter);
@@ -1465,6 +1471,7 @@ function nextQuestion(){
   sessionIdx++;
   selectedOpt=null;
   revealed=false;
+  _lastRevealRec=null;
   document.getElementById('explainCard').classList.remove('show');
   document.getElementById('resultBadge').className='result-badge';
   loadAndRender();
