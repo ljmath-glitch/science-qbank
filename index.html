@@ -2624,11 +2624,32 @@ async function generateSol(){
 let solChatHistory=[];
 function solChatAddMsg(role,text){
   const log=document.getElementById('solChatLog');
-  const div=document.createElement('div');
-  div.className=role==='user'?'sol-chat-user':'sol-chat-ai';
-  div.textContent=text;
-  log.appendChild(div);
+  if(role==='user'){
+    const div=document.createElement('div');
+    div.className='sol-chat-user';div.textContent=text;
+    log.appendChild(div);
+  }else{
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;flex-direction:column;gap:4px;align-self:flex-start;max-width:88%';
+    const bubble=document.createElement('div');
+    bubble.className='sol-chat-ai';bubble.textContent=text;
+    const adoptBtn=document.createElement('button');
+    adoptBtn.type='button';adoptBtn.textContent='✅ 採用此詳解';
+    adoptBtn.style.cssText='font-size:11px;padding:3px 10px;border:1px solid #1f6f5c;background:#e8f4ee;color:#1f6f5c;border-radius:6px;cursor:pointer;align-self:flex-start;font-family:inherit';
+    adoptBtn.onclick=()=>solChatAdopt(text,adoptBtn);
+    wrap.appendChild(bubble);wrap.appendChild(adoptBtn);
+    log.appendChild(wrap);
+  }
   log.scrollTop=log.scrollHeight;
+}
+async function solChatAdopt(sol,btn){
+  document.getElementById('eSol').value=sol;
+  if(btn){btn.textContent='✔ 已採用';btn.disabled=true;btn.style.background='#c8e8d0';}
+  if(CLOUD_READY&&editingId){
+    const now=new Date().toISOString();
+    await sb.from('questions').update({sol,updated_at:now}).eq('id',editingId);
+    const it=DB.find(x=>x.id===editingId);if(it){it.sol=sol;it.updatedAt=now;}render();
+  }
 }
 async function solChatSend(){
   const input=document.getElementById('solChatInput');
@@ -2655,12 +2676,6 @@ async function solChatSend(){
     result=normalizeSol(result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1'));
     solChatHistory.push({role:'user',content:userMsg},{role:'assistant',content:result});
     solChatAddMsg('ai',result);
-    document.getElementById('eSol').value=result;
-    if(CLOUD_READY&&editingId){
-      const now=new Date().toISOString();
-      await sb.from('questions').update({sol:result,updated_at:now}).eq('id',editingId);
-      const it=DB.find(x=>x.id===editingId);if(it){it.sol=result;it.updatedAt=now;}render();
-    }
   }catch(e){solChatAddMsg('ai','❌ 修正失敗：'+e.message);}
   finally{btn.textContent='送出';btn.disabled=false;}
 }
