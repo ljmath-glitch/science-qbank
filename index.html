@@ -156,7 +156,22 @@
   table.report th{background:#f0ece2}
   @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
   @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
-  @media(max-width:860px){.layout{grid-template-columns:1fr}}
+  .side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+  .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
+  .filter-fab{display:none;position:fixed;bottom:76px;right:16px;z-index:400;width:50px;height:50px;border-radius:50%;background:var(--phy);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);align-items:center;justify-content:center;transition:.2s}
+  .filter-fab:hover{transform:scale(1.08)}
+  .filter-fab.has-filter{background:var(--accent)}
+  .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:490;opacity:0;transition:opacity .3s}
+  .side-overlay.show{opacity:1}
+  @media(max-width:860px){
+    .layout{grid-template-columns:1fr}
+    .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:500;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
+    .side.drawer-open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2)}
+    .side-close{display:block}
+    .side-overlay.show{display:block}
+    .filter-fab{display:inline-flex}
+  }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
   .bell-badge{display:none;position:absolute;top:-2px;right:-2px;background:#e53935;color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 3px;font-family:inherit;pointer-events:none}
@@ -214,7 +229,8 @@
   </div>
 
   <div class="layout">
-    <aside class="panel side">
+    <aside class="panel side" id="filterPanel">
+      <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
       <div class="grid2">
@@ -3228,6 +3244,53 @@ function ibLockSubmit(){
   } else {
     setTimeout(()=>document.getElementById('ibLockInput').focus(),100);
   }
+})();
+</script>
+<div class="side-overlay" id="sideOverlay" onclick="closeFilterDrawer()"></div>
+<button class="filter-fab" id="filterFab" onclick="openFilterDrawer()" title="篩選條件">⚙</button>
+<script>
+(function(){
+  function updateSideSticky(){
+    if(window.innerWidth<=860) return;
+    var tb=document.querySelector('.toolbar-outer');
+    var side=document.getElementById('filterPanel');
+    if(!tb||!side) return;
+    var h=tb.getBoundingClientRect().height;
+    side.style.top=(h+10)+'px';
+    side.style.maxHeight='calc(100vh - '+(h+20)+'px)';
+  }
+  if(window.ResizeObserver){
+    var ro=new ResizeObserver(updateSideSticky);
+    var tb=document.querySelector('.toolbar-outer');
+    if(tb) ro.observe(tb);
+  }
+  window.addEventListener('resize',updateSideSticky);
+  setTimeout(updateSideSticky,200);
+  window.openFilterDrawer=function(){
+    document.getElementById('filterPanel').classList.add('drawer-open');
+    document.getElementById('sideOverlay').classList.add('show');
+    document.body.style.overflow='hidden';
+  };
+  window.closeFilterDrawer=function(){
+    document.getElementById('filterPanel').classList.remove('drawer-open');
+    document.getElementById('sideOverlay').classList.remove('show');
+    document.body.style.overflow='';
+  };
+  function hookFab(){
+    var inputs=['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'];
+    function checkFab(){
+      var fab=document.getElementById('filterFab'); if(!fab) return;
+      var active=inputs.some(function(id){var el=document.getElementById(id);return el&&el.value;});
+      var flagCb=document.getElementById('fFlag');
+      if(flagCb&&flagCb.checked) active=true;
+      fab.classList.toggle('has-filter',active);
+      fab.textContent=active?'⚙*':'⚙';
+    }
+    inputs.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('change',checkFab);});
+    var flagEl=document.getElementById('fFlag');if(flagEl)flagEl.addEventListener('change',checkFab);
+    checkFab();
+  }
+  window.addEventListener('load',function(){setTimeout(hookFab,500);});
 })();
 </script>
 </body>
