@@ -917,8 +917,8 @@ function normalizeRow(row){
   }
 
   const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
-  const examAnon = (row.exam||'').replace(/^[^-]+國中/, 'XX國中');
-  const srcParts = [row.year, examAnon, row.no?`第${row.no}題`:''].filter(Boolean);
+  const examName = (row.exam||'').replace(/^(.+?)(?:高中|高級中學)(?:附設)?國中部(-)/,'$1國中$2');
+  const srcParts = [row.year, examName, row.no?`第${row.no}題`:''].filter(Boolean);
 
   return {
     id: row.id,
