@@ -695,6 +695,9 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <div class="report-btns" style="margin-top:16px">
     <button class="report-submit" onclick="closeRules()">了解了</button>
   </div>
+  <div style="margin-top:18px;padding-top:14px;border-top:1px solid #eee;text-align:center">
+    <button onclick="resetHistory()" style="font-size:12px;color:#999;background:none;border:1px solid #ddd;border-radius:8px;padding:5px 14px;cursor:pointer;font-family:inherit">🗑 清除所有答題記錄（重新開始）</button>
+  </div>
 </div>
 
 <!-- Lock Modal -->
@@ -914,7 +917,8 @@ function normalizeRow(row){
   }
 
   const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
-  const srcParts = [row.year, row.school, row.exam, row.no?`第${row.no}題`:''].filter(Boolean);
+  const examAnon = (row.exam||'').replace(/^[^-]+國中/, 'XX國中');
+  const srcParts = [row.year, examAnon, row.no?`第${row.no}題`:''].filter(Boolean);
 
   return {
     id: row.id,
@@ -961,7 +965,7 @@ async function loadDailyQuestion(offset, sidx=0){
     let row;
     if(sidx === 0){
       // 每日一題：依日期固定 offset，pin 確保刷新不變
-      const pinKey = 'dq_pin_' + getHistKey(offset, 0);
+      const pinKey = 'dq_pin_' + getHistKey(offset);
       const pinned = localStorage.getItem(pinKey);
       let qOffset;
       if(pinned !== null){ qOffset = parseInt(pinned,10); }
@@ -1058,7 +1062,14 @@ const WEEKDAYS=['日','一','二','三','四','五','六'];
 function getHistory(){return JSON.parse(localStorage.getItem(KEY_HIST)||'{}')}
 function saveHistory(h){localStorage.setItem(KEY_HIST,JSON.stringify(h))}
 function dateStr(offset=0){const d=new Date();d.setDate(d.getDate()+offset);return d.toISOString().slice(0,10);}
-function getHistKey(offset,sidx){return sidx===0?dateStr(offset):dateStr(offset)+'_s'+sidx;}
+function getHistKey(offset){return dateStr(offset);}
+function newPracticeHistKey(){
+  const KEY='dq_pk_'+dateStr(0);
+  const n=parseInt(localStorage.getItem(KEY)||'0')+1;
+  localStorage.setItem(KEY,n);
+  // '_z' sorts after '_a','_p','_s' (legacy formats); zero-pad ensures _z002>'_z001'
+  return dateStr(0)+'_z'+String(n).padStart(3,'0');
+}
 
 function checkAbsenceReset(){
   const today=dateStr(0);
@@ -1089,6 +1100,7 @@ function checkAbsenceReset(){
 // ═══════════════════════════════════════════════════════════════
 let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
 let sessionIdx=0;
+let _lastRevealRec=null; // practice mode: stores the just-revealed record for badge rendering
 let explanationRead=false;
 
 // ═══════════════════════════════════════════════════════════════
@@ -1152,11 +1164,12 @@ function renderCharacter(){
   }).join('');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
-  // 5題循環點點 → spec-center-label
+  // 5題循環點點 → spec-center-label（只顯示每日一題，不含練習）
   const dots=Array.from({length:5},(_,i)=>{
     if(i<currentCycle.length) return currentCycle[i][1].correct?'correct':'wrong';
     return 'empty';
   });
+  // streak：每日一題＋練習模式都算，從最近一筆往回數，遇到第一個錯就停
   const allEntries=Object.entries(hist).sort(([a],[b])=>a.localeCompare(b));
   let streak=0;
   for(let i=allEntries.length-1;i>=0;i--){if(allEntries[i][1].correct)streak++;else break;}
@@ -1190,17 +1203,13 @@ function renderTasks(){
   warmBadge.textContent=todayRec?'✓ 完成':'0 / 1 題';
   warmBadge.className=todayRec?'task-badge done-badge':'task-badge todo-badge';
 
-  let streak=0;
-  const _todayRec=hist[dateStr(0)];
-  // 今天答錯 → streak = 0；今天未答 → 從昨天算起；今天答對 → 從今天算起
-  if(!(_todayRec&&!_todayRec.correct)){
-    const _start=_todayRec?.correct?0:-1;
-    for(let i=_start;i>=-365;i--){if(hist[dateStr(i)]?.correct)streak++;else break;}
-  }
-  const STREAK_GOAL=7;
-  document.getElementById('challengeFill').style.width=Math.min(100,Math.round(streak/STREAK_GOAL*100))+'%';
-  document.getElementById('challengeBadge').textContent=streak+' 連勝';
-  document.getElementById('challengeDesc').textContent=`目標：${STREAK_GOAL} 連勝（再答對 ${Math.max(0,STREAK_GOAL-streak)} 題）`;
+  let weekCorrect=0;
+  for(let i=-6;i<=0;i++){const r=hist[dateStr(i)];if(r&&r.correct)weekCorrect++;}
+  const WEEK_GOAL=7;
+  document.getElementById('challengeFill').style.width=Math.min(100,Math.round(weekCorrect/WEEK_GOAL*100))+'%';
+  document.getElementById('challengeBadge').textContent=`${weekCorrect} / ${WEEK_GOAL}`;
+  document.getElementById('challengeBadge').className=weekCorrect>=WEEK_GOAL?'task-badge done-badge':'task-badge todo-badge';
+  document.getElementById('challengeDesc').textContent=`本週每日一題答對 ${weekCorrect} 天，目標 ${WEEK_GOAL} 天`;
 
   let weekDone=0;
   for(let i=-6;i<=0;i++)if(hist[dateStr(i)])weekDone++;
@@ -1252,13 +1261,19 @@ const DIFF_CSS={簡單:'d1',中等:'d2',困難:'d3',極難:'d4'};
 function renderQuestion(){
   const q=currentQuestion;
   if(!q) return;
-  const hist=getHistory();
-  const key=getHistKey(currentOffset,sessionIdx);
-  let rec=hist[key];
-  // Discard stale record if it belongs to a different question (qid mismatch)
-  if(rec && rec.qid && rec.qid !== q.id) rec = null;
-  selectedOpt=rec?rec.selected:null;
-  revealed=!!rec;
+  let rec=null;
+  if(sessionIdx===0){
+    // 每日一題：從 localStorage 恢復已答狀態
+    const hist=getHistory();
+    const key=getHistKey(currentOffset);
+    rec=hist[key];
+    if(rec && rec.qid && rec.qid !== q.id) rec=null;
+    selectedOpt=rec?rec.selected:null;
+    revealed=!!rec;
+  } else if(revealed){
+    // 練習模式已揭曉：用 reveal() 儲存的 record 顯示徽章
+    rec=_lastRevealRec;
+  }
 
   // session counter in date sub
   if(sessionIdx>0){
@@ -1430,11 +1445,13 @@ function selectOpt(i){
 
 function reveal(){
   const q=currentQuestion; if(!q) return;
-  const key=getHistKey(currentOffset,sessionIdx);
+  const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
   const hist=getHistory();
   const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
-  hist[key]={selected:selectedOpt,correct,qid:q.id};
+  const histRec={selected:selectedOpt,correct,qid:q.id};
+  hist[key]=histRec;
   saveHistory(hist);
+  if(sessionIdx>0) _lastRevealRec=histRec;
 
   const histAfter=getHistory();
   const{upgradeScore:scoreAfter}=calcUpgradeScore(histAfter);
@@ -1459,6 +1476,7 @@ function nextQuestion(){
   sessionIdx++;
   selectedOpt=null;
   revealed=false;
+  _lastRevealRec=null;
   document.getElementById('explainCard').classList.remove('show');
   document.getElementById('resultBadge').className='result-badge';
   loadAndRender();
@@ -1507,6 +1525,18 @@ function openRules(){
 function closeRules(){
   document.getElementById('rulesOverlay').style.display='none';
   document.getElementById('rulesBox').style.display='none';
+}
+function resetHistory(){
+  if(!confirm('確定要清除所有答題記錄嗎？等級和進度會歸零，無法復原。')) return;
+  const toRemove=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k&&(k==='dq_history'||k==='dq_reset_debt'||k==='dq_practice_seen'||k.startsWith('dq_pk_')||k.startsWith('dq_pin_')))
+      toRemove.push(k);
+  }
+  toRemove.forEach(k=>localStorage.removeItem(k));
+  closeRules();
+  location.reload();
 }
 function openLockModal(){
   document.getElementById('lockInput').value='';
