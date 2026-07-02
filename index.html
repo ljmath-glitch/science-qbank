@@ -204,20 +204,20 @@
     header .wrap{gap:8px;padding:0 12px}
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
-    /* === 工具列 ⋮ 排列按鈕：手機不支援拖拉，隱藏 === */
-    .toolbar-outer{padding-top:4px}
+    /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
+    .toolbar-outer{padding:0 0 6px!important}
     #tbEditBtn,#tbResetBtn{display:none!important}
 
-    /* === 每列：標籤在上、按鈕橫捲在下 === */
-    .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:4px 0 6px;clear:both}
-    .tb-row+.tb-row{margin-top:4px;padding-top:6px}
-    .tb-row-label{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--line);border-radius:0;padding:2px 4px 4px;margin-right:0;letter-spacing:0;justify-content:flex-start;align-self:auto;height:auto;font-size:11px}
-    .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 0 4px;overflow-x:visible}
+    /* === 每列：標籤在上、按鈕 grid 在下 === */
+    .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:0;clear:both}
+    .tb-row+.tb-row{margin-top:0;border-top:1px solid var(--line)}
+    .tb-row-label{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--line);border-radius:0;padding:6px 10px 4px;margin-right:0;letter-spacing:0;justify-content:flex-start;align-self:auto;height:auto;font-size:11px}
+    .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 6px;overflow-x:visible;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr}
-    .toolbar-outer .tb-item{width:100%}
-    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 6px!important;font-size:12px!important;width:100%!important;box-sizing:border-box}
+    .toolbar-outer .tb-item{width:100%;display:flex}
+    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
     .toolbar-outer select{height:40px!important;font-size:12px!important;width:100%!important;box-sizing:border-box}
-    .toolbar-outer .stat{width:100%;text-align:center}
+    .toolbar-outer .stat{width:100%;text-align:center;padding:4px 0}
 
     /* === 統計行 === */
     .tb-row-stat .tb-btn-scroll{flex-wrap:wrap!important;gap:4px}
