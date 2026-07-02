@@ -1685,7 +1685,7 @@ function openPaperDlg(){
   document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:'';
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
-  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?'XX國中':'',shortRnd?'('+shortRnd+')':''].join(''):'';
+  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?normalizeSchool(sc):'',shortRnd?'('+shortRnd+')':''].join(''):'';
   paperDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
@@ -2939,13 +2939,20 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
   lines.push('}');
   return lines.join('\n');
 }
+function normalizeSchool(s){
+  if(!s)return s;
+  // "XX高中國中部" / "XX高中附設國中部" / "XX高級中學國中部" → "XX國中"
+  var m=s.match(/^(.+?)(?:高中|高級中學)(?:附設)?國中部$/);
+  if(m)return m[1]+'國中';
+  return s;
+}
 function getSource(it){
   var year=it.year||'';
   var school=it.school||'';
   var exam=it.exam||'';
   if(!year&&!school)return '';
   if(exam.indexOf('會考')>=0)return year+'會考';
-  return year+(school?'XX國中':'');
+  return year+normalizeSchool(school);
 }
 function latexToWordHtml(latex){
   var t=latex;
