@@ -404,7 +404,7 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center"><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><input id="ollamaModel" type="text" placeholder="模型（如 llama3.2）" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:110px;font-family:inherit" oninput="localStorage.setItem('ollamaModel',this.value)"></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center"><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><input id="ollamaModel" type="text" placeholder="模型（如 llama3.2）" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:110px;font-family:inherit" oninput="localStorage.setItem('ollamaModel',this.value)"><button type="button" onclick="detectOllama()" title="自動偵測 Ollama" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">🔍</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
       <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
@@ -2491,6 +2491,25 @@ async function callOpenAI(sys,msg,key,imgs=[]){
     }else throw new Error(msg2);
   }
   return (await r.json()).choices[0].message.content.trim();
+}
+async function detectOllama(){
+  const btn=event.target;btn.textContent='⏳';btn.disabled=true;
+  const candidates=['http://localhost:11434','http://CHIAs-MacBook-Pro.local:11434'];
+  for(const base of candidates){
+    try{
+      const r=await fetch(base+'/api/tags',{signal:AbortSignal.timeout(2500)});
+      if(r.ok){
+        localStorage.setItem('ollamaUrl',base);
+        const urlEl=document.getElementById('ollamaUrl');if(urlEl)urlEl.value=base;
+        btn.textContent='✅';btn.disabled=false;
+        setTimeout(()=>{btn.textContent='🔍';},2000);
+        return;
+      }
+    }catch(e){}
+  }
+  btn.textContent='❌';btn.disabled=false;
+  setTimeout(()=>{btn.textContent='🔍';},2000);
+  alert('找不到 Ollama，請確認 MacBook 已開啟且在同一 Wi-Fi／網路');
 }
 async function callOllama(sys,msg,baseUrl,model,imgs=[]){
   const url=(baseUrl||'http://localhost:11434').replace(/\/+$/,'')+'/v1/chat/completions';
