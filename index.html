@@ -242,9 +242,9 @@
     <aside class="panel side" id="filterPanel">
       <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
+      <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
       <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option></select></div>
       <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
-      <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
       <div class="grid2">
         <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
