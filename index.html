@@ -173,6 +173,7 @@
       align-items:stretch;
       margin-bottom:0;
       z-index:10;
+      transition:top .28s cubic-bezier(.4,0,.2,1),height .28s cubic-bezier(.4,0,.2,1);
     }
     .side{height:100%;position:static!important;max-height:none;border-radius:10px 10px 0 0}
     .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
@@ -3264,26 +3265,36 @@ function ibLockSubmit(){
 <script>
 (function(){
   function updateSideSticky(){
-    var tb=document.querySelector('.toolbar-outer');
+    var tbEl=document.querySelector('.toolbar-outer');
     var layout=document.querySelector('.layout');
-    if(!tb||!layout) return;
-    var h=tb.offsetHeight;
-    document.documentElement.style.setProperty('--tb-h', (h+8)+'px');
-    if(window.innerWidth>860){
-      layout.style.height='calc(100vh - '+h+'px)';
-      layout.style.top=h+'px';
-    } else {
-      layout.style.height='';
-      layout.style.top='';
+    if(!tbEl||!layout||window.innerWidth<=860) return;
+    // Detect collapse: tbHide() sets style.top to large negative value
+    var tbStyleTop=parseFloat(tbEl.style.top||'0');
+    var collapsed=tbStyleTop<-1;
+    var h=collapsed?0:(tbEl.offsetHeight+8);
+    document.documentElement.style.setProperty('--tb-h',h+'px');
+    layout.style.top=h+'px';
+    layout.style.height='calc(100vh - '+h+'px)';
+  }
+  (function(){
+    var tbEl=document.querySelector('.toolbar-outer');
+    var layout=document.querySelector('.layout');
+    if(!tbEl) return;
+    // Watch toolbar height changes (rows added/removed)
+    if(window.ResizeObserver){
+      new ResizeObserver(updateSideSticky).observe(tbEl);
     }
-  }
-  if(window.ResizeObserver){
-    var ro=new ResizeObserver(updateSideSticky);
-    var tb=document.querySelector('.toolbar-outer');
-    if(tb) ro.observe(tb);
-  }
-  window.addEventListener('resize',updateSideSticky);
-  setTimeout(updateSideSticky,200);
+    // Watch toolbar collapse/expand (style.top changes)
+    if(window.MutationObserver){
+      new MutationObserver(updateSideSticky).observe(tbEl,{attributes:true,attributeFilter:['style']});
+    }
+    window.addEventListener('resize',updateSideSticky);
+    // Reset transition temporarily on resize to avoid janky animation
+    window.addEventListener('resize',function(){
+      if(layout){layout.style.transition='none';setTimeout(function(){layout.style.transition='';},50);}
+    });
+    setTimeout(updateSideSticky,300);
+  })();
   window.openFilterDrawer=function(){
     document.getElementById('filterPanel').classList.add('drawer-open');
     document.getElementById('sideOverlay').classList.add('show');
