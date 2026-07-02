@@ -951,34 +951,12 @@ async function uploadImgs(imgs,qid){const out=[];
   return out;}
 function normalizeSol(s){
   if(!s)return s;
-  // Ensure section headers start on their own line with spacing
-  s=s.replace(/([^
-])(【解題關鍵】)/g,'$1
-$2');   // 【解題關鍵】
-  s=s.replace(/([^
-])(【詳解】)/g,'$1
-
-$2');             // 【詳解】
-  s=s.replace(/([^
-])(【觀念補充】)/g,'$1
-
-$2'); // 【觀念補充】
-  // Ensure line break after section headers
-  s=s.replace(/(【解題關鍵】)[ 	]*/g,'$1
-');
-  s=s.replace(/(【詳解】)[ 	]*/g,'$1
-');
-  s=s.replace(/(【觀念補充】)[ 	]*/g,'$1
-');
-  // Ensure each option (A)(B)(C)(D) starts on its own line
-  s=s.replace(/([^
-])\(([ABCDabcd])\)\s*/g,'$1
-($2) ');
-  // Collapse 3+ consecutive newlines to 2
-  s=s.replace(/
-{3,}/g,'
-
-');
+  s=s.replace(/(\u3010\u89E3\u984C\u95DC\u9375\u3011)/g,'\n$1');
+  s=s.replace(/(\u3010\u8A73\u89E3\u3011)/g,'\n\n$1');
+  s=s.replace(/(\u3010\u89C0\u5FF5\u88DC\u5145\u3011)/g,'\n\n$1');
+  s=s.replace(/(【解題關鍵】|【詳解】|【觀念補充】)([ \t]*)/g,'$1\n');
+  s=s.replace(/([^\n])\(([ABCDabcd])\)[ \t]*/g,'$1\n($2) ');
+  s=s.replace(/\n{3,}/g,'\n\n');
   return s.trim();
 }
 
