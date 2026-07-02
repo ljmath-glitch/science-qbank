@@ -184,6 +184,12 @@
     .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
   }
   @media(max-width:860px){
+    /* === Dialog 全螢幕 === */
+    dialog{width:100%!important;max-width:100%!important;border-radius:14px 14px 0 0;margin:auto auto 0;max-height:92dvh}
+    .dlg-body{padding:12px 14px;max-height:calc(92dvh - 110px)}
+    .dlg-foot{padding:10px 14px}
+    .grid4{grid-template-columns:1fr 1fr!important;gap:8px}
+
     /* === 版面 === */
     .wrap{padding:0}
     .layout{grid-template-columns:1fr;margin-left:28px;margin-right:28px}
