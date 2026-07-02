@@ -107,6 +107,12 @@
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
   .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px}
+  .sol-chat-wrap{border:1px solid #b3d9c8;border-radius:8px;background:#f5fbf8;margin-top:6px}
+  .sol-chat-head{padding:7px 12px;font-size:12px;color:#1f6f5c;font-weight:700;border-bottom:1px solid #b3d9c8}
+  .sol-chat-log{padding:8px 12px;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+  .sol-chat-user{background:#d6efde;border-radius:10px 10px 2px 10px;padding:6px 10px;font-size:12px;align-self:flex-end;max-width:88%;white-space:pre-wrap;word-break:break-word}
+  .sol-chat-ai{background:#fff;border:1px solid #c5dfd4;border-radius:10px 10px 10px 2px;padding:6px 10px;font-size:12px;align-self:flex-start;max-width:88%;white-space:pre-wrap;word-break:break-word;color:#1f6f5c}
+  .sol-chat-foot{display:flex;gap:6px;padding:8px 10px;border-top:1px solid #b3d9c8;align-items:flex-end}
   .sectionhead{font-family:inherit;font-size:12px;font-weight:700;color:var(--accent);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);letter-spacing:1px}
   .dlg-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:#faf8f3;flex-wrap:wrap}
   .x{cursor:pointer;font-size:20px;line-height:1;background:none;border:none;color:#f4f1ea}
@@ -405,6 +411,14 @@
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
     <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center"><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><input id="ollamaModel" type="text" placeholder="模型（如 llama3.2）" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:110px;font-family:inherit" oninput="localStorage.setItem('ollamaModel',this.value)"><button type="button" onclick="detectOllama()" title="自動偵測 Ollama" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">🔍</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div id="solChatWrap" class="sol-chat-wrap" style="display:none">
+      <div class="sol-chat-head">💬 詳解有誤？與 AI 討論修正</div>
+      <div class="sol-chat-log" id="solChatLog"></div>
+      <div class="sol-chat-foot">
+        <textarea id="solChatInput" placeholder="告訴 AI 哪裡不對，例如：選項B說明有誤，應該是…（Ctrl+Enter 送出）" rows="2" style="flex:1;resize:vertical;font-size:13px;font-family:inherit;border:1px solid var(--line);border-radius:6px;padding:6px 8px"></textarea>
+        <button type="button" id="solChatSendBtn" class="btn sm primary" onclick="solChatSend()" style="margin-bottom:2px;white-space:nowrap">送出</button>
+      </div>
+    </div>
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
       <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
@@ -2589,6 +2603,10 @@ async function generateSol(){
     }
     document.getElementById('eSol').value=result;
     if(aiAns){const eAns=document.getElementById('eAns');if(eAns)eAns.value=aiAns;}
+    // 顯示對話框（重置上一次的對話記錄）
+    solChatHistory=[];
+    document.getElementById('solChatLog').innerHTML='';
+    document.getElementById('solChatWrap').style.display='';
     if(CLOUD_READY&&editingId){
       const now=new Date().toISOString();
       const upd={sol:result,updated_at:now};if(aiAns)upd.ans=aiAns;
@@ -2601,6 +2619,54 @@ async function generateSol(){
     if(provider!=='ollama'&&(e.message.includes('401')||e.message.includes('authentication')||e.message.includes('API_KEY_INVALID'))){localStorage.removeItem('aiKey_'+provider);alert('API Key 無效，已清除，請重試時重新輸入。');}
   }finally{btn.textContent='✨ AI 生成詳解';btn.disabled=false;}
 }
+
+let solChatHistory=[];
+function solChatAddMsg(role,text){
+  const log=document.getElementById('solChatLog');
+  const div=document.createElement('div');
+  div.className=role==='user'?'sol-chat-user':'sol-chat-ai';
+  div.textContent=text;
+  log.appendChild(div);
+  log.scrollTop=log.scrollHeight;
+}
+async function solChatSend(){
+  const input=document.getElementById('solChatInput');
+  const userMsg=input.value.trim();if(!userMsg)return;
+  const provider=document.getElementById('aiProvider')?.value||localStorage.getItem('aiProvider')||'claude';
+  const key=getAIKey(provider);if(!key)return;
+  const q=document.getElementById('eQ').value.trim();
+  const ans=document.getElementById('eAns').value.trim();
+  const currentSol=document.getElementById('eSol').value.trim();
+  solChatAddMsg('user',userMsg);
+  input.value='';
+  const btn=document.getElementById('solChatSendBtn');
+  btn.textContent='修正中…';btn.disabled=true;
+  try{
+    const sys='你是一位臺灣自然科教師，正在修正國中會考題目的詳解。使用繁體中文。只輸出修改後的完整詳解（格式維持【解題關鍵】【詳解】【觀念補充】），不輸出其他說明。\nLaTeX規則：只用 $...$，不用 $$...$$、\\[...\\]、\\(...\\)。';
+    let histCtx='';
+    if(solChatHistory.length>0)histCtx='\n\n【本次已修正過的記錄】\n'+solChatHistory.filter(h=>h.role==='user').map((h,i)=>`第${i+1}次修正要求：${h.content}`).join('\n');
+    const msg=`【題目】\n${q}\n\n【正確答案】\n${ans||'未提供'}\n\n【目前詳解（請以此為基礎修改）】\n${currentSol}${histCtx}\n\n【修正要求】\n${userMsg}\n\n請輸出修改後的完整詳解：`;
+    let result;
+    if(provider==='claude')result=await callClaude(sys,msg,key,[]);
+    else if(provider==='gemini')result=await callGemini(sys,msg,key,[]);
+    else if(provider==='ollama'){const olUrl=localStorage.getItem('ollamaUrl')||'http://localhost:11434';const olMdl=localStorage.getItem('ollamaModel')||'llama3.2';result=await callOllama(sys,msg,olUrl,olMdl,[]);}
+    else result=await callOpenAI(sys,msg,key,[]);
+    result=normalizeSol(result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1'));
+    solChatHistory.push({role:'user',content:userMsg},{role:'assistant',content:result});
+    solChatAddMsg('ai',result);
+    document.getElementById('eSol').value=result;
+    if(CLOUD_READY&&editingId){
+      const now=new Date().toISOString();
+      await sb.from('questions').update({sol:result,updated_at:now}).eq('id',editingId);
+      const it=DB.find(x=>x.id===editingId);if(it){it.sol=result;it.updatedAt=now;}render();
+    }
+  }catch(e){solChatAddMsg('ai','❌ 修正失敗：'+e.message);}
+  finally{btn.textContent='送出';btn.disabled=false;}
+}
+// Ctrl+Enter 在聊天框送出
+document.addEventListener('keydown',function(e){
+  if(e.target.id==='solChatInput'&&(e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();solChatSend();}
+});
 
 async function batchGenerateSol(){
   const provider=document.getElementById('batchProvider')?.value||document.getElementById('aiProvider')?.value||AI_CFG.provider||localStorage.getItem('aiProvider')||'gemini';
