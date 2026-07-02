@@ -1050,10 +1050,12 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   });
   if(!adds.length){alert('沒有可匯入的題目');return}
   // ===== 重複偵測 =====
-  const dupQuestions=adds.filter(it=>it.no&&DB.some(ex=>ex.exam===it.exam&&ex.no===it.no));
-  const newExams=[...new Set(adds.map(it=>it.exam).filter(Boolean))];
-  const dupExams=newExams.filter(exam=>DB.some(ex=>ex.exam===exam));
-  if(dupQuestions.length||dupExams.length){
+  // 建立 DB 所有考試名稱集合（含兩種格式比對）
+  const dbExamSet=new Set(DB.map(x=>x.exam).filter(Boolean));
+  const newExamSet=[...new Set(adds.map(it=>it.exam).filter(Boolean))];
+  const dupExams=newExamSet.filter(e=>dbExamSet.has(e));
+  const dupQuestions=adds.filter(it=>it.no&&DB.some(ex=>ex.exam===it.exam&&String(ex.no)===String(it.no)));
+  if(dupExams.length||dupQuestions.length){
     let msg='⚠️ 發現重複內容，繼續匯入將覆蓋現有資料：\n\n';
     if(dupExams.length){
       msg+='【考卷名稱已有資料】\n';
@@ -1061,13 +1063,15 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       msg+='\n';
     }
     if(dupQuestions.length){
-      msg+='【相同考卷＋題號的題目】\n';
+      msg+='【相同考卷＋題號】\n';
       dupQuestions.slice(0,10).forEach(it=>{msg+=`• ${it.exam} 第 ${it.no} 題\n`;});
-      if(dupQuestions.length>10)msg+=`• …以及另外 ${dupQuestions.length-10} 題\n`;
+      if(dupQuestions.length>10)msg+=`  …以及另外 ${dupQuestions.length-10} 題\n`;
       msg+='\n';
     }
     msg+='是否仍要繼續匯入？';
-    if(!confirm(msg))return;
+    importDlg.close();
+    const go=confirm(msg);
+    if(!go)return;
   }
   if(passageAdds.length){const {error:pe}=await sb.from('questions').upsert(passageAdds.map(toRow));if(pe)console.error('題組文章儲存失敗',pe.message);}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
