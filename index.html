@@ -1696,7 +1696,7 @@ function openPaperDlg(){
   document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:'';
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
-  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),(sc?sc+(et==='段考'||et===''?'國中':''):''),shortRnd?'('+shortRnd+')':''].join(''):'';
+  document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?'XX國中':'',shortRnd?'('+shortRnd+')':''].join(''):'';
   paperDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
@@ -2950,7 +2950,7 @@ function getSource(it){
   var exam=it.exam||'';
   if(!year&&!school)return '';
   if(exam.indexOf('會考')>=0)return year+'會考';
-  return year+school;
+  return year+(school?'XX國中':'');
 }
 function latexToWordHtml(latex){
   var t=latex;
