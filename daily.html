@@ -917,7 +917,7 @@ function normalizeRow(row){
   }
 
   const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
-  const srcParts = [row.year, row.school, row.exam, row.no?`第${row.no}題`:''].filter(Boolean);
+  const srcParts = [row.year, row.exam, row.no?`第${row.no}題`:''].filter(Boolean);
 
   return {
     id: row.id,
