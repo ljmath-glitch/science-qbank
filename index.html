@@ -949,6 +949,39 @@ async function uploadImgs(imgs,qid){const out=[];
     }else out.push(im); // 已是 URL 或舊 base64：原樣保留
   }
   return out;}
+function normalizeSol(s){
+  if(!s)return s;
+  // Ensure section headers start on their own line with spacing
+  s=s.replace(/([^
+])(【解題關鍵】)/g,'$1
+$2');   // 【解題關鍵】
+  s=s.replace(/([^
+])(【詳解】)/g,'$1
+
+$2');             // 【詳解】
+  s=s.replace(/([^
+])(【觀念補充】)/g,'$1
+
+$2'); // 【觀念補充】
+  // Ensure line break after section headers
+  s=s.replace(/(【解題關鍵】)[ 	]*/g,'$1
+');
+  s=s.replace(/(【詳解】)[ 	]*/g,'$1
+');
+  s=s.replace(/(【觀念補充】)[ 	]*/g,'$1
+');
+  // Ensure each option (A)(B)(C)(D) starts on its own line
+  s=s.replace(/([^
+])\(([ABCDabcd])\)\s*/g,'$1
+($2) ');
+  // Collapse 3+ consecutive newlines to 2
+  s=s.replace(/
+{3,}/g,'
+
+');
+  return s.trim();
+}
+
 function parseSyl(raw){return raw.split('\n').map(l=>l.split('|').map(s=>s.trim())).filter(a=>a.length>=5&&a[4]).map(a=>({book:a[0],bookName:a[1],field:a[2],unit:a[3],sub:a[4]}))}
 
 /* ===== 難度計算 ===== */
@@ -966,7 +999,7 @@ function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.repla
 function openImport(){csvArea.value='';importDlg.showModal()}
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
-    const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws);};r.readAsArrayBuffer(f);
+    const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
   }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位（23欄新格式）: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目 20詳解 21題組文章 22題組ID
 // 22欄舊格式相容: 19題目 20詳解 21題組ID（題組文章藏在題目欄以【題幹】分隔）
@@ -985,7 +1018,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
       flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19).replace(/承第\s*\d+\s*題/g,'承上題'),
-      sol:r.length>=22?g(20):'',
+      sol:r.length>=22?normalizeSol(g(20)):'',
       _passage:is23?g(21).replace(/承第\s*\d+\s*題/g,'承上題'):'',
       groupId:is23?(g(22)||''):r.length>=22?(g(21)||''):(g(20)||''),
       imgs:[]};
@@ -2476,7 +2509,7 @@ async function generateSol(){
     else if(provider==='gemini')result=await callGemini(sys,msg,key,qImgs);
     else if(provider==='ollama'){const olUrl=localStorage.getItem('ollamaUrl')||'http://localhost:11434';const olMdl=localStorage.getItem('ollamaModel')||'llama3.2';result=await callOllama(sys,msg,olUrl,olMdl,qImgs);}
     else result=await callOpenAI(sys,msg,key,qImgs);
-    result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
+    result=normalizeSol(result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1'));
     // 若原本沒有答案，嘗試從「【AI 判斷答案】X」提取並填入
     let aiAns='';
     if(!ans){
@@ -2555,7 +2588,7 @@ async function batchGenerateSol(){
       }
     }
     if(success){
-      result=result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1');
+      result=normalizeSol(result.replace(/\*\*([^*]*)\*\*/g,'$1').replace(/__([^_]*)__/g,'$1').replace(/^#{1,3}\s*/gm,'').replace(/\*([^*]+)\*/g,'$1'));
       it.sol=result;
       if(CLOUD_READY){
         const now=new Date().toISOString();
