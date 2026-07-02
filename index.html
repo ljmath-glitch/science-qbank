@@ -159,9 +159,9 @@
   .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
   .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
-  .filter-fab{display:none;position:fixed;bottom:76px;right:16px;z-index:400;width:50px;height:50px;border-radius:50%;background:var(--phy);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);align-items:center;justify-content:center;transition:.2s}
-  .filter-fab:hover{transform:scale(1.08)}
-  .filter-fab.has-filter{background:var(--accent)}
+  .filter-tab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:501;background:var(--card);border:1px solid var(--line);border-left:none;border-radius:0 10px 10px 0;box-shadow:3px 0 10px rgba(0,0,0,.18);cursor:pointer;width:26px;padding:22px 0;font-size:11px;font-weight:700;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;transition:left .3s cubic-bezier(.4,0,.2,1),background .15s;user-select:none;border:1px solid var(--line);border-left:none}
+  .filter-tab.has-filter{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .filter-tab.panel-open{left:min(320px,92vw)}
   .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:490;opacity:0;transition:opacity .3s}
   .side-overlay.show{opacity:1}
   @media(min-width:861px){
@@ -184,7 +184,12 @@
     .side.drawer-open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2)}
     .side-close{display:block}
     .side-overlay.show{display:block}
-    .filter-fab{display:inline-flex}
+    .filter-tab{display:inline-flex}
+    .tb-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px;padding:4px 2px}
+    .tb-row::-webkit-scrollbar{display:none}
+    .tb-row-label{display:none!important}
+    .tb-row+.tb-row{margin-top:4px;padding-top:6px}
+    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 16px!important;font-size:13px!important;flex-shrink:0}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -3308,7 +3313,7 @@ function ibLockSubmit(){
 })();
 </script>
 <div class="side-overlay" id="sideOverlay" onclick="closeFilterDrawer()"></div>
-<button class="filter-fab" id="filterFab" onclick="openFilterDrawer()" title="篩選條件">⚙</button>
+<button class="filter-tab" id="filterTab" onclick="toggleFilterDrawer()" aria-label="篩選條件">篩選</button>
 <script>
 (function(){
   function updateSideSticky(){
@@ -3341,31 +3346,33 @@ function ibLockSubmit(){
     });
     setTimeout(updateSideSticky,300);
   })();
-  window.openFilterDrawer=function(){
-    document.getElementById('filterPanel').classList.add('drawer-open');
-    document.getElementById('sideOverlay').classList.add('show');
-    document.body.style.overflow='hidden';
-  };
-  window.closeFilterDrawer=function(){
-    document.getElementById('filterPanel').classList.remove('drawer-open');
-    document.getElementById('sideOverlay').classList.remove('show');
-    document.body.style.overflow='';
-  };
-  function hookFab(){
+  var _filterOpen=false;
+  function _setFilterPanel(open){
+    _filterOpen=open;
+    document.getElementById('filterPanel').classList.toggle('drawer-open',open);
+    document.getElementById('sideOverlay').classList.toggle('show',open);
+    var tab=document.getElementById('filterTab');
+    if(tab)tab.classList.toggle('panel-open',open);
+    document.body.style.overflow=open?'hidden':'';
+  }
+  window.openFilterDrawer=function(){_setFilterPanel(true);};
+  window.closeFilterDrawer=function(){_setFilterPanel(false);};
+  window.toggleFilterDrawer=function(){_setFilterPanel(!_filterOpen);};
+  function hookTab(){
     var inputs=['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'];
-    function checkFab(){
-      var fab=document.getElementById('filterFab'); if(!fab) return;
+    function checkTab(){
+      var tab=document.getElementById('filterTab'); if(!tab) return;
       var active=inputs.some(function(id){var el=document.getElementById(id);return el&&el.value;});
       var flagCb=document.getElementById('fFlag');
       if(flagCb&&flagCb.checked) active=true;
-      fab.classList.toggle('has-filter',active);
-      fab.textContent=active?'⚙*':'⚙';
+      tab.classList.toggle('has-filter',active);
+      tab.textContent=active?'篩選*':'篩選';
     }
-    inputs.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('change',checkFab);});
-    var flagEl=document.getElementById('fFlag');if(flagEl)flagEl.addEventListener('change',checkFab);
-    checkFab();
+    inputs.forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('change',checkTab);});
+    var flagEl=document.getElementById('fFlag');if(flagEl)flagEl.addEventListener('change',checkTab);
+    checkTab();
   }
-  window.addEventListener('load',function(){setTimeout(hookFab,500);});
+  window.addEventListener('load',function(){setTimeout(hookTab,500);});
 })();
 </script>
 </body>
