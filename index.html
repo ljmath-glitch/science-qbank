@@ -156,7 +156,7 @@
   table.report th{background:#f0ece2}
   @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
   @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
-  .side{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
   .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
   .filter-fab{display:none;position:fixed;bottom:76px;right:16px;z-index:400;width:50px;height:50px;border-radius:50%;background:var(--phy);color:#fff;border:none;font-size:22px;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.3);align-items:center;justify-content:center;transition:.2s}
@@ -164,6 +164,19 @@
   .filter-fab.has-filter{background:var(--accent)}
   .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:490;opacity:0;transition:opacity .3s}
   .side-overlay.show{opacity:1}
+  @media(min-width:861px){
+    .layout{
+      position:sticky;
+      top:var(--tb-h,120px);
+      height:calc(100vh - var(--tb-h,120px));
+      overflow:hidden;
+      align-items:stretch;
+      margin-bottom:0;
+      z-index:10;
+    }
+    .side{height:100%;position:static!important;max-height:none;border-radius:10px 10px 0 0}
+    .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
+  }
   @media(max-width:860px){
     .layout{grid-template-columns:1fr}
     .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:500;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
@@ -3251,13 +3264,18 @@ function ibLockSubmit(){
 <script>
 (function(){
   function updateSideSticky(){
-    if(window.innerWidth<=860) return;
     var tb=document.querySelector('.toolbar-outer');
-    var side=document.getElementById('filterPanel');
-    if(!tb||!side) return;
-    var h=tb.getBoundingClientRect().height;
-    side.style.top=(h+10)+'px';
-    side.style.maxHeight='calc(100vh - '+(h+20)+'px)';
+    var layout=document.querySelector('.layout');
+    if(!tb||!layout) return;
+    var h=tb.offsetHeight;
+    document.documentElement.style.setProperty('--tb-h', (h+8)+'px');
+    if(window.innerWidth>860){
+      layout.style.height='calc(100vh - '+h+'px)';
+      layout.style.top=h+'px';
+    } else {
+      layout.style.height='';
+      layout.style.top='';
+    }
   }
   if(window.ResizeObserver){
     var ro=new ResizeObserver(updateSideSticky);
