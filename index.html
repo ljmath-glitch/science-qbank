@@ -1049,6 +1049,26 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       step:0,mem:0,con:0,chart:'',basis:'',flag:false});
   });
   if(!adds.length){alert('沒有可匯入的題目');return}
+  // ===== 重複偵測 =====
+  const dupQuestions=adds.filter(it=>it.no&&DB.some(ex=>ex.exam===it.exam&&ex.no===it.no));
+  const newExams=[...new Set(adds.map(it=>it.exam).filter(Boolean))];
+  const dupExams=newExams.filter(exam=>DB.some(ex=>ex.exam===exam));
+  if(dupQuestions.length||dupExams.length){
+    let msg='⚠️ 發現重複內容，繼續匯入將覆蓋現有資料：\n\n';
+    if(dupExams.length){
+      msg+='【考卷名稱已有資料】\n';
+      dupExams.forEach(e=>{const cnt=DB.filter(x=>x.exam===e).length;msg+=`• ${e}（共 ${cnt} 題）\n`;});
+      msg+='\n';
+    }
+    if(dupQuestions.length){
+      msg+='【相同考卷＋題號的題目】\n';
+      dupQuestions.slice(0,10).forEach(it=>{msg+=`• ${it.exam} 第 ${it.no} 題\n`;});
+      if(dupQuestions.length>10)msg+=`• …以及另外 ${dupQuestions.length-10} 題\n`;
+      msg+='\n';
+    }
+    msg+='是否仍要繼續匯入？';
+    if(!confirm(msg))return;
+  }
   if(passageAdds.length){const {error:pe}=await sb.from('questions').upsert(passageAdds.map(toRow));if(pe)console.error('題組文章儲存失敗',pe.message);}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
   if(error){alert('匯入雲端失敗：'+error.message);return}
