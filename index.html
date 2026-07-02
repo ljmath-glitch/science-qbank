@@ -40,6 +40,9 @@
   #tbCollapseBar{margin-top:8px;border-top:1px solid var(--line);padding:3px 0;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);border-radius:0 0 10px 10px;transition:background .15s;user-select:none}
   #tbCollapseBar:hover{background:rgba(0,0,0,.04)}
   #tbCollapseBar.tb-floating{position:fixed;top:0;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:3px 24px;box-shadow:0 3px 8px rgba(0,0,0,.12);z-index:200;margin:0}
+  @media(max-width:860px){
+    #tbCollapseBar.tb-floating{padding:8px 36px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  }
   .tb-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
@@ -2751,6 +2754,7 @@ renderToolbar();
   const tb=document.getElementById('tbOuter');
   const bar=document.getElementById('tbCollapseBar');
   let collapsed=false,lastY=0;
+  const isMobile=window.innerWidth<=860;
   function tbHide(){
     if(collapsed)return;
     collapsed=true;
@@ -2765,12 +2769,16 @@ renderToolbar();
     bar.classList.remove('tb-floating');
   }
   bar.addEventListener('click',()=>collapsed?tbShow():tbHide());
+  // 手機預設收合
+  if(isMobile)requestAnimationFrame(()=>requestAnimationFrame(tbHide));
   window.addEventListener('scroll',function(){
     const y=window.scrollY;
     if(y>80&&y>lastY)tbHide();
+    // 手機向上滑回頂時自動展開
+    if(isMobile&&y<10)tbShow();
     lastY=y;
   },{passive:true});
-  document.addEventListener('mousemove',function(e){
+  if(!isMobile)document.addEventListener('mousemove',function(e){
     if(e.clientY<20)tbShow();
   });
 })();
