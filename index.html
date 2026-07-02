@@ -2315,6 +2315,11 @@ function openPromptWindow(){
   w.document.close();
 }
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 AI 指令（含翰林版骨架與22欄規則）！\n\n用法：\n1. 開新的 AI 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
+function copySystemDoc(){
+  const url='https://raw.githubusercontent.com/ljmath-glitch/science-qbank/main/CLAUDE.md';
+  const text='請讀取這份文件，完整了解「茲茲文教自然科題庫系統」的架構與所有技術細節：\n'+url;
+  navigator.clipboard.writeText(text).then(()=>alert('已複製！\n\n用法：\n1. 開啟 claude.ai 網頁版或 Claude Code\n2. 貼上（Ctrl+V / Cmd+V）並送出\n3. Claude 會自動讀取連結，完整了解這個系統的架構、資料庫、AI 設定、Ollama 連線方式等所有細節\n\n適合給主管、新加入的同事、或想幫忙修改系統的人使用。')).catch(()=>{prompt('請手動複製這段文字：',text)});
+}
 
 /* ===== AI 生成詳解 ===== */
 let AI_CFG={};
@@ -2833,6 +2838,7 @@ const TB_BUTTONS={
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
   compressImgs: ()=>`<button class="btn" onclick="batchCompressImgs()">🗜 壓縮圖片</button>`,
   claude:  ()=>`<button class="btn gold" onclick="showPrompt()">📋 AI轉檔指令</button>`,
+  sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">🤖 系統文件（給Claude）</button>`,
   report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
   kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
@@ -2850,7 +2856,7 @@ const TB_VER='8';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
-  ['claude','report','kp','guide','compressImgs'],
+  ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','solPromptBtn'],
   ['selFilt','selAll','stat'],
