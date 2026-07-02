@@ -212,9 +212,12 @@
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:4px 0 6px;clear:both}
     .tb-row+.tb-row{margin-top:4px;padding-top:6px}
     .tb-row-label{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--line);border-radius:0;padding:2px 4px 4px;margin-right:0;letter-spacing:0;justify-content:flex-start;align-self:auto;height:auto;font-size:11px}
-    .tb-btn-scroll{display:flex!important;flex-direction:row;overflow-x:visible;gap:6px;padding:6px 2px 4px;flex-wrap:wrap;align-items:center}
-    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:36px!important;padding:0 10px!important;font-size:12px!important;flex-shrink:0;width:auto!important}
-    .toolbar-outer select{height:36px!important;font-size:12px!important;flex-shrink:0}
+    .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 0 4px;overflow-x:visible}
+    .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr}
+    .toolbar-outer .tb-item{width:100%}
+    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 6px!important;font-size:12px!important;width:100%!important;box-sizing:border-box}
+    .toolbar-outer select{height:40px!important;font-size:12px!important;width:100%!important;box-sizing:border-box}
+    .toolbar-outer .stat{width:100%;text-align:center}
 
     /* === 統計行 === */
     .tb-row-stat .tb-btn-scroll{flex-wrap:wrap!important;gap:4px}
@@ -2680,11 +2683,13 @@ function renderToolbar(){
   requestAnimationFrame(()=>{
     const h=document.getElementById('tbOuter').offsetHeight;
     document.documentElement.style.setProperty('--tb-h',(h+8)+'px');
-    // 所有裝置等寬對齊
-    const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
-    btns.forEach(b=>b.style.width='');
-    const maxW=Math.max(...btns.map(b=>b.offsetWidth));
-    if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
+    // 桌機等寬對齊；手機由 CSS grid 控制
+    if(window.innerWidth>860){
+      const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
+      btns.forEach(b=>b.style.width='');
+      const maxW=Math.max(...btns.map(b=>b.offsetWidth));
+      if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
+    }
   });
 }
 function setupTbDrag(){
