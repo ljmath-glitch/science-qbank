@@ -26,6 +26,7 @@
     --shadow:0 2px 0 #e8e2d4, 0 8px 24px -12px rgba(26,34,56,.25);
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html,body{max-width:100vw;overflow-x:hidden}
   body{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
     background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
@@ -203,14 +204,9 @@
     header .wrap{gap:8px;padding:0 12px}
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
-    /* === 收放工具列：手機上隱藏浮動展開列（不需要此功能） === */
-    #tbCollapseBar{display:none!important}
-
-    /* === 工具列 ⋮ 排列按鈕：小巧右對齊，不佔滿整列 === */
+    /* === 工具列 ⋮ 排列按鈕：手機不支援拖拉，隱藏 === */
     .toolbar-outer{padding-top:4px}
-    .tb-edit-toggle{position:static;display:inline-block;font-size:11px;padding:2px 8px;margin-bottom:4px}
-    #tbEditBtn{float:right;clear:both}
-    #tbResetBtn{float:right;margin-right:4px}
+    #tbEditBtn,#tbResetBtn{display:none!important}
 
     /* === 每列：標籤在上、按鈕橫捲在下 === */
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:4px 0 6px;clear:both}
@@ -2638,13 +2634,13 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 生成prompt</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='7';
+const TB_VER='8';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','report','kp','guide','compressImgs'],
   ['raw','progress'],
-  ['batchProvider','batchGeminiModel','batchGenBtn','solPromptBtn'],
+  ['batchGenBtn','batchProvider','batchGeminiModel','solPromptBtn'],
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
@@ -2684,13 +2680,11 @@ function renderToolbar(){
   requestAnimationFrame(()=>{
     const h=document.getElementById('tbOuter').offsetHeight;
     document.documentElement.style.setProperty('--tb-h',(h+8)+'px');
-    // 桌機才做等寬對齊，手機讓按鈕自然換行
-    if(window.innerWidth>860){
-      const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
-      btns.forEach(b=>b.style.width='');
-      const maxW=Math.max(...btns.map(b=>b.offsetWidth));
-      if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
-    }
+    // 所有裝置等寬對齊
+    const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
+    btns.forEach(b=>b.style.width='');
+    const maxW=Math.max(...btns.map(b=>b.offsetWidth));
+    if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
   });
 }
 function setupTbDrag(){
