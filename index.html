@@ -2503,8 +2503,11 @@ async function detectOllama(){
     try{
       const r=await fetch(base+'/api/tags',{signal:AbortSignal.timeout(2500)});
       if(r.ok){
+        const data=await r.json();
+        const firstModel=(data.models&&data.models[0])?data.models[0].name:'';
         localStorage.setItem('ollamaUrl',base);
         const urlEl=document.getElementById('ollamaUrl');if(urlEl)urlEl.value=base;
+        if(firstModel){localStorage.setItem('ollamaModel',firstModel);const mdlEl=document.getElementById('ollamaModel');if(mdlEl)mdlEl.value=firstModel;}
         btn.textContent='✅';btn.disabled=false;
         setTimeout(()=>{btn.textContent='🔍';},2000);
         return;
