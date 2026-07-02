@@ -220,7 +220,7 @@
     <div class="ib-lock-title">茲茲文教題庫</div>
     <div class="ib-lock-sub">請輸入密碼以繼續</div>
     <div style="font-size:11px;color:rgba(244,241,234,.3);margin-bottom:20px;margin-top:-20px">提示：士林茲茲 Gmail 密碼</div>
-    <input id="ibLockInput" class="ib-lock-input" type="password" placeholder="密碼" maxlength="20" onkeydown="if(event.key==='Enter')ibLockSubmit()">
+    <input id="ibLockInput" class="ib-lock-input" type="password" placeholder="密碼" maxlength="20" autocomplete="current-password" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')ibLockSubmit()">
     <div id="ibLockErr" class="ib-lock-err"></div>
     <button class="ib-lock-btn" onclick="ibLockSubmit()">進入系統</button>
   </div>
@@ -3290,7 +3290,7 @@ const IB_LOCK_KEY='ib_unlocked';
 function ibLockSubmit(){
   const val=document.getElementById('ibLockInput').value;
   if(val===IB_LOCK_PW){
-    sessionStorage.setItem(IB_LOCK_KEY,'1');
+    localStorage.setItem(IB_LOCK_KEY,'1');
     document.getElementById('ibLockScreen').style.display='none';
     document.getElementById('ibLockInput').value='';
   } else {
@@ -3300,7 +3300,7 @@ function ibLockSubmit(){
   }
 }
 (function(){
-  if(sessionStorage.getItem(IB_LOCK_KEY)==='1'){
+  if(localStorage.getItem(IB_LOCK_KEY)==='1'){
     document.getElementById('ibLockScreen').style.display='none';
   } else {
     setTimeout(()=>document.getElementById('ibLockInput').focus(),100);
