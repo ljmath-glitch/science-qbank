@@ -183,11 +183,11 @@
     .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
   }
   @media(max-width:860px){
-    /* === 版面：去除 wrap padding，讓卡片貼近螢幕 === */
-    .wrap{padding:0 4px}
-    .layout{grid-template-columns:1fr}
-    /* 主內容向右偏，給左邊 filter tab 30px */
-    .toolbar-outer,.layout{margin-left:30px;margin-right:2px}
+    /* === 版面：卡片全寬 === */
+    .wrap{padding:0}
+    .layout{grid-template-columns:1fr;margin-left:0;margin-right:0}
+    /* toolbar 仍需為 filter tab 留 30px */
+    .toolbar-outer{margin-left:30px;margin-right:2px}
 
     /* === 篩選抽屜 === */
     .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:500;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
@@ -227,7 +227,7 @@
     .stat{margin-left:0;font-size:12px;padding:4px 2px 2px;border-top:1px dashed var(--line);margin-top:2px;flex-shrink:0}
 
     /* === 卡片全寬 === */
-    .card{border-radius:8px;padding:12px 12px}
+    .card{border-radius:0;padding:12px 14px 12px 32px;margin-bottom:8px}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
