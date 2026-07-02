@@ -50,6 +50,7 @@
   .editing .tb-item{cursor:grab;box-shadow:0 0 0 2px var(--phy);border-radius:7px}
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
+  .tb-btn-scroll{display:contents}
   .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -179,10 +180,11 @@
     .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
   }
   @media(max-width:860px){
-    /* === 版面 === */
+    /* === 版面：去除 wrap padding，讓卡片貼近螢幕 === */
+    .wrap{padding:0 4px}
     .layout{grid-template-columns:1fr}
-    /* 主內容向右偏，給左邊 filter tab 留空間 */
-    .toolbar-outer,.layout{margin-left:30px}
+    /* 主內容向右偏，給左邊 filter tab 30px */
+    .toolbar-outer,.layout{margin-left:30px;margin-right:2px}
 
     /* === 篩選抽屜 === */
     .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:500;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
@@ -196,20 +198,29 @@
     header .logo{height:28px}
     header h1{font-size:14px;letter-spacing:1px}
     header .sub{display:none}
-    header .wrap{gap:8px}
+    header .wrap{gap:8px;padding:0 12px}
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
-    /* === 工具列 === */
-    .tb-row{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px;padding:4px 0}
-    .tb-row::-webkit-scrollbar{display:none}
+    /* === 工具列 ⋮ 排列按鈕：靠右但不遮擋 === */
+    .tb-edit-toggle{position:static;display:inline-block;margin-left:auto;font-size:12px}
+    #tbEditBtn{display:block;width:100%;text-align:right;margin-bottom:4px;padding:5px 10px}
+    #tbResetBtn{align-self:flex-end;margin-bottom:4px}
+
+    /* === 每列：標籤在上、按鈕橫捲在下 === */
+    .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:4px 0 6px}
     .tb-row+.tb-row{margin-top:4px;padding-top:6px}
-    .tb-row-label{width:46px;font-size:10px;padding:0 5px 0 2px;letter-spacing:0;flex-shrink:0}
-    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 14px!important;font-size:13px!important;flex-shrink:0}
+    .tb-row-label{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--line);border-radius:0;padding:2px 4px 4px;margin-right:0;letter-spacing:0;justify-content:flex-start;align-self:auto;height:auto;font-size:11px}
+    .tb-btn-scroll{display:flex!important;flex-direction:row;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:6px;padding:6px 0 2px;flex-wrap:nowrap;align-items:center}
+    .tb-btn-scroll::-webkit-scrollbar{display:none}
+    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 14px!important;font-size:13px!important;flex-shrink:0;width:auto!important}
     .toolbar-outer select{height:40px!important;font-size:13px!important;flex-shrink:0}
 
-    /* === 統計行：讓 stat 單獨換行 === */
-    .tb-row-stat{flex-wrap:wrap!important}
-    .stat{margin-left:0;font-size:12px;width:100%;padding:4px 2px 2px;border-top:1px dashed var(--line);margin-top:2px}
+    /* === 統計行 === */
+    .tb-row-stat .tb-btn-scroll{flex-wrap:wrap!important;gap:4px}
+    .stat{margin-left:0;font-size:12px;padding:4px 2px 2px;border-top:1px dashed var(--line);margin-top:2px;flex-shrink:0}
+
+    /* === 卡片全寬 === */
+    .card{border-radius:8px;padding:12px 12px}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -2638,12 +2649,15 @@ function renderToolbar(){
     lbl.className='tb-row-label';
     lbl.textContent=TB_ROW_LABELS[ri]||'';
     rows[ri].appendChild(lbl);
+    const scroll=document.createElement('div');
+    scroll.className='tb-btn-scroll';
+    rows[ri].appendChild(scroll);
     row.forEach(key=>{
       if(!TB_BUTTONS[key])return;
       const item=document.createElement('div');
       item.className='tb-item';item.dataset.key=key;
       item.innerHTML=TB_BUTTONS[key]();
-      rows[ri].appendChild(item);
+      scroll.appendChild(item);
     });
   });
   setupTbDrag();
@@ -2672,14 +2686,15 @@ function setupTbDrag(){
     });
   });
   document.querySelectorAll('.tb-row').forEach(row=>{
-    row.addEventListener('dragover',e=>{
+    const sc=row.querySelector('.tb-btn-scroll')||row;
+    sc.addEventListener('dragover',e=>{
       e.preventDefault();if(!tbDragEl)return;
       row.classList.add('drag-over');
-      const after=getTbAfterEl(row,e.clientX);
-      if(after)row.insertBefore(tbDragEl,after);else row.appendChild(tbDragEl);
+      const after=getTbAfterEl(sc,e.clientX);
+      if(after)sc.insertBefore(tbDragEl,after);else sc.appendChild(tbDragEl);
     });
-    row.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
-    row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drag-over');});
+    sc.addEventListener('dragleave',()=>row.classList.remove('drag-over'));
+    sc.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drag-over');});
   });
 }
 function getTbAfterEl(row,x){
@@ -2692,8 +2707,10 @@ function getTbAfterEl(row,x){
   },{offset:Number.NEGATIVE_INFINITY}).el;
 }
 function saveTbLayout(){
-  const layout=[...document.querySelectorAll('.tb-row')].map(row=>
-    [...row.querySelectorAll('.tb-item')].map(el=>el.dataset.key));
+  const layout=[...document.querySelectorAll('.tb-row')].map(row=>{
+    const sc=row.querySelector('.tb-btn-scroll')||row;
+    return [...sc.querySelectorAll('.tb-item')].map(el=>el.dataset.key);
+  });
   localStorage.setItem('tbLayout',JSON.stringify(layout));
 }
 function toggleTbEdit(){
