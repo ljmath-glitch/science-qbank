@@ -308,7 +308,13 @@
       <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
       <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
     </aside>
-    <main><div id="list"></div></main>
+    <main>
+      <div id="pinBanner" style="display:none;align-items:center;gap:10px;background:#fff8e6;border:1px solid var(--phy);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;font-family:inherit">
+        <span style="flex:1">📌 目前篩選鈴噹題目（單題檢視）</span>
+        <button class="btn sm" onclick="clearPinFilter()">× 返回全部</button>
+      </div>
+      <div id="list"></div>
+    </main>
   </div>
 </div>
 
@@ -1293,15 +1299,16 @@ function toggleBellPanel(){
     panel.style.display='none';
   }
 }
-document.addEventListener('click',function(e){
-  const panel=document.getElementById('bellPanel');
-  const btn=document.getElementById('bellBtn');
-  if(_bellOpen&&panel&&!panel.contains(e.target)&&!btn.contains(e.target)){
-    _bellOpen=false;panel.style.display='none';
-  }
-});
+// 鈴噹面板不自動關閉，只有再點鈴噹按鈕才切換
+function bellFilter(id){
+  _pinId=id;
+  render();
+  requestAnimationFrame(()=>{
+    const card=document.querySelector(`[data-id="${id}"]`);
+    if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
+  });
+}
 function bellEdit(id){
-  _bellOpen=false;document.getElementById('bellPanel').style.display='none';
   openEdit(id);
 }
 async function bellResolve(id){
@@ -1327,12 +1334,12 @@ function renderBellList(items){
     const isReport=it.basis&&it.basis.startsWith('[回報]');
     const reason=isReport?it.basis.replace('[回報]','').trim():'';
     const timeStr=it.updated_at?new Date(it.updated_at).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-    return `<div class="bell-item">
+    return `<div class="bell-item" onclick="bellFilter('${it.id}')" style="cursor:pointer">
     <div class="bell-item-title">${esc(it.summary||it.kp||'（無摘要）')}</div>
     <div class="bell-item-meta">${esc([it.year,it.school,it.exam,it.no?'No.'+it.no:''].filter(Boolean).join(' · '))}</div>
     ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:'<div class="bell-item-reason" style="color:#999;background:#f7f4ee;border-color:#ccc">（未填寫回報說明）</div>'}
     ${timeStr?`<div class="bell-item-time">🕐 回報時間：${timeStr}</div>`:''}
-    <div style="display:flex;gap:6px;margin-top:4px">
+    <div style="display:flex;gap:6px;margin-top:4px" onclick="event.stopPropagation()">
       <button class="btn sm" onclick="bellEdit('${it.id}')">✏️ 前往編輯</button>
       <button class="btn sm green" onclick="bellResolve('${it.id}')">✓ 確認已解決</button>
     </div>
@@ -1371,6 +1378,7 @@ function buildFiltersKeep(){
   });
 }
 function resetFilters(){
+  _pinId=null;
   ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
@@ -1533,7 +1541,9 @@ async function _pvResizeEnd(){
   await _pvSave(type,id);
 }
 function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
-function matches(it){const s=fSearch.value.trim();
+function matches(it){
+  if(_pinId!==null)return it.id===_pinId;
+  const s=fSearch.value.trim();
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')).includes(s))return false;
   if(fBook.value&&it.book!==fBook.value)return false;
   if(fField.value&&it.field!==fField.value)return false;
@@ -1551,15 +1561,18 @@ function matches(it){const s=fSearch.value.trim();
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   return true}
-const PAGE_SIZE=50;let _page=0,_lastShown=[];
+const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null;
 let _renderTimer=null;
 function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
+function clearPinFilter(){_pinId=null;render();}
 function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
   // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
   if(_gids.size){const _sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>_sSet.has(it.id)||(it.groupId&&_gids.has(it.groupId)));}
   _lastShown=shown;_page=0;
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
+  const pinBanner=document.getElementById('pinBanner');
+  if(pinBanner)pinBanner.style.display=_pinId?'flex':'none';
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
   renderPage(list,shown,0);}
@@ -1584,7 +1597,7 @@ function renderPage(list,shown,page){
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=it.kp?`<span class="tag kp" style="white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(it.kp)}">${esc(it.kp)}</span>`:'';
-    return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}">
+    return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}" data-id="${it.id}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
       <div class="tags">
         ${it.book?`<span class="tag book">${esc(it.book)} ${esc(it.bookName)}</span>`:''}
