@@ -1066,7 +1066,12 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     if(!it.q&&!it.summary)continue;
     // 承上題 必須有 groupId
     if(/承上題/.test(it.q)&&!it.groupId){it.flag=true;if(!it.basis)it.basis='[回報] 承上題但缺少題組ID，請補填';}
+    // 〔含圖〕需手動上傳圖片
+    if(/〔含圖〕|【含圖】/.test(it.q||'')){it.flag=true;if(!it.basis)it.basis='[回報] 題目含圖，請編輯此題並上傳圖片';}
     adds.push(it)}
+  // 題組ID只有1題 → 可能其他題漏填
+  const _gidCnt={};adds.forEach(it=>{if(it.groupId)_gidCnt[it.groupId]=(_gidCnt[it.groupId]||0)+1;});
+  adds.forEach(it=>{if(it.groupId&&_gidCnt[it.groupId]<2&&!it.flag){it.flag=true;if(!it.basis)it.basis='[回報] 題組ID只有此1題，請確認其他小題是否漏填題組ID';}});
   // 題組文章處理：優先用 col 21（新格式），fallback 到【題幹】分隔（舊格式）
   const SEP='【題幹】';
   const passageAdds=[];const seenGids=new Set();
@@ -1117,7 +1122,15 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     examKeys.forEach((v,key)=>{if(!pgMap[key]){pgMap[key]={customName:v.name,updated_at:new Date().toISOString()};changed=true;}});
     if(changed)await sb.from('syllabus_doc').upsert({id:2,content:JSON.stringify(pgMap)});
   }catch(e){}
-  importDlg.close();await load();buildFilters();render();alert('成功匯入 '+adds.length+' 題到雲端')}
+  importDlg.close();await load();buildFilters();render();
+  const _imgN=adds.filter(it=>/〔含圖〕|【含圖】/.test(it.q||'')).length;
+  const _flagN=adds.filter(it=>it.flag).length;
+  let _sumMsg=`✅ 成功匯入 ${adds.length} 題`+(passageAdds.length?`（含 ${passageAdds.length} 組題組文章）`:'')+'。';
+  const _issues=[];
+  if(_imgN)_issues.push(`${_imgN} 題含〔含圖〕→ 請逐題編輯並上傳圖片`);
+  if(_flagN)_issues.push(`${_flagN} 題已標記「待確認」→ 點左側「只看待確認」集中處理`);
+  if(_issues.length)_sumMsg+='\n\n⚠️ 需人工補充：\n• '+_issues.join('\n• ');
+  alert(_sumMsg);}
 
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
@@ -2002,6 +2015,13 @@ function buildPrompt(){const syl=SYL_RAW;
     ✓ $6\\times10^{23}$　✗ $6times10^{23}$（漏了反斜線）
     ✓ $60\\,\\text{s}$　 ✗ $60s$（沒有 \\text）
     ✓ $\\text{m/s}$　　 ✗ $m/s$（沒有 \\text）
+  ▸ 常見錯誤對照（禁止使用左欄，必須用右欄）：
+    ✗ H₂O（Unicode下標）　→　✓ $H_2O$
+    ✗ CO₂                  →　✓ $CO_2$
+    ✗ 10⁸（Unicode上標）  →　✓ $10^8$
+    ✗ Cu²⁺                 →　✓ $Cu^{2+}$
+    ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
+    ✗ v=d/t（無$）         →　✓ $v=\\frac{d}{t}$
 
 ▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
   格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
@@ -2026,11 +2046,17 @@ function buildPrompt(){const syl=SYL_RAW;
   【觀念補充】
   氧化劑自身被還原，還原劑自身被氧化。"
 
-▷ 欄22 題組文章：
-  - 題組第一題（題號最小那題）：填完整共用閱讀材料文字
-  - 同題組的第二題以後：留空
-  - 獨立題目：留空
-  ⚠️ 閱讀材料只放這一欄，不要放進欄20（題目欄）
+▷ 欄20 圖片處理規則（⚠️ CSV 無法內嵌圖片，請務必照以下做）：
+  - 有圖但圖可用文字描述：在題目欄直接用文字描述圖的內容（如「如圖，甲容器中有A、B兩物質…」）
+  - 圖太複雜無法描述（如電路圖、實驗裝置圖、折線圖）：在題目後加 〔含圖〕，不要嘗試用文字描述
+    範例：（A）甲 （B）乙 （C）丙 （D）丁 〔含圖〕
+  ⚠️ 絕對禁止：用任何方式把圖片內嵌在 CSV 中；也不可以省略圖片卻不加 〔含圖〕 標記
+
+▷ 欄22 題組文章（⚠️ 以下三條規則缺一不可）：
+  1. 題組「第一題」（題號最小那題）：填完整共用閱讀材料／情境文字
+  2. 同題組「第二題以後」：欄22 一定要留空（不要重複填閱讀材料）
+  3. 獨立題目：欄22 留空
+  ⚠️ 閱讀材料「只放欄22」，題目欄（欄20）只放題幹和選項，絕對不要混在一起
 
 ▷ 欄23 題組ID（⚠️ 判斷極為重要，錯填或漏填會導致系統顯示錯誤）：
 
@@ -2062,6 +2088,29 @@ function buildPrompt(){const syl=SYL_RAW;
     ✓ 會考-114-42（會考題組）
   年級：七年級／八年級／九年級（全名，B1/B2→七年級，B3/B4→八年級，B5/B6→九年級）
   最後數字：該題組中題號最小（即第一題）的題號
+
+  ╔══════════════════════════════════════╗
+  ║ 題組 CSV 完整範例（第8、9題是題組）  ║
+  ╚══════════════════════════════════════╝
+  假設考卷有：
+  ─────────────────────────────
+  [閱讀材料] 下列為某食物網：草→兔→狐；草→鹿→狼。
+  8. 在此食物網中，屬於初級消費者的生物有幾種？
+     (A) 1種 (B) 2種 (C) 3種 (D) 4種
+  9. 承第8題，若狐大量死亡，下列何者最可能發生？
+     (A) 草增加 (B) 兔減少 (C) 兔增加 (D) 草減少
+  ─────────────────────────────
+  正確的 CSV 輸出（欄20、21、22、23 是重點）：
+
+  "題號", …, "題目", "詳解", "題組文章", "題組ID"
+  "8", …, "在此食物網中，屬於初級消費者的生物有幾種？\n(A) 1種\n(B) 2種\n(C) 3種\n(D) 4種", "【解題關鍵】…", "下列為某食物網：草→兔→狐；草→鹿→狼。", "XX國中-九年級-114上-第一次段考-8"
+  "9", …, "承上題，若狐大量死亡，下列何者最可能發生？\n(A) 草增加\n(B) 兔減少\n(C) 兔增加\n(D) 草減少", "【解題關鍵】…", "", "XX國中-九年級-114上-第一次段考-8"
+
+  ⚠️ 檢查點：
+  ① 第8題欄22有閱讀材料，第9題欄22是空字串 ""
+  ② 兩題的欄23（題組ID）完全相同："XX國中-九年級-114上-第一次段考-8"
+  ③ 第9題欄20的「承第8題」已改寫為「承上題」
+  ④ 閱讀材料沒有出現在欄20（題目欄）
 
 ════════════════════════════════════════
 【三、翰林版骨架（欄6~10只能對照此填，不可自創）】
@@ -2289,11 +2338,12 @@ ${syl}
 □ 每列恰好有 23 個欄位（含標題列）
 □ 所有欄位都用雙引號包住（標題列也是）
 □ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
-□ 欄21（詳解）：每道題目都已撰寫（包含沒有附答案的題目），格式含【解題關鍵】【詳解】
-□ 含「承上題」的題目：欄23有填題組ID且格式正確
-□ 欄22（題組文章）：只在題組第一題填入，其餘留空
-□ 欄23（題組ID）：只填代號字串，未填題目文字或閱讀材料
-□ 所有數學式都用 $...$ 包住；單位都用 \\text{} 包住
+□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 圖片：複雜圖已加 〔含圖〕 標記；欄20沒有嘗試用任何方式塞入圖片
+□ 方程式：所有數學式/化學式都用 $...$ 包住；沒有使用 Unicode 上下標（H₂O、CO₂、10⁸等）
+□ 題組文章（欄22）：只在題組「第一題」填入；其餘小題欄22為空字串 ""；閱讀材料沒有出現在欄20
+□ 題組ID（欄23）：同一題組所有小題（含第一題）都填了完全相同的ID；沒有多填也沒有漏填
+□ 有「承上題」的題目：確認欄23已填題組ID
 
 只輸出 CSV，不要任何說明文字。`}
 function openPromptWindow(){
