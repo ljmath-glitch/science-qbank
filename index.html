@@ -366,6 +366,7 @@
         <button class="btn sm" onclick="clearPinFilter()">× 返回全部</button>
       </div>
       <div id="list"></div>
+      <div id="examProgressCard"></div>
     </main>
   </div>
 </div>
@@ -981,6 +982,107 @@ const IMG_BUCKET = 'question-images';
 const CLOUD_READY = !SUPABASE_URL.startsWith('YOUR_') && !SUPABASE_ANON_KEY.startsWith('YOUR_');
 const sb = CLOUD_READY ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\n請打開 HTML，把最上方的 SUPABASE_URL 與 SUPABASE_ANON_KEY 兩行填好。');return false;}return true;}
+
+/* ===== 考卷整理進度卡片（跟 progress.html 共編進度表同一份資料，即時雙向同步） ===== */
+const PROGRESS_ROW_ID=2;
+const PROGRESS_FIELDS=[
+  {key:'verified_formula',label:'確認公式'},
+  {key:'has_images',label:'上傳圖片'},
+  {key:'has_sol',label:'製作詳解'},
+  {key:'verified_questions',label:'題幹敘述確認'},
+  {key:'verified_groups',label:'題組/承上題確認'},
+  {key:'other_ok',label:'其他確認'},
+];
+function _pgBookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
+function _pgGradeFromExam(exam,book){
+  if(exam){
+    if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
+    if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
+    if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+  }
+  return _pgBookToGrade(book);
+}
+function _pgExamRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function _pgMakeId(school,grade,year,round){
+  if(round==='會考') return '會考|||'+(year||'');
+  return [school||'',grade||'',year||'',round||''].join('|||');
+}
+function _pgDisplayName(school,grade,year,round){
+  if(round==='會考') return (year||'')+'會考';
+  return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';
+}
+function _pgKeyOf(it){
+  const school=(it.school||'').trim();
+  const grade=_pgGradeFromExam(it.exam||'',it.book||'');
+  const year=(it.year||'').trim();
+  const round=_pgExamRound(it.exam||'');
+  return {id:_pgMakeId(school,grade,year,round),school,grade,year,round};
+}
+let _examProgressInfo=null;
+async function _pgLoad(){
+  if(!CLOUD_READY)return {};
+  const {data,error}=await sb.from('syllabus_doc').select('content').eq('id',PROGRESS_ROW_ID).maybeSingle();
+  if(error||!data)return {};
+  try{return JSON.parse(data.content||'{}');}catch(e){return {};}
+}
+async function updateExamProgressCard(shown){
+  const card=document.getElementById('examProgressCard');
+  if(!card)return;
+  const real=shown.filter(it=>it.type!=='passage');
+  if(!real.length||!CLOUD_READY){card.innerHTML='';_examProgressInfo=null;return;}
+  const keys=real.map(_pgKeyOf);
+  const first=keys[0];
+  const allSame=keys.every(k=>k.id===first.id);
+  if(!allSame){card.innerHTML='';_examProgressInfo=null;return;}
+  _examProgressInfo=first;
+  const progressMap=await _pgLoad();
+  _renderExamProgressCard(first,progressMap[first.id]||{});
+}
+function _renderExamProgressCard(info,p){
+  const card=document.getElementById('examProgressCard');
+  if(!card||!_examProgressInfo||_examProgressInfo.id!==info.id)return;
+  const name=_pgDisplayName(info.school,info.grade,info.year,info.round);
+  const savedName=localStorage.getItem('pgUserName')||'';
+  card.innerHTML=`<div style="margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fbf9f3">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <b style="font-size:14px">📋 考卷整理進度：${esc(name)}</b>
+      <span style="font-size:11px;color:#7a6e60">（跟共編進度表同步）</span>
+      <a href="progress.html" target="_blank" style="font-size:11px;margin-left:auto">開啟共編進度表 ↗</a>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <label style="font-size:12px;font-weight:600">更新者姓名：</label>
+      <input id="epUserName" value="${esc(savedName)}" placeholder="請填您的姓名" oninput="localStorage.setItem('pgUserName',this.value)" style="font-size:12px;padding:3px 8px;border:1px solid var(--line);border-radius:6px;width:120px;font-family:inherit">
+      <span id="epSaving" style="font-size:11px;color:#7a6e60;display:none">儲存中…</span>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      ${PROGRESS_FIELDS.map(f=>`<label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer">
+        <input type="checkbox" ${p[f.key]?'checked':''} onchange="toggleExamProgress('${f.key}',this.checked)" style="width:16px;height:16px">${f.label}
+      </label>`).join('')}
+    </div>
+  </div>`;
+}
+async function toggleExamProgress(field,val){
+  if(!_examProgressInfo)return;
+  const info=_examProgressInfo;
+  const savingEl=document.getElementById('epSaving');
+  if(savingEl)savingEl.style.display='';
+  const who=(document.getElementById('epUserName')?.value||'').trim()||'未填姓名';
+  const latest=await _pgLoad();
+  latest[info.id]={...(latest[info.id]||{}),[field]:val,updated_by:who,updated_at:new Date().toISOString()};
+  await sb.from('syllabus_doc').upsert({id:PROGRESS_ROW_ID,content:JSON.stringify(latest)});
+  _renderExamProgressCard(info,latest[info.id]);
+  if(savingEl)savingEl.style.display='none';
+}
+if(CLOUD_READY){
+  sb.channel('exam-progress-sync-index')
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'syllabus_doc',filter:`id=eq.${PROGRESS_ROW_ID}`},payload=>{
+      if(!_examProgressInfo)return;
+      try{
+        const newMap=JSON.parse(payload.new.content||'{}');
+        _renderExamProgressCard(_examProgressInfo,newMap[_examProgressInfo.id]||{});
+      }catch(e){}
+    }).subscribe();
+}
 
 let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
@@ -1698,9 +1800,10 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
     const pbt=document.getElementById('pinBannerText');
     if(pbt)pbt.textContent=_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）';
   }
-  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();return}
-  if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
-  renderPage(list,shown,0);}
+  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);return}
+  if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);return}
+  renderPage(list,shown,0);
+  updateExamProgressCard(shown);}
 function renderPage(list,shown,page){
   const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,shown.length);
   const pageItems=shown.slice(start,end);

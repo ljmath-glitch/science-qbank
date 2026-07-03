@@ -83,14 +83,15 @@ th.sort-header:hover{background:#e5ddd0}
             <th>確認公式</th>
             <th>上傳圖片</th>
             <th>製作詳解</th>
-            <th>題目答案確認</th>
-            <th>題組確認</th>
+            <th>題幹敘述確認</th>
+            <th>題組/承上題確認</th>
+            <th>其他確認</th>
             <th style="min-width:160px">備註</th>
             <th>最後更新</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="9" class="loading">載入中…</td></tr>
+          <tr><td colspan="10" class="loading">載入中…</td></tr>
         </tbody>
       </table>
     </div>
@@ -158,7 +159,7 @@ async function mergeAndSave(changeFn){
 
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="9" class="loading">載入中…</td></tr>';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="loading">載入中…</td></tr>';
   document.getElementById('emptyMsg').style.display = 'none';
 
   let allQs = [], from = 0;
@@ -241,7 +242,7 @@ function render(){
 
   const doneCount = exams.filter(ex => {
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round)] || {};
-    return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups;
+    return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
   }).length;
   document.getElementById('statLine').textContent =
     '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
@@ -250,7 +251,7 @@ function render(){
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);
     const p   = progressMap[id] || {};
     const shownName = p.customName !== undefined ? p.customName : ex.displayName;
-    const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups;
+    const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
     const delBtn = ex.isManual
       ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
@@ -262,8 +263,9 @@ function render(){
       <td class="chk-cell"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="題目答案確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="題組確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="題幹敘述確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="題組/承上題確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
+      <td class="chk-cell"><input type="checkbox" title="其他確認" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
       <td><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
       <td class="ts-cell">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
     </tr>`;

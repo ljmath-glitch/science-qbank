@@ -643,7 +643,8 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 <div id="reportOverlay" class="report-overlay" style="display:none" onclick="closeReport()"></div>
 <div id="reportBox" class="report-box" style="display:none">
   <div class="report-title">🚩 回報錯誤</div>
-  <textarea id="reportReason" class="report-input" placeholder="請描述錯誤內容（選填）" rows="3"></textarea>
+  <div id="reportCheckList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px"></div>
+  <textarea id="reportOtherText" class="report-input" placeholder="請描述其他問題內容" rows="2" style="display:none;margin-top:6px"></textarea>
   <div class="report-btns">
     <button class="report-cancel" onclick="closeReport()">取消</button>
     <button class="report-submit" onclick="submitReport()">送出回報</button>
@@ -1491,11 +1492,42 @@ function markExplanationRead(){
 }
 
 // ── 報錯 ──────────────────────────────────────────────────────
+const REPORT_CATEGORIES=[
+  {key:'formula',label:'方程式顯示問題',field:'verified_formula'},
+  {key:'image',  label:'圖片問題',      field:'has_images'},
+  {key:'group',  label:'題組/承上題問題',field:'verified_groups'},
+  {key:'sol',    label:'詳解問題',      field:'has_sol'},
+  {key:'stem',   label:'題幹敘述問題',  field:'verified_questions'},
+  {key:'other',  label:'其他',          field:'other_ok'},
+];
+function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
+function gradeFromExam(exam,book){
+  if(exam){
+    if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
+    if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
+    if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+  }
+  return bookToGrade(book);
+}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function makeProgressId(school, grade, year, round){
+  if(round==='會考') return '會考|||'+(year||'');
+  return [school||'', grade||'', year||'', round||''].join('|||');
+}
 function openReport(){
   if(!currentQuestion) return;
-  document.getElementById('reportReason').value='';
+  document.getElementById('reportCheckList').innerHTML=REPORT_CATEGORIES.map(c=>
+    `<label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+      <input type="checkbox" class="report-cat-chk" value="${c.key}" style="width:18px;height:18px" onchange="_onReportCatChange()">${c.label}
+    </label>`).join('');
+  document.getElementById('reportOtherText').style.display='none';
+  document.getElementById('reportOtherText').value='';
   document.getElementById('reportOverlay').style.display='';
   document.getElementById('reportBox').style.display='';
+}
+function _onReportCatChange(){
+  const otherChecked=[...document.querySelectorAll('.report-cat-chk')].some(el=>el.checked&&el.value==='other');
+  document.getElementById('reportOtherText').style.display=otherChecked?'':'none';
 }
 function closeReport(){
   document.getElementById('reportOverlay').style.display='none';
@@ -1575,7 +1607,12 @@ async function submitReport(){
   }
   const q=currentQuestion;
   if(!q){showToast('⚠️','請先載入題目',2500);return;}
-  const reason=document.getElementById('reportReason').value.trim();
+  const checked=[...document.querySelectorAll('.report-cat-chk')].filter(el=>el.checked).map(el=>el.value);
+  if(!checked.length){showToast('⚠️','請至少勾選一項問題類型',2500);return;}
+  const otherText=document.getElementById('reportOtherText').value.trim();
+  const cats=REPORT_CATEGORIES.filter(c=>checked.includes(c.key));
+  let basisText='[回報] '+cats.map(c=>c.label).join('、');
+  if(checked.includes('other')&&otherText) basisText+='；其他說明：'+otherText;
   closeReport();
   showToast('⏳','正在回報...',10000);
   let ok=false;
@@ -1583,12 +1620,36 @@ async function submitReport(){
     const res=await fetch(`${SUPABASE_URL}/rest/v1/questions`,{
       method:'POST',
       headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},
-      body:JSON.stringify({id:q.id,flag:true,basis:'[回報] '+(reason||'（未填寫）'),updated_at:new Date().toISOString()})
+      body:JSON.stringify({id:q.id,flag:true,basis:basisText,updated_at:new Date().toISOString()})
     });
     ok=res.ok;
     if(!ok) console.warn('flag upsert failed',res.status, await res.text().catch(()=>''));
   }catch(e){console.warn('report error',e);}
+  try{ await uncheckExamProgress(q, cats); }catch(e){ console.warn('uncheck progress failed',e); }
   showToast(ok?'🚩':'⚠️',ok?'已回報！老師將會確認這道題目':'回報失敗，請聯絡老師',3500);
+}
+
+// 回報後，把該題所屬考卷在共編進度表對應的欄位 uncheck
+async function uncheckExamProgress(q, cats){
+  const school=(q.school||'').trim();
+  const grade=gradeFromExam(q.exam||'', q.book||'');
+  const year=(q.year||'').trim();
+  const round=examRound(q.exam||'');
+  const examId=makeProgressId(school, grade, year, round);
+  const getRes=await fetch(`${SUPABASE_URL}/rest/v1/syllabus_doc?select=content&id=eq.2`,{headers:SB_HDR});
+  const rows=await getRes.json().catch(()=>[]);
+  let progressMap={};
+  try{ progressMap=JSON.parse((rows&&rows[0]&&rows[0].content)||'{}'); }catch(e){}
+  const entry={...(progressMap[examId]||{})};
+  cats.forEach(c=>{ entry[c.field]=false; });
+  entry.updated_by='每日一題回報';
+  entry.updated_at=new Date().toISOString();
+  progressMap[examId]=entry;
+  await fetch(`${SUPABASE_URL}/rest/v1/syllabus_doc`,{
+    method:'POST',
+    headers:{...SB_HDR,'Content-Type':'application/json','Prefer':'return=minimal,resolution=merge-duplicates'},
+    body:JSON.stringify({id:2, content:JSON.stringify(progressMap)})
+  });
 }
 
 function openLightbox(src){
