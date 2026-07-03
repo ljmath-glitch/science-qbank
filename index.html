@@ -239,7 +239,7 @@
     .toolbar-outer select{height:40px!important;font-size:12px!important;width:100%!important;max-width:100%!important;box-sizing:border-box}
     .toolbar-outer .stat{width:100%;text-align:center;padding:4px 0}
 
-    /* === 統計行 V5.15 === */
+    /* === 統計行 V5.16 === */
     .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
     .stat{margin-left:0;font-size:13px;padding:3px 0;white-space:nowrap;text-align:center;flex-shrink:0}
 
@@ -339,16 +339,16 @@
       <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
-      <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option></select></div>
+      <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option><option>學測</option></select></div>
       <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
       <div class="grid2">
         <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
       </div>
-      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
+      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高中</option></select></div>
       <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
-      <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option></select></div>
+      <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option><option>物理</option><option>化學</option></select></div>
       <div class="filt"><label>冊數</label><select id="fBook" onchange="onFilterBook()"><option value="">全部</option></select></div>
       <div class="filt"><label>大單元</label><select id="fUnit" onchange="onFilterUnit()"><option value="">全部</option></select></div>
       <div class="filt"><label>子單元</label><select id="fSub" onchange="onFilterSub()"><option value="">全部</option></select></div>
@@ -426,7 +426,7 @@
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option></select></div>
+      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option></select></div>
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
@@ -440,7 +440,7 @@
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
     <div class="grid4">
-      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option></select></div>
+      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高中</option></select></div>
       <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook()"></select></div>
       <div class="field"><label>冊名／領域</label><input type="text" id="eBookName" readonly style="background:#f0ece2"></div>
       <div class="field"><label>大單元</label><select id="eUnit" onchange="syncBySub()"></select></div>
@@ -574,134 +574,200 @@
 </div>
 
 <script>
-const HANLIN_SYLLABUS = `B1|七上生物|生物|C1 生命世界與科學方法|1-1 多采多姿的生命世界
-B1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
-B1|七上生物|生物|C1 生命世界與科學方法|1-3 進入實驗室
-B1|七上生物|生物|C2 生物體的組成|2-1 生物體的基本單位
-B1|七上生物|生物|C2 生物體的組成|2-2 細胞的構造
-B1|七上生物|生物|C2 生物體的組成|2-3 物質進出細胞的方式
-B1|七上生物|生物|C3 生物體的營養|3-1 食物中的養分與能量
-B1|七上生物|生物|C3 生物體的營養|3-2 酵素
-B1|七上生物|生物|C3 生物體的營養|3-3 植物如何製造養分
-B1|七上生物|生物|C3 生物體的營養|3-4 人體如何獲得養分
-B1|七上生物|生物|C3 生物體的營養|3-5 生物獲得能量的方式
-B1|七上生物|生物|C4 生物體的運輸作用|4-1 植物的運輸構造
-B1|七上生物|生物|C4 生物體的運輸作用|4-2 植物體內物質的運輸
-B1|七上生物|生物|C4 生物體的運輸作用|4-3 人體心血管系統的組成
-B1|七上生物|生物|C4 生物體的運輸作用|4-4 人體的循環系統
-B1|七上生物|生物|C5 生物體的協調作用|5-1 刺激與反應
-B1|七上生物|生物|C5 生物體的協調作用|5-2 神經系統
-B1|七上生物|生物|C5 生物體的協調作用|5-3 內分泌系統
-B1|七上生物|生物|C5 生物體的協調作用|5-4 行為與感應
-B1|七上生物|生物|C6 生物體的恆定|6-1 呼吸與氣體的恆定
-B1|七上生物|生物|C6 生物體的恆定|6-2 排泄與水分的恆定
-B1|七上生物|生物|C6 生物體的恆定|6-3 體溫的恆定與血糖的恆定
-B2|七下生物|生物|C1 生殖|1-1 細胞的分裂
-B2|七下生物|生物|C1 生殖|1-2 無性生殖
-B2|七下生物|生物|C1 生殖|1-3 有性生殖
-B2|七下生物|生物|C2 遺傳|2-1 遺傳、染色體與基因
-B2|七下生物|生物|C2 遺傳|2-2 人類的遺傳
-B2|七下生物|生物|C2 遺傳|2-3 突變與遺傳疾病
-B2|七下生物|生物|C2 遺傳|2-4 生物技術
-B2|七下生物|生物|C3 生物的演化與分類|3-1 化石與演化
-B2|七下生物|生物|C3 生物的演化與分類|3-2 生物的命名與分類
-B2|七下生物|生物|C3 生物的演化與分類|3-3 原核、原生生物及真菌界
-B2|七下生物|生物|C3 生物的演化與分類|3-4 植物界
-B2|七下生物|生物|C3 生物的演化與分類|3-5 動物界
-B2|七下生物|生物|C4 生物與環境|4-1 族群、群集與演替
-B2|七下生物|生物|C4 生物與環境|4-2 生物間的互動關係
-B2|七下生物|生物|C4 生物與環境|4-3 生態系
-B2|七下生物|生物|C4 生物與環境|4-4 生態系的類型
-B2|七下生物|生物|C5 生物多樣性與保育|5-1 生物多樣性
-B2|七下生物|生物|C5 生物多樣性與保育|5-2 生物多樣性面臨的危機
-B2|七下生物|生物|C5 生物多樣性與保育|5-3 保育的落實
-B3|八上理化|理化|C1 基本測量|1-1 長度、質量與時間
-B3|八上理化|理化|C1 基本測量|1-2 測量與估計
-B3|八上理化|理化|C1 基本測量|1-3 體積與密度
-B3|八上理化|理化|C1 基本測量|跨科 尺度
-B3|八上理化|理化|C2 物質的世界|2-1 認識物質
-B3|八上理化|理化|C2 物質的世界|2-2 溶液與濃度
-B3|八上理化|理化|C2 物質的世界|2-3 混合物的分離
-B3|八上理化|理化|C2 物質的世界|2-3 空氣
-B3|八上理化|理化|C3 波動與聲音|3-1 波的傳播與特徵
-B3|八上理化|理化|C3 波動與聲音|3-2 聲音的形成
-B3|八上理化|理化|C3 波動與聲音|3-3 多變的聲音
-B3|八上理化|理化|C3 波動與聲音|3-4 聲波的傳播與應用
-B3|八上理化|理化|C4 光、影像與顏色|4-1 光的傳播
-B3|八上理化|理化|C4 光、影像與顏色|4-2 光的反射與面鏡成像
-B3|八上理化|理化|C4 光、影像與顏色|4-3 光的折射
-B3|八上理化|理化|C4 光、影像與顏色|4-4 透鏡成像
-B3|八上理化|理化|C4 光、影像與顏色|4-5 色散與顏色
-B3|八上理化|理化|C5 溫度與熱|5-1 溫度與溫度計
-B3|八上理化|理化|C5 溫度與熱|5-2 熱量
-B3|八上理化|理化|C5 溫度與熱|5-2 熱量與比熱
-B3|八上理化|理化|C5 溫度與熱|5-3 比熱
-B3|八上理化|理化|C5 溫度與熱|5-4 熱對物質的影響
-B3|八上理化|理化|C5 溫度與熱|5-5 熱的傳播方式
-B3|八上理化|理化|C6 物質的基本結構|6-1 元素與化合物
-B3|八上理化|理化|C6 物質的基本結構|6-2 生活中常見的元素
-B3|八上理化|理化|C6 物質的基本結構|6-3 原子結構
-B3|八上理化|理化|C6 物質的基本結構|6-4 週期表
-B3|八上理化|理化|C6 物質的基本結構|6-5 分子與化學式
-B4|八下理化|理化|C1 化學反應|1-1 質量守恆定律
-B4|八下理化|理化|C1 化學反應|1-2 反應式與化學計量
-B4|八下理化|理化|C2 氧化還原反應|2-1 氧化反應與活性
-B4|八下理化|理化|C2 氧化還原反應|2-2 氧化與還原反應
-B4|八下理化|理化|C3 電解質與酸鹼鹽|3-1 電解質
-B4|八下理化|理化|C3 電解質與酸鹼鹽|3-2 酸和鹼
-B4|八下理化|理化|C3 電解質與酸鹼鹽|3-3 酸鹼的強弱與 pH 值
-B4|八下理化|理化|C3 電解質與酸鹼鹽|3-4 酸鹼反應
-B4|八下理化|理化|C4 反應速率與平衡|4-1 反應速率
-B4|八下理化|理化|C4 反應速率與平衡|4-2 可逆反應與平衡
-B4|八下理化|理化|C5 有機化合物|5-1 有機化合物的組成
-B4|八下理化|理化|C5 有機化合物|5-2 常見的有機化合物
-B4|八下理化|理化|C5 有機化合物|5-3 聚合物與衣料纖維
-B4|八下理化|理化|C5 有機化合物|5-4 食品與清潔劑
-B4|八下理化|理化|C6 力與壓力|6-1 力與平衡
-B4|八下理化|理化|C6 力與壓力|6-2 摩擦力
-B4|八下理化|理化|C6 力與壓力|6-3 壓力
-B4|八下理化|理化|C6 力與壓力|6-4 浮力
-B5|九上理化|理化|C1 直線運動|1-1 位置、路徑長與位移
-B5|九上理化|理化|C1 直線運動|1-2 速率與速度
-B5|九上理化|理化|C1 直線運動|1-3 加速度運動
-B5|九上理化|理化|C1 直線運動|1-4 自由落體運動
-B5|九上理化|理化|C2 力與運動|2-1 慣性定律
-B5|九上理化|理化|C2 力與運動|2-2 運動定律
-B5|九上理化|理化|C2 力與運動|2-3 作用力與反作用力定律
-B5|九上理化|理化|C2 力與運動|2-4 圓周運動與萬有引力
-B5|九上理化|理化|C2 力與運動|2-5 力矩與槓桿原理
-B5|九上理化|理化|C3 功與能|3-1 功與功率
-B5|九上理化|理化|C3 功與能|3-2 動能
-B5|九上理化|理化|C3 功與能|3-3 位能、能量守恆定律與能源
-B5|九上理化|理化|C3 功與能|3-4 簡單機械
-B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-1 電荷與靜電現象
-B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-2 電流
-B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-3 電壓
-B5|九上理化|理化|C4 電流、電壓與歐姆定律|4-4 歐姆定律與電阻
-B5|九上地科|地科|C5 地球的環境|5-1 我們的地球
-B5|九上地科|地科|C5 地球的環境|5-2 地表的改變與平衡
-B5|九上地科|地科|C5 地球的環境|5-3 岩石與礦物
-B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-1 地球的構造與板塊運動
-B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-2 板塊運動與內營力的影響
-B5|九上地科|地科|C6 板塊運動與岩層的祕密|6-3 岩層的紀錄
-B5|九上地科|地科|C7 浩瀚的宇宙|7-1 宇宙與太陽系
-B5|九上地科|地科|C7 浩瀚的宇宙|7-2 晝夜與四季
-B5|九上地科|地科|C7 浩瀚的宇宙|7-3 日地月的相對運動
-B6|九下理化|理化|C1 電與生活|1-1 電流的熱效應
-B6|九下理化|理化|C1 電與生活|1-2 生活用電
-B6|九下理化|理化|C1 電與生活|1-3 電池
-B6|九下理化|理化|C1 電與生活|1-4 電流的化學效應
-B6|九下理化|理化|C2 電與磁|2-1 磁鐵與磁場
-B6|九下理化|理化|C2 電與磁|2-2 電流的磁效應
-B6|九下理化|理化|C2 電與磁|2-3 電流與磁場的交互作用
-B6|九下理化|理化|C2 電與磁|2-4 電磁感應
-B6|九下地科|地科|C3 變化莫測的天氣|3-1 地球的大氣
-B6|九下地科|地科|C3 變化莫測的天氣|3-2 天氣現象
-B6|九下地科|地科|C3 變化莫測的天氣|3-3 氣團與鋒面
-B6|九下地科|地科|C3 變化莫測的天氣|3-4 臺灣的災變天氣
-B6|九下地科|地科|C4 永續的地球|4-1 海洋與大氣的互動
-B6|九下地科|地科|C4 永續的地球|4-2 溫室效應與全球暖化
-B6|九下地科|地科|C4 永續的地球|4-3 人與自然的互動`.trim();
+const HANLIN_SYLLABUS = `JB1|七上生物|生物|C1 生命世界與科學方法|1-1 多采多姿的生命世界
+JB1|七上生物|生物|C1 生命世界與科學方法|1-2 探究自然的科學方法
+JB1|七上生物|生物|C1 生命世界與科學方法|1-3 進入實驗室
+JB1|七上生物|生物|C2 生物體的組成|2-1 生物體的基本單位
+JB1|七上生物|生物|C2 生物體的組成|2-2 細胞的構造
+JB1|七上生物|生物|C2 生物體的組成|2-3 物質進出細胞的方式
+JB1|七上生物|生物|C3 生物體的營養|3-1 食物中的養分與能量
+JB1|七上生物|生物|C3 生物體的營養|3-2 酵素
+JB1|七上生物|生物|C3 生物體的營養|3-3 植物如何製造養分
+JB1|七上生物|生物|C3 生物體的營養|3-4 人體如何獲得養分
+JB1|七上生物|生物|C3 生物體的營養|3-5 生物獲得能量的方式
+JB1|七上生物|生物|C4 生物體的運輸作用|4-1 植物的運輸構造
+JB1|七上生物|生物|C4 生物體的運輸作用|4-2 植物體內物質的運輸
+JB1|七上生物|生物|C4 生物體的運輸作用|4-3 人體心血管系統的組成
+JB1|七上生物|生物|C4 生物體的運輸作用|4-4 人體的循環系統
+JB1|七上生物|生物|C5 生物體的協調作用|5-1 刺激與反應
+JB1|七上生物|生物|C5 生物體的協調作用|5-2 神經系統
+JB1|七上生物|生物|C5 生物體的協調作用|5-3 內分泌系統
+JB1|七上生物|生物|C5 生物體的協調作用|5-4 行為與感應
+JB1|七上生物|生物|C6 生物體的恆定|6-1 呼吸與氣體的恆定
+JB1|七上生物|生物|C6 生物體的恆定|6-2 排泄與水分的恆定
+JB1|七上生物|生物|C6 生物體的恆定|6-3 體溫的恆定與血糖的恆定
+JB2|七下生物|生物|C1 生殖|1-1 細胞的分裂
+JB2|七下生物|生物|C1 生殖|1-2 無性生殖
+JB2|七下生物|生物|C1 生殖|1-3 有性生殖
+JB2|七下生物|生物|C2 遺傳|2-1 遺傳、染色體與基因
+JB2|七下生物|生物|C2 遺傳|2-2 人類的遺傳
+JB2|七下生物|生物|C2 遺傳|2-3 突變與遺傳疾病
+JB2|七下生物|生物|C2 遺傳|2-4 生物技術
+JB2|七下生物|生物|C3 生物的演化與分類|3-1 化石與演化
+JB2|七下生物|生物|C3 生物的演化與分類|3-2 生物的命名與分類
+JB2|七下生物|生物|C3 生物的演化與分類|3-3 原核、原生生物及真菌界
+JB2|七下生物|生物|C3 生物的演化與分類|3-4 植物界
+JB2|七下生物|生物|C3 生物的演化與分類|3-5 動物界
+JB2|七下生物|生物|C4 生物與環境|4-1 族群、群集與演替
+JB2|七下生物|生物|C4 生物與環境|4-2 生物間的互動關係
+JB2|七下生物|生物|C4 生物與環境|4-3 生態系
+JB2|七下生物|生物|C4 生物與環境|4-4 生態系的類型
+JB2|七下生物|生物|C5 生物多樣性與保育|5-1 生物多樣性
+JB2|七下生物|生物|C5 生物多樣性與保育|5-2 生物多樣性面臨的危機
+JB2|七下生物|生物|C5 生物多樣性與保育|5-3 保育的落實
+JB3|八上理化|理化|C1 基本測量|1-1 長度、質量與時間
+JB3|八上理化|理化|C1 基本測量|1-2 測量與估計
+JB3|八上理化|理化|C1 基本測量|1-3 體積與密度
+JB3|八上理化|理化|C1 基本測量|跨科 尺度
+JB3|八上理化|理化|C2 物質的世界|2-1 認識物質
+JB3|八上理化|理化|C2 物質的世界|2-2 溶液與濃度
+JB3|八上理化|理化|C2 物質的世界|2-3 混合物的分離
+JB3|八上理化|理化|C2 物質的世界|2-3 空氣
+JB3|八上理化|理化|C3 波動與聲音|3-1 波的傳播與特徵
+JB3|八上理化|理化|C3 波動與聲音|3-2 聲音的形成
+JB3|八上理化|理化|C3 波動與聲音|3-3 多變的聲音
+JB3|八上理化|理化|C3 波動與聲音|3-4 聲波的傳播與應用
+JB3|八上理化|理化|C4 光、影像與顏色|4-1 光的傳播
+JB3|八上理化|理化|C4 光、影像與顏色|4-2 光的反射與面鏡成像
+JB3|八上理化|理化|C4 光、影像與顏色|4-3 光的折射
+JB3|八上理化|理化|C4 光、影像與顏色|4-4 透鏡成像
+JB3|八上理化|理化|C4 光、影像與顏色|4-5 色散與顏色
+JB3|八上理化|理化|C5 溫度與熱|5-1 溫度與溫度計
+JB3|八上理化|理化|C5 溫度與熱|5-2 熱量
+JB3|八上理化|理化|C5 溫度與熱|5-2 熱量與比熱
+JB3|八上理化|理化|C5 溫度與熱|5-3 比熱
+JB3|八上理化|理化|C5 溫度與熱|5-4 熱對物質的影響
+JB3|八上理化|理化|C5 溫度與熱|5-5 熱的傳播方式
+JB3|八上理化|理化|C6 物質的基本結構|6-1 元素與化合物
+JB3|八上理化|理化|C6 物質的基本結構|6-2 生活中常見的元素
+JB3|八上理化|理化|C6 物質的基本結構|6-3 原子結構
+JB3|八上理化|理化|C6 物質的基本結構|6-4 週期表
+JB3|八上理化|理化|C6 物質的基本結構|6-5 分子與化學式
+JB4|八下理化|理化|C1 化學反應|1-1 質量守恆定律
+JB4|八下理化|理化|C1 化學反應|1-2 反應式與化學計量
+JB4|八下理化|理化|C2 氧化還原反應|2-1 氧化反應與活性
+JB4|八下理化|理化|C2 氧化還原反應|2-2 氧化與還原反應
+JB4|八下理化|理化|C3 電解質與酸鹼鹽|3-1 電解質
+JB4|八下理化|理化|C3 電解質與酸鹼鹽|3-2 酸和鹼
+JB4|八下理化|理化|C3 電解質與酸鹼鹽|3-3 酸鹼的強弱與 pH 值
+JB4|八下理化|理化|C3 電解質與酸鹼鹽|3-4 酸鹼反應
+JB4|八下理化|理化|C4 反應速率與平衡|4-1 反應速率
+JB4|八下理化|理化|C4 反應速率與平衡|4-2 可逆反應與平衡
+JB4|八下理化|理化|C5 有機化合物|5-1 有機化合物的組成
+JB4|八下理化|理化|C5 有機化合物|5-2 常見的有機化合物
+JB4|八下理化|理化|C5 有機化合物|5-3 聚合物與衣料纖維
+JB4|八下理化|理化|C5 有機化合物|5-4 食品與清潔劑
+JB4|八下理化|理化|C6 力與壓力|6-1 力與平衡
+JB4|八下理化|理化|C6 力與壓力|6-2 摩擦力
+JB4|八下理化|理化|C6 力與壓力|6-3 壓力
+JB4|八下理化|理化|C6 力與壓力|6-4 浮力
+JB5|九上理化|理化|C1 直線運動|1-1 位置、路徑長與位移
+JB5|九上理化|理化|C1 直線運動|1-2 速率與速度
+JB5|九上理化|理化|C1 直線運動|1-3 加速度運動
+JB5|九上理化|理化|C1 直線運動|1-4 自由落體運動
+JB5|九上理化|理化|C2 力與運動|2-1 慣性定律
+JB5|九上理化|理化|C2 力與運動|2-2 運動定律
+JB5|九上理化|理化|C2 力與運動|2-3 作用力與反作用力定律
+JB5|九上理化|理化|C2 力與運動|2-4 圓周運動與萬有引力
+JB5|九上理化|理化|C2 力與運動|2-5 力矩與槓桿原理
+JB5|九上理化|理化|C3 功與能|3-1 功與功率
+JB5|九上理化|理化|C3 功與能|3-2 動能
+JB5|九上理化|理化|C3 功與能|3-3 位能、能量守恆定律與能源
+JB5|九上理化|理化|C3 功與能|3-4 簡單機械
+JB5|九上理化|理化|C4 電流、電壓與歐姆定律|4-1 電荷與靜電現象
+JB5|九上理化|理化|C4 電流、電壓與歐姆定律|4-2 電流
+JB5|九上理化|理化|C4 電流、電壓與歐姆定律|4-3 電壓
+JB5|九上理化|理化|C4 電流、電壓與歐姆定律|4-4 歐姆定律與電阻
+JB5|九上地科|地科|C5 地球的環境|5-1 我們的地球
+JB5|九上地科|地科|C5 地球的環境|5-2 地表的改變與平衡
+JB5|九上地科|地科|C5 地球的環境|5-3 岩石與礦物
+JB5|九上地科|地科|C6 板塊運動與岩層的祕密|6-1 地球的構造與板塊運動
+JB5|九上地科|地科|C6 板塊運動與岩層的祕密|6-2 板塊運動與內營力的影響
+JB5|九上地科|地科|C6 板塊運動與岩層的祕密|6-3 岩層的紀錄
+JB5|九上地科|地科|C7 浩瀚的宇宙|7-1 宇宙與太陽系
+JB5|九上地科|地科|C7 浩瀚的宇宙|7-2 晝夜與四季
+JB5|九上地科|地科|C7 浩瀚的宇宙|7-3 日地月的相對運動
+JB6|九下理化|理化|C1 電與生活|1-1 電流的熱效應
+JB6|九下理化|理化|C1 電與生活|1-2 生活用電
+JB6|九下理化|理化|C1 電與生活|1-3 電池
+JB6|九下理化|理化|C1 電與生活|1-4 電流的化學效應
+JB6|九下理化|理化|C2 電與磁|2-1 磁鐵與磁場
+JB6|九下理化|理化|C2 電與磁|2-2 電流的磁效應
+JB6|九下理化|理化|C2 電與磁|2-3 電流與磁場的交互作用
+JB6|九下理化|理化|C2 電與磁|2-4 電磁感應
+JB6|九下地科|地科|C3 變化莫測的天氣|3-1 地球的大氣
+JB6|九下地科|地科|C3 變化莫測的天氣|3-2 天氣現象
+JB6|九下地科|地科|C3 變化莫測的天氣|3-3 氣團與鋒面
+JB6|九下地科|地科|C3 變化莫測的天氣|3-4 臺灣的災變天氣
+JB6|九下地科|地科|C4 永續的地球|4-1 海洋與大氣的互動
+JB6|九下地科|地科|C4 永續的地球|4-2 溫室效應與全球暖化
+JB6|九下地科|地科|C4 永續的地球|4-3 人與自然的互動
+必修物理|翰林/必修物理|物理|第一章 科學的態度與方法|1-1 科學的態度
+必修物理|翰林/必修物理|物理|第一章 科學的態度與方法|1-2 科學的方法
+必修物理|翰林/必修物理|物理|第一章 科學的態度與方法|1-3 物理學簡介
+必修物理|翰林/必修物理|物理|第二章 物質的組成與交互作用|2-1 物質的組成
+必修物理|翰林/必修物理|物理|第二章 物質的組成與交互作用|2-2 原子的尺度與結構
+必修物理|翰林/必修物理|物理|第二章 物質的組成與交互作用|2-3 物質間的基本交互作用
+必修物理|翰林/必修物理|物理|第三章 物體的運動|3-1 對物體運動的描述
+必修物理|翰林/必修物理|物理|第三章 物體的運動|3-2 牛頓運動定律
+必修物理|翰林/必修物理|物理|第三章 物體的運動|3-3 天體運動
+必修物理|翰林/必修物理|物理|第四章 電與磁的統一|4-1 電流的磁效應
+必修物理|翰林/必修物理|物理|第四章 電與磁的統一|4-2 電磁感應
+必修物理|翰林/必修物理|物理|第四章 電與磁的統一|4-3 電與磁的整合
+必修物理|翰林/必修物理|物理|第四章 電與磁的統一|4-4 光
+必修物理|翰林/必修物理|物理|第四章 電與磁的統一|4-5 都卜勒效應
+必修物理|翰林/必修物理|物理|第五章 能量|5-1 功與能量的形式
+必修物理|翰林/必修物理|物理|第五章 能量|5-2 微觀尺度下的能量
+必修物理|翰林/必修物理|物理|第五章 能量|5-3 能量間的轉換與能量守恆
+必修物理|翰林/必修物理|物理|第五章 能量|5-4 質能互換與核能
+必修物理|翰林/必修物理|物理|第六章 量子現象|6-1 光電效應與光的粒子性
+必修物理|翰林/必修物理|物理|第六章 量子現象|6-2 物質波與電子的波動性
+必修物理|翰林/必修物理|物理|第六章 量子現象|6-3 波粒二象性
+必修物理|翰林/必修物理|物理|第六章 量子現象|6-4 原子光譜
+必修化學|翰林/必修化學|化學|第一章 物質的分類與組成|1-1 物質的分類、分離及狀態
+必修化學|翰林/必修化學|化學|第一章 物質的分類與組成|1-2 化學的基本定律與莫耳
+必修化學|翰林/必修化學|化學|第一章 物質的分類與組成|1-3 原子結構與元素週期表
+必修化學|翰林/必修化學|化學|第一章 物質的分類與組成|1-4 物質的化學鍵、構造及特性
+必修化學|翰林/必修化學|化學|第二章 化學式與化學計量|2-1 化學式與百分組成
+必修化學|翰林/必修化學|化學|第二章 化學式與化學計量|2-2 化學反應式
+必修化學|翰林/必修化學|化學|第二章 化學式與化學計量|2-3 化學計量
+必修化學|翰林/必修化學|化學|第二章 化學式與化學計量|2-4 化學反應中的能量變化
+必修化學|翰林/必修化學|化學|第三章 溶液與常見的化學反應|3-1 溶液的種類與特性
+必修化學|翰林/必修化學|化學|第三章 溶液與常見的化學反應|3-2 溶解度
+必修化學|翰林/必修化學|化學|第三章 溶液與常見的化學反應|3-3 酸鹼反應
+必修化學|翰林/必修化學|化學|第三章 溶液與常見的化學反應|3-4 氧化還原反應
+必修化學|翰林/必修化學|化學|第四章 生活化學|4-1 生活中常見的有機物質
+必修化學|翰林/必修化學|化學|第四章 生活化學|4-2 科學與人文
+必修化學|翰林/必修化學|化學|第四章 生活化學|4-3 資源與永續發展
+必修生物|翰林/必修生物|生物|第一章 細胞的構造與功能|1-1 細胞學說的發展歷程
+必修生物|翰林/必修生物|生物|第一章 細胞的構造與功能|1-2 細胞的構造與功能
+必修生物|翰林/必修生物|生物|第一章 細胞的構造與功能|1-3 細胞與能量
+必修生物|翰林/必修生物|生物|第一章 細胞的構造與功能|1-4 細胞分裂
+必修生物|翰林/必修生物|生物|第二章 遺傳|2-1 遺傳法則
+必修生物|翰林/必修生物|生物|第二章 遺傳|2-2 遺傳的染色體學說之發展歷程
+必修生物|翰林/必修生物|生物|第二章 遺傳|2-3 遺傳物質
+必修生物|翰林/必修生物|生物|第二章 遺傳|2-4 基因轉殖及其應用
+必修生物|翰林/必修生物|生物|第三章 演化|3-1 演化觀念的發展
+必修生物|翰林/必修生物|生物|第三章 演化|3-2 演化觀念對生物分類系統的影響
+必修地科|翰林/必修地科|地科|第一章 地球的故事|1-1 地球的起源
+必修地科|翰林/必修地科|地科|第一章 地球的故事|1-2 探究地球歷史
+必修地科|翰林/必修地科|地科|第二章 從地球看宇宙|2-1 地球外的太空
+必修地科|翰林/必修地科|地科|第二章 從地球看宇宙|2-2 從地球看星空
+必修地科|翰林/必修地科|地科|第二章 從地球看宇宙|2-3 恆星亮度與顏色
+必修地科|翰林/必修地科|地科|第二章 從地球看宇宙|2-4 膨脹的宇宙
+必修地科|翰林/必修地科|地科|第三章 千變萬化的大氣|3-1 大氣的結構
+必修地科|翰林/必修地科|地科|第三章 千變萬化的大氣|3-2 多變的天氣
+必修地科|翰林/必修地科|地科|第三章 千變萬化的大氣|3-3 氣象觀測與分析
+必修地科|翰林/必修地科|地科|第三章 千變萬化的大氣|3-4 颱風災害
+必修地科|翰林/必修地科|地科|第四章 深藍的脈動|4-1 海洋的結構
+必修地科|翰林/必修地科|地科|第四章 深藍的脈動|4-2 海水的運動
+必修地科|翰林/必修地科|地科|第四章 深藍的脈動|4-3 海洋與氣候
+必修地科|翰林/必修地科|地科|第五章 體驗大地的撼動|5-1 固體地球的結構
+必修地科|翰林/必修地科|地科|第五章 體驗大地的撼動|5-2 地表與地殼的變動
+必修地科|翰林/必修地科|地科|第五章 體驗大地的撼動|5-3 臺灣的板塊構造
+必修地科|翰林/必修地科|地科|第五章 體驗大地的撼動|5-4 地震災害與防治
+必修地科|翰林/必修地科|地科|第六章 鑑古知今談永續|6-1 氣候變遷的影響
+必修地科|翰林/必修地科|地科|第六章 鑑古知今談永續|6-2 永續發展與氣候變遷的調適`.trim();
 const QTYPES = [
   {code:'A1',name:'概念辨識',group:'A 觀念型'},
   {code:'A2',name:'概念推論',group:'A 觀念型'},
@@ -858,7 +924,77 @@ var KP_MAP = {
 "4-1 海洋與大氣的互動":[{c:"Ic-IV-1",n:"波浪海流潮汐"},{c:"Ic-IV-2",n:"海流影響陸地氣候"},{c:"Ic-IV-3",n:"臺灣附近海流隨季節不同"},{c:"Ic-IV-4",n:"潮汐變化具規律性"},{c:"Fa-IV-5",n:"海水成分與特性"}],
 "4-2 溫室效應與全球暖化":[{c:"Me-IV-4",n:"溫室氣體與全球暖化"},{c:"Nb-IV-1",n:"全球暖化對生物的影響"},{c:"Nb-IV-2",n:"氣候變遷海平面上升異常降水"}],
 "4-3 人與自然的互動":[{c:"Lb-IV-2",n:"人類活動改變環境影響生物"},{c:"Na-IV-4",n:"5R減量拒絕重複使用回收再生"},{c:"Na-IV-7",n:"減量回收再利用綠能永續"},{c:"Nc-IV-3",n:"化石燃料形成與特性"},{c:"Nc-IV-4",n:"風能太陽能核融合燃料電池"},{c:"Nb-IV-3",n:"氣候變遷減緩與調適"}],
-"跨科 氣候變遷與調適":[{c:"Nb-IV-3",n:"氣候變遷減緩與調適"},{c:"Na-IV-4",n:"5R減量拒絕重複使用回收再生"},{c:"Na-IV-7",n:"減量回收再利用綠能永續"}]
+"跨科 氣候變遷與調適":[{c:"Nb-IV-3",n:"氣候變遷減緩與調適"},{c:"Na-IV-4",n:"5R減量拒絕重複使用回收再生"},{c:"Na-IV-7",n:"減量回收再利用綠能永續"}],
+// ── 高中必修物理 ──
+"1-1 科學的態度":[],
+"1-2 科學的方法":[],
+"1-3 物理學簡介":[],
+"2-1 物質的組成":[],
+"2-2 原子的尺度與結構":[],
+"2-3 物質間的基本交互作用":[],
+"3-1 對物體運動的描述":[],
+"3-2 牛頓運動定律":[],
+"3-3 天體運動":[],
+"4-1 電流的磁效應":[],
+"4-2 電磁感應":[],
+"4-3 電與磁的整合":[],
+"4-4 光":[],
+"4-5 都卜勒效應":[],
+"5-1 功與能量的形式":[],
+"5-2 微觀尺度下的能量":[],
+"5-3 能量間的轉換與能量守恆":[],
+"5-4 質能互換與核能":[],
+"6-1 光電效應與光的粒子性":[],
+"6-2 物質波與電子的波動性":[],
+"6-3 波粒二象性":[],
+"6-4 原子光譜":[],
+// ── 高中必修化學 ──
+"1-1 物質的分類、分離及狀態":[],
+"1-2 化學的基本定律與莫耳":[],
+"1-3 原子結構與元素週期表":[],
+"1-4 物質的化學鍵、構造及特性":[],
+"2-1 化學式與百分組成":[],
+"2-2 化學反應式":[],
+"2-3 化學計量":[],
+"2-4 化學反應中的能量變化":[],
+"3-1 溶液的種類與特性":[],
+"3-2 溶解度":[],
+"3-3 酸鹼反應":[],
+"3-4 氧化還原反應":[],
+"4-1 生活中常見的有機物質":[],
+"4-2 科學與人文":[],
+"4-3 資源與永續發展":[],
+// ── 高中必修生物 ──
+"1-1 細胞學說的發展歷程":[],
+"1-2 細胞的構造與功能":[],
+"1-3 細胞與能量":[],
+"1-4 細胞分裂":[],
+"2-1 遺傳法則":[],
+"2-2 遺傳的染色體學說之發展歷程":[],
+"2-3 遺傳物質":[],
+"2-4 基因轉殖及其應用":[],
+"3-1 演化觀念的發展":[],
+"3-2 演化觀念對生物分類系統的影響":[],
+// ── 高中必修地科 ──
+"1-1 地球的起源":[],
+"1-2 探究地球歷史":[],
+"2-1 地球外的太空":[],
+"2-2 從地球看星空":[],
+"2-3 恆星亮度與顏色":[],
+"2-4 膨脹的宇宙":[],
+"3-1 大氣的結構":[],
+"3-2 多變的天氣":[],
+"3-3 氣象觀測與分析":[],
+"3-4 颱風災害":[],
+"4-1 海洋的結構":[],
+"4-2 海水的運動":[],
+"4-3 海洋與氣候":[],
+"5-1 固體地球的結構":[],
+"5-2 地表與地殼的變動":[],
+"5-3 臺灣的板塊構造":[],
+"5-4 地震災害與防治":[],
+"6-1 氣候變遷的影響":[],
+"6-2 永續發展與氣候變遷的調適":[]
 };
 
 /* ====================================================
@@ -991,7 +1127,9 @@ function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
   ['_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ'].forEach(k=>delete r[k]);
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
-  it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;return it;}
+  it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;
+  if(it.book&&/^B[1-6]$/.test(it.book))it.book='J'+it.book;
+  return it;}
 function precompute(it){
   it._diff=calcDiff(it.step,it.mem,it.con);
   it._sylYear=parseSylYear(it.year);
@@ -1091,8 +1229,8 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const rawExam=g(2),school=g(1),year=g(0),book=g(5);
     const grade=gradeFromExam(rawExam,book);
     const round=examRound(rawExam);
-    const fmtExam=round==='會考'?(year||'')+'會考':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
-    const key=round==='會考'?'會考|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
+    const fmtExam=round==='會考'?(year||'')+'會考':round==='學測'?(year||'')+'學測':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
+    const key=round==='會考'?'會考|||'+(year||''):round==='學測'?'學測|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
     const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
@@ -1175,16 +1313,18 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
 function fillBook(sel,grade){
-  const gradeBooks={'七年級':['B1','B2'],'八年級':['B3','B4'],'九年級':['B5','B6']};
+  const gradeBooks={'七年級':['JB1','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高中':HS_BOOKS};
   const allowed=grade?gradeBooks[grade]:null;
   const books=SYL.map(k=>k.book).filter(b=>!allowed||allowed.includes(b));
-  eBook.innerHTML=optTags(books,sel);}
+  eBook.innerHTML=optTags([...new Set(books)],sel);}
 function onEditGrade(){fillBook(eBook.value,eGrade.value);syncByBook();composeExam();}
 function onEditExamRound(){composeExam();}
 function composeExam(){
   const round=eExamRound.value;
   if(round==='會考'){
     eExam.value=(eYear.value.trim()||'')+'會考';
+  } else if(round==='學測'){
+    eExam.value=(eYear.value.trim()||'')+'學測';
   } else {
     const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),round].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
@@ -1506,15 +1646,28 @@ function resetFilters(){
 
 function parseSylYear(y){return y?(y.match(/\d+/)||[''])[0]:'';}
 function parseSylSem(y){return y?(/上/.test(y)?'上':/下/.test(y)?'下':''):''}
-function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
+const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','必修化學','選修化學一','選修化學二','選修化學三','必修生物','選修生物一','選修生物二','選修生物三','必修地科','選修地科一','選修地科二','選修地科三'];
+function bookToGrade(book){
+  if(book==='JB1'||book==='JB2')return '七年級';
+  if(book==='JB3'||book==='JB4')return '八年級';
+  if(book==='JB5'||book==='JB6')return '九年級';
+  if(HS_BOOKS.includes(book))return '高中';
+  return '';
+}
 function gradeFromExam(exam,book){
-  if(exam){if(exam.includes('九年級')||exam.includes('國三'))return '九年級';if(exam.includes('八年級')||exam.includes('國二'))return '八年級';if(exam.includes('七年級')||exam.includes('國一'))return '七年級';}
+  if(exam){
+    if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
+    if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
+    if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+    if(exam.includes('高中')||exam.includes('高一')||exam.includes('高二')||exam.includes('高三')||exam.includes('學測'))return '高中';
+  }
   return bookToGrade(book);}
 function examType(exam,school){
   if(!exam)return '';
   if(exam.includes('段考'))return '段考';
   if(exam.includes('模擬')||exam.includes('北模')||exam.includes('全模'))return '模擬考';
   if(exam.includes('會考'))return '會考';
+  if(exam.includes('學測'))return '學測';
   // exam 有值但無關鍵字 → 有學校名稱視為段考
   if(school)return '段考';
   return '';}
@@ -1533,7 +1686,7 @@ function onFilterExamType(){
   if(v==='會考'||v===''){fRound.value='';}
   render();}
 /* selectFiltered 統一用 matches()，見下方 script */
-function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 const _NEG_KW=/錯誤|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非/g;
@@ -1804,14 +1957,15 @@ function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚
 function buildAutoTitle(){
   var items=pickedItems();
   if(!items.length)return '自然科測驗卷';
-  var gradeOf={B1:'國七',B2:'國七',B3:'國八',B4:'國八',B5:'國九',B6:'國九'};
-  var bookLabel={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
+  var gradeOf={JB1:'國七',JB2:'國七',JB3:'國八',JB4:'國八',JB5:'國九',JB6:'國九'};
+  HS_BOOKS.forEach(function(b){gradeOf[b]='高中';});
+  var bookLabel={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
   var books=[...new Set(items.map(function(it){return it.book;}).filter(Boolean))];
   var fields=[...new Set(items.map(function(it){return it.field;}).filter(Boolean))];
   var grades=[...new Set(books.map(function(b){return gradeOf[b];}).filter(Boolean))];
-  var grade=grades.length===1?grades[0]:grades.length===2?grades.join('')+' ':grades.length>2?'國中':'';
+  var grade=grades.length===1?grades[0]:grades.length===2?grades.join('')+' ':grades.length>2?'自然科':'';
   var field=fields.length===1?fields[0]:'自然科';
-  var bookPart=books.length===1&&bookLabel[books[0]]?' '+bookLabel[books[0]]:'';
+  var bookPart=books.length===1&&bookLabel[books[0]]?' '+bookLabel[books[0]]:books.length===1&&HS_BOOKS.includes(books[0])?' '+books[0]:'';
   return (grade+field+bookPart)||'自然科測驗卷';
 }
 async function _fetchLogoBytes(){try{const r=await fetch("logo.png");if(!r.ok)return null;const ab=await r.arrayBuffer();return new Uint8Array(ab);}catch(_){return null;}}
@@ -1821,10 +1975,10 @@ function openPaperDlg(){
   const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value;
   const yr=fYear.value?(fYear.value+(fSem.value||'')):fSem.value;
   const et=fExamType.value,rnd=fRound.value;
-  document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':'';
+  document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':gr==='高中'?'高中':'';
   document.getElementById('pSubject').value=fd||'';
-  const scopeMap={B1:'第一冊',B2:'第二冊',B3:'第三冊',B4:'第四冊',B5:'第五冊',B6:'第六冊'};
-  document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:'';
+  const scopeMap={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
+  document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:HS_BOOKS.includes(bk)?bk:'';
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
   document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?normalizeSchool(sc):'',shortRnd?'('+shortRnd+')':''].join(''):'';
@@ -1975,6 +2129,12 @@ function restoreJSON(e){
 }
 
 /* ===== Claude 指令 ===== */
+function _isHSContext(){
+  if(fGrade&&fGrade.value==='高中')return true;
+  if(fBook&&HS_BOOKS.includes(fBook.value))return true;
+  if(fField&&(fField.value==='物理'||fField.value==='化學'))return true;
+  return false;
+}
 function buildPrompt(){const syl=SYL_RAW;
   const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
   const yr=(fYear.value?(fYear.value+(fSem.value||'')):fSem.value)||'';
@@ -2016,7 +2176,7 @@ function buildPrompt(){const syl=SYL_RAW;
 ▷ 欄3 考試名稱：格式 學校-年級-學年學期-考試次，如 百齡國中-九年級-112上-第一次段考；學校部分同欄2規則（高中國中部只寫某某國中）
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：A/B/C/D；卷子有附答案直接填入，卷子沒有附答案請根據你的專業知識判斷並填入正確答案，不可留空
-▷ 欄6 冊數：對照【三、翰林版骨架】填，如 B1、B3、B5
+▷ 欄6 冊數：對照【三、翰林版骨架】填，如 JB1、JB3、JB5
 ▷ 欄7 冊名：對照【三、翰林版骨架】填
 ▷ 欄8 領域：生物 / 化學 / 物理 / 地球科學
 ▷ 欄9 大單元：對照【三、翰林版骨架】填
@@ -2134,7 +2294,7 @@ function buildPrompt(){const syl=SYL_RAW;
     ✓ 百齡國中-九年級-112上-第一次段考-7
     ✓ 士林國中-八年級-113下-第二次段考-22
     ✓ 會考-114-42（會考題組）
-  年級：七年級／八年級／九年級（全名，B1/B2→七年級，B3/B4→八年級，B5/B6→九年級）
+  年級：七年級／八年級／九年級（全名，JB1/JB2→七年級，JB3/JB4→八年級，JB5/JB6→九年級）
   最後數字：該題組中題號最小（即第一題）的題號
 
   ╔══════════════════════════════════════╗
@@ -2394,6 +2554,131 @@ ${syl}
 □ 有「承上題」的題目：確認該題及其引用的前一題都已填相同的題組ID
 
 只輸出 CSV，不要任何說明文字。`}
+
+function buildPromptHS(){
+  const hsSyl=SYL_RAW.split('\n').filter(l=>/^(必修|選修)/.test(l)).join('\n');
+  const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
+  const yr=(fYear.value?(fYear.value+(fSem.value||'')):fSem.value)||'';
+  const sc=fSchool.value||'';
+  const gr=fGrade.value||'';
+  const et=fExamType.value||'';
+  const rnd=fRound.value||'';
+  const bk=fBook.value||'';
+  const examDesc=[et,rnd].filter(Boolean).join('');
+  const exParts=[sc,gr||'高中',yr,examDesc].filter(Boolean);
+  const ex=exParts.length?exParts.join('-'):'（如：建中-高一-114上-第一次段考 或 114學測）';
+  return `你是一位臺灣自然科教師助手，請把附上的翰林版高中自然科考卷（或學測試題），逐題整理成 CSV，供我匯入題庫系統。
+
+【卷子資訊（請以上傳的卷子內容為準，下方僅供參考）】
+- 來源學校：${sc?sc+'（參考，請確認）':'學測請留空；高中段考填高中校名，如 建中、北一女中'}
+- 年級：${gr?gr+'（參考，請確認）':'高一／高二／高三 或 高中（學測不分年級填高中）'}
+- 年度學期：${yr?yr+'（參考，請確認）':'如 114上、114下；學測填 114學測'}
+- 考試名稱：${ex}${sc||yr?'（參考，請確認）':''}
+- 科目（冊數）：${bk?bk+'（參考，請確認）':'如 必修物理、必修化學、必修生物、必修地科'}
+
+════════════════════════════════════════
+【一、CSV 格式規範】
+════════════════════════════════════════
+輸出 23 欄 CSV，第一列為標題列，之後每題一列。
+欄位標題（依序）：
+  年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,詳解,題組文章,題組ID
+
+⚠️ CSV 引號規則（違反會導致匯入失敗）：
+- 每一個欄位都必須用雙引號包住，標題列也一樣
+- 欄位內有換行：換行留著，整個欄位仍在雙引號內（不要在欄位外額外換行）
+- 欄位內有雙引號：改寫為兩個雙引號 ""
+- 欄位內有逗號：一樣包在雙引號內即可，不用特別處理
+- 每一列（題目）結束才換行，不要在一題中間隨意斷列
+
+════════════════════════════════════════
+【二、逐欄填寫規則（高中版）】
+════════════════════════════════════════
+
+▷ 欄1 年度：如 114上、113下；學測填 114學測
+▷ 欄2 來源學校：高中校名，如 建中；學測請留空
+▷ 欄3 考試名稱：
+  - 學測格式：114學測
+  - 段考格式：學校-年級-學年學期-考試次，如 建中-高一-114上-第一次段考
+▷ 欄4 題號：阿拉伯數字，如 1、2、23
+▷ 欄5 答案：A/B/C/D；卷子有附答案直接填入，沒有請判斷並填入，不可留空
+▷ 欄6 冊數：對照【三、翰林版骨架】填，如 必修物理、必修化學（欄6~10只能從骨架對照，不可自創）
+▷ 欄7 冊名：對照【三、翰林版骨架】填，如 翰林/必修物理
+▷ 欄8 領域：物理 / 化學 / 生物 / 地科（高中用單科名稱，不用「理化」）
+▷ 欄9 大單元：對照【三、翰林版骨架】填
+▷ 欄10 子單元：對照【三、翰林版骨架】填
+▷ 欄11 知識點：根據108課綱學科能力測驗考試說明填入學習內容代碼，多個用「、」隔開；若不確定可留空
+▷ 欄12 題目摘要：動詞+對象，15字內，如「計算電磁感應電動勢」
+▷ 欄13 題型：從以下挑一個代碼（一題只填一個）：
+  ${typeList}
+▷ 欄14 步驟分：1（1步）/ 2（2步）/ 3（3步以上）
+▷ 欄15 記憶分：1（背就會）/ 2（需理解）/ 3（陌生情境活用）
+▷ 欄16 概念分：1（1概念）/ 2（2概念）/ 3（3個以上或跨章）
+▷ 欄17 圖表類型：無 / 折線圖 / 長條圖 / 表格 / 示意圖 / 電路圖 / v-t圖 / 實驗裝置圖 等；沒有圖填「無」
+▷ 欄18 判斷依據：分類有疑慮時簡述，否則留空
+▷ 欄19 待確認：沒把握的填 Y，有把握的留空
+
+▷ 欄20 題目（⚠️ 嚴格照原文抄錄，禁止簡化、縮寫、改寫、加字）：
+  - 完整抄錄題幹文字，選項各自換行，格式固定為 (A) (B) (C) (D)
+  - 此欄只放題幹與選項，閱讀材料放欄22
+  - 「承第N題」「承第 N 題」→ 改寫為「承上題」
+  - 含圖：以文字描述圖表內容；圖太複雜則在題目後標〔含圖〕
+
+  【數學與化學式 LaTeX 規則（題目欄、詳解欄都適用）】
+  ▸ 所有數學式、化學式用 $...$ 包住（如 $v=\\frac{d}{t}$、$Cu^{2+}$）
+  ▸ 單位和英文字詞用 \\text{} 包住（如 $30\\,\\text{m/s}$、$25\\,\\text{g}$）
+  ▸ 化學方程式整條在同一個 $...$，不可截斷
+  ▸ 所有 LaTeX 指令必須有反斜線（\\times \\cdot \\frac \\rightarrow 等）
+  ▸ 常見錯誤對照（禁止使用左欄，必須用右欄）：
+    ✗ H₂O（Unicode下標）　→　✓ $H_2O$
+    ✗ CO₂                  →　✓ $CO_2$
+    ✗ 10⁸（Unicode上標）  →　✓ $10^8$
+    ✗ Cu²⁺                 →　✓ $Cu^{2+}$
+    ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
+
+▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
+  格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
+  【解題關鍵】（換行後）一句話點出核心觀念。
+  （空一行）
+  【詳解】（換行後）選擇題每個選項單獨一行：(X) 正確：解析 或 (X) 錯誤：解析。
+  （空一行）
+  【觀念補充】（換行後）有教學價值時1~2句；無必要則整段省略。
+
+▷ 欄22 題組文章（同規則）：
+  1. 題組「第一題」：填完整共用閱讀材料／情境文字
+  2. 同題組「第二題以後」：欄22 一定要留空
+  3. 獨立題目：欄22 留空
+
+▷ 欄23 題組ID：
+  - 有共用閱讀材料或「承上題」的題組：同一題組所有小題填相同ID
+  - 格式：學校-年級-學年學期-考試名稱-題組第一題題號
+    ✓ 建中-高一-114上-第一次段考-15
+    ✓ 學測-114-42（學測題組）
+  - 年級：高一／高二／高三／高中
+  - 獨立題目：留空
+
+════════════════════════════════════════
+【三、翰林版骨架（欄6~10只能對照此填，不可自創）】
+════════════════════════════════════════
+（格式：冊數|冊名|領域|大單元|子單元）
+${hsSyl}
+
+════════════════════════════════════════
+【四、輸出前自我檢查清單（輸出前必須逐項確認）】
+════════════════════════════════════════
+□ 每道題目恰好輸出一列 CSV（不多不少）
+□ 每列恰好有 23 個欄位（含標題列）
+□ 所有欄位都用雙引號包住（標題列也是）
+□ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
+□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 欄6 冊數：只用骨架中的冊數名稱（如 必修物理），沒有自創
+□ 欄8 領域：物理/化學/生物/地科（不用「理化」）
+□ 圖片：複雜圖已加 〔含圖〕 標記
+□ 方程式：所有數學式/化學式都用 $...$ 包住；沒有使用 Unicode 上下標
+□ 題組文章（欄22）：只在題組「第一題」填入；其餘小題欄22為空字串 ""
+□ 題組ID（欄23）：同一題組所有小題（含第一題）都填了完全相同的ID
+
+只輸出 CSV，不要任何說明文字。`}
+
 function openPromptWindow(){
   var p = buildPrompt();
   var w = window.open('', '_blank', 'width=700,height=600');
@@ -2909,7 +3194,7 @@ const TB_BUTTONS={
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
   compressImgs: ()=>`<button class="btn" onclick="batchCompressImgs()">🗜 壓縮圖片</button>`,
-  claude:  ()=>`<button class="btn gold" onclick="showPrompt()">📋 AI轉檔指令</button>`,
+  claude:  ()=>`<div style="display:inline-flex;gap:4px"><button class="btn gold sm" onclick="showPromptJH()" title="國中自然科段考卷轉CSV指令">📋 AI（國中）</button><button class="btn gold sm" onclick="showPromptHS()" title="高中自然科考卷／學測試題轉CSV指令">📋 AI（高中）</button></div>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">🤖 系統文件（給Claude）</button>`,
   report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
   kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
@@ -3171,8 +3456,17 @@ function selectFiltered(){
 }
 </script>
 <script>
-function showPrompt(){
+function showPrompt(){showPromptJH();}
+function showPromptJH(){
   var p=buildPrompt();
+  var ta=document.getElementById('promptTA');
+  ta.value=p;
+  document.getElementById('promptBox').style.display='block';
+  document.body.style.overflow='hidden';
+  setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},200);
+}
+function showPromptHS(){
+  var p=buildPromptHS();
   var ta=document.getElementById('promptTA');
   ta.value=p;
   document.getElementById('promptBox').style.display='block';
