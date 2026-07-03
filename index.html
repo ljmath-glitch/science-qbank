@@ -124,9 +124,10 @@
   .diffbox .seg button.on{background:var(--phy);color:#fff;font-weight:700}
   .diffresult{margin-top:6px;padding:7px 10px;border-radius:6px;font-weight:700;text-align:center;font-size:14px}
   .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
-  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:50;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
+  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:600;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
+  .float-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .kbd{font-family:ui-monospace,monospace;background:#2a3550;color:#fff;padding:1px 6px;border-radius:4px;font-size:12px}
   .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:inherit;cursor:pointer}
   .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:inherit}
@@ -239,6 +240,13 @@
 
     /* === 卡片 === */
     .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
+
+    /* === 底部浮動列 === */
+    .float{flex-direction:column;padding:10px 14px;gap:6px;align-items:stretch}
+    .float .spacer{display:none}
+    .float .n{text-align:center;font-size:13px;padding:2px 0}
+    .float-btns{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+    .float-btns .btn,.float-btns .btn.sm{height:40px;padding:0 4px;font-size:12px;justify-content:center;flex:1 1 calc(33.333% - 4px);min-width:0;box-sizing:border-box;border-radius:8px}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -334,11 +342,13 @@
 
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
-  <button class="btn sm" onclick="autoMix()">⚖ 依比例自動選</button>
-  <button class="btn sm" onclick="clearPicks()">清空</button>
-  <button class="btn sm" style="background:#c0392b;color:#fff" onclick="deletePickedItems()">🗑 刪除已選</button>
-  <button class="btn gold" onclick="openPaperDlg()">📄 匯出考卷</button>
-  <button class="btn green" onclick="exportPaperCSV()">選題CSV</button>
+  <div class="float-btns">
+    <button class="btn sm" onclick="autoMix()">⚖ 依比例自動選</button>
+    <button class="btn sm" onclick="clearPicks()">清空</button>
+    <button class="btn sm" style="background:#c0392b;color:#fff" onclick="deletePickedItems()">🗑 刪除已選</button>
+    <button class="btn gold" onclick="openPaperDlg()">📄 匯出考卷</button>
+    <button class="btn green" onclick="exportPaperCSV()">選題CSV</button>
+  </div>
 </div>
 
 <!-- 匯入 -->
