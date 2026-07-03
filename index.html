@@ -230,7 +230,8 @@
     /* 手機緊湊模式下隱藏列標題，減少擠迫感 */
     .tb-row-label{display:none}
     .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 6px;overflow-x:visible;width:100%;box-sizing:border-box}
-    .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr}
+    .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr 1fr!important}
+    .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:1/-1!important;display:flex!important;justify-content:center!important}
     .toolbar-outer .tb-item{width:100%;display:flex}
     .toolbar-outer .tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important}
     .toolbar-outer .tb-item>div>span{white-space:normal!important;text-align:center}
@@ -238,9 +239,9 @@
     .toolbar-outer select{height:40px!important;font-size:12px!important;width:100%!important;max-width:100%!important;box-sizing:border-box}
     .toolbar-outer .stat{width:100%;text-align:center;padding:4px 0}
 
-    /* === 統計行 === */
-    .tb-row-stat .tb-btn-scroll{flex-wrap:wrap!important;gap:4px}
-    .stat{margin-left:0;font-size:12px;padding:4px 2px 2px;border-top:1px dashed var(--line);margin-top:2px;flex-shrink:0}
+    /* === 統計行 V5.15 === */
+    .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
+    .stat{margin-left:0;font-size:13px;padding:3px 0;white-space:nowrap;text-align:center;flex-shrink:0}
 
     /* === 卡片 === */
     .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
@@ -2935,6 +2936,7 @@ const TB_DEFAULT=[
 let tbEditing=false,tbDragEl=null;
 function applyMobileToolbar(){
   document.querySelectorAll('.tb-row').forEach(row=>{
+    if(row.classList.contains('tb-row-stat'))return;
     const scroll=row.querySelector('.tb-btn-scroll');
     if(!scroll||scroll.classList.contains('mobile-compact'))return;
     const items=[...scroll.querySelectorAll(':scope>.tb-item')];
