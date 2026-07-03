@@ -227,7 +227,8 @@
     /* === 每列：標籤在上、按鈕 grid 在下 === */
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:0;clear:both}
     .tb-row+.tb-row{margin-top:0;border-top:1px solid var(--line)}
-    .tb-row-label{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--line);border-radius:0;padding:6px 10px 4px;margin-right:0;letter-spacing:0;justify-content:flex-start;align-self:auto;height:auto;font-size:11px}
+    /* 手機緊湊模式下隱藏列標題，減少擠迫感 */
+    .tb-row-label{display:none}
     .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 6px;overflow-x:visible;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr}
     .toolbar-outer .tb-item{width:100%;display:flex}
@@ -245,7 +246,8 @@
     .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
 
     /* === 手機工具列緊湊模式 === */
-    .tb-btn-scroll.mobile-compact{display:flex!important;flex-direction:column!important;gap:0!important;padding:4px 8px 6px!important}
+    .tb-row+.tb-row{padding-top:2px}
+    .tb-btn-scroll.mobile-compact{display:flex!important;flex-direction:column!important;gap:5px!important;padding:6px 10px 8px!important}
     .tb-compact-main{display:flex!important;gap:6px!important;align-items:stretch!important;width:100%!important}
     .tb-compact-main>.tb-item{flex:1!important;min-width:0!important;width:0!important}
     /* 直接按鈕（無 div 包裝） */
