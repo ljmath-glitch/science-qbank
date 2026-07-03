@@ -249,15 +249,17 @@
     .tb-row+.tb-row{padding-top:2px}
     .tb-btn-scroll.mobile-compact{display:flex!important;flex-direction:column!important;gap:5px!important;padding:6px 10px 8px!important}
     .tb-compact-main{display:flex!important;gap:6px!important;align-items:stretch!important;width:100%!important}
-    .tb-compact-main>.tb-item{flex:1!important;min-width:0!important;width:0!important}
+    /* width:0 在 iOS Safari 會蓋掉 flex:1，改用標準寫法：flex-grow+min-width */
+    .tb-compact-main>.tb-item{flex-grow:1!important;flex-shrink:1!important;flex-basis:0%!important;min-width:0!important;overflow:hidden!important}
     /* 直接按鈕（無 div 包裝） */
-    .tb-compact-main>.tb-item>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 6px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 8px!important;box-sizing:border-box!important;text-align:center!important}
     /* 有 div 包裝的按鈕（raw / batchGenBtn 等） */
     .tb-compact-main>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:0!important}
-    .tb-compact-main>.tb-item>div>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 6px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>div>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 8px!important;box-sizing:border-box!important;text-align:center!important}
     /* 開發中警告標籤：緊湊模式下隱藏 */
     .tb-compact-main .badge-warn,.tb-compact-main span[style*="9px"]{display:none!important}
-    .tb-more-btn{flex-shrink:0!important;height:46px!important;width:40px!important;padding:0!important;font-size:18px!important;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:7px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;font-weight:600}
+    /* ⋯ 按鈕：明確固定寬度，不生長不縮小 */
+    .tb-more-btn{flex:0 0 40px!important;height:46px!important;width:40px!important;padding:0!important;font-size:18px!important;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:7px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;font-weight:600}
     .tb-more-secondary{display:none;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px;max-height:130px;overflow-y:auto}
     .tb-more-secondary.open{display:grid!important}
     .tb-more-secondary .tb-item{width:100%!important}

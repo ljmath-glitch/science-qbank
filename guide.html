@@ -777,6 +777,15 @@
 <table>
   <tr><th style="width:80px">版本</th><th style="width:100px">日期</th><th>更新內容</th></tr>
   <tr>
+    <td><b>V5.14</b></td>
+    <td>2026-07-03</td>
+    <td>
+      <b>修正：</b>手機版工具列主按鈕被壓成細條的 iOS Safari 相容性問題——
+      移除 width:0!important（在 iOS 上蓋掉 flex:1 導致按鈕縮到 0），
+      改用 flex-grow:1; flex-basis:0%；⋯ 按鈕改用 flex:0 0 40px 明確固定寬度
+    </td>
+  </tr>
+  <tr>
     <td><b>V5.13</b></td>
     <td>2026-07-03</td>
     <td>
@@ -880,7 +889,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  V5.13 · 2026年7月 · 僅供內部使用
+  V5.14 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
