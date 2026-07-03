@@ -43,7 +43,7 @@
   #tbCollapseBar.tb-floating{position:fixed;top:0;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:3px 24px;box-shadow:0 3px 8px rgba(0,0,0,.12);z-index:200;margin:0}
   @media(max-width:860px){
     #tbCollapseBar.tb-floating{padding:8px 36px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-    .toolbar-outer:not([style*="top: -"])::after{content:'';pointer-events:none;position:sticky;bottom:0;left:0;right:0;height:28px;display:block;background:linear-gradient(to bottom,transparent,var(--card));margin-top:-28px}
+    #tbWrap::after{content:'';pointer-events:none;position:sticky;bottom:0;left:0;right:0;height:28px;display:block;background:linear-gradient(to bottom,transparent,var(--card));margin-top:-28px}
   }
   .tb-row{display:flex;gap:7px;flex-wrap:wrap;align-items:center;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
@@ -219,7 +219,9 @@
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
     /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
-    .toolbar-outer{padding:0 0 6px!important;max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    .toolbar-outer{padding:0 0 6px!important}
+    /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
+    #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     #tbEditBtn,#tbResetBtn{display:none!important}
 
     /* === 每列：標籤在上、按鈕 grid 在下 === */
