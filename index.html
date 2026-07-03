@@ -171,10 +171,10 @@
   .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
   .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
-  .filter-tab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:501;background:var(--card);border:1px solid var(--line);border-left:none;border-radius:0 10px 10px 0;box-shadow:3px 0 10px rgba(0,0,0,.18);cursor:pointer;width:26px;padding:22px 0;font-size:11px;font-weight:700;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;transition:left .3s cubic-bezier(.4,0,.2,1),background .15s;user-select:none;border:1px solid var(--line);border-left:none}
+  .filter-tab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:701;background:var(--card);border:1px solid var(--line);border-left:none;border-radius:0 10px 10px 0;box-shadow:3px 0 10px rgba(0,0,0,.18);cursor:pointer;width:26px;padding:22px 0;font-size:11px;font-weight:700;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;transition:left .3s cubic-bezier(.4,0,.2,1),background .15s;user-select:none;border:1px solid var(--line);border-left:none}
   .filter-tab.has-filter{background:var(--accent);color:#fff;border-color:var(--accent)}
   .filter-tab.panel-open{left:min(320px,92vw)}
-  .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:490;opacity:0;transition:opacity .3s}
+  .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:610;opacity:0;transition:opacity .3s}
   .side-overlay.show{opacity:1}
   @media(min-width:861px){
     .layout{
@@ -203,7 +203,7 @@
     .toolbar-outer{margin-left:28px;margin-right:28px}
 
     /* === 篩選抽屜 === */
-    .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:500;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
+    .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:700;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto}
     .side.drawer-open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2)}
     .side-close{display:block}
     .side-overlay.show{display:block}
@@ -242,6 +242,7 @@
     .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
 
     /* === 底部浮動列 === */
+    body{padding-bottom:130px}
     .float{flex-direction:column;padding:7px 12px;gap:5px;align-items:stretch}
     .float .spacer{display:none}
     .float .n{text-align:center;font-size:12px;padding:0}
