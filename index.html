@@ -324,7 +324,7 @@
     </aside>
     <main>
       <div id="pinBanner" style="display:none;align-items:center;gap:10px;background:#fff8e6;border:1px solid var(--phy);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;font-family:inherit">
-        <span style="flex:1">📌 目前篩選鈴噹題目（單題檢視）</span>
+        <span id="pinBannerText" style="flex:1">📌 目前篩選鈴噹題目（單題檢視）</span>
         <button class="btn sm" onclick="clearPinFilter()">× 返回全部</button>
       </div>
       <div id="list"></div>
@@ -1381,6 +1381,8 @@ function toggleBellPanel(){
 // 鈴噹面板不自動關閉，只有再點鈴噹按鈕才切換
 function bellFilter(id){
   _pinId=id;
+  const it=DB.find(x=>x.id===id);
+  _pinGroupId=(it&&it.groupId)||null;
   render();
   requestAnimationFrame(()=>{
     const card=document.querySelector(`[data-id="${id}"]`);
@@ -1457,7 +1459,7 @@ function buildFiltersKeep(){
   });
 }
 function resetFilters(){
-  _pinId=null;
+  _pinId=null;_pinGroupId=null;
   ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
@@ -1621,7 +1623,7 @@ async function _pvResizeEnd(){
 }
 function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
 function matches(it){
-  if(_pinId!==null)return it.id===_pinId;
+  if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
   const s=fSearch.value.trim();
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')).includes(s))return false;
   if(fBook.value&&it.book!==fBook.value)return false;
@@ -1640,10 +1642,10 @@ function matches(it){
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   return true}
-const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null;
+const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null;
 let _renderTimer=null;
 function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
-function clearPinFilter(){_pinId=null;render();}
+function clearPinFilter(){_pinId=null;_pinGroupId=null;render();}
 function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
   // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
@@ -1651,7 +1653,11 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   _lastShown=shown;_page=0;
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   const pinBanner=document.getElementById('pinBanner');
-  if(pinBanner)pinBanner.style.display=_pinId?'flex':'none';
+  if(pinBanner){
+    pinBanner.style.display=_pinId?'flex':'none';
+    const pbt=document.getElementById('pinBannerText');
+    if(pbt)pbt.textContent=_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）';
+  }
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
   renderPage(list,shown,0);}
