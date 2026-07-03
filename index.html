@@ -476,7 +476,7 @@
 
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center;flex-wrap:wrap"><select id="ollamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他（自訂網址）</option></select><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址，可用逗號分隔多個網址依序容錯" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><input id="ollamaModel" type="text" placeholder="模型（如 qwen2.5:latest）" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:110px;font-family:inherit" oninput="localStorage.setItem('ollamaModel',this.value)"><button type="button" onclick="ollamaHelpDlg.showModal()" title="使用說明" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">❓</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center;flex-wrap:wrap"><select id="ollamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他（自訂網址）</option></select><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址，可用逗號分隔多個網址依序容錯" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><select id="ollamaModel" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:130px;font-family:inherit" onchange="localStorage.setItem('ollamaModel',this.value)"></select><button type="button" onclick="ollamaHelpDlg.showModal()" title="使用說明" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">❓</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
     <div id="solChatWrap" class="sol-chat-wrap" style="display:none">
       <div class="sol-chat-head">💬 詳解有誤？與 AI 討論修正</div>
       <div class="sol-chat-log" id="solChatLog"></div>
@@ -2641,6 +2641,20 @@ function _toggleGeminiModelSel(provider,selId){
   }
 }
 const OLLAMA_PRESETS={company:'http://100.72.250.96:11434',mac:'http://localhost:11434,http://CHIAs-MacBook-Pro.local:11434,http://100.127.211.80:11434'};
+const OLLAMA_MODEL_OPTIONS={
+  mac:[{v:'qwen2.5:latest',t:'qwen2.5（文字）'},{v:'qwen3-vl:8b',t:'qwen3-vl（文字+圖片）'}],
+  company:[{v:'qwen2.5:latest',t:'qwen2.5（文字）'}],
+  custom:[{v:'qwen2.5:latest',t:'qwen2.5（文字）'}],
+};
+function _updateOllamaModelSelect(preset){
+  const sel=document.getElementById('ollamaModel');
+  if(!sel)return;
+  const opts=OLLAMA_MODEL_OPTIONS[preset]||OLLAMA_MODEL_OPTIONS.custom;
+  const saved=localStorage.getItem('ollamaModel')||'qwen2.5:latest';
+  const keep=opts.some(o=>o.v===saved)?saved:opts[0].v;
+  sel.innerHTML=opts.map(o=>`<option value="${o.v}"${o.v===keep?' selected':''}>${o.t}</option>`).join('');
+  if(keep!==saved)localStorage.setItem('ollamaModel',keep);
+}
 function onOllamaPresetChange(v){
   localStorage.setItem('ollamaPreset',v);
   const urlEl=document.getElementById('ollamaUrl');
@@ -2650,6 +2664,7 @@ function onOllamaPresetChange(v){
     localStorage.setItem('ollamaUrl',OLLAMA_PRESETS[v]);
     if(urlEl)urlEl.value=OLLAMA_PRESETS[v];
   }
+  _updateOllamaModelSelect(v);
 }
 function _toggleOllamaSettings(provider){
   const wrap=document.getElementById('ollamaSettingsWrap');
@@ -2676,7 +2691,7 @@ function _toggleOllamaSettings(provider){
       if(!curUrl)localStorage.setItem('ollamaUrl',OLLAMA_PRESETS[preset]);
       if(urlEl)urlEl.value=OLLAMA_PRESETS[preset];
     }
-    const mdlEl=document.getElementById('ollamaModel');if(mdlEl&&!mdlEl.value)mdlEl.value=localStorage.getItem('ollamaModel')||'qwen2.5:latest';
+    _updateOllamaModelSelect(preset);
   }
 }
 function getAIKey(provider){
