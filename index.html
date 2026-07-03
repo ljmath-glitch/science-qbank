@@ -242,6 +242,19 @@
     /* === 卡片 === */
     .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
 
+    /* === 手機工具列緊湊模式 === */
+    .tb-btn-scroll.mobile-compact{display:flex!important;flex-direction:column!important;gap:0!important;padding:4px 8px 6px!important}
+    .tb-compact-main{display:flex;gap:6px;align-items:stretch}
+    .tb-compact-main>.tb-item{flex:1;min-width:0;width:auto!important}
+    .tb-compact-main>.tb-item .btn{width:100%!important;height:40px!important;justify-content:center!important}
+    .tb-more-btn{flex-shrink:0!important;height:40px!important;width:40px!important;padding:0!important;font-size:18px;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:7px;display:flex!important;align-items:center;justify-content:center;cursor:pointer;font-family:inherit;font-weight:600}
+    .tb-more-secondary{display:none;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+    .tb-more-secondary.open{display:grid!important}
+    .tb-more-secondary .tb-item{width:100%!important}
+    .tb-more-secondary .btn{width:100%!important;height:36px!important;justify-content:center!important;font-size:11px!important;padding:0 4px!important}
+    .tb-more-secondary select{width:100%!important;height:36px!important;font-size:11px!important;box-sizing:border-box}
+    .tb-more-secondary .stat{width:100%;text-align:center;font-size:12px;padding:4px 0}
+
     /* === 底部浮動列 === */
     body{padding-bottom:130px}
     .float{flex-direction:column;padding:7px 12px;gap:5px;align-items:stretch}
@@ -2906,6 +2919,36 @@ const TB_DEFAULT=[
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
+function applyMobileToolbar(){
+  document.querySelectorAll('.tb-row').forEach(row=>{
+    const scroll=row.querySelector('.tb-btn-scroll');
+    if(!scroll||scroll.classList.contains('mobile-compact'))return;
+    const items=[...scroll.querySelectorAll(':scope>.tb-item')];
+    if(!items.length)return;
+    scroll.classList.add('mobile-compact');
+    const main=document.createElement('div');
+    main.className='tb-compact-main';
+    main.appendChild(items[0]);
+    if(items.length>1){
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='btn tb-more-btn';
+      btn.textContent='⋯';
+      const sec=document.createElement('div');
+      sec.className='tb-more-secondary';
+      items.slice(1).forEach(it=>sec.appendChild(it));
+      btn.addEventListener('click',()=>{
+        const o=sec.classList.toggle('open');
+        btn.textContent=o?'▴':'⋯';
+      });
+      main.appendChild(btn);
+      scroll.appendChild(main);
+      scroll.appendChild(sec);
+    }else{
+      scroll.appendChild(main);
+    }
+  });
+}
 function renderToolbar(){
   let layout=JSON.parse(localStorage.getItem('tbLayout')||'null');
   // 版本或列數不符時自動重置
@@ -2948,6 +2991,8 @@ function renderToolbar(){
       btns.forEach(b=>b.style.width='');
       const maxW=Math.max(...btns.map(b=>b.offsetWidth));
       if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
+    }else{
+      applyMobileToolbar();
     }
   });
 }
