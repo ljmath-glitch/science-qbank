@@ -198,7 +198,7 @@
   <tr><td><span class="badge red">＋ 匯入題目</span></td><td>貼上 AI 產生的 CSV，批次匯入題目</td></tr>
   <tr><td><span class="badge gray">手動新增</span></td><td>逐欄填寫，新增單一題目</td></tr>
   <tr><td><span class="badge gray">🔄 重新整理</span></td><td>重新從雲端載入最新資料</td></tr>
-  <tr><td><span class="badge gold">📋 Claude 指令</span></td><td>產生給 AI 的完整指令（用來轉換段考卷）</td></tr>
+  <tr><td><span class="badge gold">📋 Claude 指令</span></td><td>產生給 AI 的完整轉換指令，包含 23 欄格式、圖片標記、LaTeX 公式、題組 ID 規則及自我檢查清單</td></tr>
   <tr><td><span class="badge green">⬇ 備份</span></td><td>下載完整題庫 JSON 備份</td></tr>
   <tr><td><span class="badge gray">📊 知識點分析</span></td><td>查看難度分布、題型分布、缺口子單元</td></tr>
   <tr><td><span class="badge blue">✨ 批次生成詳解</span></td><td>讓 AI 自動幫選取的題目寫詳解</td></tr>
@@ -229,7 +229,7 @@
 
 <div class="step"><div class="step-num">1</div><div class="step-body">
   <b>點工具列的「📋 Claude 指令」</b><br>
-  畫面會出現一個有很長內容的視窗。找到「全選並複製」按鈕，把這段指令複製起來。
+  畫面會出現一段很長的指令視窗。這段指令已包含：23 欄格式定義、圖片佔位規則、LaTeX 公式寫法、題組 ID 與題組文章規則，以及 AI 的自我檢查清單。找到「全選並複製」按鈕，把這段指令複製起來。
 </div></div>
 
 <h3>Step 2：把指令和考卷丟給 AI</h3>
@@ -273,13 +273,20 @@
 
 <div class="step"><div class="step-num">7</div><div class="step-body">
   <b>把 CSV 貼入文字框，點「匯入」</b><br>
-  系統會逐行解析，成功後顯示匯入幾題。
+  系統逐行解析，完成後彈出摘要訊息，例如：<br>
+  <code style="display:block;background:#f0ece2;padding:8px;border-radius:6px;margin-top:6px;font-size:12px">✅ 成功匯入 32 題（含 2 組題組文章）。
+
+⚠️ 需人工補充：
+• 5 題含〔含圖〕→ 請逐題編輯並上傳圖片
+• 7 題已標記「待確認」→ 點左側「只看待確認」集中處理</code>
+  <b>〔含圖〕的題目必須人工補圖，詳見下方說明。</b>
 </div></div>
 
 <div class="card warn">
   <b>匯入後常見問題</b><br>
-  · 如果某些欄位顯示空白，可能是 AI 填錯格式，請個別點進去「編輯」修正<br>
-  · 有疑問的題目 AI 會在「待確認」欄填 Y，篩選「只看待確認」可以集中審查
+  · 有「待確認」的題目，篩選「只看待確認」可以集中審查<br>
+  · 標記 <code>〔含圖〕</code> 的題目需手動上傳圖片（詳見下方「四大容易跑掉的欄位」）<br>
+  · 題組 ID 只有 1 題的會自動標紅，需確認其他小題是否漏填 ID
 </div>
 
 <h3>Step 4：檢查待確認題目</h3>
@@ -291,6 +298,62 @@
 
 <div class="card tip">
   <b>完成！</b>這批考卷的題目已成功進入題庫，老師就可以搜尋和出卷了。
+</div>
+
+<h3>⚠️ 四個「容易跑掉」的欄位——務必確認</h3>
+
+<div class="card warn">
+  以下四類資訊是 AI 最難完整轉換的地方，每次匯入後都要主動確認。
+</div>
+
+<h4>① 圖片</h4>
+<div class="card info">
+  <b>根本限制</b>：CSV 格式沒辦法夾帶圖片。<br><br>
+  <b>AI 的做法</b>：遇到圖片（如：電路圖、實驗裝置圖、折線圖），會在題目欄填 <code>〔含圖〕</code> 作為佔位符。<br><br>
+  <b>系統動作</b>：匯入時自動偵測到 <code>〔含圖〕</code>，把該題標記為「待確認」，備註欄填入「[回報] 題目含圖，請編輯此題並上傳圖片」。<br><br>
+  <b>你要做的</b>：
+  <ol style="margin-top:6px">
+    <li>在左側篩選面板勾選「只看待確認」找到這些題目</li>
+    <li>點「編輯」進入題目</li>
+    <li>把題目欄裡的 <code>〔含圖〕</code> 刪除</li>
+    <li>把實際圖片<b>貼上（Ctrl+V）</b>或點「上傳圖片」選擇檔案</li>
+    <li>確認圖片位置正確，點「儲存」</li>
+  </ol>
+</div>
+
+<h4>② 數學／化學公式</h4>
+<div class="card info">
+  <b>問題</b>：AI 很容易把公式打成 Unicode 上下標（H₂O、CO₂、10⁸），這些在系統裡只是普通文字，<b>不會被排版引擎（KaTeX）處理</b>。<br><br>
+  <b>正確格式</b>：一律用 <code>$...$</code> 包住 LaTeX 語法：
+  <table style="margin:8px 0">
+    <tr><th>❌ 錯誤（Unicode，直接打的）</th><th>✅ 正確（LaTeX）</th></tr>
+    <tr><td>H₂O、CO₂</td><td><code>$H_2O$</code>、<code>$CO_2$</code></td></tr>
+    <tr><td>Cu²⁺、Fe³⁺</td><td><code>$Cu^{2+}$</code>、<code>$Fe^{3+}$</code></td></tr>
+    <tr><td>10⁸、10⁻³</td><td><code>$10^8$</code>、<code>$10^{-3}$</code></td></tr>
+    <tr><td>△T、×</td><td><code>$\Delta T$</code>、<code>$\times$</code></td></tr>
+  </table>
+  <b>「📋 Claude 指令」</b>已包含完整的 LaTeX 規則表和常見錯誤示範，AI 看到後通常會照做。若 AI 還是輸出 Unicode，可請 AI「重新按照指令的 LaTeX 規則輸出」，或在貼入系統前手動修正。
+</div>
+
+<h4>③ 題組 ID</h4>
+<div class="card info">
+  <b>問題</b>：AI 可能漏填部分小題的題組 ID，或各小題的 ID 格式不一致，導致系統無法把它們連結成同一組。<br><br>
+  <b>系統動作</b>：匯入時若某個題組 ID 只有 1 題，自動標記待確認，備註「[回報] 題組ID只有1題，請確認其他小題是否漏填題組ID」。<br><br>
+  <b>正確規則</b>：同一大題的<b>所有小題</b>必須在「欄23 題組ID」填入<b>完全相同</b>的代號：<br>
+  <code style="display:block;background:#f0ece2;padding:8px;border-radius:6px;margin-top:6px;font-size:12px">XX國中-九年級-114上-第一次段考-8</code>（代表從第 8 題開始的題組）<br><br>
+  <b>你要做的</b>：在「只看待確認」中找出相關題目，點「編輯」核對所有小題是否有一致的題組 ID，補填後儲存。
+</div>
+
+<h4>④ 題組文章（共用閱讀材料）</h4>
+<div class="card info">
+  <b>問題</b>：AI 可能把題組文章每題都填一遍（重複），或漏填，或填在子題而非第一題。<br><br>
+  <b>正確規則</b>：
+  <ul style="margin-top:6px">
+    <li>題組文章<b>只填在第一題</b>（題號最小那題）的「欄22 題組文章」</li>
+    <li>同題組其他小題的「欄22」<b>一律留空</b></li>
+    <li>獨立題目（不是題組）的「欄22」也<b>留空</b></li>
+  </ul>
+  <b>「📋 Claude 指令」</b>已包含題組文章的範例 CSV，AI 通常會照格式填。若匯入後題組文章沒出現，點第一題的「編輯」，在「題組文章」欄填入材料內容，儲存即可。
 </div>
 
 <h3>CSV 23 個欄位說明</h3>
@@ -684,10 +747,17 @@
 <p>在左側篩選面板勾選「只看待確認」，逐一點「編輯」確認後，把「待確認」欄的 Y 清空，點「儲存」即可。</p>
 
 <h3>Q：題組是什麼？怎麼設定？</h3>
-<p>多道小題共用一段閱讀材料稱為「題組」。同一題組的所有小題，在「題組 ID」欄填入完全相同的代號，系統就會自動連結。選題時只要勾其中一題，其餘小題會自動被帶出。</p>
+<p>多道小題共用一段閱讀材料稱為「題組」。同一題組的所有小題，在「欄23 題組 ID」填入完全相同的代號，系統就會自動連結。選題時只要勾其中一題，其餘小題會自動被帶出。</p>
+<p>若匯入後看到備註「[回報] 題組ID只有1題」，代表某小題漏填了 ID，點「編輯」補上相同的 ID 後儲存即可。共用的閱讀材料（欄22 題組文章）只填在題組第一題，其他小題留空。</p>
+
+<h3>Q：匯入後題目顯示「〔含圖〕」這幾個字，圖片在哪？</h3>
+<p>CSV 無法夾帶圖片，AI 用「〔含圖〕」標記這個位置。系統匯入時會自動把該題標為「待確認」。你需要：在篩選面板點「只看待確認」找到這題 → 點「編輯」→ 把「〔含圖〕」刪除 → 貼上或上傳實際圖片 → 儲存。</p>
+
+<h3>Q：題目裡的化學式、數字上下標顯示不正確？</h3>
+<p>原因是 AI 輸出了 Unicode 上下標（H₂O、CO₂），這類文字無法被系統的公式引擎（KaTeX）識別。正確做法是用 LaTeX 格式：<code>$H_2O$</code>、<code>$CO_2$</code>、<code>$10^8$</code> 等。可點「編輯」手動修正，或請 AI 重新以正確格式輸出這題。</p>
 
 <h3>Q：Word 檔下載後公式顯示異常？</h3>
-<p>上下標（H₂O、CO₂、10⁸）應正確顯示，請確認用 Word 2016 以上版本開啟。如有問題，在 Word 中手動修正即可。</p>
+<p>題目欄應使用 <code>$...$</code> 格式的 LaTeX，不要使用 Unicode 上下標（H₂O 等）。若已用正確的 LaTeX 格式仍顯示異常，請確認用 Word 2016 以上版本開啟。</p>
 
 <h3>Q：網站改了東西，但我看到的還是舊的？</h3>
 <p>網站透過 GitHub → Vercel 部署，每次 push 後約 30 秒生效。若超過 5 分鐘未更新，按 <kbd>Cmd+Shift+R</kbd>（Mac）強制重新整理瀏覽器。</p>
@@ -699,7 +769,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  v3.0 · 2026年7月 · 僅供內部使用
+  v3.1 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
