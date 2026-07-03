@@ -345,7 +345,7 @@
 <dialog id="importDlg">
   <div class="dlg-head">匯入題目 (CSV / Excel)<button class="x" onclick="importDlg.close()">×</button></div>
   <div class="dlg-body">
-    <p>20 欄順序（建議直接用「📋 Claude 指令」產生）：<br>
+    <p>20 欄順序（建議直接用「📋 AI轉檔指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
@@ -1652,7 +1652,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   const pinBanner=document.getElementById('pinBanner');
   if(pinBanner)pinBanner.style.display=_pinId?'flex':'none';
-  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「Claude 指令」開始把段考卷轉成題目</div>`;updateFloat();return}
+  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();return}
   renderPage(list,shown,0);}
 function renderPage(list,shown,page){
