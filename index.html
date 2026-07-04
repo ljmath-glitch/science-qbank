@@ -344,6 +344,7 @@
       <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
+      <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="render()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
       <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option><option>學測</option></select></div>
       <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
       <div class="grid2">
@@ -2025,7 +2026,7 @@ function buildFiltersKeep(){
 }
 function resetFilters(){
   _pinId=null;_pinGroupId=null;
-  ['fSearch','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
+  ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
 
@@ -2219,6 +2220,8 @@ function matches(it){
   if(fGrade.value&&(it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book))!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
+  const _sl=document.getElementById('fSchoolLevel');
+  if(_sl&&_sl.value){const _isHS=(it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book))==='高中';if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
   return true}
 const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null;
 let _renderTimer=null;
