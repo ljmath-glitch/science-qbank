@@ -2942,7 +2942,18 @@ ${syl}
 只輸出 CSV，不要任何說明文字。`}
 
 function buildPromptHS(){
-  const hsSyl=SYL_RAW.split('\n').filter(l=>/^(必修|選修)/.test(l)).join('\n');
+  const _hsSylFromDB=SYL_RAW.split('\n').filter(l=>/^(必修|選修)/.test(l)).join('\n');
+  const hsSyl=_hsSylFromDB||HANLIN_SYLLABUS.split('\n').filter(l=>/^(必修|選修)/.test(l)).join('\n');
+  // Build HS KP list from syllabus + KP_MAP
+  const _hsKpLines=[];let _lastBook='';
+  for(const line of hsSyl.split('\n')){
+    const parts=line.split('|');if(parts.length<5)continue;
+    const book=parts[0],sub=parts[4];
+    if(book!==_lastBook){if(_lastBook)_hsKpLines.push('');_hsKpLines.push(`[${book}]`);_lastBook=book;}
+    const kps=(KP_MAP&&KP_MAP[sub])||[];
+    if(kps.length>0)_hsKpLines.push(`  ${sub}：${kps.map(k=>k.n).join('、')}`);
+  }
+  const hsKpList=_hsKpLines.join('\n');
   const typeList=QTYPES.map(t=>`${t.code} ${t.name}（${t.group}）`).join('｜');
   const yr=(fYear.value?(fYear.value+(fSem.value||'')):fSem.value)||'';
   const sc=fSchool.value||'';
@@ -2953,7 +2964,7 @@ function buildPromptHS(){
   const examDesc=[et,rnd].filter(Boolean).join('');
   const exParts=[sc,gr||'高中',yr,examDesc].filter(Boolean);
   const ex=exParts.length?exParts.join('-'):'（如：建中-高一-114上-第一次段考 或 114學測）';
-  return `你是一位臺灣自然科教師助手，請把附上的翰林版高中自然科考卷（或學測試題），逐題整理成 CSV，供我匯入題庫系統。
+  return `你是一位臺灣自然科教師助手，請把附上的高中自然科考卷（或學測試題），逐題整理成 CSV，供我匯入題庫系統。
 
 【卷子資訊（請以上傳的卷子內容為準，下方僅供參考）】
 - 來源學校：${sc?sc+'（參考，請確認）':'學測請留空；高中段考填高中校名，如 建中、北一女中'}
@@ -2987,12 +2998,12 @@ function buildPromptHS(){
   - 段考格式：學校-年級-學年學期-考試次，如 建中-高一-114上-第一次段考
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：A/B/C/D；卷子有附答案直接填入，沒有請判斷並填入，不可留空
-▷ 欄6 冊數：對照【三、翰林版骨架】填，如 必修物理、必修化學（欄6~10只能從骨架對照，不可自創）
-▷ 欄7 冊名：對照【三、翰林版骨架】填，如 翰林/必修物理
+▷ 欄6 冊數：對照【三、龍騰版骨架】填，如 必修物理、必修化學（欄6~10只能從骨架對照，不可自創）
+▷ 欄7 冊名：對照【三、龍騰版骨架】填，如 龍騰/必修物理
 ▷ 欄8 領域：物理 / 化學 / 生物 / 地科（高中用單科名稱，不用「理化」）
-▷ 欄9 大單元：對照【三、翰林版骨架】填
-▷ 欄10 子單元：對照【三、翰林版骨架】填
-▷ 欄11 知識點：根據108課綱學科能力測驗考試說明填入學習內容代碼，多個用「、」隔開；若不確定可留空
+▷ 欄9 大單元：對照【三、龍騰版骨架】填
+▷ 欄10 子單元：對照【三、龍騰版骨架】填
+▷ 欄11 知識點：從【四、高中知識點清單】挑選，多個用「、」隔開；格式直接填描述文字，若清單無對應可留空
 ▷ 欄12 題目摘要：動詞+對象，15字內，如「計算電磁感應電動勢」
 ▷ 欄13 題型：從以下挑一個代碼（一題只填一個）：
   ${typeList}
@@ -3043,13 +3054,18 @@ function buildPromptHS(){
   - 獨立題目：留空
 
 ════════════════════════════════════════
-【三、翰林版骨架（欄6~10只能對照此填，不可自創）】
+【三、龍騰版骨架（欄6~10只能對照此填，不可自創）】
 ════════════════════════════════════════
 （格式：冊數|冊名|領域|大單元|子單元）
 ${hsSyl}
 
 ════════════════════════════════════════
-【四、輸出前自我檢查清單（輸出前必須逐項確認）】
+【四、高中知識點清單（欄11只從此挑選，多個用「、」隔開，直接填描述文字不需編碼）】
+════════════════════════════════════════
+${hsKpList}
+
+════════════════════════════════════════
+【五、輸出前自我檢查清單（輸出前必須逐項確認）】
 ════════════════════════════════════════
 □ 每道題目恰好輸出一列 CSV（不多不少）
 □ 每列恰好有 23 個欄位（含標題列）
