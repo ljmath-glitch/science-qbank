@@ -344,14 +344,14 @@
       <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
-      <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="render()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
+      <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="onFilterSchoolLevel()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
       <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option><option>學測</option></select></div>
       <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
       <div class="grid2">
         <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
         <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
       </div>
-      <div class="filt"><label>年級</label><select id="fGrade" onchange="render()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高中</option></select></div>
+      <div class="filt"><label>年級</label><select id="fGrade" onchange="onFilterGrade()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
       <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
       <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option><option>物理</option><option>化學</option></select></div>
@@ -447,7 +447,7 @@
 
     <div class="sectionhead">B 課程對應（翰林版）</div>
     <div class="grid4">
-      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高中</option></select></div>
+      <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
       <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook()"></select></div>
       <div class="field"><label>冊名／領域</label><input type="text" id="eBookName" readonly style="background:#f0ece2"></div>
       <div class="field"><label>大單元</label><select id="eUnit" onchange="syncBySub()"></select></div>
@@ -1312,6 +1312,15 @@ function onFilterField() {
   setOpts(fSub,  getSylVals('sub',  fi));
   updateKpFilter(); render();
 }
+function onFilterGrade() {
+  var g = fGrade.value, f = fField.value;
+  var allowed = booksForGrade(g);
+  var fi = {}; if(f) fi.field=f;
+  var books = getSylVals('book', fi);
+  if (allowed) books = books.filter(function(b){ return allowed.includes(b); });
+  setOpts(fBook, books);
+  onFilterBook();
+}
 function onFilterBook() {
   var f = fField.value, b = fBook.value;
   var fi = {}; if(f) fi.field=f; if(b) fi.book=b;
@@ -1688,8 +1697,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
 function fillBook(sel,grade){
-  const gradeBooks={'七年級':['JB1','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高中':HS_BOOKS};
-  const allowed=grade?gradeBooks[grade]:null;
+  const allowed=booksForGrade(grade);
   const books=SYL.map(k=>k.book).filter(b=>!allowed||allowed.includes(b));
   eBook.innerHTML=optTags([...new Set(books)],sel);}
 function onEditGrade(){fillBook(eBook.value,eGrade.value);syncByBook();composeExam();}
@@ -2027,12 +2035,21 @@ function buildFiltersKeep(){
 function resetFilters(){
   _pinId=null;_pinGroupId=null;
   ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
+  onFilterSchoolLevel();
   document.getElementById('fRoundWrap').style.display='none';
   fFlag.checked=false;buildFilters();render();}
 
 function parseSylYear(y){return y?(y.match(/\d+/)||[''])[0]:'';}
 function parseSylSem(y){return y?(/上/.test(y)?'上':/下/.test(y)?'下':''):''}
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
+/* 高中年級→冊數對應（108課綱常見進度：高一必修，高二選修一二，高三選修三四五）*/
+const HS_GRADE_BOOKS={
+  '高一':['必修物理','必修化學','必修生物','必修地科'],
+  '高二':['選修物理一','選修物理二','選修化學一','選修化學二','選修生物一','選修生物二'],
+  '高三':['選修物理三','選修物理四','選修物理五','選修化學三','選修化學四','選修化學五','選修生物三','選修生物四'],
+};
+const GRADE_BOOKS={'七年級':['JB1','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高一':HS_GRADE_BOOKS['高一'],'高二':HS_GRADE_BOOKS['高二'],'高三':HS_GRADE_BOOKS['高三'],'高中':HS_BOOKS};
+function booksForGrade(grade){return grade?GRADE_BOOKS[grade]:null;}
 function bookToGrade(book){
   if(book==='JB1'||book==='JB2')return '七年級';
   if(book==='JB3'||book==='JB4')return '八年級';
@@ -2045,7 +2062,10 @@ function gradeFromExam(exam,book){
     if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
     if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
     if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
-    if(exam.includes('高中')||exam.includes('高一')||exam.includes('高二')||exam.includes('高三')||exam.includes('學測'))return '高中';
+    if(exam.includes('高一'))return '高一';
+    if(exam.includes('高二'))return '高二';
+    if(exam.includes('高三'))return '高三';
+    if(exam.includes('高中')||exam.includes('學測'))return '高中';
   }
   return bookToGrade(book);}
 function examType(exam,school){
@@ -2071,6 +2091,19 @@ function onFilterExamType(){
   document.getElementById('fRoundWrap').style.display=(v==='段考'||v==='模擬考')?'':'none';
   if(v==='會考'||v===''){fRound.value='';}
   render();}
+/* ===== 學制 → 連動考試種類／年級 ===== */
+const EXAM_TYPES_BY_LEVEL={'':['段考','模擬考','會考','學測'],'國中':['段考','模擬考','會考'],'高中':['段考','模擬考','學測']};
+const GRADES_BY_LEVEL={'':['七年級','八年級','九年級','高一','高二','高三'],'國中':['七年級','八年級','九年級'],'高中':['高一','高二','高三']};
+function onFilterSchoolLevel(){
+  const lvl=fSchoolLevel.value;
+  const curType=fExamType.value,curGrade=fGrade.value;
+  const types=EXAM_TYPES_BY_LEVEL[lvl];
+  fExamType.innerHTML='<option value="">全部</option>'+types.map(t=>`<option ${t===curType?'selected':''}>${t}</option>`).join('');
+  if(!types.includes(curType))fExamType.value='';
+  const grades=GRADES_BY_LEVEL[lvl];
+  fGrade.innerHTML='<option value="">全部</option>'+grades.map(g=>`<option ${g===curGrade?'selected':''}>${g}</option>`).join('');
+  if(!grades.includes(curGrade))fGrade.value='';
+  onFilterExamType();onFilterGrade();}
 /* selectFiltered 統一用 matches()，見下方 script */
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
@@ -2221,7 +2254,7 @@ function matches(it){
   if(fChart.value&&it.chart!==fChart.value)return false;
   if(fFlag.checked&&!it.flag)return false;
   const _sl=document.getElementById('fSchoolLevel');
-  if(_sl&&_sl.value){const _isHS=(it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book))==='高中';if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
+  if(_sl&&_sl.value){const _g=it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);const _isHS=['高一','高二','高三','高中'].includes(_g);if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
   return true}
 const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null;
 let _renderTimer=null;
@@ -2364,7 +2397,7 @@ function openPaperDlg(){
   const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value;
   const yr=fYear.value?(fYear.value+(fSem.value||'')):fSem.value;
   const et=fExamType.value,rnd=fRound.value;
-  document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':gr==='高中'?'高中':'';
+  document.getElementById('pGrade').value=gr==='七年級'?'國七':gr==='八年級'?'國八':gr==='九年級'?'國九':(gr==='高一'||gr==='高二'||gr==='高三'||gr==='高中')?gr:'';
   document.getElementById('pSubject').value=fd||'';
   const scopeMap={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
   document.getElementById('pScope').value=bk&&scopeMap[bk]?scopeMap[bk]:HS_BOOKS.includes(bk)?bk:'';
@@ -2519,7 +2552,7 @@ function restoreJSON(e){
 
 /* ===== Claude 指令 ===== */
 function _isHSContext(){
-  if(fGrade&&fGrade.value==='高中')return true;
+  if(fGrade&&['高一','高二','高三','高中'].includes(fGrade.value))return true;
   if(fBook&&HS_BOOKS.includes(fBook.value))return true;
   if(fField&&(fField.value==='物理'||fField.value==='化學'))return true;
   return false;
