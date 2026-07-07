@@ -1292,7 +1292,7 @@ function getSylVals(field, fi) {
     var v = it[field];
     if (v && !seen[v]) { seen[v] = 1; res.push(v); }
   });
-  return res.sort();
+  return res;
 }
 function setOpts(el, vals) {
   var cur = el.value;
