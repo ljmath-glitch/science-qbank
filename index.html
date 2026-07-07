@@ -2012,13 +2012,27 @@ function resetKpDefault(){if(confirm('回復成預設翰林版骨架？'))kpArea
 
 /* ===== 篩選 ===== */
 function uniq(field){return [...new Set(DB.map(x=>x[field]).filter(Boolean))].sort()}
+function uniqSchoolForLevel(level){
+  const set=new Set();
+  DB.forEach(it=>{
+    if(!it.school)return;
+    if(level){
+      const g=it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);
+      const isHS=['高一','高二','高三','高中'].includes(g);
+      if(level==='高中'&&!isHS)return;
+      if(level==='國中'&&isHS)return;
+    }
+    set.add(it.school);
+  });
+  return [...set].sort();
+}
 function allKps(){return [...new Set(DB.flatMap(x=>(x.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean)))].sort()}
 function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur;else el.value='';}
 function buildFilters(){
   setOpts(fBook,getSylVals('book'));setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
   fillSelect(fYear,[...new Set(DB.map(x=>parseSylYear(x.year)).filter(Boolean))].sort());
-  fillSelect(fSchool,uniq('school'));fillSelect(fChart,uniq('chart'));}
+  fillSelect(fSchool,uniqSchoolForLevel(fSchoolLevel?fSchoolLevel.value:''),true);fillSelect(fChart,uniq('chart'));}
 function buildFiltersKeep(){
   var cur={
     book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
@@ -2103,6 +2117,7 @@ function onFilterSchoolLevel(){
   const grades=GRADES_BY_LEVEL[lvl];
   fGrade.innerHTML='<option value="">全部</option>'+grades.map(g=>`<option ${g===curGrade?'selected':''}>${g}</option>`).join('');
   if(!grades.includes(curGrade))fGrade.value='';
+  fillSelect(fSchool,uniqSchoolForLevel(lvl),true);
   onFilterExamType();onFilterGrade();}
 /* selectFiltered 統一用 matches()，見下方 script */
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
