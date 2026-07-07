@@ -1305,8 +1305,8 @@ function setOpts(el, vals) {
   });
 }
 function onFilterField() {
-  var f = fField.value, g = fGrade.value;
-  var allowed = booksForGrade(g);
+  var f = fField.value;
+  var allowed = allowedBooksForFilter();
   var fi = f ? {field:f} : {};
   var books = getSylVals('book', fi);
   if (allowed) books = books.filter(function(b){ return allowed.includes(b); });
@@ -2024,7 +2024,10 @@ function uniqSchoolForLevel(level){
 function allKps(){return [...new Set(DB.flatMap(x=>(x.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean)))].sort()}
 function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur;else el.value='';}
 function buildFilters(){
-  setOpts(fBook,getSylVals('book'));setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
+  var _allowedBk=allowedBooksForFilter();
+  var _bkVals=getSylVals('book');
+  if(_allowedBk)_bkVals=_bkVals.filter(function(b){return _allowedBk.includes(b);});
+  setOpts(fBook,_bkVals);setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
   fillSelect(fYear,[...new Set(DB.map(x=>parseSylYear(x.year)).filter(Boolean))].sort());
   fillSelect(fSchool,uniqSchoolForLevel(fSchoolLevel?fSchoolLevel.value:''),true);fillSelect(fChart,uniq('chart'));}
@@ -2051,9 +2054,19 @@ function resetFilters(){
 function parseSylYear(y){return y?(y.match(/\d+/)||[''])[0]:'';}
 function parseSylSem(y){return y?(/上/.test(y)?'上':/下/.test(y)?'下':''):''}
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
+const JH_BOOKS=['JB1','JB2','JB3','JB4','JB5','JB6'];
 /* 高中年級（高一/高二/高三）只是分類標籤，不限制冊數選單——因為各校選修課排課進度不同 */
 const GRADE_BOOKS={'七年級':['JB1','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高一':HS_BOOKS,'高二':HS_BOOKS,'高三':HS_BOOKS,'高中':HS_BOOKS};
 function booksForGrade(grade){return grade?GRADE_BOOKS[grade]:null;}
+/* 學制→冊數：沒選特定年級時，至少用學制把冊數限制在國中六冊／高中十八科 */
+function allowedBooksForFilter(){
+  const g=fGrade.value;
+  if(g)return booksForGrade(g);
+  const lvl=fSchoolLevel.value;
+  if(lvl==='國中')return JH_BOOKS;
+  if(lvl==='高中')return HS_BOOKS;
+  return null;
+}
 function bookToGrade(book){
   if(book==='JB1'||book==='JB2')return '七年級';
   if(book==='JB3'||book==='JB4')return '八年級';
