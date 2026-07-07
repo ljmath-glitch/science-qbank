@@ -214,8 +214,25 @@
 
 <div class="card gold">
   <b>需要準備的東西</b><br>
-  · 段考卷（PDF 或照片皆可）<br>
+  · 段考卷原始掃描檔（PDF 或照片皆可）<br>
+  · 試卷寶帳號（清除學生筆跡用）<br>
   · Claude.ai 帳號（推薦）或 ChatGPT 帳號
+</div>
+
+<h3>Step 0：掃描與清除筆跡（匯入前準備）</h3>
+
+<div class="step"><div class="step-num">A</div><div class="step-body">
+  <b>掃描原始考卷</b><br>
+  把紙本段考卷（含學生作答筆跡的那份）掃描成 PDF 或照片。這份是「原始檔」，整個流程都要留著、不要刪除。
+</div></div>
+
+<div class="step"><div class="step-num">B</div><div class="step-body">
+  <b>用「試卷寶」清除筆跡</b><br>
+  把原始檔上傳到「試卷寶」（工具連結請洽主管取得），去除學生手寫作答痕跡，只保留印刷題目與版面。完成後會拿到兩個新檔案：<b>乾淨 PDF</b> 與 <b>乾淨 Word</b>。
+</div></div>
+
+<div class="card tip">
+  <b>三個檔案都要留著、下一步要一起餵給 AI</b>：原始掃描檔＋乾淨 PDF＋乾淨 Word。原因：如果乾淨版某處文字辨識有疑慮（例如符號、圖表被洗掉或看不清楚），AI 可以對照原始檔確認，減少辨識錯誤。
 </div>
 
 <h3>Step 1：在題庫系統選好篩選條件（可省略）</h3>
@@ -244,8 +261,8 @@
 </div></div>
 
 <div class="step"><div class="step-num">3</div><div class="step-body">
-  <b>上傳考卷</b><br>
-  在 AI 對話框找「附加檔案」或「圖片」按鈕，上傳段考卷（PDF 或照片）。
+  <b>上傳三個檔案</b><br>
+  在 AI 對話框找「附加檔案」或「圖片」按鈕，把 Step 0 準備好的三個檔案<b>全部一起上傳</b>：原始掃描檔、乾淨 PDF、乾淨 Word。
 </div></div>
 
 <div class="step"><div class="step-num">4</div><div class="step-body">
@@ -395,6 +412,26 @@
 
 <h3>也可以匯入 Excel 檔</h3>
 <p>若 AI 輸出的是 Excel 格式（.xlsx），也可以在匯入視窗直接選擇檔案上傳，不需要貼 CSV 文字。</p>
+
+<h3>Step 5：全部確認無誤後，回報進度</h3>
+
+<div class="step"><div class="step-num">9</div><div class="step-body">
+  <b>勾選進度</b><br>
+  上面「四個容易跑掉的欄位」都檢查、修正完畢後，回報這份考卷已處理完成，有兩種等價的方式，擇一即可：
+  <ul style="margin-top:6px">
+    <li><b>直接在題庫頁面打勾（較快）</b>：在左側篩選面板篩到「只顯示這份考卷」的題目時，題目列表下方會自動出現「📋 考卷整理進度」卡片，跟共編進度表是同一份資料、即時雙向同步</li>
+    <li><b>到共編進度表打勾</b>：點工具列的 <span class="badge blue">📋 共編進度表</span>，找到這份考卷那一列</li>
+  </ul>
+  不管用哪一種，都要：
+  <ul style="margin-top:6px">
+    <li>「更新者姓名」欄位填上自己的名字</li>
+    <li>把已完成確認的項目打勾（確認公式／上傳圖片／製作詳解／題幹敘述確認／題組承上題確認／其他確認），<b>只勾真的做完的項目，沒做完不要先打勾</b></li>
+  </ul>
+</div></div>
+
+<div class="card tip">
+  <b>打勾後記得告知主管</b>這份考卷已經全部處理完成，主管才知道可以進下一步使用。
+</div>
 
 
 <!-- ===== AI 工具選擇 ===== -->
@@ -777,6 +814,16 @@
 <table>
   <tr><th style="width:80px">版本</th><th style="width:100px">日期</th><th>更新內容</th></tr>
   <tr>
+    <td><b>V6.3</b></td>
+    <td>2026-07-07</td>
+    <td>
+      <b>使用說明：</b>「核心任務：把考卷匯入題庫」補上完整前後段——
+      新增 <b>Step 0：掃描與清除筆跡</b>（工讀生掃描原始考卷→用「試卷寶」清除筆跡輸出乾淨PDF/Word→
+      原始檔＋乾淨PDF＋乾淨Word 三個檔案一起餵給 AI，避免辨識疑慮無從對照）；
+      新增 <b>Step 5：全部確認無誤後，回報進度</b>（可直接在題庫頁面的考卷整理進度卡片打勾，或到共編進度表打勾，告知主管）
+    </td>
+  </tr>
+  <tr>
     <td><b>V6.2</b></td>
     <td>2026-07-04</td>
     <td>
@@ -924,7 +971,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  V6.2 · 2026年7月 · 僅供內部使用
+  V6.3 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->

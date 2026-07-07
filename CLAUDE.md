@@ -122,6 +122,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 
 ### 6.2 CSV / Excel 匯入（`doImport()`，`index.html:1047`）
 
+> 給工讀生的完整操作 SOP（掃描 →「試卷寶」洗筆跡 → 餵給 AI（連原始檔一起附上）→ AI 產出 Excel → 匯入 → 逐題檢查排版/方程式/題組編號/承上題 → 補圖（含題組文章與題組圖）→ 到共編進度表打勾回報主管）寫在 `guide.html` 第三節「考卷處理與匯入完整流程（工讀生 SOP）」，這裡只記程式邏輯本身。
+
 **目前正式欄位格式（23 欄，0-indexed）：**
 
 ```
@@ -208,16 +210,18 @@ Ollama（跑在公司電腦 或 使用者自己的 Mac）
 
 ### 7.3 目前已知的兩個 Ollama 主機
 
-| 名稱 | Tailscale IP | 系統 | 已裝的模型 |
-|---|---|---|---|
-| 公司電腦 | `100.72.250.96` | Windows | `qwen2.5:latest` (7.6B)、`llama3.2:1b` |
-| 使用者的 MacBook | `100.127.211.80` | macOS | `qwen2.5:latest` |
+| 下拉選單顯示名稱 | 實際主機 | Tailscale IP | 系統 | 已裝的模型 |
+|---|---|---|---|---|
+| 大南路櫃2 | 公司電腦 | `100.72.250.96` | Windows | `qwen2.5:latest` (7.6B)、`llama3.2:1b` |
+| 福大 Mac | 使用者的 MacBook | `100.127.211.80`（也可能用 `localhost` 或 mDNS `CHIAs-MacBook-Pro.local` 連到） | macOS | `qwen2.5:latest` |
 
-這兩個 IP 已經寫死在程式碼的 `OLLAMA_PRESETS` 常數裡（`index.html` 約 2421 行）：
+這兩個名稱對應的網址寫死在程式碼的 `OLLAMA_PRESETS` 常數裡（`index.html` 約 2426 行）：
 
 ```js
-const OLLAMA_PRESETS={company:'http://100.72.250.96:11434',mac:'http://100.127.211.80:11434'};
+const OLLAMA_PRESETS={company:'http://100.72.250.96:11434',mac:'http://localhost:11434,http://CHIAs-MacBook-Pro.local:11434,http://100.127.211.80:11434'};
 ```
+
+「福大 Mac」這個選項本身就是逗號分隔的三個候選網址（本機 → 同 Wi-Fi → Tailscale），交給 `resolveOllamaBase()` 依序嘗試（見 7.7），不需要另外手動偵測。
 
 > ⚠️ 如果之後 Tailscale 重新配過 IP，或換了新的主機電腦，這裡要手動更新，然後重新 push 部署。
 
@@ -250,22 +254,24 @@ lsof -iTCP:11434 -sTCP:LISTEN   → 要看到 *:11434 或 0.0.0.0，不是只有
 
 AI 供應商選單切到「Ollama（本機）」後會出現：
 
-- **下拉選單**：公司電腦 / 我的 Mac / 其他（自訂網址）——選前兩個會自動帶入對應 Tailscale IP，不用手動輸入
+- **下拉選單**：大南路櫃2 / 福大 Mac / 其他（自訂網址）——選前兩個會自動帶入對應網址，不用手動輸入（已移除獨立的🔍自動偵測按鈕，「福大 Mac」選項本身就內建多網址容錯，見 7.7）
 - **模型輸入框**：預設 `qwen2.5:latest`
-- **🔍 自動偵測按鈕**：嘗試 `http://localhost:11434` 和 `http://CHIAs-MacBook-Pro.local:11434`，抓到就自動填網址+第一個模型名稱，並把下拉選單切到「其他」
 - **❓ 說明按鈕**：跳出 `ollamaHelpDlg` 對話框，給第一次使用的人看的完整說明（裝 Tailscale、選哪個選項、常見問題）
 
 ### 7.7 容錯機制（多網址依序嘗試）
 
-選「其他」時，網址欄位可以填**逗號分隔的多個網址**，例如：
+網址欄位可以填**逗號分隔的多個網址**，「福大 Mac」預設就是三個候選網址：
 
+```
+http://localhost:11434,http://CHIAs-MacBook-Pro.local:11434,http://100.127.211.80:11434
+```
+
+選「其他」時也能自己填，例如公司優先、Mac 備援：
 ```
 http://100.72.250.96:11434,http://100.127.211.80:11434
 ```
 
-生成詳解時會呼叫 `resolveOllamaBase()`（`index.html` 約 2544 行）：對每個候選網址打 `/api/tags` 測連線（3 秒逾時），回傳第一個連得上的。用途：公司電腦沒開機時自動切到 Mac 上的 Ollama，不用手動改設定。
-
-> 目前下拉選單的三個選項是單一網址，如果要「公司電腦優先、Mac 自動備援」這種容錯效果，要手動選「其他」再貼上逗號分隔的網址。
+生成詳解時會呼叫 `resolveOllamaBase()`（`index.html` 約 2549 行）：對每個候選網址打 `/api/tags` 測連線（3 秒逾時），回傳第一個連得上的。
 
 ### 7.8 三個呼叫 Ollama 的地方
 
