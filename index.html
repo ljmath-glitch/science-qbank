@@ -408,7 +408,9 @@
   <div class="dlg-body">
     <p>把含有詳解的 CSV／Excel 貼上或上傳，系統會依「考試名稱」＋「題號」自動比對到題庫中<b>已存在</b>的題目，只更新詳解欄位，其他資料不變（找不到對應題目的列會略過並列在結果訊息裡）。<br>
     檔案第一列（標題列）必須包含這三個欄位名稱：<span class="kbd">考試名稱</span>　<span class="kbd">題號</span>　<span class="kbd">詳解</span>（順序不拘，可以有其他欄位，會自動忽略）。<br>
-    💡 不知道怎麼準備這份檔案？先在題目列表勾選要做詳解的題目，點工具列「📋 詳解製作指令」，複製指令給主管的 AI，AI 照著格式回傳的 CSV 就能直接貼來這裡匯入。</p>
+    💡 不知道怎麼準備這份檔案？兩種方式：<br>
+    ① 用 AI 生成：先在題目列表勾選要做詳解的題目，點工具列「📋 詳解製作指令」，複製指令給主管的 AI，AI 照著格式回傳的 CSV 就能直接貼來這裡匯入。<br>
+    ② 給人手動填寫：點工具列「📤 詳解匯出Excel」，會匯出一份已經填好考試名稱／題號／題目／答案的 Excel，交給主管對照紙本考卷手動填「詳解」欄，填完後直接把這份 Excel 上傳到這裡即可（欄位已經對齊，不用調整格式）。</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadSolCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="solCsvArea" style="min-height:200px"></textarea>
   </div>
@@ -1699,6 +1701,21 @@ function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name
   }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位（23欄新格式）: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目 20詳解 21題組文章 22題組ID
 
+/* ===== 詳解匯出（Excel）：給主管拿紙本考卷手動填寫用，欄位跟「詳解匯入」的比對鍵完全對齊 ===== */
+function exportSolExcel(){
+  const items=pickedItems().length?pickedItems():_lastShown.filter(it=>it.type!=='passage');
+  if(!items.length){alert('目前沒有題目可以匯出（請先勾選題目，或篩選出要匯出的考卷）');return;}
+  const rows=items.map(it=>({
+    '考試名稱':it.exam||'','題號':it.no||'','題目':fixLatex(it.q||it.summary||'')+((it.imgs&&it.imgs.length)?'　〔含圖，請對照紙本考卷〕':''),
+    '答案':it.ans||'','詳解':''
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'詳解填寫');
+  const name=(items[0].exam||'詳解匯出').replace(/[\\/:*?"<>|]/g,'_');
+  XLSX.writeFile(wb,name+'_詳解填寫.xlsx');
+}
 /* ===== 詳解匯入：只更新既有題目的詳解欄位，依「考試名稱」+「題號」比對 ===== */
 function openSolImport(){solCsvArea.value='';solImportDlg.showModal()}
 function loadSolCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
@@ -3851,6 +3868,7 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
+  solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel，交給主管對照紙本考卷手動填寫詳解，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
@@ -3873,10 +3891,10 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='10';
+const TB_VER='11';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
-  ['import','solImport','add','reload','backup','restore'],
+  ['import','solImport','solExport','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solPromptBtn'],
