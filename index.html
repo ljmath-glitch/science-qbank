@@ -1630,14 +1630,20 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   const _gidCnt={};adds.forEach(it=>{if(it.groupId)_gidCnt[it.groupId]=(_gidCnt[it.groupId]||0)+1;});
   adds.forEach(it=>{if(it.groupId&&_gidCnt[it.groupId]<2&&!it.flag){it.flag=true;if(!it.basis)it.basis='[回報] 題組ID只有此1題，請確認其他小題是否漏填題組ID';}});
   // 題組文章處理：優先用 col 21（新格式），fallback 到【題幹】分隔（舊格式）
+  // ⚠️ 不能假設題組文章一定出現在該題組「第一個被遍歷到」的列——CSV 列順序不一定跟題號順序一致
+  // （AI 有時會把題組內題目輸出成非遞增題號順序），要掃整組所有列找出真正有填內容的那一列
   const SEP='【題幹】';
   const passageAdds=[];const seenGids=new Set();
   adds.forEach(it=>{
-    const pTextNew=it._passage||'';delete it._passage;
-    if(!it.groupId||seenGids.has(it.groupId))return;
+    if(!it.groupId||seenGids.has(it.groupId)){delete it._passage;return;}
     seenGids.add(it.groupId);
-    let pText=pTextNew;
-    if(!pText){const si=it.q.indexOf(SEP);if(si!==-1){pText=it.q.slice(0,si).trim();it.q=it.q.slice(si+SEP.length).trim();}}
+    const groupRows=adds.filter(x=>x.groupId===it.groupId);
+    let pText=groupRows.map(x=>(x._passage||'').trim()).find(t=>t)||'';
+    groupRows.forEach(x=>delete x._passage);
+    if(!pText){
+      const withSep=groupRows.find(x=>x.q.includes(SEP));
+      if(withSep){const si=withSep.q.indexOf(SEP);pText=withSep.q.slice(0,si).trim();withSep.q=withSep.q.slice(si+SEP.length).trim();}
+    }
     if(!pText)return;
     passageAdds.push({id:uid(),groupId:it.groupId,type:'passage',q:pText,sol:'',ans:'',imgs:[],
       year:it.year,school:it.school,exam:it.exam,book:it.book,bookName:it.bookName,
