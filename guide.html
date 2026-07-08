@@ -814,6 +814,15 @@
 <table>
   <tr><th style="width:80px">版本</th><th style="width:100px">日期</th><th>更新內容</th></tr>
   <tr>
+    <td><b>V6.12</b></td>
+    <td>2026-07-08</td>
+    <td>
+      <b>改善：</b>「📤 詳解匯出Excel」含圖題目的處理——原本只在 Excel 裡註明「請對照紙本考卷」，
+      現在改成把圖片實際打包進同一個 ZIP 的 images 資料夾（base64 圖片與已上傳 Supabase Storage 的圖片都支援），
+      Excel 裡註明對應檔名，主管不用再另外找紙本考卷；打包失敗的圖片會統計數量提醒改對照紙本
+    </td>
+  </tr>
+  <tr>
     <td><b>V6.11</b></td>
     <td>2026-07-08</td>
     <td>
@@ -1050,7 +1059,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  V6.11 · 2026年7月 · 僅供內部使用
+  V6.12 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
