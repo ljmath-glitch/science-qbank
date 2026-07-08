@@ -373,6 +373,7 @@
       </div>
       <div id="list"></div>
       <div id="examProgressCard"></div>
+      <div id="groupIdToolCard"></div>
     </main>
   </div>
 </div>
@@ -1497,6 +1498,90 @@ if(CLOUD_READY){
     }).subscribe();
 }
 
+/* ===== 題組編號人工校對工具（篩選單一考卷時出現，跟考卷整理進度卡片同一個判斷邏輯） ===== */
+let _groupToolInfo=null;
+let _groupToolRows=[{range:''}];
+function updateGroupIdTool(shown){
+  const card=document.getElementById('groupIdToolCard');
+  if(!card)return;
+  const real=shown.filter(it=>it.type!=='passage');
+  if(!real.length||!CLOUD_READY){card.innerHTML='';_groupToolInfo=null;return;}
+  const keys=real.map(_pgKeyOf);
+  const first=keys[0];
+  const allSame=keys.every(k=>k.id===first.id);
+  if(!allSame){card.innerHTML='';_groupToolInfo=null;return;}
+  if(!_groupToolInfo||_groupToolInfo.id!==first.id)_groupToolRows=[{range:''}];
+  _groupToolInfo=first;
+  _renderGroupIdTool();
+}
+function _renderGroupIdTool(){
+  const card=document.getElementById('groupIdToolCard');
+  if(!card||!_groupToolInfo)return;
+  if(!_groupToolRows.length)_groupToolRows=[{range:''}];
+  card.innerHTML=`<div style="margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fdf6f6">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <b style="font-size:14px">🔧 題組編號人工校對</b>
+      <span style="font-size:11px;color:#7a6e60">輸入題號範圍，按套用後：範圍內的題會標同一個題組ID，範圍外的題組ID會被清空</span>
+    </div>
+    <div id="groupToolRows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      ${_groupToolRows.map((r,i)=>`<div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:12px;color:#7a6e60;width:52px">題組${i+1}</span>
+        <input type="text" value="${esc(r.range)}" placeholder="例如 8-9 或 15-19" oninput="_groupToolRows[${i}].range=this.value" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;width:150px;font-family:inherit">
+        <button type="button" class="btn sm" onclick="_removeGroupToolRow(${i})">✕</button>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn sm" onclick="_addGroupToolRow()">＋ 新增題組</button>
+      <button type="button" class="btn sm" style="background:#c0392b;color:#fff;border-color:#c0392b" onclick="applyGroupIdTool()">套用</button>
+    </div>
+  </div>`;
+}
+function _addGroupToolRow(){_groupToolRows.push({range:''});_renderGroupIdTool();}
+function _removeGroupToolRow(i){_groupToolRows.splice(i,1);_renderGroupIdTool();}
+function _parseNoRange(str){
+  const nums=new Set();
+  (str||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{
+    const m=part.match(/^(\d+)\s*-\s*(\d+)$/);
+    if(m){const a=+m[1],b=+m[2];for(let n=Math.min(a,b);n<=Math.max(a,b);n++)nums.add(n);}
+    else if(/^\d+$/.test(part))nums.add(+part);
+  });
+  return nums;
+}
+async function applyGroupIdTool(){
+  if(!_groupToolInfo)return;
+  const real=_lastShown.filter(it=>it.type!=='passage');
+  if(!real.length)return;
+  const groups=_groupToolRows.map(r=>_parseNoRange(r.range)).filter(s=>s.size>0);
+  if(!groups.length){alert('請至少輸入一組題號範圍');return;}
+  const seen=new Set();
+  for(const g of groups){
+    for(const n of g){
+      if(seen.has(n)){alert('題號 '+n+' 出現在兩個題組裡，請確認範圍沒有重疊');return;}
+      seen.add(n);
+    }
+  }
+  const examBase=real[0].exam;
+  const updates=[];
+  real.forEach(it=>{
+    const no=parseInt(it.no)||0;
+    let matchedGroup=null;
+    groups.forEach(g=>{if(g.has(no))matchedGroup=g;});
+    const newGroupId=matchedGroup?`${examBase}-${Math.min(...matchedGroup)}`:'';
+    if((it.groupId||'')!==newGroupId)updates.push({id:it.id,groupId:newGroupId,no:it.no});
+  });
+  if(!updates.length){alert('沒有需要變更的題目（題組編號已經是正確的）');return;}
+  const summary=updates.slice(0,20).map(u=>`第${u.no}題 → ${u.groupId?u.groupId:'（清空）'}`).join('\n')+(updates.length>20?`\n…以及另外 ${updates.length-20} 題`:'');
+  if(!confirm(`即將更新 ${updates.length} 題的題組編號：\n\n${summary}\n\n確定套用嗎？`))return;
+  if(!requireCloud())return;
+  for(const u of updates){
+    const {error}=await sb.from('questions').update({group_id:u.groupId,updated_at:new Date().toISOString()}).eq('id',u.id);
+    if(error){alert('更新失敗：'+error.message);return;}
+    const it=DB.find(x=>x.id===u.id);if(it)it.groupId=u.groupId;
+  }
+  alert('已更新 '+updates.length+' 題的題組編號');
+  render();
+}
+
 let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
@@ -2300,10 +2385,11 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
     const pbt=document.getElementById('pinBannerText');
     if(pbt)pbt.textContent=_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）';
   }
-  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);return}
-  if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);return}
+  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
+  if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
   renderPage(list,shown,0);
-  updateExamProgressCard(shown);}
+  updateExamProgressCard(shown);
+  updateGroupIdTool(shown);}
 function renderPage(list,shown,page){
   const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,shown.length);
   const pageItems=shown.slice(start,end);
