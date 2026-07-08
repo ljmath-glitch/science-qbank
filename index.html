@@ -169,7 +169,11 @@
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
   @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
-  @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
+  @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}
+    /* 直接從網頁列印/存PDF時強制用系統內建中文字型，不依賴外部字型檔——Chrome的列印渲染是獨立流程，
+       可能無法正確沿用網頁上已經載入好的外部字型，導致中文大量消失，數字/英文/公式卻正常 */
+    .pv-sheet{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","Microsoft YaHei",sans-serif!important}
+  }
   .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
   .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
