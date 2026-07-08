@@ -2481,7 +2481,7 @@ function matches(it){
   const _sl=document.getElementById('fSchoolLevel');
   if(_sl&&_sl.value){const _g=it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);const _isHS=['高一','高二','高三','高中'].includes(_g);if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
   return true}
-const PAGE_SIZE=50;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null;
+const RENDER_CAP=200,RENDER_BATCH=200;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null,_renderLimit=RENDER_CAP;
 let _renderTimer=null;
 function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
 function clearPinFilter(){_pinId=null;_pinGroupId=null;render();}
@@ -2489,6 +2489,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
   if(_gids.size){const _sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>_sSet.has(it.id)||(it.groupId&&_gids.has(it.groupId)));}
+  _renderLimit=RENDER_CAP;
   _lastShown=shown;_page=0;
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   const pinBanner=document.getElementById('pinBanner');
@@ -2503,7 +2504,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   updateExamProgressCard(shown);
   updateGroupIdTool(shown);}
 function renderPage(list,shown,page){
-  const pageItems=shown;
+  const pageItems=shown.slice(0,_renderLimit);
   const _shownPs=new Set();
   list.innerHTML=pageItems.map(it=>{
     let passageHtml='';
@@ -2544,6 +2545,12 @@ function renderPage(list,shown,page){
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
+  if(shown.length>_renderLimit){
+    const more=document.createElement('div');
+    more.style.cssText='display:flex;justify-content:center;padding:16px 0;font-family:inherit';
+    more.innerHTML=`<button class="btn" onclick="_renderLimit+=RENDER_BATCH;renderPage(document.getElementById('list'),_lastShown,0)">顯示更多（已顯示 ${pageItems.length} / ${shown.length} 題，還有 ${shown.length-pageItems.length} 題）</button>`;
+    list.appendChild(more);
+  }
   (window.requestIdleCallback||setTimeout)(()=>renderMath(list));
   updateFloat();}
 function fixLatex(text){
