@@ -450,7 +450,7 @@
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option></select></div>
+      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
@@ -1429,10 +1429,14 @@ function _pgGradeFromExam(exam,book){
     if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
     if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
     if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+    if(exam.includes('高一'))return '高一';
+    if(exam.includes('高二'))return '高二';
+    if(exam.includes('高三'))return '高三';
+    if(exam.includes('高中')||exam.includes('學測')||exam.includes('分科測驗'))return '高中';
   }
   return _pgBookToGrade(book);
 }
-function _pgExamRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function _pgExamRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
 function _pgMakeId(school,grade,year,round){
   if(round==='會考') return '會考|||'+(year||'');
   return [school||'',grade||'',year||'',round||''].join('|||');
@@ -1797,8 +1801,8 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const rawExam=g(2),school=g(1),year=g(0),book=g(5);
     const grade=gradeFromExam(rawExam,book);
     const round=examRound(rawExam);
-    const fmtExam=round==='會考'?(year||'')+'會考':round==='學測'?(year||'')+'學測':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
-    const key=round==='會考'?'會考|||'+(year||''):round==='學測'?'學測|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
+    const fmtExam=round==='會考'?(year||'')+'會考':round==='學測'?(year||'')+'學測':round==='分科測驗'?(year||'')+'分科測驗':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
+    const key=round==='會考'?'會考|||'+(year||''):round==='學測'?'學測|||'+(year||''):round==='分科測驗'?'分科測驗|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
     const it={id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
@@ -1898,6 +1902,8 @@ function composeExam(){
     eExam.value=(eYear.value.trim()||'')+'會考';
   } else if(round==='學測'){
     eExam.value=(eYear.value.trim()||'')+'學測';
+  } else if(round==='分科測驗'){
+    eExam.value=(eYear.value.trim()||'')+'分科測驗';
   } else {
     const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),round].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
@@ -2277,7 +2283,7 @@ function gradeFromExam(exam,book){
     if(exam.includes('高一'))return '高一';
     if(exam.includes('高二'))return '高二';
     if(exam.includes('高三'))return '高三';
-    if(exam.includes('高中')||exam.includes('學測'))return '高中';
+    if(exam.includes('高中')||exam.includes('學測')||exam.includes('分科測驗'))return '高中';
   }
   return bookToGrade(book);}
 function examType(exam,school){
@@ -2286,6 +2292,7 @@ function examType(exam,school){
   if(exam.includes('模擬')||exam.includes('北模')||exam.includes('全模'))return '模擬考';
   if(exam.includes('會考'))return '會考';
   if(exam.includes('學測'))return '學測';
+  if(exam.includes('分科測驗'))return '分科測驗';
   // exam 有值但無關鍵字 → 有學校名稱視為段考
   if(school)return '段考';
   return '';}
@@ -2304,7 +2311,7 @@ function onFilterExamType(){
   if(v==='會考'||v===''){fRound.value='';}
   render();}
 /* ===== 學制 → 連動考試種類／年級 ===== */
-const EXAM_TYPES_BY_LEVEL={'':['段考','模擬考','會考','學測'],'國中':['段考','模擬考','會考'],'高中':['段考','模擬考','學測']};
+const EXAM_TYPES_BY_LEVEL={'':['段考','模擬考','會考','學測','分科測驗'],'國中':['段考','模擬考','會考'],'高中':['段考','模擬考','學測','分科測驗']};
 const GRADES_BY_LEVEL={'':['七年級','八年級','九年級','高一','高二','高三'],'國中':['七年級','八年級','九年級'],'高中':['高一','高二','高三']};
 const FIELDS_BY_LEVEL={'':['生物','理化','地科','物理','化學'],'國中':['生物','理化','地科'],'高中':['物理','化學','生物','地科']};
 function onFilterSchoolLevel(){
@@ -2322,7 +2329,7 @@ function onFilterSchoolLevel(){
   fillSelect(fSchool,uniqSchoolForLevel(lvl),true);
   onFilterExamType();onFilterField();}
 /* selectFiltered 統一用 matches()，見下方 script */
-function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return '';}
 /* ===== 渲染 ===== */
 function esc(s){return (s||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
 const _NEG_KW=/錯誤|不適當|不正確|不恰當|不合理|不完整|不符合|不成立|為非/g;
@@ -3249,9 +3256,9 @@ function buildPromptHS(){
   return `你是一位臺灣自然科教師助手，請把附上的高中自然科考卷（或學測試題），逐題整理成 CSV，供我匯入題庫系統。
 
 【卷子資訊（請以上傳的卷子內容為準，下方僅供參考）】
-- 來源學校：${sc?sc+'（參考，請確認）':'學測請留空；高中段考填高中校名，如 建中、北一女中'}
-- 年級：${gr?gr+'（參考，請確認）':'高一／高二／高三 或 高中（學測不分年級填高中）'}
-- 年度學期：${yr?yr+'（參考，請確認）':'如 114上、114下；學測填 114學測'}
+- 來源學校：${sc?sc+'（參考，請確認）':'學測／分科測驗請留空；高中段考填高中校名，如 建中、北一女中'}
+- 年級：${gr?gr+'（參考，請確認）':'高一／高二／高三 或 高中（學測／分科測驗不分年級填高中）'}
+- 年度學期：${yr?yr+'（參考，請確認）':'如 114上、114下；學測填 114學測、分科測驗填 114分科測驗'}
 - 考試名稱：${ex}${sc||yr?'（參考，請確認）':''}
 - 科目（冊數）：${bk?bk+'（參考，請確認）':'如 必修物理、必修化學、必修生物、必修地科'}
 
@@ -3273,10 +3280,11 @@ function buildPromptHS(){
 【二、逐欄填寫規則（高中版）】
 ════════════════════════════════════════
 
-▷ 欄1 年度：如 114上、113下；學測填 114學測
-▷ 欄2 來源學校：高中校名，如 建中；學測請留空
+▷ 欄1 年度：如 114上、113下；學測填 114學測、分科測驗填 114分科測驗
+▷ 欄2 來源學校：高中校名，如 建中；學測／分科測驗請留空
 ▷ 欄3 考試名稱：
   - 學測格式：114學測
+  - 分科測驗格式：114分科測驗
   - 段考格式：學校-年級-學年學期-考試次，如 建中-高一-114上-第一次段考
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：

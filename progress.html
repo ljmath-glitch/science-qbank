@@ -117,10 +117,14 @@ function gradeFromExam(exam,book){
     if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
     if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
     if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+    if(exam.includes('高一'))return '高一';
+    if(exam.includes('高二'))return '高二';
+    if(exam.includes('高三'))return '高三';
+    if(exam.includes('高中')||exam.includes('學測')||exam.includes('分科測驗'))return '高中';
   }
   return bookToGrade(book);
 }
-function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
 function composeDisplayName(school,grade,year,round){
   if(round==='會考') return (year||'')+'會考';
   return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';

@@ -589,19 +589,43 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   <!-- ⑥ 篩選器 -->
   <div class="filter-bar">
     <select class="filter-sel" id="selBook" onchange="applyFilter()">
-      <option value="">全年級（含會考）</option>
+      <option value="">全年級（含會考/學測）</option>
+      <optgroup label="國中">
       <option value="B1">七年級上學期（一上）</option>
       <option value="B2">七年級下學期（一下）</option>
       <option value="B3">八年級上學期（二上）</option>
       <option value="B4">八年級下學期（二下）</option>
       <option value="B5">九年級上學期（三上）</option>
       <option value="B6">九年級下學期（三下）</option>
+      </optgroup>
+      <optgroup label="高中">
+      <option value="必修物理">必修物理</option>
+      <option value="選修物理一">選修物理一</option>
+      <option value="選修物理二">選修物理二</option>
+      <option value="選修物理三">選修物理三</option>
+      <option value="選修物理四">選修物理四</option>
+      <option value="選修物理五">選修物理五</option>
+      <option value="必修化學">必修化學</option>
+      <option value="選修化學一">選修化學一</option>
+      <option value="選修化學二">選修化學二</option>
+      <option value="選修化學三">選修化學三</option>
+      <option value="選修化學四">選修化學四</option>
+      <option value="選修化學五">選修化學五</option>
+      <option value="必修生物">必修生物</option>
+      <option value="選修生物一">選修生物一</option>
+      <option value="選修生物二">選修生物二</option>
+      <option value="選修生物三">選修生物三</option>
+      <option value="選修生物四">選修生物四</option>
+      <option value="必修地科">必修地科</option>
+      </optgroup>
     </select>
     <select class="filter-sel" id="selExam" onchange="applyFilter()">
-      <option value="">所有（含會考）</option>
+      <option value="">所有（含會考/學測）</option>
       <option value="第一次">第一次段考</option>
       <option value="第二次">第二次段考</option>
       <option value="第三次">第三次段考</option>
+      <option value="學測">學測</option>
+      <option value="分科測驗">分科測驗</option>
     </select>
     <button class="start-btn" id="startBtn" onclick="applyFilter()">套用篩選 →</button>
   </div>
@@ -1514,10 +1538,14 @@ function gradeFromExam(exam,book){
     if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
     if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
     if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+    if(exam.includes('高一'))return '高一';
+    if(exam.includes('高二'))return '高二';
+    if(exam.includes('高三'))return '高三';
+    if(exam.includes('高中')||exam.includes('學測')||exam.includes('分科測驗'))return '高中';
   }
   return bookToGrade(book);
 }
-function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
 function makeProgressId(school, grade, year, round){
   if(round==='會考') return '會考|||'+(year||'');
   return [school||'', grade||'', year||'', round||''].join('|||');
