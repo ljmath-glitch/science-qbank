@@ -402,6 +402,18 @@
   <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
 </dialog>
 
+<!-- 詳解匯入 -->
+<dialog id="solImportDlg">
+  <div class="dlg-head">詳解匯入<button class="x" onclick="solImportDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <p>把含有詳解的 CSV／Excel 貼上或上傳，系統會依「考試名稱」＋「題號」自動比對到題庫中<b>已存在</b>的題目，只更新詳解欄位，其他資料不變（找不到對應題目的列會略過並列在結果訊息裡）。<br>
+    檔案第一列（標題列）必須包含這三個欄位名稱：<span class="kbd">考試名稱</span>　<span class="kbd">題號</span>　<span class="kbd">詳解</span>（順序不拘，可以有其他欄位，會自動忽略）。</p>
+    <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadSolCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
+    <textarea id="solCsvArea" style="min-height:200px"></textarea>
+  </div>
+  <div class="dlg-foot"><button class="btn" onclick="solImportDlg.close()">取消</button><button class="btn primary" onclick="doImportSol()">匯入詳解</button></div>
+</dialog>
+
 <!-- Ollama 使用說明 -->
 <dialog id="ollamaHelpDlg">
   <div class="dlg-head">Ollama（本機 AI）使用說明<button class="x" onclick="ollamaHelpDlg.close()">×</button></div>
@@ -1685,6 +1697,45 @@ function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
   }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位（23欄新格式）: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目 20詳解 21題組文章 22題組ID
+
+/* ===== 詳解匯入：只更新既有題目的詳解欄位，依「考試名稱」+「題號」比對 ===== */
+function openSolImport(){solCsvArea.value='';solImportDlg.showModal()}
+function loadSolCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
+  if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];solCsvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
+  }else{const r=new FileReader();r.onload=()=>solCsvArea.value=r.result;r.readAsText(f,'utf-8');}}
+async function doImportSol(){
+  if(!requireCloud())return;
+  const rows=parseCSV(solCsvArea.value);
+  if(!rows.length){alert('沒有資料');return}
+  const head=rows[0].map(h=>(h||'').trim());
+  const idxExam=head.indexOf('考試名稱'),idxNo=head.indexOf('題號'),idxSol=head.indexOf('詳解');
+  if(idxExam===-1||idxNo===-1||idxSol===-1){
+    alert('找不到必要欄位：檔案第一列（標題列）必須包含「考試名稱」「題號」「詳解」這三個欄位名稱');
+    return;
+  }
+  const updates=[],notFound=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    const exam=(r[idxExam]||'').trim(),no=(r[idxNo]||'').trim(),sol=(r[idxSol]||'').trim();
+    if(!exam&&!no)continue;
+    if(!sol)continue;
+    const it=DB.find(x=>x.exam===exam&&String(x.no)===String(no));
+    if(!it){notFound.push(exam+' 第'+no+'題');continue}
+    updates.push({...it,sol:normalizeSol(sol)});
+  }
+  if(!updates.length){
+    alert('沒有可匯入的詳解'+(notFound.length?('\n\n找不到對應題目：\n'+notFound.slice(0,10).join('\n')+(notFound.length>10?'\n…以及另外 '+(notFound.length-10)+' 筆':'')):''));
+    return;
+  }
+  const {error}=await sb.from('questions').upsert(updates.map(toRow));
+  if(error){alert('匯入失敗：'+error.message);return}
+  solImportDlg.close();
+  await load();buildFilters();render();
+  let msg='成功匯入 '+updates.length+' 題詳解';
+  if(notFound.length)msg+='\n\n找不到對應題目（考卷／題號沒對上，共 '+notFound.length+' 筆）：\n'+notFound.slice(0,10).join('\n')+(notFound.length>10?'\n…以及另外 '+(notFound.length-10)+' 筆':'');
+  alert(msg);
+}
 // 22欄舊格式相容: 19題目 20詳解 21題組ID（題組文章藏在題目欄以【題幹】分隔）
 async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return}
   let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
@@ -2766,28 +2817,8 @@ function buildPrompt(){const syl=SYL_RAW;
     ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
     ✗ v=d/t（無$）         →　✓ $v=\\frac{d}{t}$
 
-▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
-  格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
-  ⚠️ 此欄在CSV中用雙引號包住，雙引號內可以有真實換行——選項必須各自換行，段落之間空一行。
-  【解題關鍵】（換行後）一句話點出核心觀念。
-  （空一行）
-  【詳解】（換行後）選擇題每個選項單獨一行：(X) 正確：解析 或 (X) 錯誤：解析；計算題只寫關鍵代入步驟。
-  （空一行）
-  【觀念補充】（換行後）有教學價值時1~2句；無必要則整段省略（含標題不寫）。
-  ✗ 不寫「故選(A)」　✗ 不使用 ## 或 **
-
-  ⬇ 詳解CSV格式示範（雙引號內的完整內容，注意選項分行、段間空行）：
-  "【解題關鍵】
-  氧化數下降代表得電子，得電子的物質即為氧化劑。
-
-  【詳解】
-  (A) 錯誤：Zn 氧化數 0→+2，失電子為還原劑。
-  (B) 正確：$Cu^{2+}$ 氧化數 +2→0，得電子為氧化劑。
-  (C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原作用物。
-  (D) 錯誤：Cu 為還原後產物，非氧化劑。
-
-  【觀念補充】
-  氧化劑自身被還原，還原劑自身被氧化。"
+▷ 欄21 詳解（⚠️ 此欄一律留空，不要生成詳解）：
+  詳解另外由專人使用其他工具製作後再匯入，AI 輸出 CSV 時這一欄固定留空（雙引號內不放任何文字，"" 即可），不要自行撰寫解題說明。
 
 ▷ 欄20 圖片處理規則（⚠️ CSV 無法內嵌圖片，請務必照以下做）：
   - 有圖但圖可用文字描述：在題目欄直接用文字描述圖的內容（如「如圖，甲容器中有A、B兩物質…」）
@@ -2853,8 +2884,8 @@ function buildPrompt(){const syl=SYL_RAW;
   正確的 CSV 輸出（欄20、21、22、23 是重點）：
 
   "題號", …, "題目", "詳解", "題組文章", "題組ID"
-  "8", …, "在此食物網中，屬於初級消費者的生物有幾種？\n(A) 1種\n(B) 2種\n(C) 3種\n(D) 4種", "【解題關鍵】…", "下列為某食物網：草→兔→狐；草→鹿→狼。", "XX國中-九年級-114上-第一次段考-8"
-  "9", …, "承上題，若狐大量死亡，下列何者最可能發生？\n(A) 草增加\n(B) 兔減少\n(C) 兔增加\n(D) 草減少", "【解題關鍵】…", "", "XX國中-九年級-114上-第一次段考-8"
+  "8", …, "在此食物網中，屬於初級消費者的生物有幾種？\n(A) 1種\n(B) 2種\n(C) 3種\n(D) 4種", "", "下列為某食物網：草→兔→狐；草→鹿→狼。", "XX國中-九年級-114上-第一次段考-8"
+  "9", …, "承上題，若狐大量死亡，下列何者最可能發生？\n(A) 草增加\n(B) 兔減少\n(C) 兔增加\n(D) 草減少", "", "", "XX國中-九年級-114上-第一次段考-8"
 
   ⚠️ 檢查點：
   ① 第8題欄22有閱讀材料，第9題欄22是空字串 ""
@@ -3088,7 +3119,7 @@ ${syl}
 □ 每列恰好有 23 個欄位（含標題列）
 □ 所有欄位都用雙引號包住（標題列也是）
 □ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
-□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 欄21（詳解）：已留空，沒有自行生成詳解內容
 □ 圖片：複雜圖已加 〔含圖〕 標記；欄20沒有嘗試用任何方式塞入圖片
 □ 方程式：所有數學式/化學式都用 $...$ 包住；沒有使用 Unicode 上下標（H₂O、CO₂、10⁸等）
 □ 題組文章（欄22）：只在題組「第一題」填入；其餘小題欄22為空字串 ""；閱讀材料沒有出現在欄20
@@ -3189,13 +3220,8 @@ function buildPromptHS(){
     ✗ Cu²⁺                 →　✓ $Cu^{2+}$
     ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
 
-▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
-  格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
-  【解題關鍵】（換行後）一句話點出核心觀念。
-  （空一行）
-  【詳解】（換行後）選擇題每個選項單獨一行：(X) 正確：解析 或 (X) 錯誤：解析。
-  （空一行）
-  【觀念補充】（換行後）有教學價值時1~2句；無必要則整段省略。
+▷ 欄21 詳解（⚠️ 此欄一律留空，不要生成詳解）：
+  詳解另外由專人使用其他工具製作後再匯入，AI 輸出 CSV 時這一欄固定留空（雙引號內不放任何文字，"" 即可），不要自行撰寫解題說明。
 
 ▷ 欄22 題組文章（同規則）：
   1. 題組「第一題」：填完整共用閱讀材料／情境文字
@@ -3233,7 +3259,7 @@ ${hsKpList}
 □ 每列恰好有 23 個欄位（含標題列）
 □ 所有欄位都用雙引號包住（標題列也是）
 □ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
-□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 欄21（詳解）：已留空，沒有自行生成詳解內容
 □ 欄6 冊數：只用骨架中的冊數名稱（如 必修物理），沒有自創
 □ 欄8 領域：物理/化學/生物/地科（不用「理化」）
 □ 圖片：複雜圖已加 〔含圖〕 標記
@@ -3793,6 +3819,7 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
+  solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
@@ -3815,10 +3842,10 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 生成prompt</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='9';
+const TB_VER='10';
 const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
 const TB_DEFAULT=[
-  ['import','add','reload','backup','restore'],
+  ['import','solImport','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solPromptBtn'],
