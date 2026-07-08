@@ -2481,7 +2481,7 @@ function matches(it){
   const _sl=document.getElementById('fSchoolLevel');
   if(_sl&&_sl.value){const _g=it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);const _isHS=['高一','高二','高三','高中'].includes(_g);if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
   return true}
-const RENDER_CAP=200,RENDER_BATCH=200;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null,_renderLimit=RENDER_CAP;
+const RENDER_CAP=60,RENDER_BATCH=60;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null,_renderLimit=RENDER_CAP;
 let _renderTimer=null;
 function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
 function clearPinFilter(){_pinId=null;_pinGroupId=null;render();}
