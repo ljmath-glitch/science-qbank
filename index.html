@@ -3856,7 +3856,7 @@ const TB_BUTTONS={
   batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
   batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:110px;max-width:110px" onchange="saveOllamaModel(this.value)"></select>`,
   batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
-  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令，複製給主管的AI製作詳解">📋 詳解製作指令</button>`,
+  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_VER='10';
@@ -4128,20 +4128,21 @@ function buildSolBatchPrompt(items){
   const example='【格式範例：選擇題（氧化還原）】\n【解題關鍵】\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n【詳解】\n(A) 錯誤：Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) 正確：$Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) 錯誤：Cu 為還原後的產物，非氧化劑。\n\n【觀念補充】\n氧化劑自身被還原，還原劑自身被氧化。\n【範例結束】';
   const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項格式固定為「(X) 正確：解析」或「(X) 錯誤：解析」，先標示正誤再接一句解析；計算題只保留關鍵代入步驟。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、出題範圍；不寫「故選(A)」等語句。\n6. LaTeX：只用 $...$，絕對不用 $$...$$、\\[...\\]、\\(...\\)。\n7. 若某題答案是「（未提供，請自行判斷）」，請先自行判斷正確選項，在該題【解題關鍵】前單獨一行寫「【AI 判斷答案】X」（X為你認為的正確選項），再依此撰寫詳解。';
   const outputFormat='════════════════════════════════════════\n【輸出格式——非常重要，請務必嚴格遵守，這是拿來自動比對匯入用的】\n════════════════════════════════════════\n把以上每一題的詳解都寫完後，最後請額外整理成一份 CSV（用 ``` 包住方便複製），規則如下：\n1. 只要三個欄位，標題列（第一列）固定寫：考試名稱,題號,詳解\n2. 「考試名稱」「題號」必須跟我在下面提供的原始資料一字不差（這是系統拿來自動比對題目用的比對鍵，不可以自己重新命名、簡化、或調整格式），否則會比對失敗、匯入不進去\n3. 每個欄位都用雙引號包住；「詳解」欄位內部有換行、逗號都直接留在雙引號裡即可，不用額外處理\n4. 每道題目一列，不可以漏題，也不可以把多題合併成一列\n5. 除了這份 CSV，前面每一題正常撰寫的詳解內容也請保留，不要省略，我要兩者都能看到';
-  const qList=items.map((it,i)=>{
+  const qList=items.length?items.map((it,i)=>{
     const gid=it.groupId||'';
     let ctx='';
     if(gid&&PASSAGES[gid]&&PASSAGES[gid].q)ctx='【題組閱讀材料】\n'+PASSAGES[gid].q+'\n\n';
     const hasImg=(it.imgs&&it.imgs.length)?'　⚠️此題含圖，請參考我另外附上的圖片再寫詳解':'';
     const meta=[it.field&&'領域：'+it.field,it.unit&&'單元：'+it.unit,it.kp&&'知識點：'+it.kp].filter(Boolean).join('　');
     return `【第 ${i+1} 題】考試名稱：${it.exam}　題號：${it.no}${hasImg}\n${meta}\n答案：${it.ans||'（未提供，請自行判斷）'}\n${ctx}題目：\n${it.q}`;
-  }).join('\n\n'+'─'.repeat(40)+'\n\n');
-  const msg=`以下共有 ${items.length} 道題目需要撰寫詳解：\n\n${qList}\n\n${example}\n\n${rules}\n\n${outputFormat}`;
+  }).join('\n\n'+'─'.repeat(40)+'\n\n'):
+    '【請把題目資料貼在這裡，格式如下，可貼多題】\n\n【第 1 題】考試名稱：＿＿＿　題號：＿＿＿\n領域：＿＿＿　單元：＿＿＿　知識點：＿＿＿\n答案：＿＿＿\n題目：\n＿＿＿（把題目文字貼在這裡，含圖的話另外附上圖片）';
+  const countTxt=items.length?`以下共有 ${items.length} 道題目需要撰寫詳解：`:'請為以下題目撰寫詳解（可自行貼上題目內容，沒有勾選特定題目時用此範本手動複製）：';
+  const msg=`${countTxt}\n\n${qList}\n\n${example}\n\n${rules}\n\n${outputFormat}`;
   return {sys,msg};
 }
 function showSolPrompt(){
   const items=pickedItems();
-  if(!items.length){alert('請先在題目列表勾選要製作詳解的題目，再點這個按鈕');return;}
   const hasImgCount=items.filter(it=>it.imgs&&it.imgs.length).length;
   const ex=buildSolBatchPrompt(items);
   var text='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(60)+'\n\n【使用者訊息 user】\n'+ex.msg;
