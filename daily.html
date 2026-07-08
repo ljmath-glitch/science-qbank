@@ -933,6 +933,7 @@ function normalizeRow(row){
     opts,
     ansIdx,
     ansLetter: String.fromCharCode(65+ansIdx),
+    stdAnswer: fixLatex(row.ans||''), // 非選題（無法解析出選項）時，這是真正的標準答案文字，不是字母
     sol: fixLatex(row.sol||''),
     kp: row.kp||'',
     keywords: kws,
@@ -1332,9 +1333,12 @@ function renderQuestion(){
       optsEl.appendChild(btn);
     });
   } else {
-    // no parseable options — show answer directly if revealed
+    // 非選題（問答/計算/填充）：給一個手寫作答欄位讓學生先自己寫，再揭曉標準答案（不列入自動計分）
     if(!revealed){
-      optsEl.innerHTML=`<div style="padding:8px 0;font-family:inherit;font-size:13px;color:var(--muted)">此題為問答題，揭曉後顯示答案。</div>`;
+      optsEl.innerHTML=`<div style="padding:8px 0;font-family:inherit">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">此題為問答/計算題，請先在下方寫下你的答案，再按「顯示答案」對照：</div>
+        <textarea id="handwriteArea" placeholder="在這裡寫下你的作答…" style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>
+      </div>`;
     }
   }
 
@@ -1343,7 +1347,7 @@ function renderQuestion(){
   badge.className='result-badge';
   if(revealed&&rec){
     badge.className='result-badge '+(rec.correct?'correct':'wrong');
-    badge.innerHTML=rec.correct?'✓ 答對了！':q.hasOpts?`✗ 答錯了，正確答案是 (${q.ansLetter})`:`正確答案：(${q.ansLetter})`;
+    badge.innerHTML=q.hasOpts?(rec.correct?'✓ 答對了！':`✗ 答錯了，正確答案是 (${q.ansLetter})`):'📝 對照下方標準答案';
   }
 
   // practice mode
@@ -1381,8 +1385,12 @@ function renderExplanation(q){
   hint.style.display='none';
 
   let html='';
-  html+=`<div class="step"><div class="step-title">正確答案</div>`;
-  html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.hasOpts&&q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx],false):''}</div></div>`;
+  html+=`<div class="step"><div class="step-title">${q.hasOpts?'正確答案':'標準答案'}</div>`;
+  if(q.hasOpts){
+    html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx],false):''}</div></div>`;
+  }else{
+    html+=`<div>${mathToHtml(q.stdAnswer,false)||'（尚未提供標準答案）'}</div></div>`;
+  }
   if(q.sol){
     html+=`<div class="step"><div class="step-title">詳解</div><div>${mathToHtml(q.sol,false)}</div></div>`;
   }
