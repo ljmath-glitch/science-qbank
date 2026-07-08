@@ -14,6 +14,7 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   @font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
   @font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
@@ -410,7 +411,7 @@
     檔案第一列（標題列）必須包含這三個欄位名稱：<span class="kbd">考試名稱</span>　<span class="kbd">題號</span>　<span class="kbd">詳解</span>（順序不拘，可以有其他欄位，會自動忽略）。<br>
     💡 不知道怎麼準備這份檔案？兩種方式：<br>
     ① 用 AI 生成：先在題目列表勾選要做詳解的題目，點工具列「📋 詳解製作指令」，複製指令給主管的 AI，AI 照著格式回傳的 CSV 就能直接貼來這裡匯入。<br>
-    ② 給人手動填寫：點工具列「📤 詳解匯出Excel」，會匯出一份已經填好考試名稱／題號／題目／答案的 Excel，交給主管對照紙本考卷手動填「詳解」欄，填完後直接把這份 Excel 上傳到這裡即可（欄位已經對齊，不用調整格式）。</p>
+    ② 給人手動填寫：點工具列「📤 詳解匯出Excel」，會下載一個 ZIP，裡面有已經填好考試名稱／題號／題目／答案的 Excel，含圖的題目圖片也會一起打包在 images 資料夾裡（不用另外找紙本考卷），交給主管填好「詳解」欄後，把裡面的 Excel 上傳到這裡即可（欄位已經對齊，不用調整格式）。</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadSolCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="solCsvArea" style="min-height:200px"></textarea>
   </div>
@@ -1701,20 +1702,54 @@ function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name
   }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位（23欄新格式）: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目 20詳解 21題組文章 22題組ID
 
-/* ===== 詳解匯出（Excel）：給主管拿紙本考卷手動填寫用，欄位跟「詳解匯入」的比對鍵完全對齊 ===== */
-function exportSolExcel(){
+/* ===== 詳解匯出（Excel＋圖片ZIP）：給主管拿紙本考卷手動填寫用，欄位跟「詳解匯入」的比對鍵完全對齊 =====
+   含圖的題目：把圖片實際打包進同一個 ZIP 的 images 資料夾，Excel 裡註明檔名，主管不用另外找紙本考卷 */
+async function _imgToBlob(im){
+  if(im.src&&im.src.startsWith('data:'))return dataURLtoBlob(im.src);
+  const r=await fetch(im.src);if(!r.ok)throw new Error('HTTP '+r.status);return await r.blob();
+}
+function _extFromBlob(blob){const t=(blob.type||'').toLowerCase();if(t.includes('png'))return 'png';if(t.includes('gif'))return 'gif';if(t.includes('webp'))return 'webp';return 'jpg';}
+async function exportSolExcel(){
   const items=pickedItems().length?pickedItems():_lastShown.filter(it=>it.type!=='passage');
   if(!items.length){alert('目前沒有題目可以匯出（請先勾選題目，或篩選出要匯出的考卷）');return;}
-  const rows=items.map(it=>({
-    '考試名稱':it.exam||'','題號':it.no||'','題目':fixLatex(it.q||it.summary||'')+((it.imgs&&it.imgs.length)?'　〔含圖，請對照紙本考卷〕':''),
-    '答案':it.ans||'','詳解':''
-  }));
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}];
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'詳解填寫');
-  const name=(items[0].exam||'詳解匯出').replace(/[\\/:*?"<>|]/g,'_');
-  XLSX.writeFile(wb,name+'_詳解填寫.xlsx');
+  const btn=event&&event.target;if(btn){btn.disabled=true;btn.textContent='⏳ 匯出中…';}
+  try{
+    const zip=new JSZip();
+    const imgFolder=zip.folder('images');
+    let imgFailCount=0;
+    const rows=[];
+    for(const it of items){
+      let noteImg='';
+      if(it.imgs&&it.imgs.length){
+        const names=[];
+        for(let i=0;i<it.imgs.length;i++){
+          try{
+            const blob=await _imgToBlob(it.imgs[i]);
+            const fname=`${(it.no||'x')}_${i+1}.${_extFromBlob(blob)}`;
+            imgFolder.file(fname,blob);
+            names.push(fname);
+          }catch(e){imgFailCount++;}
+        }
+        noteImg=names.length?`　〔含圖，檔名：${names.join('、')}，請開啟同一個壓縮檔內的 images 資料夾查看〕`:'　〔含圖，圖片打包失敗，請對照紙本考卷〕';
+      }
+      rows.push({'考試名稱':it.exam||'','題號':it.no||'','題目':fixLatex(it.q||it.summary||'')+noteImg,'答案':it.ans||'','詳解':''});
+    }
+    const ws=XLSX.utils.json_to_sheet(rows);
+    ws['!cols']=[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}];
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,'詳解填寫');
+    const xlsxData=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+    const name=(items[0].exam||'詳解匯出').replace(/[\\/:*?"<>|]/g,'_');
+    zip.file(name+'_詳解填寫.xlsx',xlsxData);
+    const blob=await zip.generateAsync({type:'blob'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=name+'_詳解填寫（含圖片）.zip';a.click();
+    URL.revokeObjectURL(url);
+    if(imgFailCount)alert('提醒：有 '+imgFailCount+' 張圖片打包失敗（可能是網路問題），這幾題請對照紙本考卷');
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📤 詳解匯出Excel';}
+  }
 }
 /* ===== 詳解匯入：只更新既有題目的詳解欄位，依「考試名稱」+「題號」比對 ===== */
 function openSolImport(){solCsvArea.value='';solImportDlg.showModal()}
@@ -3868,7 +3903,7 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
-  solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel，交給主管對照紙本考卷手動填寫詳解，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
+  solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel＋圖片ZIP，含圖的題目圖片會一起打包，主管不用對照紙本考卷，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
