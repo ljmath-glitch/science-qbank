@@ -143,11 +143,23 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
       <div class="step" id="step2">
         <div class="bubble idle" id="bub2">2</div>
         <div class="step-body">
-          <div class="step-title">複製 Prompt → 貼進 AI</div>
+          <div class="step-title">複製 Prompt → 貼進 AI（或用本機 Ollama 自動處理）</div>
           <div class="step-desc">自動嵌入考卷內容與 22 欄分析規則</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0">
+            <select id="ocrOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;font-family:inherit" onchange="onOcrPresetChange(this.value)">
+              <option value="mac">福大 Mac</option>
+              <option value="company">大南路櫃2</option>
+              <option value="custom">其他（自訂網址）</option>
+            </select>
+            <select id="ocrOllamaModel" title="視覺模型" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;font-family:inherit" onchange="localStorage.setItem('ocrOllamaModel',this.value)"></select>
+            <input id="ocrOllamaUrl" type="text" placeholder="http://localhost:11434" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:150px;font-family:inherit;display:none" oninput="localStorage.setItem('ocrOllamaUrl',this.value)">
+          </div>
           <div class="step-msg" id="msg2"></div>
         </div>
-        <button class="btn btn-raw" id="btn2" onclick="step2()" disabled>複製 Prompt</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-raw" id="btnOcrAuto" onclick="runOllamaOCR()" disabled>🤖 用本機 Ollama 自動處理</button>
+          <button class="btn btn-raw" id="btn2" onclick="step2()" disabled>複製 Prompt（手動貼外部 AI）</button>
+        </div>
       </div>
       <div class="connector"></div>
     </div>
@@ -239,7 +251,91 @@ let selectedFile = null;
 let docContent = '';
 let csvFilename = '';
 let currentImages = {};
+let ocrImages = [];
 let logVisible = false;
+
+// ── 本機 Ollama OCR 設定（跟 index.html 同一套主機清單） ──────────────────
+const OCR_OLLAMA_PRESETS={company:'http://100.72.250.96:11434',mac:'http://localhost:11434,http://CHIAs-MacBook-Pro.local:11434,http://100.127.211.80:11434'};
+const OCR_MODEL_OPTIONS={
+  mac:[{v:'qwen3-vl:8b',t:'qwen3-vl（推薦）'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'}],
+  company:[{v:'qwen2.5:latest',t:'qwen2.5（無圖片辨識）'}],
+  custom:[{v:'qwen3-vl:8b',t:'qwen3-vl'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'},{v:'qwen2.5:latest',t:'qwen2.5（無圖片辨識）'}],
+};
+function _updateOcrModelSelect(preset){
+  const sel=document.getElementById('ocrOllamaModel');
+  if(!sel)return;
+  const opts=OCR_MODEL_OPTIONS[preset]||OCR_MODEL_OPTIONS.custom;
+  const saved=localStorage.getItem('ocrOllamaModel')||opts[0].v;
+  const keep=opts.some(o=>o.v===saved)?saved:opts[0].v;
+  sel.innerHTML=opts.map(o=>`<option value="${o.v}"${o.v===keep?' selected':''}>${o.t}</option>`).join('');
+  if(keep!==saved)localStorage.setItem('ocrOllamaModel',keep);
+}
+function onOcrPresetChange(v){
+  localStorage.setItem('ocrOllamaPreset',v);
+  const urlEl=document.getElementById('ocrOllamaUrl');
+  if(v==='custom'){
+    urlEl.style.display='';
+    if(!urlEl.value)urlEl.value=localStorage.getItem('ocrOllamaUrl')||'http://localhost:11434';
+  }else{
+    urlEl.style.display='none';
+    localStorage.setItem('ocrOllamaUrl',OCR_OLLAMA_PRESETS[v]);
+  }
+  _updateOcrModelSelect(v);
+}
+function _initOcrOllama(){
+  const preset=localStorage.getItem('ocrOllamaPreset')||'mac';
+  document.getElementById('ocrOllamaPreset').value=preset;
+  onOcrPresetChange(preset);
+}
+async function callOllamaVisionOCR(sys,msg,baseUrl,model,imgs){
+  const url=(baseUrl||'http://localhost:11434').replace(/\/+$/,'')+'/v1/chat/completions';
+  const content=[{type:'text',text:msg},...imgs.map(im=>({type:'image_url',image_url:{url:`data:${im.mime};base64,${im.b64}`}}))];
+  const msgs=[{role:'system',content:sys},{role:'user',content}];
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,stream:false})});
+  if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
+  return (await r.json()).choices[0].message.content.trim();
+}
+async function resolveOcrOllamaBase(){
+  const raw=(localStorage.getItem('ocrOllamaUrl')||'http://localhost:11434').trim();
+  const candidates=raw.split(/[,;\n]+/).map(s=>s.trim()).filter(Boolean);
+  if(candidates.length<=1)return candidates[0]||'http://localhost:11434';
+  for(const c of candidates){
+    try{
+      const r=await fetch(c.replace(/\/+$/,'')+'/api/tags',{signal:AbortSignal.timeout(3000)});
+      if(r.ok)return c;
+    }catch(e){}
+  }
+  return candidates[0];
+}
+async function runOllamaOCR(){
+  if(!docContent){alert('請先完成步驟一');return;}
+  const btn=document.getElementById('btnOcrAuto');
+  btn.disabled=true;document.getElementById('btn2').disabled=true;
+  setBub(2,'running');setMsg(2,`正在用本機 Ollama 辨識中（含 ${ocrImages.length} 張圖片，可能需要幾分鐘）⋯`);setActive(2);
+  try{
+    const model=localStorage.getItem('ocrOllamaModel')||'qwen3-vl:8b';
+    const baseUrl=await resolveOcrOllamaBase();
+    const prompt=buildPrompt();
+    const result=await callOllamaVisionOCR('你是專業的考卷資料整理助手，請嚴格照使用者的格式規則輸出 CSV，不要加任何說明文字或 Markdown 標記。',prompt,baseUrl,model,ocrImages);
+    const csv=result.replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+    document.getElementById('csvArea').value=csv;
+    setBub(2,'done');setMsg(2,'✅ Ollama 自動處理完成','ok');
+    document.getElementById('btn2').disabled=false;
+    setBub(3,'done');setMsg3Skip();
+    document.getElementById('csvCard').style.display='block';
+    setActive(4);
+    setBub(4,'waiting');document.getElementById('btn4').disabled=false;
+  }catch(e){
+    appendLog('Ollama OCR 失敗：'+e.message);
+    setBub(2,'error');setMsg(2,'失敗：'+e.message+'（可改用下方「複製 Prompt」手動處理）','err');
+    document.getElementById('btn2').disabled=false;
+  }
+  btn.disabled=false;
+}
+function setMsg3Skip(){
+  document.getElementById('btn3').disabled=true;
+  setMsg(3,'已由 Ollama 自動處理，略過此步驟','ok');
+}
 
 // ── 工具 ───────────────────────────────────────────────────────────────
 function toggleLog(){
@@ -266,8 +362,10 @@ function resetAll(){
   [1,2,3,4].forEach(i=>{setBub(i,'idle');setMsg(i,'');document.getElementById('step'+i).classList.remove('active');});
   document.getElementById('btn1').disabled=true;
   [2,3,4].forEach(i=>document.getElementById('btn'+i).disabled=true);
+  document.getElementById('btnOcrAuto').disabled=true;
   document.getElementById('csvCard').style.display='none';
   document.getElementById('csvArea').value='';
+  ocrImages=[];
 }
 
 // ── 檔案選擇 ──────────────────────────────────────────────────────────
@@ -504,6 +602,7 @@ async function step1(){
   if(!selectedFile) return;
   setBub(1,'running'); setMsg(1,'處理中⋯'); setActive(1);
   document.getElementById('btn1').disabled=true;
+  ocrImages=[];
 
   try{
     const basename=selectedFile.name.replace(/\.docx$/i,'');
@@ -549,6 +648,7 @@ async function step1(){
         try{
           const pngB64=await imgBase64ToPng(b64,mime);
           folder.file(`img${String(imgIdx).padStart(2,'0')}.png`,pngB64,{base64:true});
+          ocrImages.push({name:`img${String(imgIdx).padStart(2,'0')}.png`,mime:'image/png',b64:pngB64});
         }catch(_){ folder.file(origName,b64,{base64:true}); }
       }else{
         folder.file(origName,b64,{base64:true});
@@ -568,7 +668,9 @@ async function step1(){
         document.body.appendChild(wrap);
         try{
           const canvas=await html2canvas(wrap,{backgroundColor:'#ffffff',scale:2,logging:false});
-          folder.file(`table${String(i+1).padStart(2,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
+          const tblB64=canvas.toDataURL('image/png').split(',')[1];
+          folder.file(`table${String(i+1).padStart(2,'0')}.png`,tblB64,{base64:true});
+          ocrImages.push({name:`table${String(i+1).padStart(2,'0')}.png`,mime:'image/png',b64:tblB64});
         }catch(e){ appendLog('表格截圖失敗：'+e.message); }
         finally{ document.body.removeChild(wrap); }
       }
@@ -587,7 +689,7 @@ async function step1(){
 
     setBub(1,'done');
     setMsg(1,`完成：${imgIdx} 張圖片 ＋ ${tableEls.length} 張表格截圖`,'ok');
-    setBub(2,'waiting'); document.getElementById('btn2').disabled=false; setActive(2);
+    setBub(2,'waiting'); document.getElementById('btn2').disabled=false; document.getElementById('btnOcrAuto').disabled=false; setActive(2);
 
   }catch(e){
     appendLog('步驟一錯誤：'+e.message);
@@ -924,6 +1026,7 @@ function downloadCSV(){
     resetAll();
   },3000);
 }
+_initOcrOllama();
 </script>
 </body>
 </html>
