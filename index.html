@@ -2620,16 +2620,26 @@ let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
 function _countSubQuestions(text){
   if(!text)return 1;
+  // 先移除 LaTeX $...$ 區段，避免 $f(x)$、$f(2)$ 這類函數記號被誤判成子題標記(a)(b)(1)(2)
+  const stripped=text.replace(/\$[^$]*\$/g,'');
   const re=/[（(]([a-z]|[1-9][0-9]?)[）)]/g;
   const marks=new Set();let m;
-  while((m=re.exec(text)))marks.add(m[1]);
-  return marks.size>=2?marks.size:1;
+  while((m=re.exec(stripped)))marks.add(m[1]);
+  if(marks.size<2)return 1;
+  const arr=[...marks];
+  const allLetters=arr.every(x=>/^[a-z]$/.test(x));
+  const allDigits=arr.every(x=>/^[0-9]+$/.test(x));
+  // 還要求標記是從 a 或 1 開始的連續編號，避免文中偶然出現的單一括號引用誤判
+  if(allLetters&&marks.has('a'))return marks.size;
+  if(allDigits&&marks.has('1'))return marks.size;
+  return 1;
 }
 function _pvBlankResizeEnd(el){
   const key=el.dataset.key;
-  const h=Math.round(el.offsetHeight);
+  const h=Math.min(500,Math.round(el.offsetHeight));
   if(_paperBlankH[key]===h)return;
   _paperBlankH[key]=h;
+  el.style.height=h+'px';
   _rebuildLastPaperHTML();
 }
 function buildExamHeader(){
