@@ -2742,7 +2742,11 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
 .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
 @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555}}
-@media print{.noprint{display:none}}</style></head><body>${downloadInner}
+@media print{.noprint{display:none}
+/* 列印/存PDF時強制用系統內建中文字型，不要依賴外部字型檔——Chrome的列印渲染是獨立流程，
+   有時無法正確沿用網頁上已經載入好的外部字型，導致中文整段消失，數字/英文/公式卻正常 */
+body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","Microsoft YaHei",sans-serif!important}}
+</style></head><body>${downloadInner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function showPaperPreview(){if(!PICKS.size)return;
