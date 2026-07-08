@@ -765,7 +765,7 @@ const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_AN
 let _filter = {book:'', exam:''};
 
 function filterQS(){
-  let q='type=neq.passage';
+  let q='type=neq.passage&or=(flag.is.null,flag.eq.false)'; // 跳過待確認題目
   if(_filter.book==='會考'||_filter.book==='學測'){
     q+=`&exam=like.*${encodeURIComponent(_filter.book)}*`;
   }else if(_filter.book){
