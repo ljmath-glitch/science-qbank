@@ -845,12 +845,12 @@ async function sbFetchPassage(groupId){
     {headers:SB_HDR}
   );
   const data = await res.json();
-  if(!Array.isArray(data)) return {passageRow:null, firstSubRow:null};
+  if(!Array.isArray(data)) return {passageRow:null, subs:[]};
   const passageRow = data.find(r => r.type === 'passage') || null;
-  // 按題號排序（no 欄位為文字，需轉整數），取最小題號為第一題
+  // 按題號排序（no 欄位為文字，需轉整數）
   const subs = data.filter(r => r.type !== 'passage')
                    .sort((a,b) => (parseInt(a.no)||0) - (parseInt(b.no)||0));
-  return {passageRow, firstSubRow: subs[0] || null};
+  return {passageRow, subs};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1014,25 +1014,51 @@ async function loadDailyQuestion(offset, sidx=0){
     if(!row) throw new Error('no data');
 
     const q = normalizeRow(row);
+    const curNo = parseInt(row.no)||0;
     if(q.groupId){
       try{
-        const {passageRow, firstSubRow} = await sbFetchPassage(q.groupId);
+        const {passageRow, subs} = await sbFetchPassage(q.groupId);
         if(passageRow){
           q.passage = {
             text: fixLatex(passageRow.q||''),
             imgs: Array.isArray(passageRow.imgs) ? passageRow.imgs : [],
           };
-        } else if(firstSubRow && (parseInt(firstSubRow.no)||0) !== (parseInt(row.no)||0)){
-          // 沒有獨立題組文章且本題不是第一題：以第一題的題幹（不含選項）作為情境
-          const rawFirstQ = fixLatex(firstSubRow.q||'');
-          const parsedFirst = parseOptions(rawFirstQ);
+        } else if(subs && subs.length){
+          // 沒有獨立題組文章：找出題號比本題小、且最接近的那一題（真正的「上一題」，
+          // 不是題組第一題——題組可能有3題以上，承上題指的是緊接在前的那一題）
+          const prevRow = subs.filter(r=>(parseInt(r.no)||0) < curNo)
+                               .sort((a,b)=>(parseInt(b.no)||0)-(parseInt(a.no)||0))[0];
+          if(prevRow){
+            const rawPrevQ = fixLatex(prevRow.q||'');
+            const parsedPrev = parseOptions(rawPrevQ);
+            q.passage = {
+              text: parsedPrev ? parsedPrev.stem : rawPrevQ,
+              imgs: Array.isArray(prevRow.imgs) ? prevRow.imgs : [],
+              isContext: true,
+            };
+          }
+        }
+      }catch(pe){ console.warn('passage fetch failed',pe); }
+    }
+    if(!q.passage && /承上題|承第\s*\d+\s*題/.test(row.q||'') && row.exam && curNo>1){
+      // 題目寫著「承上題」但沒有題組ID（資料沒連結好）：退而求其次，
+      // 用同一份考卷、題號-1 去找上一題當作情境（盡力而為，非嚴謹題組關係）
+      try{
+        const res = await fetch(
+          `${SUPABASE_URL}/rest/v1/questions?select=q,imgs&exam=eq.${encodeURIComponent(row.exam)}&no=eq.${encodeURIComponent(String(curNo-1))}&limit=1`,
+          {headers:SB_HDR}
+        );
+        const data = await res.json();
+        if(Array.isArray(data) && data[0]){
+          const rawPrevQ = fixLatex(data[0].q||'');
+          const parsedPrev = parseOptions(rawPrevQ);
           q.passage = {
-            text: parsedFirst ? parsedFirst.stem : rawFirstQ,
-            imgs: Array.isArray(firstSubRow.imgs) ? firstSubRow.imgs : [],
+            text: parsedPrev ? parsedPrev.stem : rawPrevQ,
+            imgs: Array.isArray(data[0].imgs) ? data[0].imgs : [],
             isContext: true,
           };
         }
-      }catch(pe){ console.warn('passage fetch failed',pe); }
+      }catch(pe){ console.warn('fallback passage fetch failed',pe); }
     }
     _cache[cacheKey] = q;
     return q;
