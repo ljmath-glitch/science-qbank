@@ -372,9 +372,9 @@
         <span id="pinBannerText" style="flex:1">📌 目前篩選鈴噹題目（單題檢視）</span>
         <button class="btn sm" onclick="clearPinFilter()">× 返回全部</button>
       </div>
+      <div id="groupIdToolCard"></div>
       <div id="list"></div>
       <div id="examProgressCard"></div>
-      <div id="groupIdToolCard"></div>
     </main>
   </div>
 </div>
@@ -1534,7 +1534,7 @@ function _renderGroupIdTool(){
   const card=document.getElementById('groupIdToolCard');
   if(!card||!_groupToolInfo)return;
   if(!_groupToolRows.length)_groupToolRows=[{range:''}];
-  card.innerHTML=`<div style="margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fdf6f6">
+  card.innerHTML=`<div style="margin-bottom:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fdf6f6">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
       <b style="font-size:14px">🔧 題組編號人工校對</b>
       <span style="font-size:11px;color:#7a6e60">輸入題號範圍，按套用後：範圍內的題會標同一個題組ID，範圍外的題組ID會被清空</span>
@@ -2496,8 +2496,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   updateExamProgressCard(shown);
   updateGroupIdTool(shown);}
 function renderPage(list,shown,page){
-  const start=page*PAGE_SIZE,end=Math.min(start+PAGE_SIZE,shown.length);
-  const pageItems=shown.slice(start,end);
+  const pageItems=shown;
   const _shownPs=new Set();
   list.innerHTML=pageItems.map(it=>{
     let passageHtml='';
@@ -2538,14 +2537,6 @@ function renderPage(list,shown,page){
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
-  // 分頁導覽
-  if(shown.length>PAGE_SIZE){
-    const totalPages=Math.ceil(shown.length/PAGE_SIZE);
-    const nav=document.createElement('div');
-    nav.style.cssText='display:flex;align-items:center;gap:8px;padding:14px 0;font-family:inherit;font-size:13px;justify-content:center';
-    nav.innerHTML=`<button class="btn sm" ${page===0?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page-1});window.scrollTo(0,0)">◀ 上一頁</button><span style="color:var(--muted)">第 ${page+1} / ${totalPages} 頁（共 ${shown.length} 題）</span><button class="btn sm" ${end>=shown.length?'disabled':''} onclick="renderPage(document.getElementById('list'),_lastShown,${page+1});window.scrollTo(0,0)">下一頁 ▶</button>`;
-    list.appendChild(nav);
-  }
   (window.requestIdleCallback||setTimeout)(()=>renderMath(list));
   updateFloat();}
 function fixLatex(text){
