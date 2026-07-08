@@ -2372,6 +2372,7 @@ async function _pvSave(type,id){
   const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
   pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
   if(pv)pv.scrollTop=sy;
+  _rebuildLastPaperHTML();
 }
 function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
 function imgHtmlPreview(im,type,id,idx){
@@ -2625,6 +2626,21 @@ function openPaperDlg(){
   paperDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
+let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
+function _countSubQuestions(text){
+  if(!text)return 1;
+  const re=/[（(]([a-z]|[1-9][0-9]?)[）)]/g;
+  const marks=new Set();let m;
+  while((m=re.exec(text)))marks.add(m[1]);
+  return marks.size>=2?marks.size:1;
+}
+function _pvBlankResizeEnd(el){
+  const key=el.dataset.key;
+  const h=Math.round(el.offsetHeight);
+  if(_paperBlankH[key]===h)return;
+  _paperBlankH[key]=h;
+  _rebuildLastPaperHTML();
+}
 function buildExamHeader(){
   const g=document.getElementById('pGrade').value.trim();
   const s=document.getElementById('pSubject').value.trim();
@@ -2669,10 +2685,17 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     qNum++;
     let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
-    // 非選題（填充/計算）留手寫作答空白，答案卷模式（已顯示答案/詳解）就不用留空白
+    // 非選題（填充/計算）依題目內偵測到的子問句數量各留一格手寫作答空白，答案卷模式（已顯示答案/詳解）就不用留空白
     if((it.type==='填'||it.type==='計')&&ansMode!=='inline'&&ansMode!=='full'){
-      const blankHeight=it.type==='計'?'110px':'34px';
-      extra+=`<div style="margin-top:6px;border:1px dashed #aaa;border-radius:6px;height:${blankHeight}"></div>`;
+      const subN=_countSubQuestions(it.q||it.summary||'');
+      const defaultH=it.type==='計'?110:34;
+      for(let s=0;s<subN;s++){
+        const bkey=it.id+'_'+s;
+        const bh=_paperBlankH[bkey]||defaultH;
+        extra+=forPreview
+          ?`<div class="pvblank" data-key="${bkey}" style="margin-top:6px;border:1px dashed #aaa;border-radius:6px;height:${bh}px;overflow:hidden;resize:vertical" onmouseup="_pvBlankResizeEnd(this)"></div>`
+          :`<div style="margin-top:6px;border:1px dashed #aaa;border-radius:6px;height:${bh}px"></div>`;
+      }
     }
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
     return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')))}${imgs}${extra}${src}</div>`;
@@ -2681,9 +2704,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`;
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
-function showPaperPreview(){if(!PICKS.size)return;
-  pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
-  document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
+function _rebuildLastPaperHTML(){
   const downloadInner=buildPaperInner();
   lastPaperHTML=`<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(lastPaperTitle)}</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
@@ -2709,6 +2730,10 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 @media print{.noprint{display:none}}</style></head><body>${downloadInner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
+function showPaperPreview(){if(!PICKS.size)return;
+  pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
+  document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
+  _rebuildLastPaperHTML();}
 function closePaper(){document.getElementById('paperView').classList.remove('show')}
 function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
 
