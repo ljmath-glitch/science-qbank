@@ -160,7 +160,8 @@
   .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
   .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
   .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
-  .pv-sheet .q{margin-bottom:18px;font-style:normal}
+  .pv-sheet .q{margin-bottom:18px;font-style:normal;page-break-inside:avoid;break-inside:avoid}
+  .pv-sheet .passage-block{page-break-inside:avoid;break-inside:avoid}
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
   .pv-sheet .sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
@@ -2698,7 +2699,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
         const r=groupRanges[gid];
         const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
         const hdrLine=rangeStr?`<div style="margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
-        passageHtml=`${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div>`;
+        passageHtml=`<div class="passage-block">${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div></div>`;
       }
     }
     qNum++;
