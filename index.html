@@ -3742,13 +3742,13 @@ const TB_BUTTONS={
   importSolBtn: ()=>`<button class="btn sm" onclick="openImportSol()">⬆ 匯入詳解</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='9';
+const TB_VER='10';
 const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
-  ['batchGenBtn','batchProvider','batchGeminiModel','solPromptBtn','solRegenBtn','importSolBtn'],
+  ['solRegenBtn','importSolBtn','solPromptBtn','batchProvider','batchGeminiModel','batchGenBtn'],
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
