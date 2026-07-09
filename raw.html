@@ -257,9 +257,9 @@ let logVisible = false;
 // ── 本機 Ollama OCR 設定（跟 index.html 同一套主機清單） ──────────────────
 const OCR_OLLAMA_PRESETS={company:'http://100.72.250.96:11434',mac:'http://localhost:11434,http://CHIAs-MacBook-Pro.local:11434,http://100.127.211.80:11434'};
 const OCR_MODEL_OPTIONS={
-  mac:[{v:'qwen3-vl:8b',t:'qwen3-vl（推薦）'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'}],
+  mac:[{v:'qwen3-vl:8b',t:'qwen3-vl（推薦）'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'},{v:'moondream:latest',t:'moondream（最輕量）'}],
   company:[{v:'qwen2.5:latest',t:'qwen2.5（無圖片辨識）'}],
-  custom:[{v:'qwen3-vl:8b',t:'qwen3-vl'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'},{v:'qwen2.5:latest',t:'qwen2.5（無圖片辨識）'}],
+  custom:[{v:'qwen3-vl:8b',t:'qwen3-vl'},{v:'granite3.2-vision:latest',t:'granite3.2-vision'},{v:'llama3.2-vision:11b',t:'llama3.2-vision'},{v:'moondream:latest',t:'moondream'},{v:'qwen2.5:latest',t:'qwen2.5（無圖片辨識）'}],
 };
 function _updateOcrModelSelect(preset){
   const sel=document.getElementById('ocrOllamaModel');
