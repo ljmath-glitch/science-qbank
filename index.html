@@ -1597,6 +1597,7 @@ function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.repla
     else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}}
   if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
 function openImport(){csvArea.value='';const fr=document.querySelector('input[name=importMode][value=full]');if(fr){fr.checked=true;onImportModeChange();}importDlg.showModal()}
+function openImportSol(){csvArea.value='';const sr=document.querySelector('input[name=importMode][value=sol]');if(sr){sr.checked=true;onImportModeChange();}importDlg.showModal()}
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
@@ -3736,16 +3737,18 @@ const TB_BUTTONS={
   batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel')"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama</option></select>`,
   batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
   batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
-  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 生成prompt</button>`,
+  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()">📋 詳解格式</button>`,
+  solRegenBtn:  ()=>`<button class="btn sm gold" onclick="copySolRegenPrompt()" title="複製給AI的詳解重生成指令，AI看考卷輸出3欄CSV後用「匯入詳解」匯入">📋 詳解重生成指令</button>`,
+  importSolBtn: ()=>`<button class="btn sm" onclick="openImportSol()">⬆ 匯入詳解</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='8';
-const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
+const TB_VER='9';
+const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
-  ['batchGenBtn','batchProvider','batchGeminiModel','solPromptBtn'],
+  ['batchGenBtn','batchProvider','batchGeminiModel','solPromptBtn','solRegenBtn','importSolBtn'],
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
