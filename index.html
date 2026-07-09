@@ -168,7 +168,7 @@
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
   @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
-  @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}}
+  @media print{.noprint{display:none!important}.paperview{position:static!important;overflow:visible!important;height:auto!important}body>*:not(.paperview){display:none!important}.pv-sheet{width:100%!important;box-shadow:none!important;margin:0 auto!important}.q{page-break-inside:avoid}}
   .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
   .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
@@ -390,15 +390,21 @@
 
 <!-- 匯入 -->
 <dialog id="importDlg">
-  <div class="dlg-head">匯入題目 (CSV / Excel)<button class="x" onclick="importDlg.close()">×</button></div>
+  <div class="dlg-head">匯入<button class="x" onclick="importDlg.close()">×</button></div>
   <div class="dlg-body">
-    <p>20 欄順序（建議直接用「📋 AI轉檔指令」產生）：<br>
-    <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
-    （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
+    <div style="display:flex;gap:16px;margin-bottom:10px;font-size:13px">
+      <label style="cursor:pointer;display:flex;align-items:center;gap:5px"><input type="radio" name="importMode" value="full" checked onchange="onImportModeChange()"> 題目匯入（23欄）</label>
+      <label style="cursor:pointer;display:flex;align-items:center;gap:5px"><input type="radio" name="importMode" value="sol" onchange="onImportModeChange()"> 只更新詳解（3欄）</label>
+    </div>
+    <div id="importHintFull"><p>23 欄順序（建議直接用「📋 AI（國中）」或「📋 AI（高中）」指令產生）：<br>
+    <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,詳解,題組文章,題組ID</span></p></div>
+    <div id="importHintSol" style="display:none"><p>3 欄順序：<span class="kbd">考試名稱,題號,詳解</span><br>
+    只更新已存在題目的詳解，不新增題目、不動其他欄位。<br>
+    <button class="btn sm" onclick="copySolRegenPrompt()" style="margin-top:6px">📋 複製詳解重生成指令</button></p></div>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="csvArea" style="min-height:200px"></textarea>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImportAuto()">匯入</button></div>
 </dialog>
 
 <!-- Ollama 使用說明 -->
@@ -1590,7 +1596,7 @@ function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.repla
     if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}
     else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}}
   if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
-function openImport(){csvArea.value='';importDlg.showModal()}
+function openImport(){csvArea.value='';const fr=document.querySelector('input[name=importMode][value=full]');if(fr){fr.checked=true;onImportModeChange();}importDlg.showModal()}
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
@@ -1684,6 +1690,48 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(_flagN)_issues.push(`${_flagN} 題已標記「待確認」→ 點左側「只看待確認」集中處理`);
   if(_issues.length)_sumMsg+='\n\n⚠️ 需人工補充：\n• '+_issues.join('\n• ');
   alert(_sumMsg);}
+
+function onImportModeChange(){
+  const mode=document.querySelector('input[name=importMode]:checked')?.value||'full';
+  document.getElementById('importHintFull').style.display=mode==='full'?'':'none';
+  document.getElementById('importHintSol').style.display=mode==='sol'?'':'none';
+}
+function doImportAuto(){
+  const mode=document.querySelector('input[name=importMode]:checked')?.value||'full';
+  if(mode==='sol')doImportSolOnly();else doImport();
+}
+async function doImportSolOnly(){
+  if(!requireCloud())return;
+  const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return;}
+  let start=0;const head=rows[0].join('');
+  if(head.includes('考試名稱')||head.includes('詳解')||head.includes('題號'))start=1;
+  const updates=[];
+  for(let i=start;i<rows.length;i++){
+    const r=rows[i];const g=n=>(r[n]||'').trim();
+    const exam=g(0),no=g(1),sol=normalizeSol(g(2));
+    if(!exam||!no||!sol)continue;
+    updates.push({exam,no,sol});
+  }
+  if(!updates.length){alert('沒有可更新的資料（請確認格式為 3 欄：考試名稱,題號,詳解）');return;}
+  const toUpdate=[];const notFound=[];
+  for(const u of updates){
+    const q=DB.find(x=>x.exam===u.exam&&String(x.no)===String(u.no));
+    if(q)toUpdate.push({id:q.id,sol:u.sol,updated_at:new Date().toISOString()});
+    else notFound.push(`${u.exam} 第 ${u.no} 題`);
+  }
+  if(!toUpdate.length){alert('找不到任何符合的題目（考試名稱＋題號需與題庫完全一致）\n\n常見原因：考試名稱格式不同，請在篩選欄確認題庫中的考試名稱');return;}
+  let errCount=0;
+  for(const u of toUpdate){
+    const {error}=await sb.from('questions').update({sol:u.sol,updated_at:u.updated_at}).eq('id',u.id);
+    if(error){console.error('更新詳解失敗',u.id,error.message);errCount++;}
+    else{const it=DB.find(x=>x.id===u.id);if(it){it.sol=u.sol;it.updatedAt=u.updated_at;}}
+  }
+  importDlg.close();render();
+  let msg=`✅ 詳解更新完成！\n已更新：${toUpdate.length-errCount} 題`;
+  if(errCount)msg+=`\n更新失敗（網路錯誤）：${errCount} 題`;
+  if(notFound.length){msg+=`\n\n找不到的題目（${notFound.length} 筆）：\n`;msg+=notFound.slice(0,10).join('\n');if(notFound.length>10)msg+=`\n…以及另外 ${notFound.length-10} 筆`;}
+  alert(msg);
+}
 
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
@@ -2450,7 +2498,7 @@ h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-
 .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
 .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
 @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555}}
-@media print{.noprint{display:none}}</style></head><body>${downloadInner}
+@media print{.noprint{display:none}.q{page-break-inside:avoid}}</style></head><body>${downloadInner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function closePaper(){document.getElementById('paperView').classList.remove('show')}
@@ -2621,25 +2669,32 @@ function buildPrompt(){const syl=SYL_RAW;
 ▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
   格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
   ⚠️ 此欄在CSV中用雙引號包住，雙引號內可以有真實換行——選項必須各自換行，段落之間空一行。
-  【解題關鍵】（換行後）一句話點出核心觀念。
-  （空一行）
-  【詳解】（換行後）選擇題每個選項單獨一行：(X) 正確：解析 或 (X) 錯誤：解析；計算題只寫關鍵代入步驟。
-  （空一行）
-  【觀念補充】（換行後）有教學價值時1~2句；無必要則整段省略（含標題不寫）。
-  ✗ 不寫「故選(A)」　✗ 不使用 ## 或 **
+
+  ▸ 【解題關鍵】：一句話，點出這題的核心觀念或解題切入點。
+
+  ▸ 【詳解】：
+    【選擇題】每個選項（A、B、C、D）都必須單獨一行：
+      (X) 正確：〔說明此選項正確的具體理由——引用定義、公式、數值，不可只寫「正確」或「符合」〕
+      (X) 錯誤：〔說明此選項哪裡錯、錯在哪個概念或數值——禁止只寫「不符合」「說法有誤」等空洞理由〕
+    【計算題】逐步列出每個代入步驟，直到得出最終答案，不可只寫結果。
+    【填充/簡答題】說明答案的推導過程或定義依據。
+
+  ▸ 【觀念補充】：有教學價值時寫1~2句延伸觀念；無必要則整段省略（含標題不寫）。
+
+  ✗ 不寫「故選(A)」　✗ 不使用 ## 或 **　✗ 禁止選項解析只有一個詞語如「正確」「錯誤」
 
   ⬇ 詳解CSV格式示範（雙引號內的完整內容，注意選項分行、段間空行）：
   "【解題關鍵】
   氧化數下降代表得電子，得電子的物質即為氧化劑。
 
   【詳解】
-  (A) 錯誤：Zn 氧化數 0→+2，失電子為還原劑。
-  (B) 正確：$Cu^{2+}$ 氧化數 +2→0，得電子為氧化劑。
-  (C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原作用物。
-  (D) 錯誤：Cu 為還原後產物，非氧化劑。
+  (A) 錯誤：Zn 氧化數由 0 升至 +2，是失電子的氧化過程，Zn 是還原劑而非氧化劑。
+  (B) 正確：$Cu^{2+}$ 氧化數由 +2 降至 0，得到電子被還原，是氧化劑。
+  (C) 錯誤：$Zn^{2+}$ 是 Zn 氧化後的產物，本身並非接受電子的氧化劑。
+  (D) 錯誤：Cu 是 $Cu^{2+}$ 被還原後的產物，不是反應中主動得電子的物質。
 
   【觀念補充】
-  氧化劑自身被還原，還原劑自身被氧化。"
+  氧化劑自身被還原（氧化數下降），還原劑自身被氧化（氧化數上升）。"
 
 ▷ 欄20 圖片處理規則（⚠️ CSV 無法內嵌圖片，請務必照以下做）：
   - 有圖但圖可用文字描述：在題目欄直接用文字描述圖的內容（如「如圖，甲容器中有A、B兩物質…」）
@@ -2935,7 +2990,7 @@ ${syl}
 □ 每列恰好有 23 個欄位（含標題列）
 □ 所有欄位都用雙引號包住（標題列也是）
 □ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
-□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】；選擇題每個選項都有具體說明，非只寫「正確」「錯誤」
 □ 圖片：複雜圖已加 〔含圖〕 標記；欄20沒有嘗試用任何方式塞入圖片
 □ 方程式：所有數學式/化學式都用 $...$ 包住；沒有使用 Unicode 上下標（H₂O、CO₂、10⁸等）
 □ 題組文章（欄22）：只在題組「第一題」填入；其餘小題欄22為空字串 ""；閱讀材料沒有出現在欄20
@@ -3037,11 +3092,20 @@ function buildPromptHS(){
 
 ▷ 欄21 詳解（⚠️ 每道題目都必須撰寫，不可留空）：
   格式固定三段，使用全形括號【 】，禁止使用 ## 或 **。
-  【解題關鍵】（換行後）一句話點出核心觀念。
-  （空一行）
-  【詳解】（換行後）選擇題每個選項單獨一行：(X) 正確：解析 或 (X) 錯誤：解析。
-  （空一行）
-  【觀念補充】（換行後）有教學價值時1~2句；無必要則整段省略。
+  ⚠️ 此欄在CSV中用雙引號包住，雙引號內可以有真實換行——選項必須各自換行，段落之間空一行。
+
+  ▸ 【解題關鍵】：一句話，點出這題的核心觀念或解題切入點。
+
+  ▸ 【詳解】：
+    【選擇題】每個選項（A、B、C、D）都必須單獨一行：
+      (X) 正確：〔說明此選項正確的具體理由——引用定義、公式、數值，不可只寫「正確」或「符合」〕
+      (X) 錯誤：〔說明此選項哪裡錯、錯在哪個概念或數值——禁止只寫「不符合」「說法有誤」等空洞理由〕
+    【計算題】逐步列出每個代入步驟，直到得出最終答案，不可只寫結果。
+    【填充/簡答題】說明答案的推導過程或定義依據。
+
+  ▸ 【觀念補充】：有教學價值時寫1~2句延伸觀念；無必要則整段省略（含標題不寫）。
+
+  ✗ 不寫「故選(A)」　✗ 不使用 ## 或 **　✗ 禁止選項解析只有一個詞語如「正確」「錯誤」
 
 ▷ 欄22 題組文章（同規則）：
   1. 題組「第一題」：填完整共用閱讀材料／情境文字
@@ -3074,7 +3138,7 @@ ${hsKpList}
 □ 每列恰好有 23 個欄位（含標題列）
 □ 所有欄位都用雙引號包住（標題列也是）
 □ 欄20（題目）內的換行都在雙引號內，沒有在欄位外額外斷列
-□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】
+□ 欄21（詳解）：每道題目都已撰寫，格式含【解題關鍵】【詳解】；選擇題每個選項都有具體說明，非只寫「正確」「錯誤」
 □ 欄6 冊數：只用骨架中的冊數名稱（如 必修物理），沒有自創
 □ 欄8 領域：物理/化學/生物/地科（不用「理化」）
 □ 圖片：複雜圖已加 〔含圖〕 標記
@@ -3103,6 +3167,52 @@ function openPromptWindow(){
   w.document.close();
 }
 function copyPrompt(){const p=buildPrompt();navigator.clipboard.writeText(p).then(()=>alert('已複製 AI 指令（含翰林版骨架與22欄規則）！\n\n用法：\n1. 開新的 AI 對話\n2. 上傳段考卷 PDF/照片\n3. 貼上指令、填年度/學校/考試名稱\n4. 把回傳的 CSV 用「匯入題目」貼回來')).catch(()=>{csvArea.value=p;importDlg.showModal()})}
+function copySolRegenPrompt(){
+  const p=`你是一位臺灣自然科教師，請根據我提供的考卷，為每道題目撰寫詳細詳解，輸出成 3 欄 CSV，供我匯入題庫系統更新詳解欄位。
+
+【輸出格式】
+3 欄 CSV，第一列為標題列，之後每題一列。
+標題列：考試名稱,題號,詳解
+⚠️ CSV 規則：每個欄位都必須用雙引號包住；詳解欄位內的換行留著，整個欄位仍在同一對雙引號內；欄位內有雙引號時改寫為兩個雙引號 ""
+
+【詳解撰寫規則 ── 必須嚴格執行以下每一條】
+格式固定三段，使用全形括號【 】，禁止使用 ## 或 **：
+
+▸ 【解題關鍵】：一句話，點出這題的核心觀念或解題切入點。
+
+▸ 【詳解】：
+  【選擇題】每個選項（A、B、C、D）都必須單獨一行：
+    (X) 正確：〔說明此選項正確的具體理由——引用定義、公式、數值，不可只寫「正確」或「符合」〕
+    (X) 錯誤：〔說明此選項哪裡錯、錯在哪個概念或數值——禁止只寫「不符合」「說法有誤」等空洞理由〕
+  【計算題】逐步列出每個代入步驟直到最終答案，不可只寫結果。
+  【填充/非選題】說明推導過程或定義依據。
+
+▸ 【觀念補充】：有教學價值時寫1~2句延伸；無必要則整段省略（含標題不寫）。
+
+✗ 絕對不寫「故選(X)」　✗ 不使用 ## 或 **　✗ 禁止選項解析只有一個詞如「正確」「錯誤」
+
+【LaTeX 數學符號規則】
+所有數學式、化學式、物理量、單位，一律用 $...$ 包住（只有這一種，沒有例外）：
+✅ 正確：$v=\\frac{d}{t}$、$Cu^{2+}$、$H_2O$、$30\\,\\text{m/s}$
+❌ 絕對禁止：$$...$$、\\[...\\]、\\(...\\)、Unicode 上下標（H₂O 改寫為 $H_2O$）
+
+【範例輸出】
+"考試名稱","題號","詳解"
+"建中-高一-114上-第一次段考","5","【解題關鍵】
+代入電功率公式 $P=IV$ 求電流大小。
+
+【詳解】
+(A) 錯誤：$I=\\frac{P}{V}=\\frac{60}{120}=0.5\\,\\text{A}$，不是 2 A，故此選項錯誤。
+(B) 正確：$I=\\frac{P}{V}=\\frac{60\\,\\text{W}}{120\\,\\text{V}}=0.5\\,\\text{A}$，符合題意。
+(C) 錯誤：若 $I=1\\,\\text{A}$，則 $P=1\\times120=120\\,\\text{W}\\neq60\\,\\text{W}$，不符題意。
+(D) 錯誤：若 $I=2\\,\\text{A}$，則 $P=2\\times120=240\\,\\text{W}\\neq60\\,\\text{W}$，不符題意。
+
+【觀念補充】
+電功率三個公式互換：$P=IV=I^2R=\\dfrac{V^2}{R}$，依已知條件選用。"
+
+只輸出 CSV，不要任何說明文字。考試名稱請從考卷封面或試卷標題判斷後完整填入。`;
+  navigator.clipboard.writeText(p).then(()=>alert('已複製詳解重生成指令！\n\n用法：\n1. 在題庫勾選要重新生成詳解的題目，用「📄 匯出考卷」輸出（選「答案卷＋詳解」格式）\n2. 開新的 AI 對話，上傳或貼上考卷內容\n3. 貼上此指令，讓 AI 輸出 3 欄 CSV\n4. 在「匯入題目」選「只更新詳解（3欄）」模式，貼入 CSV 後按匯入\n   （只更新詳解欄位，不新增題目、不動其他欄位）')).catch(()=>{});
+}
 function copySystemDoc(){
   const url='https://raw.githubusercontent.com/ljmath-glitch/science-qbank/main/CLAUDE.md';
   const text='請讀取這份文件，完整了解「茲茲文教自然科題庫系統」的架構與所有技術細節：\n'+url;
