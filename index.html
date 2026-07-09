@@ -1727,6 +1727,74 @@ async function _imgToBlob(im){
   const r=await fetch(im.src);if(!r.ok)throw new Error('HTTP '+r.status);return await r.blob();
 }
 function _extFromBlob(blob){const t=(blob.type||'').toLowerCase();if(t.includes('png'))return 'png';if(t.includes('gif'))return 'gif';if(t.includes('webp'))return 'webp';return 'jpg';}
+/* 手動組裝 .xlsx（繞過 xlsx.js 免費版無法寫入儲存格樣式的限制，讓「自動換行」真的生效）
+   欄位內容有 \n 時，Excel 必須要有 wrapText 樣式才會顯示成多行，否則會擠成一行不斷行 */
+function _xlsxColName(idx){let s='';idx++;while(idx>0){const m=(idx-1)%26;s=String.fromCharCode(65+m)+s;idx=Math.floor((idx-1)/26);}return s;}
+function _escXml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
+async function buildXlsxWithWrap(rows,colWidths){
+  const rowHeights=rows.map((r,ri)=>{
+    if(ri===0)return 20;
+    let maxLines=1;
+    r.forEach(cell=>{const lines=(String(cell==null?'':cell).match(/\n/g)||[]).length+1;if(lines>maxLines)maxLines=lines;});
+    return Math.min(15*maxLines+10,400);
+  });
+  const colsXml='<cols>'+colWidths.map((c,i)=>`<col min="${i+1}" max="${i+1}" width="${c.wch}" customWidth="1"/>`).join('')+'</cols>';
+  const sheetRows=rows.map((r,ri)=>{
+    const rIdx=ri+1;
+    const cells=r.map((val,ci)=>{
+      const addr=_xlsxColName(ci)+rIdx;
+      const styleIdx=ri===0?1:2;
+      return `<c r="${addr}" s="${styleIdx}" t="inlineStr"><is><t xml:space="preserve">${_escXml(val)}</t></is></c>`;
+    }).join('');
+    return `<row r="${rIdx}" ht="${rowHeights[ri]}" customHeight="1">${cells}</row>`;
+  }).join('');
+  const dimension=`A1:${_xlsxColName(colWidths.length-1)}${rows.length}`;
+  const sheetXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<dimension ref="${dimension}"/><sheetViews><sheetView workbookViewId="0"/></sheetViews>
+<sheetFormatPr defaultRowHeight="15"/>${colsXml}<sheetData>${sheetRows}</sheetData></worksheet>`;
+  const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="3">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
+</cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
+</styleSheet>`;
+  const workbookXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<sheets><sheet name="詳解填寫" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+  const workbookRelsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+  const rootRelsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>`;
+  const contentTypesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
+<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
+</Types>`;
+  const xzip=new JSZip();
+  xzip.file('[Content_Types].xml',contentTypesXml);
+  xzip.file('_rels/.rels',rootRelsXml);
+  xzip.file('xl/workbook.xml',workbookXml);
+  xzip.file('xl/_rels/workbook.xml.rels',workbookRelsXml);
+  xzip.file('xl/styles.xml',stylesXml);
+  xzip.file('xl/worksheets/sheet1.xml',sheetXml);
+  return xzip.generateAsync({type:'uint8array'});
+}
 async function exportSolExcel(){
   const items=pickedItems().length?pickedItems():_lastShown.filter(it=>it.type!=='passage');
   if(!items.length){alert('目前沒有題目可以匯出（請先勾選題目，或篩選出要匯出的考卷）');return;}
@@ -1735,7 +1803,7 @@ async function exportSolExcel(){
     const zip=new JSZip();
     const imgFolder=zip.folder('images');
     let imgFailCount=0;
-    const rows=[];
+    const rows=[['考試名稱','題號','題目','答案','詳解']];
     for(const it of items){
       let noteImg='';
       if(it.imgs&&it.imgs.length){
@@ -1750,13 +1818,9 @@ async function exportSolExcel(){
         }
         noteImg=names.length?`　〔含圖，檔名：${names.join('、')}，請開啟同一個壓縮檔內的 images 資料夾查看〕`:'　〔含圖，圖片打包失敗，請對照紙本考卷〕';
       }
-      rows.push({'考試名稱':it.exam||'','題號':it.no||'','題目':fixLatex(it.q||it.summary||'')+noteImg,'答案':it.ans||'','詳解':''});
+      rows.push([it.exam||'',it.no||'',fixLatex(it.q||it.summary||'')+noteImg,it.ans||'','']);
     }
-    const ws=XLSX.utils.json_to_sheet(rows);
-    ws['!cols']=[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}];
-    const wb=XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb,ws,'詳解填寫');
-    const xlsxData=XLSX.write(wb,{type:'array',bookType:'xlsx'});
+    const xlsxData=await buildXlsxWithWrap(rows,[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}]);
     const name=(items[0].exam||'詳解匯出').replace(/[\\/:*?"<>|]/g,'_');
     zip.file(name+'_詳解填寫.xlsx',xlsxData);
     const blob=await zip.generateAsync({type:'blob'});
