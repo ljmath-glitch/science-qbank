@@ -273,6 +273,15 @@
     .tb-more-secondary .btn{display:flex!important;width:100%!important;height:32px!important;justify-content:center!important;align-items:center!important;font-size:10px!important;padding:0 2px!important;white-space:normal!important;line-height:1.1!important;text-align:center!important}
     .tb-more-secondary select{width:100%!important;height:32px!important;font-size:10px!important;box-sizing:border-box}
     .tb-more-secondary .stat{width:100%;text-align:center;font-size:11px;padding:3px 0}
+    /* 詳解工具列自訂展開版型 */
+    .tb-more-secondary-sol{display:none;flex-direction:column;gap:5px;padding:5px 0 3px;margin-top:4px}
+    .tb-more-secondary-sol.open{display:flex!important}
+    .tb-more-ai-row{display:flex;gap:4px;align-items:flex-start;width:100%}
+    .tb-more-ai-row>.tb-item{flex:1;min-width:0}
+    .tb-more-ai-row select{height:36px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important}
+    .tb-more-sol-row{display:flex;gap:4px;width:100%}
+    .tb-more-sol-row>.tb-item{flex:1;min-width:0}
+    .tb-more-sol-row .btn{display:flex!important;width:100%!important;height:36px!important;justify-content:center!important;align-items:center!important;font-size:11px!important;padding:0 2px!important;white-space:normal!important;line-height:1.1!important;text-align:center!important;box-sizing:border-box!important}
 
     /* === 底部浮動列 === */
     body{padding-bottom:130px}
@@ -4005,8 +4014,27 @@ function applyMobileToolbar(){
       btn.className='btn tb-more-btn';
       btn.textContent='⋯';
       const sec=document.createElement('div');
-      sec.className='tb-more-secondary';
-      items.slice(1).forEach(it=>sec.appendChild(it));
+      // 詳解工具列（row index 3）：自訂兩列展開版型
+      if(row.dataset.rowIdx==='3'&&items.length>=8){
+        sec.className='tb-more-secondary-sol';
+        // 第一列：AI供應商（items[1]）｜AI模型選擇（items[2~4]）各佔50%
+        const aiRow=document.createElement('div');
+        aiRow.className='tb-more-ai-row';
+        aiRow.appendChild(items[1]);
+        const modelWrap=document.createElement('div');
+        modelWrap.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;gap:3px';
+        items.slice(2,5).forEach(it=>modelWrap.appendChild(it));
+        aiRow.appendChild(modelWrap);
+        sec.appendChild(aiRow);
+        // 第二列：詳解匯入｜詳解匯出｜詳解指令 各佔33%
+        const solRow=document.createElement('div');
+        solRow.className='tb-more-sol-row';
+        items.slice(5).forEach(it=>solRow.appendChild(it));
+        sec.appendChild(solRow);
+      }else{
+        sec.className='tb-more-secondary';
+        items.slice(1).forEach(it=>sec.appendChild(it));
+      }
       btn.addEventListener('click',()=>{
         const o=sec.classList.toggle('open');
         btn.textContent=o?'▴':'⋯';
@@ -4038,6 +4066,7 @@ function renderToolbar(){
     lbl.className='tb-row-label';
     lbl.textContent=TB_ROW_LABELS[ri]||'';
     rows[ri].appendChild(lbl);
+    rows[ri].dataset.rowIdx=ri;
     const scroll=document.createElement('div');
     scroll.className='tb-btn-scroll';
     rows[ri].appendChild(scroll);
