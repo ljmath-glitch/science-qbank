@@ -170,7 +170,7 @@
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
   @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
-  @media print{.noprint{display:none!important}.paperview{position:static}body>*:not(.paperview){display:none!important}
+  @media print{.noprint{display:none!important}.paperview{position:static!important;overflow:visible!important;height:auto!important}body>*:not(.paperview){display:none!important}
     /* 直接從網頁列印/存PDF時強制用系統內建中文字型，不依賴外部字型檔——Chrome的列印渲染是獨立流程，
        可能無法正確沿用網頁上已經載入好的外部字型，導致中文大量消失，數字/英文/公式卻正常 */
     .pv-sheet{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","Microsoft YaHei",sans-serif!important}
@@ -3978,13 +3978,13 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='11';
-const TB_ROW_LABELS=['資料管理','功能工具','','生成詳解','選題操作'];
+const TB_VER='12';
+const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
-  ['import','solImport','solExport','add','reload','backup','restore'],
+  ['import','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
-  ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solPromptBtn'],
+  ['solImport','solExport','solPromptBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','batchGenBtn'],
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
