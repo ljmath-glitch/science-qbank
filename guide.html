@@ -814,6 +814,16 @@
 <table>
   <tr><th style="width:80px">版本</th><th style="width:100px">日期</th><th>更新內容</th></tr>
   <tr>
+    <td><b>V6.20</b></td>
+    <td>2026-07-09</td>
+    <td>
+      <b>修正：</b>「📤 詳解匯出Excel」文字不換行的問題——原本用的免費版 xlsx.js 函式庫寫入 .xlsx 時
+      會靜默忽略所有儲存格樣式設定（含自動換行），導致題目欄位裡的換行全部擠成一行；
+      改為手動組裝標準 OOXML 格式的 .xlsx（沿用既有的 JSZip，不需額外函式庫），
+      正確嵌入自動換行樣式，並依內容行數自動調整列高
+    </td>
+  </tr>
+  <tr>
     <td><b>V6.19</b></td>
     <td>2026-07-09</td>
     <td>
@@ -1120,7 +1130,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  V6.19 · 2026年7月 · 僅供內部使用
+  V6.20 · 2026年7月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
