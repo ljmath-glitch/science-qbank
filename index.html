@@ -3987,13 +3987,13 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='13';
+const TB_VER='14';
 const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
-  ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solExport','solPromptBtn'],
+  ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solPromptBtn'],
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
@@ -4015,7 +4015,7 @@ function applyMobileToolbar(){
       btn.textContent='⋯';
       const sec=document.createElement('div');
       // 詳解工具列（row index 3）：自訂兩列展開版型
-      if(row.dataset.rowIdx==='3'&&items.length>=8){
+      if(row.dataset.rowIdx==='3'&&items.length>=7){
         sec.className='tb-more-secondary-sol';
         // 第一列：AI供應商（items[1]）｜AI模型選擇（items[2~4]）各佔50%
         const aiRow=document.createElement('div');
