@@ -672,7 +672,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 <div id="reportBox" class="report-box" style="display:none">
   <div class="report-title">🚩 回報錯誤</div>
   <div id="reportCheckList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:4px"></div>
-  <textarea id="reportOtherText" class="report-input" placeholder="請描述其他問題內容" rows="2" style="display:none;margin-top:6px"></textarea>
+  <textarea id="reportOtherText" class="report-input" placeholder="請描述需要修改的部分（選填）" rows="2" style="display:none;margin-top:6px"></textarea>
   <div class="report-btns">
     <button class="report-cancel" onclick="closeReport()">取消</button>
     <button class="report-submit" onclick="submitReport()">送出回報</button>
@@ -1596,8 +1596,8 @@ function openReport(){
   document.getElementById('reportBox').style.display='';
 }
 function _onReportCatChange(){
-  const otherChecked=[...document.querySelectorAll('.report-cat-chk')].some(el=>el.checked&&el.value==='other');
-  document.getElementById('reportOtherText').style.display=otherChecked?'':'none';
+  const anyChecked=[...document.querySelectorAll('.report-cat-chk')].some(el=>el.checked);
+  document.getElementById('reportOtherText').style.display=anyChecked?'':'none';
 }
 function closeReport(){
   document.getElementById('reportOverlay').style.display='none';
@@ -1679,10 +1679,10 @@ async function submitReport(){
   if(!q){showToast('⚠️','請先載入題目',2500);return;}
   const checked=[...document.querySelectorAll('.report-cat-chk')].filter(el=>el.checked).map(el=>el.value);
   if(!checked.length){showToast('⚠️','請至少勾選一項問題類型',2500);return;}
-  const otherText=document.getElementById('reportOtherText').value.trim();
+  const detailText=document.getElementById('reportOtherText').value.trim();
   const cats=REPORT_CATEGORIES.filter(c=>checked.includes(c.key));
   let basisText='[回報] '+cats.map(c=>c.label).join('、');
-  if(checked.includes('other')&&otherText) basisText+='；其他說明：'+otherText;
+  if(detailText) basisText+='；需修改：'+detailText;
   closeReport();
   showToast('⏳','正在回報...',10000);
   let ok=false;
