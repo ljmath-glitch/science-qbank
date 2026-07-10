@@ -949,6 +949,15 @@ function normalizeRow(row){
     opts = [];
   }
 
+  // Multi-select detection (應選X項 in stem, or ans has multiple letters)
+  const multiStemMatch = stem.match(/應選\s*([一二三四\d]+)\s*項/);
+  const CN_NUM={'一':1,'二':2,'三':3,'四':4};
+  const multiCountFromStem = multiStemMatch ? (CN_NUM[multiStemMatch[1]] || parseInt(multiStemMatch[1]) || 2) : null;
+  const ansStr = String(row.ans||'').replace(/[^A-Da-d]/g,'').toUpperCase();
+  const multiAnsIndices = ansStr.length > 0 ? ansStr.split('').map(c=>c.charCodeAt(0)-65) : [ansIdx];
+  const isMulti = multiCountFromStem !== null || ansStr.length > 1;
+  const multiCount = multiCountFromStem || (ansStr.length > 1 ? ansStr.length : 1);
+
   const kws = (row.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean);
   const examName = (row.exam||'').replace(/^(.+?)(?:高中|高級中學)(?:附設)?國中部(-)/,'$1國中$2');
   const srcParts = [row.year, examName, row.no?`第${row.no}題`:''].filter(Boolean);
@@ -964,7 +973,7 @@ function normalizeRow(row){
     stem,
     opts,
     ansIdx,
-    ansLetter: String.fromCharCode(65+ansIdx),
+    ansLetter: isMulti ? multiAnsIndices.map(i=>String.fromCharCode(65+i)).join('') : String.fromCharCode(65+ansIdx),
     stdAnswer: fixLatex(row.ans||''), // 非選題（無法解析出選項）時，這是真正的標準答案文字，不是字母
     sol: fixLatex(row.sol||''),
     kp: row.kp||'',
@@ -973,6 +982,9 @@ function normalizeRow(row){
     imgs: Array.isArray(row.imgs) ? row.imgs : [],
     groupId: row.group_id || null,
     passage: null,
+    isMulti,
+    multiCount,
+    multiAnsIndices,
   };
 }
 
@@ -1158,7 +1170,7 @@ function checkAbsenceReset(){
 // ═══════════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════════
-let currentOffset=0, selectedOpt=null, revealed=false, currentQuestion=null;
+let currentOffset=0, selectedOpt=null, selectedOpts=[], revealed=false, currentQuestion=null;
 let sessionIdx=0;
 let _lastRevealRec=null; // practice mode: stores the just-revealed record for badge rendering
 let explanationRead=false;
@@ -1328,7 +1340,13 @@ function renderQuestion(){
     const key=getHistKey(currentOffset);
     rec=hist[key];
     if(rec && rec.qid && rec.qid !== q.id) rec=null;
-    selectedOpt=rec?rec.selected:null;
+    if(q.isMulti){
+      selectedOpts=rec&&Array.isArray(rec.selected)?[...rec.selected]:[];
+      selectedOpt=null;
+    } else {
+      selectedOpt=rec?rec.selected:null;
+      selectedOpts=[];
+    }
     revealed=!!rec;
   } else if(revealed){
     // 練習模式已揭曉：用 reveal() 儲存的 record 顯示徽章
@@ -1376,16 +1394,26 @@ function renderQuestion(){
   const optsEl=document.getElementById('qOpts');
   optsEl.innerHTML='';
   if(q.hasOpts){
+    if(q.isMulti&&!revealed){
+      const counter=document.createElement('div');
+      counter.id='multiCounter';
+      counter.style.cssText='font-size:12px;color:var(--muted);font-family:inherit;padding:0 0 8px;text-align:right';
+      counter.textContent=`請選擇 ${q.multiCount} 個選項（已選 ${selectedOpts.length}）`;
+      optsEl.appendChild(counter);
+    }
     q.opts.forEach((opt,i)=>{
       const btn=document.createElement('button');
       btn.className='opt-btn';
       btn.innerHTML=`<span class="opt-label">${String.fromCharCode(65+i)}</span><span>${mathToHtml(opt,false)}</span>`;
       if(revealed){
         btn.disabled=true;
-        if(i===q.ansIdx) btn.classList.add('correct');
-        if(i===selectedOpt&&selectedOpt!==q.ansIdx) btn.classList.add('wrong');
+        const isCorrectAns=q.isMulti?q.multiAnsIndices.includes(i):i===q.ansIdx;
+        const wasSelected=q.isMulti?(Array.isArray(rec?.selected)?rec.selected.includes(i):selectedOpts.includes(i)):i===selectedOpt;
+        if(isCorrectAns) btn.classList.add('correct');
+        if(wasSelected&&!isCorrectAns) btn.classList.add('wrong');
       } else {
-        if(i===selectedOpt) btn.classList.add('selected');
+        const isSel=q.isMulti?selectedOpts.includes(i):i===selectedOpt;
+        if(isSel) btn.classList.add('selected');
         btn.onclick=()=>selectOpt(i);
       }
       optsEl.appendChild(btn);
@@ -1405,7 +1433,11 @@ function renderQuestion(){
   badge.className='result-badge';
   if(revealed&&rec){
     badge.className='result-badge '+(rec.correct?'correct':'wrong');
-    badge.innerHTML=q.hasOpts?(rec.correct?'✓ 答對了！':`✗ 答錯了，正確答案是 (${q.ansLetter})`):'📝 對照下方標準答案';
+    if(q.isMulti){
+      badge.innerHTML=rec.correct?'✓ 全對！':`✗ 答錯了，正確答案是 (${q.multiAnsIndices.map(i=>String.fromCharCode(65+i)).join('')})`;
+    } else {
+      badge.innerHTML=q.hasOpts?(rec.correct?'✓ 答對了！':`✗ 答錯了，正確答案是 (${q.ansLetter})`):'📝 對照下方標準答案';
+    }
   }
 
   // practice mode
@@ -1420,8 +1452,14 @@ function renderQuestion(){
   } else {
     btnReveal.style.display='';
     if(q.hasOpts){
-      btnReveal.disabled=selectedOpt===null;
-      btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
+      if(q.isMulti){
+        const ready=selectedOpts.length===q.multiCount;
+        btnReveal.disabled=!ready;
+        btnReveal.textContent=ready?'揭曉答案':`請選擇 ${q.multiCount} 個選項`;
+      } else {
+        btnReveal.disabled=selectedOpt===null;
+        btnReveal.textContent=selectedOpt!==null?'揭曉答案':'請先選擇答案';
+      }
     } else {
       btnReveal.disabled=false;
       btnReveal.textContent='顯示答案';
@@ -1445,7 +1483,14 @@ function renderExplanation(q){
   let html='';
   html+=`<div class="step"><div class="step-title">${q.hasOpts?'正確答案':'標準答案'}</div>`;
   if(q.hasOpts){
-    html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx],false):''}</div></div>`;
+    if(q.isMulti){
+      const ans=q.multiAnsIndices.map(i=>String.fromCharCode(65+i)).join('');
+      html+=`<div style="margin-bottom:6px">正確答案：<strong>${ans}</strong></div>`;
+      html+=q.multiAnsIndices.map(idx=>`<div>(${String.fromCharCode(65+idx)}) ${q.opts[idx]?mathToHtml(q.opts[idx],false):''}</div>`).join('');
+      html+=`</div>`;
+    } else {
+      html+=`<div>(<strong>${q.ansLetter}</strong>) ${q.opts[q.ansIdx]?mathToHtml(q.opts[q.ansIdx],false):''}</div></div>`;
+    }
   }else{
     html+=`<div>${mathToHtml(q.stdAnswer,false)||'（尚未提供標準答案）'}</div></div>`;
   }
@@ -1504,18 +1549,43 @@ async function loadAndRender(){
 // ═══════════════════════════════════════════════════════════════
 function selectOpt(i){
   if(revealed) return;
-  selectedOpt=i;
-  document.querySelectorAll('.opt-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
-  const btn=document.getElementById('btnReveal');
-  btn.disabled=false; btn.textContent='揭曉答案';
+  const q=currentQuestion;
+  if(q&&q.isMulti){
+    const idx=selectedOpts.indexOf(i);
+    if(idx===-1){
+      if(selectedOpts.length>=q.multiCount) return; // 已達上限
+      selectedOpts.push(i);
+    } else {
+      selectedOpts.splice(idx,1);
+    }
+    document.querySelectorAll('.opt-btn').forEach((b,j)=>b.classList.toggle('selected',selectedOpts.includes(j)));
+    const counter=document.getElementById('multiCounter');
+    if(counter) counter.textContent=`請選擇 ${q.multiCount} 個選項（已選 ${selectedOpts.length}）`;
+    const btn=document.getElementById('btnReveal');
+    const ready=selectedOpts.length===q.multiCount;
+    btn.disabled=!ready;
+    btn.textContent=ready?'揭曉答案':`請選擇 ${q.multiCount} 個選項`;
+  } else {
+    selectedOpt=i;
+    document.querySelectorAll('.opt-btn').forEach((b,j)=>b.classList.toggle('selected',j===i));
+    const btn=document.getElementById('btnReveal');
+    btn.disabled=false; btn.textContent='揭曉答案';
+  }
 }
 
 function reveal(){
   const q=currentQuestion; if(!q) return;
   const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
   const hist=getHistory();
-  const correct=q.hasOpts?(selectedOpt===q.ansIdx):true; // non-MC always mark as revealed
-  const histRec={selected:selectedOpt,correct,qid:q.id};
+  let correct;
+  if(q.isMulti){
+    const sortedSel=[...selectedOpts].sort((a,b)=>a-b);
+    const sortedAns=[...q.multiAnsIndices].sort((a,b)=>a-b);
+    correct=sortedSel.length===sortedAns.length&&sortedSel.every((v,k)=>v===sortedAns[k]);
+  } else {
+    correct=q.hasOpts?(selectedOpt===q.ansIdx):true;
+  }
+  const histRec={selected:q.isMulti?[...selectedOpts]:selectedOpt,correct,qid:q.id};
   hist[key]=histRec;
   saveHistory(hist);
   if(sessionIdx>0) _lastRevealRec=histRec;
@@ -1542,6 +1612,7 @@ function nextQuestion(){
   explanationRead=false;
   sessionIdx++;
   selectedOpt=null;
+  selectedOpts=[];
   revealed=false;
   _lastRevealRec=null;
   document.getElementById('explainCard').classList.remove('show');
