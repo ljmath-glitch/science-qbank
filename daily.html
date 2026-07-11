@@ -329,6 +329,13 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
 }
 .result-badge.correct{background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;display:flex}
 .result-badge.wrong{background:#ffebee;color:#c62828;border:1px solid #ef9a9a;display:flex}
+.result-badge.pending{background:#fff8e1;color:#6d4c00;border:1px solid #ffe082;display:block;text-align:center;padding:14px 16px}
+.selfgrade-btns{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.btn-sg{padding:9px 20px;border-radius:8px;border:1.5px solid;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s}
+.btn-sg.ok{background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7}
+.btn-sg.ok:hover{background:#c8e6c9}
+.btn-sg.ng{background:#ffebee;color:#c62828;border-color:#ef9a9a}
+.btn-sg.ng:hover{background:#ffcdd2}
 
 .action-row{padding:0 16px 10px;display:flex;gap:9px}
 .btn-flag{
@@ -1171,6 +1178,7 @@ function checkAbsenceReset(){
 // STATE
 // ═══════════════════════════════════════════════════════════════
 let currentOffset=0, selectedOpt=null, selectedOpts=[], revealed=false, currentQuestion=null;
+let pendingGrade=false; // 非選題：已顯示答案但等待學生自評
 let sessionIdx=0;
 let _lastRevealRec=null; // practice mode: stores the just-revealed record for badge rendering
 let explanationRead=false;
@@ -1419,11 +1427,11 @@ function renderQuestion(){
       optsEl.appendChild(btn);
     });
   } else {
-    // 非選題（問答/計算/填充）：給一個手寫作答欄位讓學生先自己寫，再揭曉標準答案（不列入自動計分）
+    // 非選題（問答/計算/勾選甲乙丙丁）：先自己作答再揭曉，揭曉後由學生自評對錯
     if(!revealed){
       optsEl.innerHTML=`<div style="padding:8px 0;font-family:inherit">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">此題為問答/計算題，請先在下方寫下你的答案，再按「顯示答案」對照：</div>
-        <textarea id="handwriteArea" placeholder="在這裡寫下你的作答…" style="width:100%;min-height:100px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">此題為問答／勾選題，請先在下方寫下你的答案，再按「顯示答案」對照，並自行評分：</div>
+        <textarea id="handwriteArea" placeholder="在這裡寫下你的作答…" style="width:100%;min-height:90px;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-family:inherit;box-sizing:border-box;resize:vertical"></textarea>
       </div>`;
     }
   }
@@ -1431,12 +1439,19 @@ function renderQuestion(){
   // result badge
   const badge=document.getElementById('resultBadge');
   badge.className='result-badge';
-  if(revealed&&rec){
+  if(pendingGrade&&!q.hasOpts){
+    badge.className='result-badge pending';
+    badge.innerHTML=`<div style="font-size:13px;font-weight:700;margin-bottom:8px;font-family:inherit">對照上方標準答案，你答對了嗎？</div>
+      <div class="selfgrade-btns">
+        <button class="btn-sg ok" onclick="selfGrade(true)">✓ 我答對了</button>
+        <button class="btn-sg ng" onclick="selfGrade(false)">✗ 答錯 / 不完整</button>
+      </div>`;
+  } else if(revealed&&rec){
     badge.className='result-badge '+(rec.correct?'correct':'wrong');
     if(q.isMulti){
       badge.innerHTML=rec.correct?'✓ 全對！':`✗ 答錯了，正確答案是 (${q.multiAnsIndices.map(i=>String.fromCharCode(65+i)).join('')})`;
     } else {
-      badge.innerHTML=q.hasOpts?(rec.correct?'✓ 答對了！':`✗ 答錯了，正確答案是 (${q.ansLetter})`):'📝 對照下方標準答案';
+      badge.innerHTML=q.hasOpts?(rec.correct?'✓ 答對了！':`✗ 答錯了，正確答案是 (${q.ansLetter})`):(rec.correct?'✓ 答對了！':'✗ 答錯 / 不完整');
     }
   }
 
@@ -1448,7 +1463,8 @@ function renderQuestion(){
   const btnReveal=document.getElementById('btnReveal');
   if(revealed){
     btnReveal.style.display='none';
-    document.getElementById('btnReadDone').style.display=explanationRead?'none':'';
+    // 非選題：等自評完才顯示「已看懂詳解」；自評中隱藏
+    document.getElementById('btnReadDone').style.display=(pendingGrade||explanationRead)?'none':'';
   } else {
     btnReveal.style.display='';
     if(q.hasOpts){
@@ -1573,8 +1589,34 @@ function selectOpt(i){
   }
 }
 
+function selfGrade(correct){
+  const q=currentQuestion; if(!q) return;
+  pendingGrade=false;
+  const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
+  const hist=getHistory();
+  const histRec={selected:null,correct,qid:q.id};
+  hist[key]=histRec;
+  saveHistory(hist);
+  if(sessionIdx>0) _lastRevealRec=histRec;
+  const histAfter=getHistory();
+  const{upgradeScore:scoreAfter}=calcUpgradeScore(histAfter);
+  const{upgradeScore:scoreBefore}=calcUpgradeScore(Object.fromEntries(Object.entries(histAfter).filter(([k])=>k!==key)));
+  const lvBefore=getLevel(scoreBefore).index,lvAfter=getLevel(scoreAfter).index;
+  renderQuestion();renderWeekDots();renderStats();renderTasks();renderCharacter();
+  if(correct&&lvAfter>lvBefore) showToast(lvAfter);
+  setTimeout(()=>document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
 function reveal(){
   const q=currentQuestion; if(!q) return;
+  // 非選題（問答/計算/勾選甲乙丙）：先顯示答案，等學生自評
+  if(!q.hasOpts){
+    pendingGrade=true;
+    revealed=true;
+    renderQuestion();
+    setTimeout(()=>document.getElementById('explainCard').scrollIntoView({behavior:'smooth',block:'start'}),200);
+    return;
+  }
   const key=sessionIdx===0?getHistKey(currentOffset):newPracticeHistKey();
   const hist=getHistory();
   let correct;
@@ -1610,6 +1652,7 @@ function navigate(dir){
 
 function nextQuestion(){
   explanationRead=false;
+  pendingGrade=false;
   sessionIdx++;
   selectedOpt=null;
   selectedOpts=[];
