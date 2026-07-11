@@ -914,7 +914,7 @@ function fieldSubject(f){
 function parseOptions(qText){
   const text = qText.replace(/\r\n/g,'\n').replace(/\r/g,'\n');
   // match (A) / （A）/ [A]
-  const pat = /[（(][A-Da-d][）)]\s*|\[[A-Da-d]\]\s*/g;
+  const pat = /[（(][A-Fa-f][）)]\s*|\[[A-Fa-f]\]\s*/g;
   const positions = [];
   let r;
   while((r=pat.exec(text))!==null) positions.push({idx:r.index,len:r[0].length});
@@ -933,7 +933,7 @@ function parseOptions(qText){
 function ansToIndex(ans){
   if(typeof ans === 'number') return ans;
   const s = String(ans).trim().replace(/[()（）\s]/g,'').toUpperCase();
-  if(/^[ABCD]$/.test(s)) return s.charCodeAt(0)-65;
+  if(/^[A-F]$/.test(s)) return s.charCodeAt(0)-65;
   const n = parseInt(s);
   return isNaN(n) ? 0 : n;
 }
@@ -960,7 +960,7 @@ function normalizeRow(row){
   const multiStemMatch = stem.match(/應選\s*([一二三四\d]+)\s*項/);
   const CN_NUM={'一':1,'二':2,'三':3,'四':4};
   const multiCountFromStem = multiStemMatch ? (CN_NUM[multiStemMatch[1]] || parseInt(multiStemMatch[1]) || 2) : null;
-  const ansStr = String(row.ans||'').replace(/[^A-Da-d]/g,'').toUpperCase();
+  const ansStr = String(row.ans||'').replace(/[^A-Fa-f]/g,'').toUpperCase();
   const multiAnsIndices = ansStr.length > 0 ? ansStr.split('').map(c=>c.charCodeAt(0)-65) : [ansIdx];
   const isMulti = multiCountFromStem !== null || ansStr.length > 1;
   const multiCount = multiCountFromStem || (ansStr.length > 1 ? ansStr.length : 1);
