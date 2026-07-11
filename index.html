@@ -16,10 +16,9 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
-  @font-face{font-family:'HuaKang';src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
-  @font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
-  @font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
-  @font-face{font-family:'GenSenRounded';font-weight:800;font-display:swap;src:local('GenSenRounded-H'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-H.ttc') format('truetype');}
+  /* 中文（含全形標點）用華康中圓體，英數字/半形符號用 Times New Roman：同一個 font-family 名稱下用 unicode-range 依字元分流 */
+  @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
+  @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
     --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
@@ -28,7 +27,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{overflow-x:clip}body{max-width:100vw;overflow-x:clip}
-  body{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
+  body{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;
     background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
   header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative;z-index:150}
@@ -91,7 +90,7 @@
   .tag.d3{background:#fff0e0;color:#e8740c}
   .tag.d4{background:#ffebee;color:#c62828}
   .tag.flagtag{background:#fde7c9;color:#a5600a}
-  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}
+  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
   .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
   .summary{font-size:12px;color:var(--muted);font-family:inherit;margin-top:6px}
@@ -148,7 +147,7 @@
   @media print{.pvimg-corner{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
-  .pv-sheet{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
+  .pv-sheet{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
   .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
   .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
@@ -169,7 +168,7 @@
   table.report{width:100%;border-collapse:collapse;font-family:inherit;font-size:13px}
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
   table.report th{background:#f0ece2}
-  @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif}}
+  @page{@bottom-center{content:"第 " counter(page) " 頁 / 共 " counter(pages) " 頁";font-size:10pt;color:#555;font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif}}
   @media print{.noprint{display:none!important}.paperview{position:static!important;overflow:visible!important;height:auto!important}body>*:not(.paperview){display:none!important}
     /* 直接從網頁列印/存PDF時強制用系統內建中文字型，不依賴外部字型檔——Chrome的列印渲染是獨立流程，
        可能無法正確沿用網頁上已經載入好的外部字型，導致中文大量消失，數字/英文/公式卻正常 */
@@ -2618,7 +2617,7 @@ function renderPage(list,shown,page){
       const _ps=PASSAGES[_gid];
       const _pImgs=(_ps.imgs||[]).map(imgHtml).join('');
       const _pText=esc(fixLatex(_ps.q||'')).replace(/\n/g,'<br>');
-      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'GenSenRounded','Noto Sans TC',system-ui,sans-serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
+      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:'HuaKangTNR','Noto Sans TC',system-ui,sans-serif;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
     }
     const d=calcDiff(it.step,it.mem,it.con);
     const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
@@ -2830,9 +2829,9 @@ function _rebuildLastPaperHTML(){
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
-<style>@font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
-@font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
-body{font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
+<style>@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('https://science-qbank.vercel.app/fonts/HuaKang.ttc') format('truetype');}
+@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
+body{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
 .q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
 .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
@@ -4625,7 +4624,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
   var hasHdr=g||s||sc||en;
   var css='<style>'+
     '@page{margin:2.54cm}'+
-    'body{font-family:GenSenRounded,"Noto Sans TC",system-ui,sans-serif;font-size:12pt;line-height:1.8;margin:0}'+
+    'body{font-family:HuaKangTNR,"Noto Sans TC",system-ui,sans-serif;font-size:12pt;line-height:1.8;margin:0}'+
     'h1{text-align:center;font-size:18pt;margin-bottom:6pt}'+
     '.meta{text-align:right;color:#888;font-size:10pt;margin-bottom:24pt}'+
     '.tag{color:#999;font-size:9pt;font-style:italic;margin-bottom:2pt}'+

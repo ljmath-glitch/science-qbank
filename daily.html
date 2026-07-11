@@ -13,9 +13,9 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <style>
-@font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
-@font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
-@font-face{font-family:'GenSenRounded';font-weight:800;font-display:swap;src:local('GenSenRounded-H'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-H.ttc') format('truetype');}
+/* 中文（含全形標點）用華康中圓體，英數字/半形符號用 Times New Roman：同一個 font-family 名稱下用 unicode-range 依字元分流 */
+@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKang.ttc') format('truetype');}
+@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
 :root{
   --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
   --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
@@ -25,7 +25,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{
-  font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
+  font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;
   background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.07),transparent 40%),
              radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),
              var(--paper);
@@ -303,7 +303,7 @@ header .sub{font-size:11px;color:#b9c2d6;margin-top:3px;letter-spacing:1px;font-
   display:flex;align-items:flex-start;gap:12px;padding:12px 14px;
   border-radius:10px;border:1.5px solid var(--line);background:#fff;
   cursor:pointer;text-align:left;
-  font-family:'GenSenRounded',"Noto Sans TC",system-ui,sans-serif;
+  font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;
   font-size:15px;color:var(--ink);transition:.18s;line-height:1.6;width:100%;
 }
 .opt-btn:hover:not(:disabled){border-color:var(--bio);background:#f4faf7;transform:translateX(3px)}
