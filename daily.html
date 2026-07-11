@@ -887,7 +887,7 @@ function fixLatex(text){
   return text.replace(/\$([^$]+)\$/g,function(_,inner){
     let f=inner.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim();
     f=f.replace(/(?<!\\)times/g,'\\times').replace(/(?<!\\)cdot/g,'\\cdot')
-       .replace(/(?<!\\)rightarrow/g,'\\rightarrow').replace(/(?<!\\)leftarrow/g,'\\leftarrow')
+       .replace(/(?<![a-zA-Z\\])rightarrow/g,'\\rightarrow').replace(/(?<![a-zA-Z\\])leftarrow/g,'\\leftarrow')
        .replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons')
        .replace(/(?<!\\)alpha/g,'\\alpha').replace(/(?<!\\)beta/g,'\\beta')
        .replace(/(?<!\\)Delta/g,'\\Delta').replace(/(?<!\\)degree/g,'\\degree')

@@ -2665,8 +2665,8 @@ function fixLatex(text){
     // 修正常見 AI 錯誤：少了反斜線的指令
     fixed=fixed.replace(/(?<!\\)times/g,'\\times');      // times → \times
     fixed=fixed.replace(/(?<!\\)cdot/g,'\\cdot');        // cdot → \cdot
-    fixed=fixed.replace(/(?<!\\)rightarrow/g,'\\rightarrow'); // rightarrow → \rightarrow
-    fixed=fixed.replace(/(?<!\\)leftarrow/g,'\\leftarrow');
+    fixed=fixed.replace(/(?<![a-zA-Z\\])rightarrow/g,'\\rightarrow'); // rightarrow → \rightarrow（不破壞 \longrightarrow、\xrightarrow 等）
+    fixed=fixed.replace(/(?<![a-zA-Z\\])leftarrow/g,'\\leftarrow');
     fixed=fixed.replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons');
     fixed=fixed.replace(/(?<!\\)alpha/g,'\\alpha');
     fixed=fixed.replace(/(?<!\\)beta/g,'\\beta');
