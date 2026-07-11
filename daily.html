@@ -946,8 +946,12 @@ function normalizeRow(row){
   const diff = calcDiff(row.step||0, row.mem||0, row.con||0);
   const ansIdx = ansToIndex(row.ans);
 
+  // 填/計 為非選擇題型（見 CLAUDE.md QTYPES），即使題幹含 (a)(b) 子題標號
+  // 也不能當成選擇題選項解析，一律走問答／計算作答流程
+  const isEssayType = row.type === '填' || row.type === '計';
+
   let stem, opts;
-  if(parsed && parsed.opts.length >= 2){
+  if(!isEssayType && parsed && parsed.opts.length >= 2){
     stem = parsed.stem;
     opts = parsed.opts.map(fixLatex);
   } else {
