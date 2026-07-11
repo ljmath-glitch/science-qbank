@@ -17,7 +17,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
   /* 中文（含全形標點）用華康中圓體，英數字/半形符號用 Times New Roman：同一個 font-family 名稱下用 unicode-range 依字元分流 */
-  @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
+  @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKangP.ttf') format('truetype'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
   @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
   :root{
     --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
@@ -2829,7 +2829,7 @@ function _rebuildLastPaperHTML(){
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"><\/script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"><\/script>
-<style>@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
+<style>@font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('https://science-qbank.vercel.app/fonts/HuaKangP.ttf') format('truetype'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
 @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
 body{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.9;color:#1a2238}
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
