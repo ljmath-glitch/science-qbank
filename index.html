@@ -74,6 +74,99 @@
   select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink)}
   textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
   textarea.drag-over{border:2px dashed #3498db!important;background:#eaf6ff!important;outline:none}
+  /* ===== 試卷截圖識別（步驟精靈）===== */
+  #recognizeDlg{max-width:800px;width:96vw}
+  #recognizeDlg .dlg-body{max-height:78vh;overflow:hidden;padding:0;display:flex;flex-direction:column}
+  .wiz-steps{display:flex;align-items:flex-start;padding:14px 24px 12px;border-bottom:1px solid #eee;flex-shrink:0;background:#fafbfd}
+  .wiz-step{display:flex;flex-direction:column;align-items:center;flex:1;position:relative}
+  .wiz-step:not(:last-child)::after{content:'';position:absolute;top:16px;left:58%;right:-42%;height:2px;background:#e0e0e0;z-index:0}
+  .wiz-step.done:not(:last-child)::after{background:#27ae60}
+  .wiz-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;background:#e4e7ec;color:#9aa;border:2px solid #d0d4dc;position:relative;z-index:1;transition:.3s}
+  .wiz-step.active .wiz-dot{background:#3498db;color:#fff;border-color:#2980b9;box-shadow:0 0 0 4px rgba(52,152,219,.18)}
+  .wiz-step.done .wiz-dot{background:#27ae60;color:#fff;border-color:#1e8449;font-size:16px}
+  .wiz-lbl{font-size:10.5px;margin-top:5px;color:#aaa;text-align:center;white-space:nowrap}
+  .wiz-step.active .wiz-lbl{color:#2980b9;font-weight:700}
+  .wiz-step.done .wiz-lbl{color:#27ae60}
+  .wiz-panels{flex:1;min-height:0;overflow:hidden;position:relative}
+  .wiz-panel{display:none;flex-direction:column;position:absolute;inset:0;overflow-y:auto}
+  .wiz-panel.active{display:flex}
+  .wiz-foot{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #eee;flex-shrink:0}
+  /* Step 1 */
+  .recog-upload{border:2px dashed #ccc;border-radius:10px;padding:22px 20px;text-align:center;cursor:pointer;transition:.2s;margin:12px 16px 6px;user-select:none}
+  .recog-upload:hover,.recog-upload.drag-over{border-color:#3498db;background:#eaf6ff}
+  .recog-upload-icon{font-size:32px;margin-bottom:5px}
+  .recog-thumb-wrap{padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:7px}
+  .recog-thumb{position:relative;width:80px;border:1px solid #ddd;border-radius:7px;overflow:hidden;flex-shrink:0;background:#f8f8f8}
+  .recog-thumb img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover}
+  .recog-thumb .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;text-align:center;padding:0}
+  .recog-thumb .pg{position:absolute;bottom:3px;left:4px;background:rgba(0,0,0,.52);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px}
+  /* Step 2 */
+  .wiz-s2-info{margin:12px 16px 8px;background:#eaf7f0;border:1px solid #a9d5b8;border-radius:8px;padding:11px 14px;font-size:13px;color:#1a5c34;line-height:1.75}
+  .wiz-copy-btn{display:block;width:calc(100% - 32px);margin:0 16px 5px;padding:10px;font-size:14px;font-weight:600;text-align:center}
+  .wiz-copy-ok{text-align:center;font-size:12px;color:#27ae60;min-height:18px;margin-bottom:5px}
+  .wiz-prompt-preview{margin:0 16px 12px;background:#f4f6fa;border:1px solid #d4dae6;border-radius:7px;padding:10px 12px}
+  .wiz-prompt-preview pre{font-size:10.5px;font-family:monospace;color:#44506b;overflow:hidden;max-height:76px;line-height:1.5;white-space:pre-wrap;margin:0}
+  /* Step 3 */
+  .wiz-s3-info{margin:12px 16px 8px;background:#f0f4ff;border:1px solid #b8c8ea;border-radius:8px;padding:10px 13px;font-size:13px;color:#2c3e6e}
+  /* Step 4 */
+  .recog-preview-wrap{padding:10px 16px 8px}
+  .recog-preview-hd{font-weight:700;font-size:14px;margin-bottom:10px;color:#2c3e50}
+  .recog-q-card{border:1px solid #e0e0e0;border-radius:7px;padding:9px 12px;margin-bottom:8px;font-size:12.5px;background:#fafafa}
+  .recog-q-card .qno{font-weight:700;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .recog-q-card .qtext{color:#333;white-space:pre-wrap;max-height:72px;overflow:hidden;line-height:1.5;margin-bottom:6px}
+  .recog-q-card .qtags{display:flex;flex-wrap:wrap;gap:5px}
+  .recog-q-card .qtag{background:#f0f4f8;border-radius:4px;padding:2px 7px;color:#555;font-size:11px}
+  .recog-q-card .qtag.ans{background:#d4efdf;color:#1e6635;font-weight:600}
+  .recog-err{margin:14px 16px;padding:12px 14px;color:#c0392b;background:#fdf3f3;border-radius:7px;font-size:13px}
+  /* 分值設置 */
+  .score-section{background:#f0f7ff;border:1px solid #c4d8ef;border-radius:8px;padding:12px 14px;margin-bottom:10px}
+  .score-section-title{font-size:12px;font-weight:700;color:#2c5f8a;margin-bottom:10px;letter-spacing:.5px}
+  .score-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;font-size:13px;flex-wrap:wrap}
+  .score-row label{color:#334;width:64px;flex-shrink:0;font-weight:600}
+  .score-row input[type=number]{width:56px;padding:4px 6px;text-align:center}
+  .score-total{display:flex;justify-content:flex-end;align-items:center;font-size:13px;font-weight:700;color:#1a3a5c;margin-top:8px;padding-top:8px;border-top:1px solid #d0e4f0;gap:4px}
+  /* 試卷分析 */
+  #analysisDlg{max-width:660px;width:94vw}
+  .an-section{margin-bottom:16px}
+  .an-title{font-size:12px;font-weight:700;color:#666;margin-bottom:7px;letter-spacing:.5px;text-transform:uppercase}
+  .an-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:12.5px}
+  .an-bar-label{width:90px;color:#444;flex-shrink:0;text-align:right;font-size:12px}
+  .an-bar-track{flex:1;height:16px;background:#eff0f1;border-radius:4px;overflow:hidden}
+  .an-bar-fill{height:100%;border-radius:4px;transition:width .4s}
+  .an-bar-count{width:80px;color:#666;font-size:11.5px;flex-shrink:0;text-align:right}
+  /* ===== 批次貼圖 ===== */
+  #batchImgDlg{max-width:740px;width:96vw}
+  #batchImgDlg .dlg-body{max-height:76vh;overflow-y:auto;padding:0}
+  .bimg-drop{border:2px dashed #ccc;border-radius:10px;padding:18px 20px;text-align:center;cursor:pointer;transition:.2s;margin:8px 16px 10px;user-select:none}
+  .bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#eaf6ff}
+  .bimg-table-wrap{padding:0 16px 10px;overflow-x:auto}
+  .bimg-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .bimg-table th{text-align:left;padding:6px 8px;font-size:11px;font-weight:700;color:#888;border-bottom:1px solid #e0e0e0;letter-spacing:.3px}
+  .bimg-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+  .bimg-thumb{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #ddd;display:block}
+  .bimg-ok{color:#27ae60;font-weight:600;font-size:12px}
+  .bimg-err{color:#e74c3c;font-size:12px}
+  .bimg-warn{color:#e67e22;font-size:12px}
+  .bimg-summary{font-size:12.5px;color:#555;margin-bottom:8px;padding:8px 10px;background:#f7f9fc;border-radius:6px;border:1px solid #e0e8f0}
+  @media(prefers-color-scheme:dark){
+    .wiz-steps{background:#1a1a28;border-color:#333}
+    .wiz-dot{background:#2d2d40;color:#555;border-color:#3d3d50}
+    .wiz-step.active .wiz-dot{background:#2980b9;border-color:#3498db}
+    .wiz-step.done .wiz-dot{background:#1e8449;border-color:#27ae60}
+    .wiz-lbl{color:#555}
+    .wiz-foot,.wiz-steps{border-color:#333}
+    .recog-upload{border-color:#555}.recog-upload:hover,.recog-upload.drag-over{border-color:#3498db;background:#1a2e40}
+    .recog-q-card{background:#1e1e2e;border-color:#333}.recog-q-card .qtext{color:#ccc}
+    .recog-q-card .qtag{background:#2a2a3e;color:#aaa}
+    .wiz-s2-info{background:#1a3028;border-color:#2d6045;color:#8ecda0}
+    .wiz-s3-info{background:#1a2038;border-color:#2d4070;color:#8aacd0}
+    .wiz-prompt-preview{background:#1e222e;border-color:#333}.wiz-prompt-preview pre{color:#8899aa}
+    .score-section{background:#1a2535;border-color:#2a3d55}.score-total{border-color:#2a3d55}
+    .an-bar-track{background:#2d2d3d}
+    .bimg-drop{border-color:#444}.bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#1a2e40}
+    .bimg-table th{color:#666;border-color:#333}.bimg-table td{border-color:#2a2a3a}
+    .bimg-thumb{border-color:#444}.bimg-summary{background:#1a1e2a;border-color:#2a3040;color:#aaa}
+  }
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
   .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
@@ -414,7 +507,73 @@
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="csvArea" style="min-height:200px" placeholder="貼上 CSV 內容，或直接將 CSV / Excel 檔案拖曳至此" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');_dropFileToArea(event,'csvArea')"></textarea>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn" onclick="importDlg.close();openRecognizeDlg()" style="background:#f0f4f8">📷 試卷截圖識別</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+</dialog>
+
+<!-- 試卷截圖識別 -->
+<dialog id="recognizeDlg">
+  <div class="dlg-head">📷 試卷截圖識別<button class="x" onclick="recognizeDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <!-- 步驟進度條 -->
+    <div class="wiz-steps">
+      <div class="wiz-step active" id="wizS1"><div class="wiz-dot">1</div><div class="wiz-lbl">上傳圖片</div></div>
+      <div class="wiz-step" id="wizS2"><div class="wiz-dot">2</div><div class="wiz-lbl">取得指令</div></div>
+      <div class="wiz-step" id="wizS3"><div class="wiz-dot">3</div><div class="wiz-lbl">貼入結果</div></div>
+      <div class="wiz-step" id="wizS4"><div class="wiz-dot">4</div><div class="wiz-lbl">確認匯入</div></div>
+    </div>
+    <!-- 步驟內容 -->
+    <div class="wiz-panels">
+      <!-- 步驟1：上傳圖片 -->
+      <div class="wiz-panel active" id="wizP1">
+        <div class="recog-upload" id="recogDrop"
+             onclick="recogFileIn.click()"
+             ondragover="event.preventDefault();this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="event.preventDefault();this.classList.remove('drag-over');_recogAddFiles(event.dataTransfer.files)">
+          <div class="recog-upload-icon">🖼️</div>
+          <div style="font-size:14px;font-weight:600">拖曳試卷圖片至此，或點擊選擇</div>
+          <div style="color:#999;font-size:12px;margin-top:4px">支援 JPG / PNG，一頁一張圖，多頁依序排列</div>
+          <input type="file" id="recogFileIn" multiple accept="image/*" style="display:none" onchange="_recogAddFiles(this.files);this.value=''">
+        </div>
+        <div class="recog-thumb-wrap" id="recogThumbWrap"></div>
+      </div>
+      <!-- 步驟2：取得 AI 指令 -->
+      <div class="wiz-panel" id="wizP2">
+        <div class="wiz-s2-info">
+          <b>接下來請：</b><br>
+          ① 點下方「複製 AI 指令」<br>
+          ② 開啟你的 AI（Claude.ai、ChatGPT、Gemini 等任一皆可）<br>
+          ③ <b>同時上傳第 1 步的 <span id="wizImgCount">0</span> 張試卷圖片</b>，並貼上指令<br>
+          ④ 待 AI 回傳 CSV 後，回到這裡按「下一步」
+        </div>
+        <button class="btn primary wiz-copy-btn" onclick="_recogCopyPrompt()">📋 複製 AI 指令</button>
+        <div class="wiz-copy-ok" id="wizCopyOk"></div>
+        <div class="wiz-prompt-preview">
+          <div style="font-size:10.5px;font-weight:700;color:#888;margin-bottom:5px;letter-spacing:.3px">指令內容預覽（前幾行）：</div>
+          <pre id="wizPromptPre"></pre>
+        </div>
+      </div>
+      <!-- 步驟3：貼入 AI 結果 -->
+      <div class="wiz-panel" id="wizP3">
+        <div class="wiz-s3-info">將 AI 回傳的 CSV 貼入下方。若 AI 在 CSV 前後附加說明文字，不需刪除，系統會自動處理。</div>
+        <div style="padding:0 16px 14px;flex:1;display:flex;flex-direction:column">
+          <textarea id="recogPasteIn" placeholder="把 AI 回傳的 CSV 貼在這裡…" style="flex:1;min-height:200px;font-size:11px;font-family:monospace"></textarea>
+        </div>
+      </div>
+      <!-- 步驟4：預覽並確認 -->
+      <div class="wiz-panel" id="wizP4">
+        <div id="recogPreview4"></div>
+      </div>
+    </div>
+  </div>
+  <!-- 精靈底部按鈕列 -->
+  <div class="wiz-foot">
+    <span id="wizCounter" style="font-size:12px;color:#888;flex:1"></span>
+    <button class="btn" onclick="recognizeDlg.close()">取消</button>
+    <button class="btn" id="wizPrevBtn" style="display:none" onclick="_recogGoStep(_recogStep-1)">← 上一步</button>
+    <button class="btn primary" id="wizNextBtn" onclick="_recogNextStep()">下一步 →</button>
+    <button class="btn primary" id="wizImportBtn" style="display:none" onclick="_recogApply()">✅ 套入匯入框</button>
+  </div>
 </dialog>
 
 <!-- 詳解匯入 -->
@@ -537,6 +696,51 @@
   <div class="dlg-foot"><button class="btn" onclick="kpDlg.close()">取消</button><button class="btn" onclick="resetKpDefault()">回復預設</button><button class="btn primary" onclick="saveKp()">儲存</button></div>
 </dialog>
 
+<!-- 批次貼圖 -->
+<dialog id="batchImgDlg">
+  <div class="dlg-head">🖼 批次貼圖（依檔名對應題目）<button class="x" onclick="batchImgDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <div style="padding:12px 16px 4px">
+      <p style="font-size:13px;color:#555;margin-bottom:10px;line-height:1.6">用 AI 將考卷圖片依規則命名後，在此批次上傳，系統自動依檔名對應到題庫中的題目並貼圖。<br><small style="color:#888">命名規則：<b>Q{題號}_{描述}.png</b>（如 <code>Q3_圖1.png</code>）、題組文章圖用 <b>P_{描述}.png</b></small></p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:13px;font-weight:600;white-space:nowrap">目標考卷：</label>
+        <select id="bimgExam" style="flex:1;min-width:200px;max-width:380px" onchange="_bimgBuildTable()">
+          <option value="">—— 請先選擇考卷 ——</option>
+        </select>
+        <button class="btn" onclick="_bimgCopyNamingPrompt()">📋 複製 AI 命名指令</button>
+      </div>
+    </div>
+    <div class="bimg-drop" id="bimgDrop"
+         onclick="bimgFileIn.click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="event.preventDefault();this.classList.remove('drag-over');_bimgAddFiles(event.dataTransfer.files)">
+      <div style="font-size:26px;margin-bottom:4px">🖼️</div>
+      <div style="font-size:13px;font-weight:600">拖曳命名好的圖片至此，或點擊選擇</div>
+      <div style="color:#999;font-size:12px;margin-top:3px">支援 JPG / PNG，可一次多選</div>
+      <input type="file" id="bimgFileIn" multiple accept="image/*" style="display:none" onchange="_bimgAddFiles(this.files);this.value=''">
+    </div>
+    <div id="bimgTableWrap" style="display:none" class="bimg-table-wrap">
+      <div class="bimg-summary" id="bimgSummary"></div>
+      <table class="bimg-table">
+        <thead><tr>
+          <th style="width:44px">預覽</th>
+          <th>檔名</th>
+          <th style="width:80px">解析題號</th>
+          <th>對應題目</th>
+          <th style="width:56px">略過</th>
+        </tr></thead>
+        <tbody id="bimgTbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <span id="bimgCountMsg" style="flex:1;font-size:12px;color:#888"></span>
+    <button class="btn" onclick="batchImgDlg.close()">取消</button>
+    <button class="btn primary" id="bimgConfirmBtn" style="display:none" onclick="_bimgConfirm()">🖼 貼圖到題庫</button>
+  </div>
+</dialog>
+
 <!-- 考卷設定 -->
 <dialog id="paperDlg">
   <div class="dlg-head">匯出考卷設定<button class="x" onclick="paperDlg.close()">×</button></div>
@@ -572,9 +776,15 @@
         <label class="chk"><input type="checkbox" id="pShowSourceFull"> 每題顯示完整考卷名稱與題號</label>
       </div>
     </div>
-    <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
+    <!-- 分值設置 -->
+    <div class="score-section" id="pScoreSection">
+      <div class="score-section-title">⚖ 分值設置</div>
+      <div id="pScoreRows"><div style="color:#aaa;font-size:13px">（無已選題目）</div></div>
+      <div class="score-total">滿分：<span id="pTotalScore" style="margin-left:4px;color:#e74c3c;font-size:16px">—</span> 分</div>
+    </div>
+    <p style="font-size:12px;color:#888">點「預覽考卷」在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="openAnalysisDlg()" style="background:#7f8c8d;color:#fff">📊 試卷分析</button><span style="flex:1"></span><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -598,6 +808,13 @@
   <div class="dlg-head">知識點覆蓋分析<button class="x" onclick="reportDlg.close()">×</button></div>
   <div class="dlg-body" id="reportBody"></div>
   <div class="dlg-foot"><button class="btn" onclick="reportDlg.close()">關閉</button></div>
+</dialog>
+
+<!-- 試卷分析 -->
+<dialog id="analysisDlg">
+  <div class="dlg-head">📊 試卷分析<button class="x" onclick="analysisDlg.close()">×</button></div>
+  <div class="dlg-body" id="analysisBody"></div>
+  <div class="dlg-foot"><button class="btn" onclick="analysisDlg.close()">關閉</button></div>
 </dialog>
 
 <!-- 考卷預覽 -->
@@ -1723,6 +1940,324 @@ function _dropFileToArea(e,areaId){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];el.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
   }else{const r=new FileReader();r.onload=()=>el.value=r.result;r.readAsText(f,'utf-8');}
 }
+/* ===== 試卷截圖識別 ===== */
+let _recogImgs=[], _recogCSV='', _recogStep=1;
+
+function openRecognizeDlg(){
+  _recogImgs=[];_recogCSV='';
+  _recogRenderThumbs();
+  _recogGoStep(1);
+  recognizeDlg.showModal();
+}
+
+function _recogAddFiles(files){
+  for(const f of files){
+    if(!f.type.startsWith('image/'))continue;
+    const r=new FileReader();
+    r.onload=e=>{_recogImgs.push({src:e.target.result,name:f.name});_recogRenderThumbs();};
+    r.readAsDataURL(f);
+  }
+}
+
+function _recogRenderThumbs(){
+  const wrap=document.getElementById('recogThumbWrap');if(!wrap)return;
+  if(!_recogImgs.length){wrap.innerHTML='';_recogUpdateCounter();return;}
+  wrap.innerHTML=_recogImgs.map((im,i)=>`<div class="recog-thumb"><img src="${im.src}" alt="第${i+1}頁"><button class="rm" onclick="_recogRemove(${i})" title="移除">✕</button><div class="pg">第${i+1}頁</div></div>`).join('');
+  _recogUpdateCounter();
+}
+
+function _recogRemove(i){_recogImgs.splice(i,1);_recogRenderThumbs();}
+
+function _recogUpdateCounter(){
+  const el=document.getElementById('wizCounter');if(!el)return;
+  if(_recogStep===1)el.textContent=_recogImgs.length?`已上傳 ${_recogImgs.length} 頁圖片`:'尚未上傳圖片，請拖曳或點擊選擇';
+  else if(_recogStep===2)el.textContent=`共 ${_recogImgs.length} 頁圖片`;
+  else el.textContent='';
+}
+
+function _recogGoStep(n){
+  _recogStep=n;
+  [1,2,3,4].forEach(i=>{
+    const s=document.getElementById('wizS'+i);
+    const p=document.getElementById('wizP'+i);
+    if(s){s.classList.toggle('active',i===n);s.classList.toggle('done',i<n);
+    const dot=s.querySelector('.wiz-dot');if(dot)dot.textContent=i<n?'✓':String(i);}
+    if(p)p.classList.toggle('active',i===n);
+  });
+  const prev=document.getElementById('wizPrevBtn');
+  const next=document.getElementById('wizNextBtn');
+  const imp=document.getElementById('wizImportBtn');
+  if(prev)prev.style.display=n>1?'':'none';
+  if(next)next.style.display=n<4?'':'none';
+  if(imp)imp.style.display=n===4?'':'none';
+  _recogUpdateCounter();
+  if(n===2){
+    const cnt=document.getElementById('wizImgCount');if(cnt)cnt.textContent=_recogImgs.length;
+    const pre=document.getElementById('wizPromptPre');
+    if(pre){const p=buildPrompt();pre.textContent=p.slice(0,280)+'…';}
+  }
+}
+
+function _recogNextStep(){
+  if(_recogStep===1){
+    if(!_recogImgs.length){alert('請先上傳至少一張試卷圖片');return;}
+    _recogGoStep(2);
+  }else if(_recogStep===2){
+    _recogGoStep(3);
+  }else if(_recogStep===3){
+    const v=(document.getElementById('recogPasteIn')?.value||'').trim();
+    if(!v){alert('請先貼入 AI 回傳的 CSV 結果');return;}
+    _recogCSV=v;
+    _recogFinish(v);
+    _recogGoStep(4);
+  }
+}
+
+function _recogCopyPrompt(){
+  navigator.clipboard.writeText(buildPrompt()).then(()=>{
+    const ok=document.getElementById('wizCopyOk');
+    if(ok){ok.textContent='✅ 已複製！請前往你的 AI 貼上指令並附上圖片';setTimeout(()=>{ok.textContent=''},4000);}
+  }).catch(()=>alert('複製失敗，請手動選取指令文字'));
+}
+
+function _recogFinish(csv){
+  const res=document.getElementById('recogPreview4');if(!res)return;
+  csv=csv.replace(/^```(?:csv)?\s*/i,'').replace(/\s*```$/,'').trim();
+  _recogCSV=csv;
+  let rows=[];try{rows=parseCSV(csv);}catch(e){}
+  let dataRows=rows;
+  if(rows.length&&(rows[0].join('').includes('題目')||rows[0].join('').includes('年度')||rows[0].join('').includes('題號')))dataRows=rows.slice(1);
+  const escH=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if(!dataRows.length){
+    res.innerHTML=`<div class="recog-err">⚠️ 無法解析，請在下方直接編輯 CSV 後再套入。</div><div style="padding:0 16px 14px"><textarea id="recogRawTA4" style="width:100%;height:200px;font-size:11px;font-family:monospace;box-sizing:border-box">${escH(csv)}</textarea></div>`;
+    return;
+  }
+  const flags=dataRows.filter(r=>r[18]==='Y').length;
+  const flagNote=flags?`<div style="color:#e67e22;font-size:12px;margin-bottom:8px">⚑ 其中 ${flags} 題標記為待確認，請重點核查答案欄</div>`:'';
+  const cards=dataRows.map((r,i)=>{
+    const no=escH(r[3])||String(i+1);
+    const qraw=(r[19]||'').slice(0,160);
+    const qtext=escH(qraw)+(r[19]&&r[19].length>160?'…':'');
+    const ans=escH(r[4])||'—';
+    const book=escH(r[6]||r[5]||'');
+    const unit=escH(r[8]||'');
+    const tp=escH(r[12]||'');
+    const flag=r[18]==='Y';
+    return `<div class="recog-q-card">
+      <div class="qno">第 ${no} 題${flag?' <span style="color:#e67e22;font-size:11px">⚑ 待確認</span>':''}</div>
+      <div class="qtext">${qtext}</div>
+      <div class="qtags"><span class="qtag ans">答 ${ans}</span>${book?`<span class="qtag">${book}</span>`:''}${unit?`<span class="qtag">${unit}</span>`:''}${tp?`<span class="qtag">${tp}</span>`:''}</div>
+    </div>`;
+  }).join('');
+  res.innerHTML=`<div class="recog-preview-wrap">
+    <div class="recog-preview-hd">✅ 共 ${dataRows.length} 題，請確認各題資料是否正確</div>
+    ${flagNote}${cards}
+    <details style="margin-top:4px;padding-bottom:12px"><summary style="cursor:pointer;font-size:12px;color:#888;padding:8px 0">▸ 顯示／隱藏原始 CSV（可在此編輯後再匯入）</summary>
+    <textarea id="recogRawTA4" style="width:100%;height:180px;font-size:11px;font-family:monospace;margin-top:6px;box-sizing:border-box">${escH(csv)}</textarea></details>
+  </div>`;
+}
+
+function _recogApply(){
+  const ta=document.getElementById('recogRawTA4');
+  const csv=(ta?ta.value:_recogCSV)||'';
+  if(!csv.trim()){alert('沒有識別結果可套入');return;}
+  csvArea.value=csv;
+  recognizeDlg.close();
+  importDlg.showModal();
+}
+
+/* ===== 批次貼圖 ===== */
+let _bimgFiles=[];
+
+function openBatchImgDlg(){
+  if(!requireCloud())return;
+  _bimgFiles=[];
+  // 填入考卷下拉選單（依 exam 欄位去重）
+  const examSet=new Set();
+  DB.forEach(it=>{if(it.exam&&it.type!=='passage')examSet.add(it.exam);});
+  const sel=document.getElementById('bimgExam');
+  sel.innerHTML='<option value="">—— 請先選擇考卷 ——</option>';
+  [...examSet].sort().forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;sel.appendChild(o);});
+  document.getElementById('bimgTableWrap').style.display='none';
+  document.getElementById('bimgConfirmBtn').style.display='none';
+  document.getElementById('bimgCountMsg').textContent='';
+  batchImgDlg.showModal();
+}
+
+function _bimgParseName(fname){
+  const base=fname.replace(/\.[^.]+$/,'').replace(/\s+/g,'');
+  // 題組文章圖（P_ 或 passage 或 文章 等）
+  if(/^[Pp][_\-]|文章|passage|題組|reading/i.test(base))return{isPassage:true,qno:null};
+  // Q3_... 或 q3... 格式
+  let m=base.match(/^[Qq](\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 3_... 或 3-... 格式
+  m=base.match(/^(\d+)[_\-\.]/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 第3題 或 題3
+  m=base.match(/(?:第|題)(\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 純數字
+  m=base.match(/^(\d+)$/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 第一組連續數字
+  m=base.match(/(\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  return{isPassage:false,qno:null};
+}
+
+function _bimgAddFiles(files){
+  _bimgFiles=[];
+  for(const f of files){if(!f.type.startsWith('image/'))continue;_bimgFiles.push({file:f,src:null,qno:null,isPassage:false,matched:null,passageId:null,skip:false});}
+  if(!_bimgFiles.length)return;
+  let done=0;
+  _bimgFiles.forEach(item=>{
+    const r=new FileReader();
+    r.onload=e=>{item.src=e.target.result;done++;if(done===_bimgFiles.length)_bimgBuildTable();};
+    r.readAsDataURL(item.file);
+  });
+}
+
+function _bimgBuildTable(){
+  const exam=document.getElementById('bimgExam').value;
+  const questions=exam?DB.filter(it=>it.exam===exam&&it.type!=='passage'):[];
+  // 找這份考卷涉及的所有題組文章
+  const passageItems={};
+  questions.forEach(q=>{
+    if(q.groupId&&PASSAGES[q.groupId])passageItems[q.groupId]=PASSAGES[q.groupId];
+  });
+  const passageList=Object.values(passageItems);
+
+  _bimgFiles.forEach(item=>{
+    const{isPassage,qno}=_bimgParseName(item.file.name);
+    item.isPassage=isPassage;item.qno=qno;
+    if(isPassage){
+      item.matched=passageList[0]||null;
+      item.passageId=passageList.length===1?passageList[0].id:null;
+    }else if(qno){
+      item.matched=questions.find(q=>String(q.no)===qno)||null;
+    }else{
+      item.matched=null;
+    }
+    item.skip=!item.matched;
+  });
+
+  const escH=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tbody=document.getElementById('bimgTbody');
+  tbody.innerHTML=_bimgFiles.map((item,i)=>{
+    const thumb=item.src?`<img src="${item.src}" class="bimg-thumb" alt="">`:'';
+    const fname=escH(item.file.name);
+    const qnoStr=item.isPassage?'題組文章':(item.qno?`第 ${item.qno} 題`:'<span class="bimg-err">無法解析</span>');
+    let matchHtml='';
+    if(item.isPassage&&item.matched){
+      const grpSize=Object.keys(passageItems).length;
+      matchHtml=grpSize>1
+        ?`<span class="bimg-warn">多個題組，請選擇：${Object.keys(passageItems).map(gid=>`<button class="btn" style="font-size:11px;padding:2px 7px;margin-left:4px" onclick="_bimgPickPassage(${i},'${gid}')">題組${gid.slice(-4)}</button>`).join('')}</span>`
+        :`<span class="bimg-ok">題組文章</span>`;
+    }else if(item.matched){
+      matchHtml=`<span class="bimg-ok">✓ 第 ${escH(item.matched.no)} 題：${escH((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
+    }else if(exam){
+      matchHtml=`<span class="bimg-err">找不到第 ${item.qno||'?'} 題</span>`;
+    }else{
+      matchHtml=`<span class="bimg-warn">請先選考卷</span>`;
+    }
+    return `<tr>
+      <td>${thumb}</td>
+      <td style="font-size:11px;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${fname}">${fname}</td>
+      <td>${qnoStr}</td>
+      <td>${matchHtml}</td>
+      <td style="text-align:center"><input type="checkbox" id="bskip${i}" ${item.skip?'checked':''} onchange="_bimgFiles[${i}].skip=this.checked;_bimgUpdateCount()"></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bimgTableWrap').style.display='';
+  _bimgUpdateCount();
+}
+
+function _bimgPickPassage(idx,gid){
+  const p=PASSAGES[gid];if(!p)return;
+  _bimgFiles[idx].matched=p;_bimgFiles[idx].passageId=p.id;_bimgFiles[idx].skip=false;
+  const cb=document.getElementById('bskip'+idx);if(cb)cb.checked=false;
+  _bimgBuildTable();
+}
+
+function _bimgUpdateCount(){
+  const total=_bimgFiles.length;
+  const toUpload=_bimgFiles.filter(it=>!it.skip&&it.matched).length;
+  const skipped=_bimgFiles.filter(it=>it.skip).length;
+  const noMatch=_bimgFiles.filter(it=>!it.matched&&!it.skip).length;
+  document.getElementById('bimgSummary').textContent=`共 ${total} 張圖片：將貼到 ${toUpload} 題 / 文章，略過 ${skipped} 張${noMatch?`，${noMatch} 張無對應題目`:''}`;
+  const btn=document.getElementById('bimgConfirmBtn');
+  btn.style.display=toUpload>0?'':'none';
+  document.getElementById('bimgCountMsg').textContent=toUpload>0?`將上傳 ${toUpload} 張圖片`:'沒有可貼的圖片';
+}
+
+async function _bimgConfirm(){
+  const toProcess=_bimgFiles.filter(it=>!it.skip&&it.matched&&it.src);
+  if(!toProcess.length){alert('沒有可貼的圖片');return;}
+  const btn=document.getElementById('bimgConfirmBtn');
+  btn.disabled=true;btn.textContent='上傳中…';
+  const msg=document.getElementById('bimgCountMsg');
+  // Group by target question id
+  const byId={};
+  toProcess.forEach(item=>{
+    const id=item.matched.id;
+    if(!byId[id])byId[id]={target:item.matched,items:[]};
+    byId[id].items.push(item);
+  });
+  let done=0,failed=0,total=toProcess.length;
+  const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+  for(const[id,grp]of Object.entries(byId)){
+    try{
+      msg.textContent=`上傳中… ${done+failed}/${total}`;
+      const newImgs=grp.items.map(it=>({src:it.src,width:null}));
+      const uploaded=await uploadImgs(newImgs,id);
+      const existing=grp.target.imgs||[];
+      const merged=[...existing,...uploaded];
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/questions?id=eq.${encodeURIComponent(id)}`,{
+        method:'PATCH',headers:hdr,body:JSON.stringify({imgs:merged,updated_at:new Date().toISOString()})
+      });
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      // 更新本地 DB / PASSAGES
+      const dbIt=DB.find(x=>x.id===id);if(dbIt)dbIt.imgs=merged;
+      if(PASSAGES[grp.target.groupId||'']?.id===id){const p=PASSAGES[grp.target.groupId];if(p)p.imgs=merged;}
+      done+=grp.items.length;
+    }catch(e){
+      console.error('批次貼圖失敗',id,e);failed+=grp.items.length;
+    }
+  }
+  btn.disabled=false;btn.textContent='🖼 貼圖到題庫';
+  msg.textContent=`完成！成功 ${done} 張${failed?`，失敗 ${failed} 張`:''}`;
+  if(done>0){render();if(failed===0)setTimeout(()=>batchImgDlg.close(),1800);}
+}
+
+function _bimgCopyNamingPrompt(){
+  const prompt=`你的任務是「圖片命名與裁切」，**不是**重新繪製或描述圖片。
+
+【重要前提】
+- 考卷圖片中可能有學生筆跡或批改痕跡，請完全忽略，只按原始印刷內容辨識題號和圖片位置
+- 你只需告訴我每張圖片應該裁切哪個區域、命名什麼，不需要描述圖片內容
+- 如果圖片因筆跡模糊而看不清楚，直接回報「第X題圖片不清晰，無法確認」，**絕對不能自行推測或生成圖片內容**
+
+【命名規則】
+每一張考卷中的圖（含圖表、示意圖、照片、選項旁的圖）：
+  → 格式：Q{題號}_{描述}.png
+  → 例：Q1_圖.png　Q3_圖1.png　Q3_圖2.png　Q5_選項圖.png
+
+題組閱讀文章中的圖（不屬於任何單一題號）：
+  → 格式：P_{描述}.png
+  → 例：P_文章圖.png　P_圖表1.png
+
+【裁切規則】
+- 每張輸出圖片只包含一個圖，不要合併
+- 裁切範圍包含圖本身＋緊鄰的說明文字（如圖1、圖A等）
+- 保留題目中「如圖」「如右圖」等文字，但不需要截取這些文字
+- 裁切時保留少量白邊（約5-10px）
+
+【注意事項】
+- 如果某題沒有圖，不需要輸出
+- 不要猜測、不要幻想、不要補全任何圖片內容
+- 有疑問的地方直接說明，讓我人工處理
+
+請依以上規則處理以下考卷圖片，回傳各圖片的命名清單（格式：行號/頁碼 → 檔名），以及可裁切下載的圖片。`;
+  navigator.clipboard.writeText(prompt).then(()=>alert('已複製 AI 命名指令！\n\n請將此指令連同考卷圖片一起傳給 AI。\nAI 不清楚的圖片會回報讓你人工確認，不會亂猜。')).catch(()=>alert('複製失敗，請手動複製'));
+}
+
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
@@ -2740,7 +3275,84 @@ function openPaperDlg(){
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
   document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?normalizeSchool(sc):'',shortRnd?'('+shortRnd+')':''].join(''):'';
+  _buildScoreSection();
   paperDlg.showModal();
+}
+const _SCORE_GRPS={
+  choice:{label:'選擇題',types:['A1','A2','A3','B1','B2','B3','C1','C2','C3','D1','D2','D3','E1','E2','E3'],default:4},
+  fill:{label:'填充題',types:['填'],default:4},
+  calc:{label:'計算題',types:['計'],default:6}
+};
+function _buildScoreSection(){
+  const items=pickedItems();
+  const rows=document.getElementById('pScoreRows');if(!rows)return;
+  const counts={};
+  Object.keys(_SCORE_GRPS).forEach(k=>{counts[k]=items.filter(it=>_SCORE_GRPS[k].types.includes(it.type||'')).length;});
+  const active=Object.keys(_SCORE_GRPS).filter(k=>counts[k]>0);
+  if(!active.length){rows.innerHTML='<div style="color:#aaa;font-size:13px">（尚未選題）</div>';document.getElementById('pTotalScore').textContent='—';return;}
+  rows.innerHTML=active.map(k=>{
+    const g=_SCORE_GRPS[k];
+    const saved=parseFloat(document.getElementById('pScore_'+k)?.value)||g.default;
+    return `<div class="score-row">
+      <label>${g.label}</label>
+      <span style="color:#666;font-size:12px">${counts[k]} 題 ×</span>
+      <input type="number" id="pScore_${k}" value="${saved}" min="0" step="0.5" onchange="_updateScoreTotal()" style="width:54px">
+      <span style="color:#666;font-size:12px">分＝</span>
+      <span id="pSub_${k}" style="font-weight:700;color:#2c5f8a;min-width:44px">${(counts[k]*saved).toFixed(counts[k]*saved%1?1:0)} 分</span>
+    </div>`;
+  }).join('');
+  _updateScoreTotal();
+}
+function _updateScoreTotal(){
+  const items=pickedItems();let total=0;
+  Object.keys(_SCORE_GRPS).forEach(k=>{
+    const el=document.getElementById('pScore_'+k);const sub=document.getElementById('pSub_'+k);if(!el||!sub)return;
+    const sc=parseFloat(el.value)||0;
+    const cnt=items.filter(it=>_SCORE_GRPS[k].types.includes(it.type||'')).length;
+    const s=sc*cnt;sub.textContent=(s%1?s.toFixed(1):s)+' 分';total+=s;
+  });
+  const t=document.getElementById('pTotalScore');if(t)t.textContent=(total%1?total.toFixed(1):total)||'—';
+}
+function getPaperScoreHeader(){
+  const items=pickedItems();
+  const parts=[];
+  Object.keys(_SCORE_GRPS).forEach(k=>{
+    const el=document.getElementById('pScore_'+k);if(!el)return;
+    const sc=parseFloat(el.value)||0;if(!sc)return;
+    const cnt=items.filter(it=>_SCORE_GRPS[k].types.includes(it.type||'')).length;
+    if(!cnt)return;
+    parts.push(`${_SCORE_GRPS[k].label}每題 ${sc} 分，共 ${cnt} 題（${sc*cnt} 分）`);
+  });
+  return parts.join('　');
+}
+function openAnalysisDlg(){
+  const items=pickedItems();
+  if(!items.length){alert('尚未選題');return;}
+  const n=items.length;
+  const diff={'簡單':0,'中等':0,'困難':0,'極難':0,'未評':0};
+  items.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl||'未評';diff[l]++;});
+  const typeGrp={'A':'觀念型','B':'圖表型','C':'實驗型','D':'計算型','E':'素養情境型','填':'填充','計':'計算'};
+  const grpMap={};items.forEach(it=>{if(!it.type||it.type==='passage')return;const g=it.type[0]||'?';grpMap[g]=(grpMap[g]||0)+1;});
+  const fieldMap={};items.forEach(it=>{if(it.field)fieldMap[it.field]=(fieldMap[it.field]||0)+1;});
+  const diffColors={'簡單':'#2ecc71','中等':'#3498db','困難':'#e67e22','極難':'#e74c3c','未評':'#bdc3c7'};
+  const grpColors={'A':'#8e44ad','B':'#2980b9','C':'#27ae60','D':'#e67e22','E':'#c0392b','填':'#16a085','計':'#8e44ad'};
+  const fieldColors={'生物':'#27ae60','理化':'#2980b9','地科':'#e67e22'};
+  const bar=(label,cnt,tot,color)=>{
+    const pct=tot?Math.round(cnt/tot*100):0;
+    return `<div class="an-bar-row"><span class="an-bar-label">${label}</span><div class="an-bar-track"><div class="an-bar-fill" style="width:${pct}%;background:${color}"></div></div><span class="an-bar-count">${cnt} 題（${pct}%）</span></div>`;
+  };
+  const body=document.getElementById('analysisBody');
+  body.innerHTML=`<p style="margin:0 0 14px;font-size:13px">共選 <b>${n}</b> 題</p>
+    <div class="an-section"><div class="an-title">難度分布</div>
+      ${Object.entries(diff).filter(([,v])=>v>0).map(([k,v])=>bar(k,v,n,diffColors[k]||'#aaa')).join('')}
+    </div>
+    ${Object.keys(grpMap).length?`<div class="an-section"><div class="an-title">題型大類</div>
+      ${Object.entries(grpMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>bar((typeGrp[k]?k+' '+typeGrp[k]:k),v,n,grpColors[k]||'#888')).join('')}
+    </div>`:''}
+    ${Object.keys(fieldMap).length>1?`<div class="an-section"><div class="an-title">領域分布</div>
+      ${Object.entries(fieldMap).sort((a,b)=>b[1]-a[1]).map(([k,v])=>bar(k,v,n,fieldColors[k]||'#aaa')).join('')}
+    </div>`:''}`;
+  analysisDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
@@ -4074,6 +4686,7 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
+  batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">🖼 批次貼圖</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
   solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel＋圖片ZIP，含圖的題目圖片會一起打包，主管不用對照紙本考卷，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
@@ -4101,7 +4714,7 @@ const TB_BUTTONS={
 const TB_VER='14';
 const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
-  ['import','add','reload','backup','restore'],
+  ['import','batchImg','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solPromptBtn'],
