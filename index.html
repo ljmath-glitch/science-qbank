@@ -2574,7 +2574,7 @@ function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+
 function matches(it){
   if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
   const s=fSearch.value.trim();
-  if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')).includes(s))return false;
+  if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')+(it.sol||'')).includes(s))return false;
   if(fBook.value&&it.book!==fBook.value)return false;
   if(fField.value&&it.field!==fField.value)return false;
   if(fUnit.value&&it.unit!==fUnit.value)return false;
