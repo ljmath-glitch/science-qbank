@@ -74,6 +74,37 @@
   select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink)}
   textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
   textarea.drag-over{border:2px dashed #3498db!important;background:#eaf6ff!important;outline:none}
+  /* ===== 試卷截圖識別 ===== */
+  #recognizeDlg{max-width:780px;width:96vw}
+  #recognizeDlg .dlg-body{max-height:82vh;overflow-y:auto;padding:0;display:flex;flex-direction:column}
+  .recog-upload{border:2px dashed #ccc;border-radius:10px;padding:26px 20px;text-align:center;cursor:pointer;transition:.2s;margin:14px 16px 6px;user-select:none}
+  .recog-upload:hover,.recog-upload.drag-over{border-color:#3498db;background:#eaf6ff}
+  .recog-upload-icon{font-size:36px;margin-bottom:6px}
+  .recog-thumb-wrap{padding:0 16px 6px;display:flex;flex-wrap:wrap;gap:8px}
+  .recog-thumb{position:relative;width:88px;border:1px solid #ddd;border-radius:7px;overflow:hidden;flex-shrink:0;background:#f8f8f8}
+  .recog-thumb img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover}
+  .recog-thumb .rm{position:absolute;top:3px;right:3px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:20px;text-align:center;padding:0}
+  .recog-thumb .pg{position:absolute;bottom:3px;left:4px;background:rgba(0,0,0,.52);color:#fff;font-size:10px;padding:1px 5px;border-radius:3px}
+  .recog-ctrl{padding:8px 16px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid #eee;margin-top:4px}
+  .recog-progress{padding:32px 20px;text-align:center;color:#666}
+  .recog-spinner{display:inline-block;width:36px;height:36px;border:3px solid #e0e0e0;border-top-color:#3498db;border-radius:50%;animation:_spin .8s linear infinite;margin-bottom:14px}
+  @keyframes _spin{to{transform:rotate(360deg)}}
+  .recog-err{margin:14px 16px;padding:12px 14px;color:#c0392b;background:#fdf3f3;border-radius:7px;font-size:13px}
+  .recog-preview-wrap{padding:10px 16px 4px;flex:1;overflow-y:auto}
+  .recog-preview-hd{font-weight:700;font-size:14px;margin-bottom:10px;color:#2c3e50}
+  .recog-q-card{border:1px solid #e0e0e0;border-radius:7px;padding:9px 12px;margin-bottom:8px;font-size:12.5px;background:#fafafa}
+  .recog-q-card .qno{font-weight:700;color:#2980b9;margin-bottom:4px;font-size:13px}
+  .recog-q-card .qtext{color:#333;white-space:pre-wrap;max-height:72px;overflow:hidden;line-height:1.5;margin-bottom:6px}
+  .recog-q-card .qtags{display:flex;flex-wrap:wrap;gap:5px}
+  .recog-q-card .qtag{background:#f0f4f8;border-radius:4px;padding:2px 7px;color:#555;font-size:11px}
+  .recog-q-card .qtag.ans{background:#d4efdf;color:#1e6635;font-weight:600}
+  .recog-raw-wrap{padding:0 16px 12px}
+  .recog-raw-wrap textarea{height:150px;font-size:11px;font-family:monospace;resize:vertical}
+  @media(prefers-color-scheme:dark){
+    .recog-upload{border-color:#555}.recog-upload:hover,.recog-upload.drag-over{border-color:#3498db;background:#1a2e40}
+    .recog-q-card{background:#1e1e2e;border-color:#333}.recog-q-card .qtext{color:#ccc}
+    .recog-q-card .qtag{background:#2a2a3e;color:#aaa}.recog-raw-wrap textarea{background:#1a1a2e;color:#ddd;border-color:#444}
+  }
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
   .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
@@ -414,7 +445,41 @@
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="csvArea" style="min-height:200px" placeholder="貼上 CSV 內容，或直接將 CSV / Excel 檔案拖曳至此" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');_dropFileToArea(event,'csvArea')"></textarea>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn" onclick="importDlg.close();openRecognizeDlg()" style="background:#f0f4f8">📷 試卷截圖識別</button><button class="btn primary" onclick="doImport()">匯入</button></div>
+</dialog>
+
+<!-- 試卷截圖識別 -->
+<dialog id="recognizeDlg">
+  <div class="dlg-head">📷 試卷截圖識別<button class="x" onclick="recognizeDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <div class="recog-upload" id="recogDrop"
+         onclick="recogFileIn.click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="event.preventDefault();this.classList.remove('drag-over');_recogAddFiles(event.dataTransfer.files)">
+      <div class="recog-upload-icon">🖼️</div>
+      <div style="font-size:14px;font-weight:600">拖曳試卷圖片至此，或點擊選擇</div>
+      <div style="color:#999;font-size:12px;margin-top:4px">支援 JPG / PNG，一張一頁，多頁依序排列</div>
+      <input type="file" id="recogFileIn" multiple accept="image/*" style="display:none" onchange="_recogAddFiles(this.files);this.value=''">
+    </div>
+    <div class="recog-thumb-wrap" id="recogThumbWrap"></div>
+    <div class="recog-ctrl">
+      <label style="font-weight:600;white-space:nowrap">AI：</label>
+      <select id="recogAiProv" style="width:auto;flex:0 0 auto">
+        <option value="gemini">Gemini</option>
+        <option value="ollama">Ollama（本機）</option>
+        <option value="manual">手動（複製指令）</option>
+      </select>
+      <button class="btn primary" onclick="startRecognize()">開始識別</button>
+      <span id="recogHint" style="color:#888;font-size:12px"></span>
+    </div>
+    <div id="recogResult"></div>
+  </div>
+  <div class="dlg-foot">
+    <button class="btn" onclick="recognizeDlg.close()">取消</button>
+    <button class="btn" id="recogRawBtn" style="display:none" onclick="_toggleRecogRaw()">顯示原始 CSV</button>
+    <button class="btn primary" id="recogApplyBtn" style="display:none" onclick="_recogApply()">套入匯入框</button>
+  </div>
 </dialog>
 
 <!-- 詳解匯入 -->
@@ -1723,6 +1788,208 @@ function _dropFileToArea(e,areaId){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];el.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
   }else{const r=new FileReader();r.onload=()=>el.value=r.result;r.readAsText(f,'utf-8');}
 }
+/* ===== 試卷截圖識別 ===== */
+let _recogImgs=[];
+let _recogCSV='';
+let _recogRawVisible=false;
+
+function openRecognizeDlg(){
+  _recogImgs=[];_recogCSV='';_recogRawVisible=false;
+  _recogRenderThumbs();
+  const res=document.getElementById('recogResult');
+  if(res)res.innerHTML='';
+  document.getElementById('recogRawBtn').style.display='none';
+  document.getElementById('recogApplyBtn').style.display='none';
+  document.getElementById('recogHint').textContent='';
+  recognizeDlg.showModal();
+}
+
+function _recogAddFiles(files){
+  for(const f of files){
+    if(!f.type.startsWith('image/'))continue;
+    const r=new FileReader();
+    r.onload=e=>{_recogImgs.push({src:e.target.result,name:f.name});_recogRenderThumbs();};
+    r.readAsDataURL(f);
+  }
+}
+
+function _recogRenderThumbs(){
+  const wrap=document.getElementById('recogThumbWrap');if(!wrap)return;
+  if(!_recogImgs.length){wrap.innerHTML='';return;}
+  wrap.innerHTML=_recogImgs.map((im,i)=>`<div class="recog-thumb"><img src="${im.src}" alt="第${i+1}頁"><button class="rm" onclick="_recogRemove(${i})" title="移除">✕</button><div class="pg">第${i+1}頁</div></div>`).join('');
+}
+
+function _recogRemove(i){_recogImgs.splice(i,1);_recogRenderThumbs();}
+
+async function startRecognize(){
+  if(!_recogImgs.length){alert('請先上傳至少一張試卷圖片');return;}
+  const prov=document.getElementById('recogAiProv').value;
+  const res=document.getElementById('recogResult');
+  const rawBtn=document.getElementById('recogRawBtn');
+  const applyBtn=document.getElementById('recogApplyBtn');
+  res.innerHTML='';rawBtn.style.display='none';applyBtn.style.display='none';_recogCSV='';
+
+  if(prov==='manual'){
+    res.innerHTML=`<div class="recog-preview-wrap">
+      <div class="recog-preview-hd">📋 手動模式</div>
+      <p style="font-size:13px;color:#666;line-height:1.7">① 點「複製 AI 指令」<br>② 開啟 Claude.ai / ChatGPT，上傳試卷圖片並貼上指令<br>③ 把 AI 回傳的 CSV 貼入下方文字框，點「套入匯入框」</p>
+      <button class="btn" style="margin-bottom:10px" onclick="navigator.clipboard.writeText(buildPrompt()).then(()=>alert('已複製！'))">📋 複製 AI 指令</button>
+      <div class="recog-raw-wrap">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">貼入 AI 回傳的 CSV：</label>
+        <textarea id="recogManualIn" placeholder="把 AI 回傳的 CSV 貼在這裡…"></textarea>
+      </div>
+    </div>`;
+    applyBtn.style.display='';
+    applyBtn.onclick=()=>{const v=document.getElementById('recogManualIn')?.value||'';if(!v.trim()){alert('請先貼入 CSV');return;}_recogCSV=v;_recogFinish(v);};
+    return;
+  }
+
+  // Show loading with steps
+  res.innerHTML=`<div class="recog-progress">
+    <div class="recog-spinner"></div>
+    <div id="recogStep" style="font-size:14px;font-weight:600">正在識別中…</div>
+    <div id="recogSubStep" style="font-size:12px;color:#aaa;margin-top:6px">共 ${_recogImgs.length} 頁圖片，大型試卷可能需要 30–60 秒</div>
+  </div>`;
+
+  const setStep=(t,s='')=>{const el=document.getElementById('recogStep');const sel=document.getElementById('recogSubStep');if(el)el.textContent=t;if(sel)sel.textContent=s;};
+
+  try{
+    setStep('📤 上傳圖片…','正在處理 '+_recogImgs.length+' 頁');
+    let csv;
+    if(prov==='gemini'){
+      setStep('🤖 Gemini 分析中…','OCR 識別 → 分析題型 → 產出 CSV');
+      const key=await getAIKey('gemini');
+      csv=await _callGeminiForRecog(_recogImgs,key);
+    }else if(prov==='ollama'){
+      setStep('🤖 Ollama 分析中…','本機模型識別，速度視硬體而定');
+      csv=await _callOllamaForRecog(_recogImgs);
+    }
+    setStep('✅ 識別完成！','正在解析結果…');
+    _recogCSV=csv;
+    _recogFinish(csv);
+  }catch(e){
+    res.innerHTML=`<div class="recog-err">❌ 識別失敗：${e.message}<br><small style="color:#999">請確認 API Key 正確、圖片格式為 JPG/PNG、且單張不超過 20MB</small></div>`;
+  }
+}
+
+async function _callGeminiForRecog(imgs,key){
+  if(!key)throw new Error('需要 Gemini API Key（請先在 AI 設定中輸入）');
+  const model=await getGeminiModel(key);
+  const sys=buildPrompt();
+  const parts=[];
+  for(const im of imgs){
+    const p=_parseImgSrc(im.src);
+    if(p)parts.push({inline_data:{mime_type:p.mimeType,data:p.b64}});
+  }
+  parts.push({text:'以上為試卷圖片（共 '+imgs.length+' 頁），請辨識所有題目並依指定格式輸出 CSV，不要輸出任何說明文字。'});
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+encodeURIComponent(key),{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      system_instruction:{parts:[{text:sys}]},
+      contents:[{parts}],
+      generationConfig:{maxOutputTokens:65536,temperature:0.1}
+    })
+  });
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||r.statusText);}
+  const data=await r.json();
+  const text=data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if(!text){const reason=data?.candidates?.[0]?.finishReason||data?.promptFeedback?.blockReason||'';throw new Error('Gemini 未返回內容'+(reason?'（'+reason+'）':'，可能圖片過大'));}
+  return text.trim();
+}
+
+async function _callOllamaForRecog(imgs){
+  const olUrl=await resolveOllamaBase();
+  const olMdl=localStorage.getItem('ollamaModel')||'qwen2.5:latest';
+  const sys=buildPrompt();
+  const msg='以上為試卷圖片（共 '+imgs.length+' 頁），請辨識所有題目並依指定格式輸出 CSV，不要輸出任何說明文字。';
+  return await callOllama(sys,msg,olUrl,olMdl,imgs.map(im=>({src:im.src})));
+}
+
+function _recogFinish(csv){
+  const res=document.getElementById('recogResult');
+  const rawBtn=document.getElementById('recogRawBtn');
+  const applyBtn=document.getElementById('recogApplyBtn');
+
+  // Strip markdown code fences if AI wrapped the CSV
+  csv=csv.replace(/^```(?:csv)?\s*/i,'').replace(/\s*```$/,'').trim();
+  _recogCSV=csv;
+
+  let rows=[];
+  try{rows=parseCSV(csv);}catch(e){}
+  let dataRows=rows;
+  if(rows.length&&(rows[0].join('').includes('題目')||rows[0].join('').includes('年度')||rows[0].join('').includes('題號')))dataRows=rows.slice(1);
+
+  if(!dataRows.length){
+    res.innerHTML=`<div class="recog-err">⚠️ 無法解析識別結果，請點「顯示原始 CSV」手動確認後編輯，再套入匯入框。</div>`;
+    rawBtn.style.display='';applyBtn.style.display='';
+    rawBtn.onclick=_toggleRecogRaw;
+    _showRecogRaw(csv,res);
+    return;
+  }
+
+  const escH=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const cards=dataRows.map((r,i)=>{
+    const no=escH(r[3])||String(i+1);
+    const qraw=(r[19]||'').slice(0,160);
+    const qtext=escH(qraw)+(r[19]&&r[19].length>160?'…':'');
+    const ans=escH(r[4])||'—';
+    const book=escH(r[6]||r[5]||'');
+    const unit=escH(r[8]||'');
+    const tp=escH(r[12]||'');
+    const flag=r[18]==='Y';
+    return `<div class="recog-q-card">
+      <div class="qno">第 ${no} 題${flag?' <span style="color:#e67e22;font-size:11px">⚑ 待確認</span>':''}</div>
+      <div class="qtext">${qtext}</div>
+      <div class="qtags">
+        <span class="qtag ans">答 ${ans}</span>
+        ${book?`<span class="qtag">${book}</span>`:''}
+        ${unit?`<span class="qtag">${unit}</span>`:''}
+        ${tp?`<span class="qtag">${tp}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  res.innerHTML=`<div class="recog-preview-wrap">
+    <div class="recog-preview-hd">✅ 識別完成，共 ${dataRows.length} 題</div>
+    ${cards}
+    <div id="recogRawWrap" style="display:none" class="recog-raw-wrap">
+      <label style="font-size:12px;color:#888;display:block;margin-bottom:4px">原始 CSV（可直接編輯後再套入）：</label>
+      <textarea id="recogRawTA"></textarea>
+    </div>
+  </div>`;
+  document.getElementById('recogRawTA').value=csv;
+
+  rawBtn.style.display='';rawBtn.textContent='顯示原始 CSV';rawBtn.onclick=_toggleRecogRaw;
+  applyBtn.style.display='';applyBtn.onclick=_recogApply;
+}
+
+function _showRecogRaw(csv,res){
+  const existing=document.getElementById('recogRawWrap');
+  if(!existing){
+    const d=document.createElement('div');d.id='recogRawWrap';d.className='recog-raw-wrap';
+    d.innerHTML='<label style="font-size:12px;color:#888;display:block;margin-bottom:4px">原始 CSV：</label><textarea id="recogRawTA"></textarea>';
+    res.appendChild(d);
+  }
+  const ta=document.getElementById('recogRawTA');if(ta)ta.value=csv;
+}
+
+function _toggleRecogRaw(){
+  _recogRawVisible=!_recogRawVisible;
+  const wrap=document.getElementById('recogRawWrap');
+  const btn=document.getElementById('recogRawBtn');
+  if(wrap)wrap.style.display=_recogRawVisible?'':'none';
+  if(btn)btn.textContent=_recogRawVisible?'隱藏原始 CSV':'顯示原始 CSV';
+}
+
+function _recogApply(){
+  const ta=document.getElementById('recogRawTA');
+  const csv=(ta?ta.value:_recogCSV)||'';
+  if(!csv.trim()){alert('沒有識別結果可套入');return;}
+  csvArea.value=csv;
+  recognizeDlg.close();
+  importDlg.showModal();
+}
+
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
