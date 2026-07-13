@@ -1788,7 +1788,7 @@ function openBatchImgDlg(){
   _bimgFiles=[];
   const exams=[...new Set(DB.map(it=>it.exam).filter(Boolean))].sort();
   const sel=document.getElementById('bimgExam');
-  sel.innerHTML='<option value="">（請選擇考卷）</option>'+exams.map(e=>`<option value="${escH(e)}">${escH(e)}</option>`).join('');
+  sel.innerHTML='<option value="">（請選擇考卷）</option>'+exams.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('');
   document.getElementById('bimgTableWrap').style.display='none';
   document.getElementById('bimgConfirmBtn').style.display='none';
   document.getElementById('bimgCountMsg').textContent='';
@@ -1850,7 +1850,7 @@ function _bimgBuildTable(){
         ?`<span class="bimg-warn">多個題組，請選擇：${gids.map(gid=>`<button class="btn" style="font-size:11px;padding:2px 7px;margin-left:4px" onclick="_bimgPickPassage(${i},'${gid}')">題組${gid.slice(-4)}</button>`).join('')}</span>`
         :`<span class="bimg-ok">題組文章</span>`;
     }else if(item.matched){
-      matchHtml=`<span class="bimg-ok">✓ 第 ${escH(item.matched.no)} 題：${escH((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
+      matchHtml=`<span class="bimg-ok">✓ 第 ${esc(item.matched.no)} 題：${esc((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
     }else if(item.qno){
       matchHtml=`<span class="bimg-err">找不到第 ${item.qno||'?'} 題</span>`;
     }else if(!exam){
@@ -1858,7 +1858,7 @@ function _bimgBuildTable(){
     }else{matchHtml=`<span class="bimg-err">檔名無法解析</span>`;}
     return`<tr>
       <td>${thumb}</td>
-      <td style="font-size:11px;color:#666;max-width:140px;word-break:break-all">${escH(item.file.name)}</td>
+      <td style="font-size:11px;color:#666;max-width:140px;word-break:break-all">${esc(item.file.name)}</td>
       <td>${qnoStr}</td>
       <td>${matchHtml}</td>
       <td style="text-align:center"><input type="checkbox" id="bskip${i}" ${item.skip?'checked':''} onchange="_bimgFiles[${i}].skip=this.checked;_bimgUpdateCount()"></td>
