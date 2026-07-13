@@ -134,6 +134,20 @@
   .an-bar-track{flex:1;height:16px;background:#eff0f1;border-radius:4px;overflow:hidden}
   .an-bar-fill{height:100%;border-radius:4px;transition:width .4s}
   .an-bar-count{width:80px;color:#666;font-size:11.5px;flex-shrink:0;text-align:right}
+  /* ===== 批次貼圖 ===== */
+  #batchImgDlg{max-width:740px;width:96vw}
+  #batchImgDlg .dlg-body{max-height:76vh;overflow-y:auto;padding:0}
+  .bimg-drop{border:2px dashed #ccc;border-radius:10px;padding:18px 20px;text-align:center;cursor:pointer;transition:.2s;margin:8px 16px 10px;user-select:none}
+  .bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#eaf6ff}
+  .bimg-table-wrap{padding:0 16px 10px;overflow-x:auto}
+  .bimg-table{width:100%;border-collapse:collapse;font-size:12.5px}
+  .bimg-table th{text-align:left;padding:6px 8px;font-size:11px;font-weight:700;color:#888;border-bottom:1px solid #e0e0e0;letter-spacing:.3px}
+  .bimg-table td{padding:6px 8px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+  .bimg-thumb{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid #ddd;display:block}
+  .bimg-ok{color:#27ae60;font-weight:600;font-size:12px}
+  .bimg-err{color:#e74c3c;font-size:12px}
+  .bimg-warn{color:#e67e22;font-size:12px}
+  .bimg-summary{font-size:12.5px;color:#555;margin-bottom:8px;padding:8px 10px;background:#f7f9fc;border-radius:6px;border:1px solid #e0e8f0}
   @media(prefers-color-scheme:dark){
     .wiz-steps{background:#1a1a28;border-color:#333}
     .wiz-dot{background:#2d2d40;color:#555;border-color:#3d3d50}
@@ -149,6 +163,9 @@
     .wiz-prompt-preview{background:#1e222e;border-color:#333}.wiz-prompt-preview pre{color:#8899aa}
     .score-section{background:#1a2535;border-color:#2a3d55}.score-total{border-color:#2a3d55}
     .an-bar-track{background:#2d2d3d}
+    .bimg-drop{border-color:#444}.bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#1a2e40}
+    .bimg-table th{color:#666;border-color:#333}.bimg-table td{border-color:#2a2a3a}
+    .bimg-thumb{border-color:#444}.bimg-summary{background:#1a1e2a;border-color:#2a3040;color:#aaa}
   }
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
@@ -677,6 +694,51 @@
     <textarea id="kpArea" style="min-height:340px"></textarea>
   </div>
   <div class="dlg-foot"><button class="btn" onclick="kpDlg.close()">取消</button><button class="btn" onclick="resetKpDefault()">回復預設</button><button class="btn primary" onclick="saveKp()">儲存</button></div>
+</dialog>
+
+<!-- 批次貼圖 -->
+<dialog id="batchImgDlg">
+  <div class="dlg-head">🖼 批次貼圖（依檔名對應題目）<button class="x" onclick="batchImgDlg.close()">×</button></div>
+  <div class="dlg-body">
+    <div style="padding:12px 16px 4px">
+      <p style="font-size:13px;color:#555;margin-bottom:10px;line-height:1.6">用 AI 將考卷圖片依規則命名後，在此批次上傳，系統自動依檔名對應到題庫中的題目並貼圖。<br><small style="color:#888">命名規則：<b>Q{題號}_{描述}.png</b>（如 <code>Q3_圖1.png</code>）、題組文章圖用 <b>P_{描述}.png</b></small></p>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <label style="font-size:13px;font-weight:600;white-space:nowrap">目標考卷：</label>
+        <select id="bimgExam" style="flex:1;min-width:200px;max-width:380px" onchange="_bimgBuildTable()">
+          <option value="">—— 請先選擇考卷 ——</option>
+        </select>
+        <button class="btn" onclick="_bimgCopyNamingPrompt()">📋 複製 AI 命名指令</button>
+      </div>
+    </div>
+    <div class="bimg-drop" id="bimgDrop"
+         onclick="bimgFileIn.click()"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="event.preventDefault();this.classList.remove('drag-over');_bimgAddFiles(event.dataTransfer.files)">
+      <div style="font-size:26px;margin-bottom:4px">🖼️</div>
+      <div style="font-size:13px;font-weight:600">拖曳命名好的圖片至此，或點擊選擇</div>
+      <div style="color:#999;font-size:12px;margin-top:3px">支援 JPG / PNG，可一次多選</div>
+      <input type="file" id="bimgFileIn" multiple accept="image/*" style="display:none" onchange="_bimgAddFiles(this.files);this.value=''">
+    </div>
+    <div id="bimgTableWrap" style="display:none" class="bimg-table-wrap">
+      <div class="bimg-summary" id="bimgSummary"></div>
+      <table class="bimg-table">
+        <thead><tr>
+          <th style="width:44px">預覽</th>
+          <th>檔名</th>
+          <th style="width:80px">解析題號</th>
+          <th>對應題目</th>
+          <th style="width:56px">略過</th>
+        </tr></thead>
+        <tbody id="bimgTbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="dlg-foot">
+    <span id="bimgCountMsg" style="flex:1;font-size:12px;color:#888"></span>
+    <button class="btn" onclick="batchImgDlg.close()">取消</button>
+    <button class="btn primary" id="bimgConfirmBtn" style="display:none" onclick="_bimgConfirm()">🖼 貼圖到題庫</button>
+  </div>
 </dialog>
 
 <!-- 考卷設定 -->
@@ -2002,6 +2064,198 @@ function _recogApply(){
   csvArea.value=csv;
   recognizeDlg.close();
   importDlg.showModal();
+}
+
+/* ===== 批次貼圖 ===== */
+let _bimgFiles=[];
+
+function openBatchImgDlg(){
+  if(!requireCloud())return;
+  _bimgFiles=[];
+  // 填入考卷下拉選單（依 exam 欄位去重）
+  const examSet=new Set();
+  DB.forEach(it=>{if(it.exam&&it.type!=='passage')examSet.add(it.exam);});
+  const sel=document.getElementById('bimgExam');
+  sel.innerHTML='<option value="">—— 請先選擇考卷 ——</option>';
+  [...examSet].sort().forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;sel.appendChild(o);});
+  document.getElementById('bimgTableWrap').style.display='none';
+  document.getElementById('bimgConfirmBtn').style.display='none';
+  document.getElementById('bimgCountMsg').textContent='';
+  batchImgDlg.showModal();
+}
+
+function _bimgParseName(fname){
+  const base=fname.replace(/\.[^.]+$/,'').replace(/\s+/g,'');
+  // 題組文章圖（P_ 或 passage 或 文章 等）
+  if(/^[Pp][_\-]|文章|passage|題組|reading/i.test(base))return{isPassage:true,qno:null};
+  // Q3_... 或 q3... 格式
+  let m=base.match(/^[Qq](\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 3_... 或 3-... 格式
+  m=base.match(/^(\d+)[_\-\.]/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 第3題 或 題3
+  m=base.match(/(?:第|題)(\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 純數字
+  m=base.match(/^(\d+)$/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  // 第一組連續數字
+  m=base.match(/(\d+)/);if(m)return{isPassage:false,qno:String(parseInt(m[1]))};
+  return{isPassage:false,qno:null};
+}
+
+function _bimgAddFiles(files){
+  _bimgFiles=[];
+  for(const f of files){if(!f.type.startsWith('image/'))continue;_bimgFiles.push({file:f,src:null,qno:null,isPassage:false,matched:null,passageId:null,skip:false});}
+  if(!_bimgFiles.length)return;
+  let done=0;
+  _bimgFiles.forEach(item=>{
+    const r=new FileReader();
+    r.onload=e=>{item.src=e.target.result;done++;if(done===_bimgFiles.length)_bimgBuildTable();};
+    r.readAsDataURL(item.file);
+  });
+}
+
+function _bimgBuildTable(){
+  const exam=document.getElementById('bimgExam').value;
+  const questions=exam?DB.filter(it=>it.exam===exam&&it.type!=='passage'):[];
+  // 找這份考卷涉及的所有題組文章
+  const passageItems={};
+  questions.forEach(q=>{
+    if(q.groupId&&PASSAGES[q.groupId])passageItems[q.groupId]=PASSAGES[q.groupId];
+  });
+  const passageList=Object.values(passageItems);
+
+  _bimgFiles.forEach(item=>{
+    const{isPassage,qno}=_bimgParseName(item.file.name);
+    item.isPassage=isPassage;item.qno=qno;
+    if(isPassage){
+      item.matched=passageList[0]||null;
+      item.passageId=passageList.length===1?passageList[0].id:null;
+    }else if(qno){
+      item.matched=questions.find(q=>String(q.no)===qno)||null;
+    }else{
+      item.matched=null;
+    }
+    item.skip=!item.matched;
+  });
+
+  const escH=s=>(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const tbody=document.getElementById('bimgTbody');
+  tbody.innerHTML=_bimgFiles.map((item,i)=>{
+    const thumb=item.src?`<img src="${item.src}" class="bimg-thumb" alt="">`:'';
+    const fname=escH(item.file.name);
+    const qnoStr=item.isPassage?'題組文章':(item.qno?`第 ${item.qno} 題`:'<span class="bimg-err">無法解析</span>');
+    let matchHtml='';
+    if(item.isPassage&&item.matched){
+      const grpSize=Object.keys(passageItems).length;
+      matchHtml=grpSize>1
+        ?`<span class="bimg-warn">多個題組，請選擇：${Object.keys(passageItems).map(gid=>`<button class="btn" style="font-size:11px;padding:2px 7px;margin-left:4px" onclick="_bimgPickPassage(${i},'${gid}')">題組${gid.slice(-4)}</button>`).join('')}</span>`
+        :`<span class="bimg-ok">題組文章</span>`;
+    }else if(item.matched){
+      matchHtml=`<span class="bimg-ok">✓ 第 ${escH(item.matched.no)} 題：${escH((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
+    }else if(exam){
+      matchHtml=`<span class="bimg-err">找不到第 ${item.qno||'?'} 題</span>`;
+    }else{
+      matchHtml=`<span class="bimg-warn">請先選考卷</span>`;
+    }
+    return `<tr>
+      <td>${thumb}</td>
+      <td style="font-size:11px;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${fname}">${fname}</td>
+      <td>${qnoStr}</td>
+      <td>${matchHtml}</td>
+      <td style="text-align:center"><input type="checkbox" id="bskip${i}" ${item.skip?'checked':''} onchange="_bimgFiles[${i}].skip=this.checked;_bimgUpdateCount()"></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('bimgTableWrap').style.display='';
+  _bimgUpdateCount();
+}
+
+function _bimgPickPassage(idx,gid){
+  const p=PASSAGES[gid];if(!p)return;
+  _bimgFiles[idx].matched=p;_bimgFiles[idx].passageId=p.id;_bimgFiles[idx].skip=false;
+  const cb=document.getElementById('bskip'+idx);if(cb)cb.checked=false;
+  _bimgBuildTable();
+}
+
+function _bimgUpdateCount(){
+  const total=_bimgFiles.length;
+  const toUpload=_bimgFiles.filter(it=>!it.skip&&it.matched).length;
+  const skipped=_bimgFiles.filter(it=>it.skip).length;
+  const noMatch=_bimgFiles.filter(it=>!it.matched&&!it.skip).length;
+  document.getElementById('bimgSummary').textContent=`共 ${total} 張圖片：將貼到 ${toUpload} 題 / 文章，略過 ${skipped} 張${noMatch?`，${noMatch} 張無對應題目`:''}`;
+  const btn=document.getElementById('bimgConfirmBtn');
+  btn.style.display=toUpload>0?'':'none';
+  document.getElementById('bimgCountMsg').textContent=toUpload>0?`將上傳 ${toUpload} 張圖片`:'沒有可貼的圖片';
+}
+
+async function _bimgConfirm(){
+  const toProcess=_bimgFiles.filter(it=>!it.skip&&it.matched&&it.src);
+  if(!toProcess.length){alert('沒有可貼的圖片');return;}
+  const btn=document.getElementById('bimgConfirmBtn');
+  btn.disabled=true;btn.textContent='上傳中…';
+  const msg=document.getElementById('bimgCountMsg');
+  // Group by target question id
+  const byId={};
+  toProcess.forEach(item=>{
+    const id=item.matched.id;
+    if(!byId[id])byId[id]={target:item.matched,items:[]};
+    byId[id].items.push(item);
+  });
+  let done=0,failed=0,total=toProcess.length;
+  const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+  for(const[id,grp]of Object.entries(byId)){
+    try{
+      msg.textContent=`上傳中… ${done+failed}/${total}`;
+      const newImgs=grp.items.map(it=>({src:it.src,width:null}));
+      const uploaded=await uploadImgs(newImgs,id);
+      const existing=grp.target.imgs||[];
+      const merged=[...existing,...uploaded];
+      const res=await fetch(`${SUPABASE_URL}/rest/v1/questions?id=eq.${encodeURIComponent(id)}`,{
+        method:'PATCH',headers:hdr,body:JSON.stringify({imgs:merged,updated_at:new Date().toISOString()})
+      });
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      // 更新本地 DB / PASSAGES
+      const dbIt=DB.find(x=>x.id===id);if(dbIt)dbIt.imgs=merged;
+      if(PASSAGES[grp.target.groupId||'']?.id===id){const p=PASSAGES[grp.target.groupId];if(p)p.imgs=merged;}
+      done+=grp.items.length;
+    }catch(e){
+      console.error('批次貼圖失敗',id,e);failed+=grp.items.length;
+    }
+  }
+  btn.disabled=false;btn.textContent='🖼 貼圖到題庫';
+  msg.textContent=`完成！成功 ${done} 張${failed?`，失敗 ${failed} 張`:''}`;
+  if(done>0){render();if(failed===0)setTimeout(()=>batchImgDlg.close(),1800);}
+}
+
+function _bimgCopyNamingPrompt(){
+  const prompt=`你的任務是「圖片命名與裁切」，**不是**重新繪製或描述圖片。
+
+【重要前提】
+- 考卷圖片中可能有學生筆跡或批改痕跡，請完全忽略，只按原始印刷內容辨識題號和圖片位置
+- 你只需告訴我每張圖片應該裁切哪個區域、命名什麼，不需要描述圖片內容
+- 如果圖片因筆跡模糊而看不清楚，直接回報「第X題圖片不清晰，無法確認」，**絕對不能自行推測或生成圖片內容**
+
+【命名規則】
+每一張考卷中的圖（含圖表、示意圖、照片、選項旁的圖）：
+  → 格式：Q{題號}_{描述}.png
+  → 例：Q1_圖.png　Q3_圖1.png　Q3_圖2.png　Q5_選項圖.png
+
+題組閱讀文章中的圖（不屬於任何單一題號）：
+  → 格式：P_{描述}.png
+  → 例：P_文章圖.png　P_圖表1.png
+
+【裁切規則】
+- 每張輸出圖片只包含一個圖，不要合併
+- 裁切範圍包含圖本身＋緊鄰的說明文字（如圖1、圖A等）
+- 保留題目中「如圖」「如右圖」等文字，但不需要截取這些文字
+- 裁切時保留少量白邊（約5-10px）
+
+【注意事項】
+- 如果某題沒有圖，不需要輸出
+- 不要猜測、不要幻想、不要補全任何圖片內容
+- 有疑問的地方直接說明，讓我人工處理
+
+請依以上規則處理以下考卷圖片，回傳各圖片的命名清單（格式：行號/頁碼 → 檔名），以及可裁切下載的圖片。`;
+  navigator.clipboard.writeText(prompt).then(()=>alert('已複製 AI 命名指令！\n\n請將此指令連同考卷圖片一起傳給 AI。\nAI 不清楚的圖片會回報讓你人工確認，不會亂猜。')).catch(()=>alert('複製失敗，請手動複製'));
 }
 
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
@@ -4432,6 +4686,7 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
+  batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">🖼 批次貼圖</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
   solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel＋圖片ZIP，含圖的題目圖片會一起打包，主管不用對照紙本考卷，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
@@ -4459,7 +4714,7 @@ const TB_BUTTONS={
 const TB_VER='14';
 const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
-  ['import','add','reload','backup','restore'],
+  ['import','batchImg','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide','compressImgs'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solPromptBtn'],
