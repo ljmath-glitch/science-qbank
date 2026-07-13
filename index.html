@@ -73,6 +73,7 @@
   .filt label{display:block;font-size:12px;font-family:inherit;color:var(--muted);margin-bottom:4px;font-weight:600}
   select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink)}
   textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
+  textarea.drag-over{border:2px dashed #3498db!important;background:#eaf6ff!important;outline:none}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
   .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
@@ -411,7 +412,7 @@
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
-    <textarea id="csvArea" style="min-height:200px"></textarea>
+    <textarea id="csvArea" style="min-height:200px" placeholder="貼上 CSV 內容，或直接將 CSV / Excel 檔案拖曳至此" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');_dropFileToArea(event,'csvArea')"></textarea>
   </div>
   <div class="dlg-foot"><button class="btn" onclick="importDlg.close()">取消</button><button class="btn primary" onclick="doImport()">匯入</button></div>
 </dialog>
@@ -426,7 +427,7 @@
     ① 用 AI 生成：先在題目列表勾選要做詳解的題目，點工具列「📋 詳解製作指令」，複製指令給主管的 AI，AI 照著格式回傳的 CSV 就能直接貼來這裡匯入。<br>
     ② 給人手動填寫：點工具列「📤 詳解匯出Excel」，會下載一個 ZIP，裡面有已經填好考試名稱／題號／題目／答案的 Excel，含圖的題目圖片也會一起打包在 images 資料夾裡（不用另外找紙本考卷），交給主管填好「詳解」欄後，把裡面的 Excel 上傳到這裡即可（欄位已經對齊，不用調整格式）。</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadSolCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
-    <textarea id="solCsvArea" style="min-height:200px"></textarea>
+    <textarea id="solCsvArea" style="min-height:200px" placeholder="貼上 CSV 內容，或直接將 CSV / Excel 檔案拖曳至此" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');_dropFileToArea(event,'solCsvArea')"></textarea>
   </div>
   <div class="dlg-foot"><button class="btn" onclick="solImportDlg.close()">取消</button><button class="btn primary" onclick="doImportSol()">匯入詳解</button></div>
 </dialog>
@@ -1714,6 +1715,14 @@ function parseCSV(text){const rows=[];let row=[],cell='',q=false;text=text.repla
     else{if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else cell+=c}}
   if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
 function openImport(){csvArea.value='';importDlg.showModal()}
+function _dropFileToArea(e,areaId){
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const el=document.getElementById(areaId);
+  const name=f.name.toLowerCase();
+  if(name.endsWith('.xlsx')||name.endsWith('.xls')){
+    const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];el.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
+  }else{const r=new FileReader();r.onload=()=>el.value=r.result;r.readAsText(f,'utf-8');}
+}
 function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
   if(name.endsWith('.xlsx')||name.endsWith('.xls')){
     const r=new FileReader();r.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];csvArea.value=XLSX.utils.sheet_to_csv(ws,{RS:'\n',FS:','});};r.readAsArrayBuffer(f);
