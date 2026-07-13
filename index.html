@@ -1967,119 +1967,6 @@ function loadCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name
   }else{const r=new FileReader();r.onload=()=>csvArea.value=r.result;r.readAsText(f,'utf-8');}}
 // 欄位（23欄新格式）: 0年度 1學校 2考名 3題號 4答案 5冊數 6冊名 7領域 8大單元 9子單元 10知識點 11摘要 12題型 13步驟 14記憶 15概念 16圖表 17依據 18待確認 19題目 20詳解 21題組文章 22題組ID
 
-/* ===== 詳解匯出（Excel＋圖片ZIP）：給主管拿紙本考卷手動填寫用，欄位跟「詳解匯入」的比對鍵完全對齊 =====
-   含圖的題目：把圖片實際打包進同一個 ZIP 的 images 資料夾，Excel 裡註明檔名，主管不用另外找紙本考卷 */
-async function _imgToBlob(im){
-  if(im.src&&im.src.startsWith('data:'))return dataURLtoBlob(im.src);
-  const r=await fetch(im.src);if(!r.ok)throw new Error('HTTP '+r.status);return await r.blob();
-}
-function _extFromBlob(blob){const t=(blob.type||'').toLowerCase();if(t.includes('png'))return 'png';if(t.includes('gif'))return 'gif';if(t.includes('webp'))return 'webp';return 'jpg';}
-/* 手動組裝 .xlsx（繞過 xlsx.js 免費版無法寫入儲存格樣式的限制，讓「自動換行」真的生效）
-   欄位內容有 \n 時，Excel 必須要有 wrapText 樣式才會顯示成多行，否則會擠成一行不斷行 */
-function _xlsxColName(idx){let s='';idx++;while(idx>0){const m=(idx-1)%26;s=String.fromCharCode(65+m)+s;idx=Math.floor((idx-1)/26);}return s;}
-function _escXml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));}
-async function buildXlsxWithWrap(rows,colWidths){
-  const rowHeights=rows.map((r,ri)=>{
-    if(ri===0)return 20;
-    let maxLines=1;
-    r.forEach(cell=>{const lines=(String(cell==null?'':cell).match(/\n/g)||[]).length+1;if(lines>maxLines)maxLines=lines;});
-    return Math.min(15*maxLines+10,400);
-  });
-  const colsXml='<cols>'+colWidths.map((c,i)=>`<col min="${i+1}" max="${i+1}" width="${c.wch}" customWidth="1"/>`).join('')+'</cols>';
-  const sheetRows=rows.map((r,ri)=>{
-    const rIdx=ri+1;
-    const cells=r.map((val,ci)=>{
-      const addr=_xlsxColName(ci)+rIdx;
-      const styleIdx=ri===0?1:2;
-      return `<c r="${addr}" s="${styleIdx}" t="inlineStr"><is><t xml:space="preserve">${_escXml(val)}</t></is></c>`;
-    }).join('');
-    return `<row r="${rIdx}" ht="${rowHeights[ri]}" customHeight="1">${cells}</row>`;
-  }).join('');
-  const dimension=`A1:${_xlsxColName(colWidths.length-1)}${rows.length}`;
-  const sheetXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<dimension ref="${dimension}"/><sheetViews><sheetView workbookViewId="0"/></sheetViews>
-<sheetFormatPr defaultRowHeight="15"/>${colsXml}<sheetData>${sheetRows}</sheetData></worksheet>`;
-  const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
-<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
-<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
-<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-<cellXfs count="3">
-<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
-<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>
-</cellXfs>
-<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
-</styleSheet>`;
-  const workbookXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-<sheets><sheet name="詳解填寫" sheetId="1" r:id="rId1"/></sheets></workbook>`;
-  const workbookRelsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
-</Relationships>`;
-  const rootRelsXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
-<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
-</Relationships>`;
-  const contentTypesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
-<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
-<Default Extension="xml" ContentType="application/xml"/>
-<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
-<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>
-</Types>`;
-  const xzip=new JSZip();
-  xzip.file('[Content_Types].xml',contentTypesXml);
-  xzip.file('_rels/.rels',rootRelsXml);
-  xzip.file('xl/workbook.xml',workbookXml);
-  xzip.file('xl/_rels/workbook.xml.rels',workbookRelsXml);
-  xzip.file('xl/styles.xml',stylesXml);
-  xzip.file('xl/worksheets/sheet1.xml',sheetXml);
-  return xzip.generateAsync({type:'uint8array'});
-}
-async function exportSolExcel(){
-  const items=pickedItems().length?pickedItems():_lastShown.filter(it=>it.type!=='passage');
-  if(!items.length){alert('目前沒有題目可以匯出（請先勾選題目，或篩選出要匯出的考卷）');return;}
-  const btn=event&&event.target;if(btn){btn.disabled=true;btn.textContent='⏳ 匯出中…';}
-  try{
-    const zip=new JSZip();
-    const imgFolder=zip.folder('images');
-    let imgFailCount=0;
-    const rows=[['考試名稱','題號','題目','答案','詳解']];
-    for(const it of items){
-      let noteImg='';
-      if(it.imgs&&it.imgs.length){
-        const names=[];
-        for(let i=0;i<it.imgs.length;i++){
-          try{
-            const blob=await _imgToBlob(it.imgs[i]);
-            const fname=`${(it.no||'x')}_${i+1}.${_extFromBlob(blob)}`;
-            imgFolder.file(fname,blob);
-            names.push(fname);
-          }catch(e){imgFailCount++;}
-        }
-        noteImg=names.length?`　〔含圖，檔名：${names.join('、')}，請開啟同一個壓縮檔內的 images 資料夾查看〕`:'　〔含圖，圖片打包失敗，請對照紙本考卷〕';
-      }
-      rows.push([it.exam||'',it.no||'',fixLatex(it.q||it.summary||'')+noteImg,it.ans||'','']);
-    }
-    const xlsxData=await buildXlsxWithWrap(rows,[{wch:22},{wch:6},{wch:50},{wch:8},{wch:60}]);
-    const name=(items[0].exam||'詳解匯出').replace(/[\\/:*?"<>|]/g,'_');
-    zip.file(name+'_詳解填寫.xlsx',xlsxData);
-    const blob=await zip.generateAsync({type:'blob'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.download=name+'_詳解填寫（含圖片）.zip';a.click();
-    URL.revokeObjectURL(url);
-    if(imgFailCount)alert('提醒：有 '+imgFailCount+' 張圖片打包失敗（可能是網路問題），這幾題請對照紙本考卷');
-  }finally{
-    if(btn){btn.disabled=false;btn.textContent='📤 詳解匯出Excel';}
-  }
-}
 /* ===== 詳解匯入：只更新既有題目的詳解欄位，依「考試名稱」+「題號」比對 ===== */
 function openSolImport(){solCsvArea.value='';solImportDlg.showModal()}
 function loadSolCsvFile(e){const f=e.target.files[0];if(!f)return;const name=f.name.toLowerCase();
@@ -2272,42 +2159,6 @@ function compress(d,maxW){
     img.onerror=function(){rej(new Error('圖片載入失敗'));}
     img.src=d;
   });
-}
-async function batchCompressImgs(){
-  if(!requireCloud())return;
-  if(!confirm('將重新壓縮雲端所有題目的圖片，以 WebP/PNG/JPEG 三者取最小格式儲存。\n此操作不可還原，確定？'))return;
-  const prog=document.createElement('div');
-  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 20px;border-radius:12px;font-family:inherit;font-size:14px;z-index:9999;min-width:260px;box-shadow:0 4px 20px rgba(0,0,0,.4)';
-  prog.textContent='🗜 載入題目中…';
-  document.body.appendChild(prog);
-  const {data,error}=await supabase.from('questions').select('id,imgs');
-  if(error){prog.remove();alert('載入失敗：'+error.message);return;}
-  const targets=(data||[]).filter(q=>q.imgs&&q.imgs.length>0);
-  if(!targets.length){prog.remove();alert('沒有找到含圖的題目');return;}
-  let done=0,skipped=0,failed=0,savedBytes=0;
-  const upd=()=>{prog.textContent=`🗜 重壓縮中：${done+skipped+failed}/${targets.length}　節省 ${savedBytes>1048576?(savedBytes/1048576).toFixed(1)+'MB':(savedBytes/1024).toFixed(0)+'KB'}`;};
-  upd();
-  for(const q of targets){
-    try{
-      let changed=false;
-      const newImgs=[];
-      for(const im of q.imgs){
-        const c=await compress(im.src,IMG_MAXW);
-        if(c.length<im.src.length){savedBytes+=im.src.length-c.length;newImgs.push({...im,src:c});changed=true;}
-        else newImgs.push(im);
-      }
-      if(changed){
-        const {error:e}=await supabase.from('questions').update({imgs:newImgs}).eq('id',q.id);
-        if(e)throw e;
-        done++;
-      }else{skipped++;}
-    }catch(e){failed++;}
-    upd();
-  }
-  prog.remove();
-  const saved=savedBytes>1048576?(savedBytes/1048576).toFixed(1)+' MB':(savedBytes/1024).toFixed(0)+' KB';
-  alert(`完成！\n更新 ${done} 題　已是最小 ${skipped} 題　失敗 ${failed} 題\n節省約 ${saved}`);
-  await load();render();
 }
 function _imgTargetIsPassage(){const el=document.getElementById('imgTarget');return el&&el.value==='p';}
 async function addImages(e){
@@ -4313,13 +4164,11 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 const TB_BUTTONS={
   import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
-  solExport: ()=>`<button class="btn" onclick="exportSolExcel()" title="把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel＋圖片ZIP，含圖的題目圖片會一起打包，主管不用對照紙本考卷，填完後用「詳解匯入」讀回">📤 詳解匯出Excel</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
   batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">🖼 批次貼圖</button>`,
-  compressImgs: ()=>`<button class="btn" onclick="batchCompressImgs()">🗜 壓縮圖片</button>`,
   claude:  ()=>`<div style="display:inline-flex;flex-direction:row!important;gap:8px!important;width:100%"><button class="btn gold sm" style="flex:1;min-width:0" onclick="showPromptJH()" title="國中自然科段考卷轉CSV指令">📋 AI（國中）</button><button class="btn gold sm" style="flex:1;min-width:0" onclick="showPromptHS()" title="高中自然科考卷／學測試題轉CSV指令">📋 AI（高中）</button></div>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">🤖 系統文件（給Claude）</button>`,
   report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
@@ -4337,11 +4186,11 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='15';
+const TB_VER='16';
 const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','batchImg','add','reload','backup','restore'],
-  ['claude','sysDoc','report','kp','guide','compressImgs'],
+  ['claude','sysDoc','report','kp','guide'],
   ['raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solPromptBtn'],
   ['selFilt','selAll','stat'],
