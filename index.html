@@ -1690,7 +1690,7 @@ function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;
 function precompute(it){
   it._diff=calcDiff(it.step,it.mem,it.con);
   it._sylYear=parseSylYear(it.year);
-  it._sylSem=parseSylSem(it.year);
+  it._sylSem=parseSylSem(it.year,it.exam);
   it._examType=examType(it.exam,it.school);
   it._examRoundNum=examRoundNum(it.exam);
   it._grade=gradeFromExam(it.exam,it.book);
@@ -2518,7 +2518,17 @@ function resetFilters(){
   fFlag.checked=false;buildFilters();render();}
 
 function parseSylYear(y){return y?(y.match(/\d+/)||[''])[0]:'';}
-function parseSylSem(y){return y?(/上/.test(y)?'上':/下/.test(y)?'下':''):''}
+function parseSylSem(y,exam){
+  if(y&&/上/.test(y))return '上';
+  if(y&&/下/.test(y))return '下';
+  // year 欄沒標學期時，從 exam 名稱補判（如「蘭雅國中-九年級-113上-第一次段考」裡的「113上-」）
+  if(exam){
+    if(exam.includes('上學期'))return '上';
+    if(exam.includes('下學期'))return '下';
+    if(/\d+上[\-\s第]/.test(exam))return '上';
+    if(/\d+下[\-\s第]/.test(exam))return '下';
+  }
+  return '';}
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
 const JH_BOOKS=['JB1','JB2','JB3','JB4','JB5','JB6'];
 /* 高中年級（高一/高二/高三）只是分類標籤，不限制冊數選單——因為各校選修課排課進度不同 */
@@ -2558,8 +2568,8 @@ function examType(exam,school){
   if(exam.includes('會考'))return '會考';
   if(exam.includes('學測'))return '學測';
   if(exam.includes('分科測驗'))return '分科測驗';
-  // exam 有值但無關鍵字 → 有學校名稱視為段考
-  if(school)return '段考';
+  // exam 有值但無關鍵字 → 有學校名稱（school 欄位 或 exam 名稱含國中/高中）視為段考
+  if(school||/國[中小]|高[中職]/.test(exam))return '段考';
   return '';}
 function examSemester(exam){
   if(!exam)return '';
