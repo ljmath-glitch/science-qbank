@@ -771,8 +771,54 @@ const SB_HDR = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_AN
 // ── 篩選器狀態 ──────────────────────────────────────────────────
 let _filter = {book:'', exam:''};
 
+// ── 共編進度表：只有六項全部打勾確認完成的考卷，題目才會進每日一題的題庫 ──
+// null = 尚未載入完成（載入失敗時也維持 null，失敗開放，不擋題目）
+let CONFIRMED_EXAM_NAMES = null;
+async function loadConfirmedExamNames(){
+  try{
+    const pgRes = await fetch(`${SUPABASE_URL}/rest/v1/syllabus_doc?select=content&id=eq.2`, {headers:SB_HDR});
+    const pgRows = await pgRes.json().catch(()=>[]);
+    let progressMap = {};
+    try{ progressMap = JSON.parse((pgRows&&pgRows[0]&&pgRows[0].content)||'{}'); }catch(e){}
+
+    let allQs = [], from = 0;
+    while(true){
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/questions?select=year,school,exam,book,type&type=neq.passage&order=id&offset=${from}&limit=1000`, {headers:SB_HDR});
+      const data = await res.json();
+      if(!Array.isArray(data) || !data.length) break;
+      allQs = allQs.concat(data);
+      if(data.length < 1000) break;
+      from += 1000;
+    }
+
+    const names = new Set();
+    allQs.forEach(q=>{
+      const school=(q.school||'').trim();
+      const grade=gradeFromExam(q.exam||'', q.book||'');
+      const year=(q.year||'').trim();
+      const round=examRound(q.exam||'');
+      const key=makeProgressId(school, grade, year, round);
+      const p=progressMap[key];
+      const allDone = p && p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
+      if(allDone && q.exam) names.add(q.exam);
+    });
+    CONFIRMED_EXAM_NAMES = names;
+  }catch(e){
+    console.warn('載入共編進度表失敗，每日一題暫不套用確認篩選', e);
+  }
+}
+
 function filterQS(){
   let q='type=neq.passage&or=(flag.is.null,flag.eq.false)'; // 跳過待確認題目
+  // 只選共編進度表六項全部打勾（確認公式／上傳圖片／製作詳解／題幹敘述確認／題組確認／其他確認）的考卷
+  if(CONFIRMED_EXAM_NAMES){
+    if(CONFIRMED_EXAM_NAMES.size===0){
+      q+='&id=eq.__none__'; // 目前沒有任何考卷全部確認完成
+    }else{
+      const list=[...CONFIRMED_EXAM_NAMES].map(n=>encodeURIComponent(n)).join(',');
+      q+=`&exam=in.(${list})`;
+    }
+  }
   if(_filter.book==='會考'||_filter.book==='學測'){
     q+=`&exam=like.*${encodeURIComponent(_filter.book)}*`;
   }else if(_filter.book){
@@ -1879,7 +1925,7 @@ function showToast(lvIdx){
     setTimeout(()=>showDemotion(absent.daysDiff,absent.droppedFrom),400);
   }
 }
-applyFilter();
+loadConfirmedExamNames().finally(applyFilter);
 </script>
 </body>
 </html>
