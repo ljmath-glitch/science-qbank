@@ -2019,7 +2019,7 @@ async function doImportSol(){
   }
   // 正規化考試名稱，使 AI 產出的考試名稱格式（如「介壽國中-八年級-113上-第二次段考-理化」）
   // 能對應到 DB 裡的格式（如「介壽國中-八年級-113-第二次段考」）
-  function _normExam(e){return e.replace(/-?(理化|生物|地科|自然科?|物理|化學)$/,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
+  function _normExam(e){return e.replace(/-?(理化|生物|地科|自然科?|物理|化學)$/,'').replace(/-?(上學期|下學期)/g,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
   const _dbExamNormMap=new Map();DB.forEach(x=>{if(x.exam)_dbExamNormMap.set(_normExam(x.exam)+'|||'+String(x.no),x);});
   const toAdd=[],toReplace=[],notFound=[];
   for(let i=1;i<rows.length;i++){
@@ -2072,11 +2072,17 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const rawExam=g(2),school=g(1),year=g(0),book=g(5);
     const grade=gradeFromExam(rawExam,book);
     const round=examRound(rawExam);
-    const fmtExam=round==='會考'?(year||'')+'會考':round==='學測'?(year||'')+'學測':round==='分科測驗'?(year||'')+'分科測驗':[school,grade,year,round].filter(Boolean).join('-')||rawExam;
-    const key=round==='會考'?'會考|||'+(year||''):round==='學測'?'學測|||'+(year||''):round==='分科測驗'?'分科測驗|||'+(year||''):[school||'',grade||'',year||'',round||''].join('|||');
+    // 正規化：year 欄裡的「上」/「下」改成獨立的「上學期」/「下學期」字串
+    const yr=(year||'').replace(/[上下]$/,'');
+    const sem=parseSylSem(year,rawExam);
+    const semStr=sem?sem+'學期':'';
+    const fmtExam=round==='會考'?(yr||'')+'會考':round==='學測'?(yr||'')+'學測':round==='分科測驗'?(yr||'')+'分科測驗':[school,grade,yr,semStr,round].filter(Boolean).join('-')||rawExam;
+    const key=round==='會考'?'會考|||'+(yr||''):round==='學測'?'學測|||'+(yr||''):round==='分科測驗'?'分科測驗|||'+(yr||''):[school||'',grade||'',yr||'',semStr||'',round||''].join('|||');
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
-    const dup=existingByExamNo.get(fmtExam+'|||'+g(3));
+    // 往回找舊格式（如「113上」嵌在年度欄的舊 exam 名稱）以避免重複匯入
+    const _oldFmt=fmtExam.replace(/-上學期-/g,'上-').replace(/-下學期-/g,'下-').replace(/-上學期$/,'上').replace(/-下學期$/,'下');
+    const dup=existingByExamNo.get(fmtExam+'|||'+g(3))||existingByExamNo.get(_oldFmt+'|||'+g(3));
     const it={id:dup?dup.id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
