@@ -2017,20 +2017,27 @@ async function doImportSol(){
     alert('找不到必要欄位：檔案第一列（標題列）必須包含「考試名稱」「題號」「詳解」這三個欄位名稱');
     return;
   }
+  // 正規化考試名稱，使 AI 產出的考試名稱格式（如「介壽國中-八年級-113上-第二次段考-理化」）
+  // 能對應到 DB 裡的格式（如「介壽國中-八年級-113-第二次段考」）
+  function _normExam(e){return e.replace(/-?(理化|生物|地科|自然科?|物理|化學)$/,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
+  const _dbExamNormMap=new Map();DB.forEach(x=>{if(x.exam)_dbExamNormMap.set(_normExam(x.exam)+'|||'+String(x.no),x);});
   const toAdd=[],toReplace=[],notFound=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
     const exam=(r[idxExam]||'').trim(),no=(r[idxNo]||'').trim(),sol=(r[idxSol]||'').trim();
     if(!exam&&!no)continue;
     if(!sol)continue;
-    const it=DB.find(x=>x.exam===exam&&String(x.no)===String(no));
+    const it=DB.find(x=>x.exam===exam&&String(x.no)===String(no))
+            ||_dbExamNormMap.get(_normExam(exam)+'|||'+String(no));
     if(!it){notFound.push(exam+' 第'+no+'題');continue}
     if(it.sol&&it.sol.trim()) toReplace.push({...it,sol:normalizeSol(sol)});
     else toAdd.push({...it,sol:normalizeSol(sol)});
   }
   const total=toAdd.length+toReplace.length;
   if(!total){
-    alert('沒有可匯入的詳解'+(notFound.length?('\n\n找不到對應題目：\n'+notFound.slice(0,10).join('\n')+(notFound.length>10?'\n…以及另外 '+(notFound.length-10)+' 筆':'')):''));
+    const hint=notFound.length?'\n\n找不到對應題目（共 '+notFound.length+' 筆）：\n'+notFound.slice(0,5).join('\n')+(notFound.length>5?'\n…':''):''
+    +'\n\n提示：請確認「考試名稱」欄與題庫中一致，例如「介壽國中-八年級-113-第二次段考」（不含學期、不含科目）。';
+    alert('沒有可匯入的詳解'+hint);
     return;
   }
   if(toReplace.length){
