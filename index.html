@@ -2104,6 +2104,8 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       // CSV 無法承載圖片資料，覆蓋既有題目時要保留原本已上傳的圖片，避免被清空
       imgs:dup?dup.imgs:[]};
     if(!it.q&&!it.summary)continue;
+    // 摘要若幾乎等於題目文字，匯入時清空（避免將題目原文當摘要）
+    if(it.summary&&it.q){const _s=it.summary.trim(),_q=it.q.trim(),_sh=Math.min(_s.length,_q.length,60);let _m=0;for(let _i=0;_i<_sh;_i++)if(_s[_i]===_q[_i])_m++;if(_q.slice(0,_s.length+5).includes(_s)||(_sh>0&&_m/_sh>0.75))it.summary='';}
     // 承上題 必須有 groupId
     if(/承上題/.test(it.q)&&!it.groupId){it.flag=true;if(!it.basis)it.basis='[回報] 承上題但缺少題組ID，請補填';}
     // 〔含圖〕需手動上傳圖片
