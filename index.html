@@ -2138,20 +2138,21 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(!adds.length){alert('沒有可匯入的題目');return}
   // ===== 重複偵測 =====
   // 建立 DB 所有考試名稱集合（含兩種格式比對）
-  const dbExamSet=new Set(DB.map(x=>x.exam).filter(Boolean));
-  const newExamSet=[...new Set(adds.map(it=>it.exam).filter(Boolean))];
-  const dupExams=newExamSet.filter(e=>dbExamSet.has(e));
-  const dupQuestions=adds.filter(it=>it.no&&DB.some(ex=>ex.exam===it.exam&&String(ex.no)===String(it.no)));
-  if(dupExams.length||dupQuestions.length){
+  // 重複偵測：同考試名稱＋同領域才算重複（不同領域是不同科目分開出卷的正常情況）
+  const dbExamFieldSet=new Set(DB.map(x=>x.exam&&(x.exam+'|||'+(x.field||''))).filter(Boolean));
+  const newExamFieldSet=[...new Set(adds.map(it=>it.exam&&(it.exam+'|||'+(it.field||''))).filter(Boolean))];
+  const dupExamFields=newExamFieldSet.filter(ef=>dbExamFieldSet.has(ef));
+  const dupQuestions=adds.filter(it=>it.no&&DB.some(ex=>ex.exam===it.exam&&(ex.field||'')===(it.field||'')&&String(ex.no)===String(it.no)));
+  if(dupExamFields.length||dupQuestions.length){
     let msg='⚠️ 發現重複內容，繼續匯入將覆蓋現有資料：\n\n';
-    if(dupExams.length){
-      msg+='【考卷名稱已有資料】\n';
-      dupExams.forEach(e=>{const cnt=DB.filter(x=>x.exam===e).length;msg+=`• ${e}（共 ${cnt} 題）\n`;});
+    if(dupExamFields.length){
+      msg+='【考卷名稱＋領域已有資料】\n';
+      dupExamFields.forEach(ef=>{const [e,f]=ef.split('|||');const cnt=DB.filter(x=>x.exam===e&&(x.field||'')===(f||'')).length;msg+=`• ${e}${f?' ('+f+')':''}（共 ${cnt} 題）\n`;});
       msg+='\n';
     }
     if(dupQuestions.length){
-      msg+='【相同考卷＋題號】\n';
-      dupQuestions.slice(0,10).forEach(it=>{msg+=`• ${it.exam} 第 ${it.no} 題\n`;});
+      msg+='【相同考卷＋領域＋題號】\n';
+      dupQuestions.slice(0,10).forEach(it=>{msg+=`• ${it.exam}${it.field?' ('+it.field+')':''} 第 ${it.no} 題\n`;});
       if(dupQuestions.length>10)msg+=`  …以及另外 ${dupQuestions.length-10} 題\n`;
       msg+='\n';
     }
