@@ -2066,8 +2066,9 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
   const examKeys=new Map();
   // 重複匯入時要沿用既有題目的 id，upsert 才會真的「覆蓋」而不是多插入一筆重複題目
+  // key 加入 field（領域），讓同一考試下地科/理化題號相同時不互蓋
   const existingByExamNo=new Map();
-  DB.forEach(x=>{if(x.exam&&x.no!==undefined&&x.no!==null&&x.no!=='')existingByExamNo.set(x.exam+'|||'+String(x.no),x)});
+  DB.forEach(x=>{if(x.exam&&x.no!==undefined&&x.no!==null&&x.no!=='')existingByExamNo.set(x.exam+'|||'+(x.field||'')+'|||'+String(x.no),x)});
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
     const rawExam=g(2),school=g(1),year=g(0),book=g(5);
     const grade=gradeFromExam(rawExam,book);
@@ -2081,8 +2082,9 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
     // 往回找舊格式（如「113上」嵌在年度欄的舊 exam 名稱）以避免重複匯入
+    const _field=g(7);
     const _oldFmt=fmtExam.replace(/-上學期-/g,'上-').replace(/-下學期-/g,'下-').replace(/-上學期$/,'上').replace(/-下學期$/,'下');
-    const dup=existingByExamNo.get(fmtExam+'|||'+g(3))||existingByExamNo.get(_oldFmt+'|||'+g(3));
+    const dup=existingByExamNo.get(fmtExam+'|||'+_field+'|||'+g(3))||existingByExamNo.get(_oldFmt+'|||'+_field+'|||'+g(3));
     const it={id:dup?dup.id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
