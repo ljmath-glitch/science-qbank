@@ -66,7 +66,7 @@
   .toolbar-outer select{height:30px;box-sizing:border-box;vertical-align:middle}
   .stat{font-family:inherit;font-size:12px;color:var(--muted);margin-left:auto}
   .stat b{color:var(--accent);font-size:15px}
-  .layout{display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start}
+  .layout{display:grid;grid-template-columns:1fr;gap:20px;align-items:start}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px}
   .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:inherit;font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .filt{margin-bottom:11px}
@@ -175,27 +175,18 @@
        可能無法正確沿用網頁上已經載入好的外部字型，導致中文大量消失，數字/英文/公式卻正常 */
     .pv-sheet{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","Microsoft YaHei",sans-serif!important}
   }
-  .side{overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .side{position:fixed;top:0;left:0;width:min(320px,92vw);height:100dvh;max-height:none;border-radius:0 12px 12px 0;z-index:700;transform:translateX(-110%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:none;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  .side.drawer-open{transform:translateX(0);box-shadow:4px 0 20px rgba(0,0,0,.2)}
   .side::-webkit-scrollbar{width:4px}.side::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
-  .side-close{display:none;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
-  .filter-tab{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:701;background:var(--card);border:1px solid var(--line);border-left:none;border-radius:0 10px 10px 0;box-shadow:3px 0 10px rgba(0,0,0,.18);cursor:pointer;width:26px;padding:22px 0;font-size:11px;font-weight:700;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;transition:left .3s cubic-bezier(.4,0,.2,1),background .15s;user-select:none;border:1px solid var(--line);border-left:none}
+  .side-close{display:block;position:absolute;top:10px;right:10px;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;z-index:2}
+  .filter-tab{display:inline-flex;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:701;background:var(--card);border:1px solid var(--line);border-left:none;border-radius:0 10px 10px 0;box-shadow:3px 0 10px rgba(0,0,0,.18);cursor:pointer;width:26px;padding:22px 0;font-size:11px;font-weight:700;color:var(--ink);writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:2px;align-items:center;justify-content:center;text-align:center;transition:left .3s cubic-bezier(.4,0,.2,1),background .15s;user-select:none;border:1px solid var(--line);border-left:none}
   .filter-tab.has-filter{background:var(--accent);color:#fff;border-color:var(--accent)}
   .filter-tab.panel-open{left:min(320px,92vw)}
   .side-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:610;opacity:0;transition:opacity .3s}
-  .side-overlay.show{opacity:1}
+  .side-overlay.show{display:block;opacity:1}
   @media(min-width:861px){
-    .layout{
-      position:sticky;
-      top:var(--tb-h,120px);
-      height:calc(100vh - var(--tb-h,120px));
-      overflow:hidden;
-      align-items:stretch;
-      margin-bottom:0;
-      z-index:10;
-      transition:top .28s cubic-bezier(.4,0,.2,1),height .28s cubic-bezier(.4,0,.2,1);
-    }
-    .side{height:100%;position:static!important;max-height:none;border-radius:10px 10px 0 0}
-    .layout>main{height:100%;overflow-y:auto;padding-bottom:90px}
+    /* 桌面版篩選板改為抽屜（同手機版），主內容占滿寬度；預留底部空間避免浮動列遮住內容 */
+    .layout>main{padding-bottom:90px}
   }
   @media(max-width:860px){
     /* === Dialog 全螢幕 === */
@@ -4470,13 +4461,13 @@ renderToolbar();
     bar.classList.remove('tb-floating');
   }
   bar.addEventListener('click',()=>collapsed?tbShow():tbHide());
-  // 手機預設收合
-  if(isMobile)requestAnimationFrame(()=>requestAnimationFrame(tbHide));
+  // 桌面與手機一致：載入時預設收合
+  requestAnimationFrame(()=>requestAnimationFrame(tbHide));
   window.addEventListener('scroll',function(){
     const y=window.scrollY;
     if(y>80&&y>lastY)tbHide();
-    // 手機向上滑回頂時自動展開
-    if(isMobile&&y<10)tbShow();
+    // 向上滑回頂端時自動展開（桌面與手機一致）
+    if(y<10)tbShow();
     lastY=y;
   },{passive:true});
   if(!isMobile)document.addEventListener('mousemove',function(e){
@@ -5130,15 +5121,8 @@ function ibLockSubmit(){
 <script>
 (function(){
   function updateSideSticky(){
-    var tbEl=document.querySelector('.toolbar-outer');
-    var layout=document.querySelector('.layout');
-    if(!tbEl||!layout||window.innerWidth<=860) return;
-    var tbStyleTop=parseFloat(tbEl.style.top||'0');
-    var collapsed=tbStyleTop<-1;
-    var h=collapsed?0:(tbEl.offsetHeight+8);
-    document.documentElement.style.setProperty('--tb-h',h+'px');
-    layout.style.top=h+'px';
-    layout.style.height='calc(100vh - '+h+'px)';
+    // 桌面版已改用抽屜式篩選板（同手機），不再有固定側欄的 sticky 版面，故停用此邏輯
+    return;
   }
   (function(){
     var tbEl=document.querySelector('.toolbar-outer');
