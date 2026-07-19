@@ -63,6 +63,15 @@
   /* 編輯模式：全部展開，方便跨列拖曳 */
   #tbWrap.tb-edit-all>.tb-row{display:flex!important}
   #tbWrap.tb-edit-all .tb-tabs{opacity:.45;pointer-events:none}
+  /* 量測用：暫時展開全部列以取得按鈕自然寬度（同步執行、不會被畫出來） */
+  #tbWrap.tb-measuring>.tb-row{display:flex!important}
+  /* ===== 篩選面板分頁 ===== */
+  .ft-tabs{display:flex;gap:4px;margin:12px 0 12px;border-bottom:2px solid var(--line)}
+  .ft-tab{flex:1;text-align:center;font-family:inherit;font-size:12px;font-weight:700;padding:6px 3px 7px;border:1px solid var(--line);border-bottom:none;background:#f1e9db;color:var(--muted);border-radius:8px 8px 0 0;cursor:pointer;margin-bottom:-2px;transition:.15s;white-space:nowrap;user-select:none}
+  .ft-tab:hover{background:#ece2d0;color:var(--ink)}
+  .ft-tab.active{background:var(--card);color:var(--red);box-shadow:0 -3px 0 var(--red) inset}
+  .ft-panel{display:none}
+  .ft-panel.ft-active{display:block}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
   .tb-item.dragging{opacity:.25;pointer-events:none}
   .tb-row.drag-over{background:rgba(184,134,11,.09)}
@@ -374,8 +383,7 @@
       <div class="tb-row" data-row="0"></div>
       <div class="tb-row" data-row="1"></div>
       <div class="tb-row" data-row="2"></div>
-      <div class="tb-row" data-row="3"></div>
-      <div class="tb-row tb-row-stat" data-row="4"></div>
+      <div class="tb-row tb-row-stat" data-row="3"></div>
     </div>
     <div id="tbCollapseBar">▲ 收起工具列</div>
   </div>
@@ -385,27 +393,37 @@
       <button class="side-close" onclick="closeFilterDrawer()" title="關閉篩選">×</button>
       <h2>篩選條件 <button class="btn sm" onclick="resetFilters()">清除</button></h2>
       <div class="filt"><label>關鍵字（題目／摘要／知識點）</label><input type="search" id="fSearch" oninput="renderDebounced()"></div>
-      <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="onFilterSchoolLevel()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
-      <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option><option>學測</option></select></div>
-      <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
-      <div class="grid2">
-        <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
-        <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
+      <div class="ft-tabs">
+        <div class="ft-tab active" data-ft="0" onclick="setFilterTab(0)">考卷來源</div>
+        <div class="ft-tab" data-ft="1" onclick="setFilterTab(1)">章節分類</div>
+        <div class="ft-tab" data-ft="2" onclick="setFilterTab(2)">其他</div>
       </div>
-      <div class="filt"><label>年級</label><select id="fGrade" onchange="onFilterGrade()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
-      <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
-      <div style="border-top:1px solid var(--line);margin:8px 0 10px"></div>
-      <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option><option>物理</option><option>化學</option></select></div>
-      <div class="filt"><label>冊數</label><select id="fBook" onchange="onFilterBook()"><option value="">全部</option></select></div>
-      <div class="filt"><label>大單元</label><select id="fUnit" onchange="onFilterUnit()"><option value="">全部</option></select></div>
-      <div class="filt"><label>子單元</label><select id="fSub" onchange="onFilterSub()"><option value="">全部</option></select></div>
-      <div class="filt"><label>知識點</label><select id="fKp" onchange="render()"><option value="">全部</option></select></div>
-      <div class="grid2">
-        <div class="filt"><label>題型</label><select id="fType" onchange="render()"><option value="">全部</option></select></div>
-        <div class="filt"><label>難度</label><select id="fDiff" onchange="render()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select></div>
+      <div class="ft-panel ft-active" data-ft="0">
+        <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="onFilterSchoolLevel()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
+        <div class="filt"><label>考試種類</label><select id="fExamType" onchange="onFilterExamType()"><option value="">全部</option><option>段考</option><option>模擬考</option><option>會考</option><option>學測</option></select></div>
+        <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
+        <div class="grid2">
+          <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
+          <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
+        </div>
+        <div class="filt"><label>年級</label><select id="fGrade" onchange="onFilterGrade()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
+        <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
       </div>
-      <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
-      <div class="filt"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
+      <div class="ft-panel" data-ft="1">
+        <div class="filt"><label>領域</label><select id="fField" onchange="onFilterField()"><option value="">全部</option><option>生物</option><option>理化</option><option>地科</option><option>物理</option><option>化學</option></select></div>
+        <div class="filt"><label>冊數</label><select id="fBook" onchange="onFilterBook()"><option value="">全部</option></select></div>
+        <div class="filt"><label>大單元</label><select id="fUnit" onchange="onFilterUnit()"><option value="">全部</option></select></div>
+        <div class="filt"><label>子單元</label><select id="fSub" onchange="onFilterSub()"><option value="">全部</option></select></div>
+        <div class="filt"><label>知識點</label><select id="fKp" onchange="render()"><option value="">全部</option></select></div>
+      </div>
+      <div class="ft-panel" data-ft="2">
+        <div class="grid2">
+          <div class="filt"><label>題型</label><select id="fType" onchange="render()"><option value="">全部</option></select></div>
+          <div class="filt"><label>難度</label><select id="fDiff" onchange="render()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select></div>
+        </div>
+        <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
+      </div>
+      <div class="filt" style="border-top:1px solid var(--line);margin-top:10px;padding-top:12px"><label class="chk"><input type="checkbox" id="fFlag" onchange="render()"> 只看待確認(Y)</label></div>
     </aside>
     <main>
       <div id="pinBanner" style="display:none;align-items:center;gap:10px;background:#fff8e6;border:1px solid var(--phy);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;font-family:inherit">
@@ -434,7 +452,7 @@
 <dialog id="importDlg">
   <div class="dlg-head">匯入題目 (CSV / Excel)<button class="x" onclick="importDlg.close()">×</button></div>
   <div class="dlg-body">
-    <p>20 欄順序（建議直接用「📋 AI轉檔指令」產生）：<br>
+    <p>20 欄順序（建議直接用「轉檔指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
@@ -554,14 +572,6 @@
 </dialog>
 
 <!-- 章節清單管理 -->
-<dialog id="kpDlg">
-  <div class="dlg-head">章節骨架（翰林版）<button class="x" onclick="kpDlg.close()">×</button></div>
-  <div class="dlg-body">
-    <p>受控的章節骨架，每行格式：<span class="kbd">冊數|冊名|領域|大單元|子單元</span>。可自由增刪以符合你的實際課本。</p>
-    <textarea id="kpArea" style="min-height:340px"></textarea>
-  </div>
-  <div class="dlg-foot"><button class="btn" onclick="kpDlg.close()">取消</button><button class="btn" onclick="resetKpDefault()">回復預設</button><button class="btn primary" onclick="saveKp()">儲存</button></div>
-</dialog>
 
 <!-- 批次貼圖 -->
 <dialog id="batchImgDlg">
@@ -659,11 +669,6 @@
 </dialog>
 
 <!-- 知識點分析報表 -->
-<dialog id="reportDlg">
-  <div class="dlg-head">知識點覆蓋分析<button class="x" onclick="reportDlg.close()">×</button></div>
-  <div class="dlg-body" id="reportBody"></div>
-  <div class="dlg-foot"><button class="btn" onclick="reportDlg.close()">關閉</button></div>
-</dialog>
 
 <!-- 考卷預覽 -->
 <div id="paperView" class="paperview">
@@ -2489,13 +2494,6 @@ function renderBellList(items){
   }).join('');
 }
 
-/* ===== 章節清單管理 ===== */
-function openKpManager(){kpArea.value=SYL_RAW;kpDlg.showModal()}
-async function saveKp(){if(!requireCloud())return;SYL_RAW=kpArea.value;SYL=parseSyl(SYL_RAW);
-  const {error}=await sb.from('syllabus_doc').upsert({id:1,content:SYL_RAW});
-  if(error){alert('儲存失敗：'+error.message);return}
-  kpDlg.close();buildFilters();alert('章節骨架已更新並同步雲端（共 '+SYL.length+' 個子單元）')}
-function resetKpDefault(){if(confirm('回復成預設翰林版骨架？'))kpArea.value=HANLIN_SYLLABUS}
 
 /* ===== 篩選 ===== */
 function uniq(field){return [...new Set(DB.map(x=>x[field]).filter(Boolean))].sort()}
@@ -2799,7 +2797,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
     const pbt=document.getElementById('pinBannerText');
     if(pbt)pbt.textContent=_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）';
   }
-  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「AI轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
+  if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
   renderPage(list,shown,0);
   updateExamProgressCard(shown);
@@ -3057,23 +3055,6 @@ function showPaperPreview(){if(!PICKS.size)return;
   _rebuildLastPaperHTML();}
 function closePaper(){document.getElementById('paperView').classList.remove('show')}
 function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
-
-/* ===== 知識點分析報表 ===== */
-function openReport(){
-  const subCount={};SYL.forEach(s=>subCount[s.book+' '+s.unit+' '+s.sub]=0);
-  DB.forEach(it=>{const key=it.book+' '+it.unit+' '+it.sub;if(key in subCount)subCount[key]++;else subCount[key]=(subCount[key]||0)+1});
-  const typeCount={};QTYPES.forEach(t=>typeCount[t.code]=0);DB.forEach(it=>{if(it.type)typeCount[it.type]=(typeCount[it.type]||0)+1});
-  const diffCount={'簡單':0,'中等':0,'困難':0,'極難':0,'未評':0};DB.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl||'未評';diffCount[l]++});
-  const zero=Object.entries(subCount).filter(([k,v])=>v===0).map(([k])=>k);
-  const max=Math.max(1,...Object.values(typeCount));
-  let html=`<p>題庫共 <b>${DB.length}</b> 題。以下統計幫你找出缺口與分布。</p>`;
-  html+=`<div class="sectionhead">難度分布</div><table class="report"><tr><th>難度</th><th>題數</th></tr>`+
-    Object.entries(diffCount).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('')+`</table>`;
-  html+=`<div class="sectionhead">題型分布</div><table class="report"><tr><th>題型</th><th>題數</th><th>分布</th></tr>`+
-    QTYPES.map(t=>`<tr><td>${t.code} ${t.name}</td><td>${typeCount[t.code]||0}</td><td><div class="statbar" style="width:${(typeCount[t.code]||0)/max*100}%"></div></td></tr>`).join('')+`</table>`;
-  html+=`<div class="sectionhead">尚無題目的子單元（缺口，共 ${zero.length} 個）</div>`;
-  html+=zero.length?`<div style="font-family:inherit;font-size:12px;line-height:1.9">${zero.map(z=>`<div>· ${esc(z)}</div>`).join('')}</div>`:'<p>太棒了，所有子單元都有題目！</p>';
-  reportBody.innerHTML=html;reportDlg.showModal()}
 
 /* ===== 備份/還原 ===== */
 function exportJSON(){
@@ -4749,36 +4730,33 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
-  import:  ()=>`<button class="btn primary" onclick="openImport()">＋ 匯入題目</button>`,
-  solImport: ()=>`<button class="btn" onclick="openSolImport()">📥 詳解匯入</button>`,
+  import:  ()=>`<button class="btn" onclick="openImport()">匯入題目</button>`,
+  solImport: ()=>`<button class="btn" onclick="openSolImport()">詳解匯入</button>`,
   add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
-  reload:  ()=>`<button class="btn" onclick="reloadCloud()">🔄 重新整理</button>`,
-  backup:  ()=>`<button class="btn" onclick="exportJSON()">⬇ 備份</button>`,
-  restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">⬆ 匯入備份</button>`,
-  batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">🖼 批次貼圖</button>`,
-  claude:  ()=>`<button class="btn gold sm" style="width:100%" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">📋 AI 轉檔指令</button>`,
-  sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">🤖 系統文件（給Claude）</button>`,
-  report:  ()=>`<button class="btn" onclick="openReport()">📊 知識點分析</button>`,
-  kp:      ()=>`<button class="btn" onclick="openKpManager()">🏷 章節清單</button>`,
-  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">📋 共編進度表</a>`,
-  guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">📖 使用說明</a>`,
-  raw:     ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><a class="btn green" href="raw.html" style="text-decoration:none">📄 raw考卷前處理</a><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
-  selFilt: ()=>`<button class="btn sm" onclick="selectFiltered()">☑ 全選篩選結果</button>`,
-  selAll:  ()=>`<button class="btn sm" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">☑ 全選全部</button>`,
-  batchProvider: ()=>`<select id="batchProvider" style="font-size:11px;padding:2px 6px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;width:72px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel');_toggleBatchOllamaSel(this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama</option></select>`,
-  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
-  batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
-  batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:110px;max-width:110px" onchange="saveOllamaModel(this.value)"></select>`,
-  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
-  solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
+  reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
+  backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
+  restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
+  batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button>`,
+  claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
+  sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
+  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
+  guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
+  raw:     ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><a class="btn" href="raw.html" style="text-decoration:none;width:100%">raw考卷前處理</a><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
+  selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
+  selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
+  batchProvider: ()=>`<select id="batchProvider" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;width:100px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel');_toggleBatchOllamaSel(this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama</option></select>`,
+  batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:130px;max-width:130px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
+  batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:120px;max-width:120px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
+  batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:150px;max-width:150px" onchange="saveOllamaModel(this.value)"></select>`,
+  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="batchGenerateSol()">批次生成詳解</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
+  solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='16';
-const TB_ROW_LABELS=['資料管理','功能工具','考卷處理','詳解工具','選題操作'];
+const TB_VER='17';
+const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','batchImg','add','reload','backup','restore'],
-  ['claude','sysDoc','report','kp','guide'],
-  ['raw','progress'],
+  ['claude','sysDoc','guide','raw','progress'],
   ['batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel','solImport','solPromptBtn'],
   ['selFilt','selAll','stat'],
 ];
@@ -4836,7 +4814,7 @@ function applyMobileToolbar(){
 function renderToolbar(){
   let layout=JSON.parse(localStorage.getItem('tbLayout')||'null');
   // 版本或列數不符時自動重置
-  if(!layout||layout.length!==5||localStorage.getItem('tbLayoutVer')!==TB_VER){
+  if(!layout||layout.length!==4||localStorage.getItem('tbLayoutVer')!==TB_VER){
     layout=TB_DEFAULT;localStorage.setItem('tbLayoutVer',TB_VER);localStorage.removeItem('tbLayout');
   }
   // 確保 TB_BUTTONS 裡的新 key 不被 localStorage 快取漏掉
@@ -4877,7 +4855,7 @@ function buildTbTabs(layout){
   tabs=document.createElement('div');
   tabs.className='tb-tabs';
   let active=parseInt(localStorage.getItem('tbActiveTab')||'0',10);
-  const tabRows=[0,1,2,3].filter(ri=>layout[ri]&&layout[ri].length);
+  const tabRows=[0,1,2].filter(ri=>layout[ri]&&layout[ri].length);
   if(!tabRows.includes(active))active=tabRows.length?tabRows[0]:0;
   tabRows.forEach(ri=>{
     const t=document.createElement('div');
@@ -4905,16 +4883,25 @@ function setActiveTab(ri){
 }
 function sizeToolbar(){
   requestAnimationFrame(()=>{
-    const tb=document.getElementById('tbOuter');
-    if(!tb)return;
-    document.documentElement.style.setProperty('--tb-h',(tb.offsetHeight+8)+'px');
+    const wrap=document.getElementById('tbWrap'),tb=document.getElementById('tbOuter');
+    if(!wrap||!tb)return;
     if(window.innerWidth>860){
-      const vis=[...document.querySelectorAll('#tbWrap .tb-row.tb-active .tb-item .btn')];
-      vis.forEach(b=>b.style.width='');
-      const w=Math.max(0,...vis.map(b=>b.offsetWidth));
-      if(w>0)vis.forEach(b=>{b.style.width=w+'px';b.style.justifyContent='center';});
+      // 量測全部按鈕（含非作用中分頁）的自然寬度，統一成最寬者；同步進行不會有閃爍
+      wrap.classList.add('tb-measuring');
+      const btns=[...wrap.querySelectorAll('.tb-item .btn')];
+      btns.forEach(b=>{b.style.width='';b.style.justifyContent='center';});
+      const w=Math.max(0,...btns.map(b=>b.offsetWidth));
+      wrap.classList.remove('tb-measuring');
+      if(w>0)btns.forEach(b=>{b.style.width=w+'px';});
     }
+    document.documentElement.style.setProperty('--tb-h',(tb.offsetHeight+8)+'px');
   });
+}
+function setFilterTab(i){
+  i=+i||0;
+  document.querySelectorAll('#filterPanel .ft-tab').forEach(t=>t.classList.toggle('active',+t.dataset.ft===i));
+  document.querySelectorAll('#filterPanel .ft-panel').forEach(p=>p.classList.toggle('ft-active',+p.dataset.ft===i));
+  try{localStorage.setItem('filterTab',String(i));}catch(e){}
 }
 function setupTbDrag(){
   document.querySelectorAll('.tb-item').forEach(item=>{
@@ -4975,6 +4962,7 @@ function resetTbLayout(){
   renderToolbar();
 }
 renderToolbar();
+try{setFilterTab(+(localStorage.getItem('filterTab')||0));}catch(e){}
 
 
 ;(function(){
