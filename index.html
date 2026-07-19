@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#850103">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="茲茲題庫">
@@ -20,19 +21,21 @@
   @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+3000-303F,U+3040-30FF,U+3400-4DBF,U+4E00-9FFF,U+F900-FAFF,U+FF00-FFEF;src:local('華康中圓體(P)'),local('華康中圓體'),url('/fonts/HuaKangP.ttf') format('truetype'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
   @font-face{font-family:'HuaKangTNR';font-display:swap;unicode-range:U+0000-00FF,U+0100-024F,U+2018-201E,U+2039-203A;src:local('Times New Roman'),local('Times'),local('Georgia');}
   :root{
-    --ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;
+    --ink:#2b201c;--paper:#f7f2ea;--card:#fffefb;--line:#e2d9c8;
     --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
-    --accent:#c0392b;--muted:#6b6557;
-    --shadow:0 2px 0 #e8e2d4, 0 8px 24px -12px rgba(26,34,56,.25);
+    /* 茲茲品牌色（同人資系統）：深紅主色 + 橘/金點綴 */
+    --red:#850103;--orange:#f9a12c;--gold:#af9a6b;
+    --accent:#850103;--muted:#7a7060;
+    --shadow:0 2px 0 #ece3d4, 0 8px 24px -12px rgba(133,1,3,.18);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{overflow-x:clip}body{max-width:100vw;overflow-x:clip}
   body{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;
-    background:radial-gradient(circle at 12% 8%,rgba(31,111,92,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(52,84,180,.05),transparent 40%),var(--paper);
+    background:radial-gradient(circle at 12% 8%,rgba(133,1,3,.05),transparent 40%),radial-gradient(circle at 88% 92%,rgba(249,161,44,.06),transparent 40%),var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
-  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:24px 32px 20px;border-bottom:4px solid var(--phy);position:relative;z-index:150}
+  header{background:linear-gradient(135deg,#850103,#5e0102);color:#fdf1ea;padding:24px 32px 20px;border-bottom:4px solid var(--orange);position:relative;z-index:150}
   header h1{font-size:24px;letter-spacing:3px;font-weight:700}
-  header .sub{font-size:12px;color:#b9c2d6;margin-top:4px;letter-spacing:1px;font-family:inherit}
+  header .sub{font-size:12px;color:#f2cdb4;margin-top:4px;letter-spacing:1px;font-family:inherit}
   header .wrap{display:flex;align-items:center;gap:16px}
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
@@ -59,7 +62,7 @@
   .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
   .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
   .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .btn.green{background:var(--bio);color:#fff;border-color:var(--bio)}
+  .btn.green{background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700}
   .btn.gold{background:var(--phy);color:#fff;border-color:var(--phy)}
   .btn.sm{padding:4px 11px;font-size:12px}
   .toolbar-outer .btn,.toolbar-outer .btn.sm{height:30px;padding:0 12px;box-sizing:border-box;white-space:nowrap;align-items:center}
@@ -289,8 +292,8 @@
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
   .bell-badge{display:none;position:absolute;top:-2px;right:-2px;background:#e53935;color:#fff;font-size:10px;font-weight:700;border-radius:50%;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 3px;font-family:inherit;pointer-events:none}
   .bell-panel{display:none;position:fixed;width:360px;max-height:440px;background:#fff;border-radius:12px;box-shadow:0 6px 28px rgba(0,0,0,.22);z-index:9999;overflow:hidden;border:1px solid #e0e0e0}
-  .bell-panel-hdr{padding:12px 16px;background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;font-family:inherit;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
-  .bell-panel-hdr button{background:none;border:none;color:#b9c2d6;cursor:pointer;font-size:20px;line-height:1}
+  .bell-panel-hdr{padding:12px 16px;background:linear-gradient(135deg,#850103,#5e0102);color:#fdf1ea;font-family:inherit;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .bell-panel-hdr button{background:none;border:none;color:#f2cdb4;cursor:pointer;font-size:20px;line-height:1}
   .bell-list{overflow-y:auto;max-height:380px}
   .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:inherit}
   .bell-item:last-child{border-bottom:none}
@@ -298,11 +301,11 @@
   .bell-item-meta{font-size:11px;color:#888;margin-bottom:4px}
   .bell-item-reason{font-size:12px;color:#c0392b;background:#fff5f5;border-left:3px solid #e74c3c;padding:4px 8px;border-radius:0 5px 5px 0;margin:4px 0;line-height:1.5}
   .bell-item-time{font-size:11px;color:#999;margin-bottom:6px}
-  .bell-float{display:none;position:fixed;top:14px;right:16px;z-index:400;background:linear-gradient(135deg,#13241f,#1a2238);border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);align-items:center;justify-content:center}
+  .bell-float{display:none;position:fixed;top:14px;right:16px;z-index:400;background:linear-gradient(135deg,#850103,#5e0102);border:none;border-radius:50%;width:48px;height:48px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.28);align-items:center;justify-content:center}
   .bell-float .bell-btn{padding:0;font-size:24px}
   .bell-float.show{display:flex}
   /* 題庫入口鎖 */
-  .ib-lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#13241f 0%,#1a1a2e 60%,#2d1b1b 100%);display:flex;align-items:center;justify-content:center}
+  .ib-lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#850103 0%,#5e0102 55%,#3a0808 100%);display:flex;align-items:center;justify-content:center}
   .ib-lock-box{text-align:center;color:#f4f1ea;padding:36px 28px;max-width:320px;width:90%}
   .ib-lock-logo{font-size:56px;margin-bottom:12px}
   .ib-lock-title{font-size:20px;font-weight:800;letter-spacing:2px;margin-bottom:4px}
@@ -311,8 +314,8 @@
   .ib-lock-input::placeholder{color:rgba(244,241,234,.3);letter-spacing:1px}
   .ib-lock-input:focus{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.12)}
   .ib-lock-err{font-size:12px;color:#e74c3c;margin-bottom:12px;min-height:18px}
-  .ib-lock-btn{width:100%;padding:14px;border-radius:12px;border:none;background:rgba(184,134,11,.7);color:#f4f1ea;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s}
-  .ib-lock-btn:hover{background:rgba(184,134,11,.9)}
+  .ib-lock-btn{width:100%;padding:14px;border-radius:12px;border:none;background:var(--orange);color:#5e0102;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;transition:background .2s}
+  .ib-lock-btn:hover{background:#ffb347}
   /* ===== 批次貼圖 ===== */
   #batchImgDlg{max-width:740px;width:96vw}
   #batchImgDlg .dlg-body{max-height:76vh;overflow-y:auto;padding:0}
@@ -4753,7 +4756,7 @@ const TB_BUTTONS={
   batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
   batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:80px;max-width:80px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
   batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:11px;padding:2px 4px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:110px;max-width:110px" onchange="saveOllamaModel(this.value)"></select>`,
-  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:#2563eb;color:#fff;border-color:#2563eb" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
+  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px"><button class="btn sm" style="background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700" onclick="batchGenerateSol()">✨ 批次生成詳解</button><span style="font-size:9px;color:#dc2626;font-family:inherit;white-space:nowrap">🚧 開發中，請勿使用</span></div>`,
   solPromptBtn: ()=>`<button class="btn sm" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">📋 詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
@@ -4974,7 +4977,7 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
 <!-- 指令顯示區（隱藏） -->
 <div id="promptBox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;padding:20px;box-sizing:border-box">
   <div style="background:#fff;border-radius:12px;height:100%;display:flex;flex-direction:column;overflow:hidden">
-    <div style="background:#1a2238;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+    <div style="background:#850103;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
       <span style="font-size:14px;font-weight:700">📋 AI 指令（Claude / ChatGPT / Gemini）</span>
       <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
     </div>
@@ -4991,13 +4994,13 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
 
 <div id="solPromptOverlay" onclick="closeSolPrompt()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998"></div>
 <div id="solPromptBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.35);z-index:9999;width:min(92vw,680px);max-height:82vh;flex-direction:column;overflow:hidden">
-  <div style="background:#1a2238;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+  <div style="background:#850103;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
     <span style="font-size:14px;font-weight:700">📋 詳解製作指令（給主管的AI）</span>
     <button onclick="closeSolPrompt()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
   </div>
   <textarea id="solPromptTA" readonly style="flex:1;margin:10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none;min-height:360px"></textarea>
   <div style="padding:0 10px 12px;display:flex;gap:8px;flex-shrink:0">
-    <button onclick="var t=document.getElementById('solPromptTA');t.select();t.setSelectionRange(0,99999);try{document.execCommand('copy');this.textContent='✓ 已複製！';}catch(e){}" style="flex:1;padding:10px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
+    <button onclick="var t=document.getElementById('solPromptTA');t.select();t.setSelectionRange(0,99999);try{document.execCommand('copy');this.textContent='✓ 已複製！';}catch(e){}" style="flex:1;padding:10px;background:#850103;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
     <button onclick="closeSolPrompt()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer">關閉</button>
   </div>
 </div>
