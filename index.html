@@ -50,6 +50,19 @@
   }
   .tb-row{display:flex;gap:7px;align-items:flex-start;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
+  /* ===== 工具列分頁（tab）===== */
+  .tb-tabs{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;border-bottom:2px solid var(--line)}
+  .tb-tab{font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.5px;padding:7px 16px 8px;border:1px solid var(--line);border-bottom:none;background:#f1e9db;color:var(--muted);border-radius:9px 9px 0 0;cursor:pointer;margin-bottom:-2px;transition:.15s;white-space:nowrap;user-select:none}
+  .tb-tab:hover{background:#ece2d0;color:var(--ink)}
+  .tb-tab.active{background:var(--card);color:var(--red);border-color:var(--line);box-shadow:0 -3px 0 var(--red) inset}
+  /* 分頁模式：只顯示作用中的動作列，統計列（第4列）永遠顯示 */
+  #tbWrap.tabs-on>.tb-row:not(.tb-active):not(.tb-row-stat){display:none}
+  #tbWrap.tabs-on>.tb-row{margin-top:0;padding-top:2px;border-top:none}
+  #tbWrap.tabs-on>.tb-row-stat{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  #tbWrap.tabs-on .tb-row-label{display:none}
+  /* 編輯模式：全部展開，方便跨列拖曳 */
+  #tbWrap.tb-edit-all>.tb-row{display:flex!important}
+  #tbWrap.tb-edit-all .tb-tabs{opacity:.45;pointer-events:none}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
   .tb-item.dragging{opacity:.25;pointer-events:none}
   .tb-row.drag-over{background:rgba(184,134,11,.09)}
@@ -4761,7 +4774,7 @@ const TB_BUTTONS={
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_VER='16';
-const TB_ROW_LABELS=['資料管理','功能工具','','詳解工具','選題操作'];
+const TB_ROW_LABELS=['資料管理','功能工具','考卷處理','詳解工具','選題操作'];
 const TB_DEFAULT=[
   ['import','batchImg','add','reload','backup','restore'],
   ['claude','sysDoc','report','kp','guide'],
@@ -4851,20 +4864,55 @@ function renderToolbar(){
       scroll.appendChild(item);
     });
   });
+  buildTbTabs(layout);
   setupTbDrag();
   const bp=document.getElementById('batchProvider');
   if(bp){bp.value=localStorage.getItem('batchProvider')||AI_CFG.provider||'gemini';_toggleGeminiModelSel(bp.value,'batchGeminiModel');_toggleBatchOllamaSel(bp.value);}
+  sizeToolbar();
+}
+function buildTbTabs(layout){
+  const wrap=document.getElementById('tbWrap');
+  let tabs=wrap.querySelector('.tb-tabs');
+  if(tabs)tabs.remove();
+  tabs=document.createElement('div');
+  tabs.className='tb-tabs';
+  let active=parseInt(localStorage.getItem('tbActiveTab')||'0',10);
+  const tabRows=[0,1,2,3].filter(ri=>layout[ri]&&layout[ri].length);
+  if(!tabRows.includes(active))active=tabRows.length?tabRows[0]:0;
+  tabRows.forEach(ri=>{
+    const t=document.createElement('div');
+    t.className='tb-tab'+(ri===active?' active':'');
+    t.textContent=TB_ROW_LABELS[ri]||('工具'+ri);
+    t.dataset.row=ri;
+    t.onclick=()=>setActiveTab(ri);
+    tabs.appendChild(t);
+  });
+  wrap.insertBefore(tabs,wrap.firstChild);
+  wrap.classList.toggle('tabs-on',!tbEditing);
+  wrap.classList.toggle('tb-edit-all',tbEditing);
+  wrap.querySelectorAll(':scope>.tb-row').forEach(r=>r.classList.remove('tb-active'));
+  const ar=wrap.querySelector('.tb-row[data-row="'+active+'"]');
+  if(ar)ar.classList.add('tb-active');
+}
+function setActiveTab(ri){
+  localStorage.setItem('tbActiveTab',ri);
+  const wrap=document.getElementById('tbWrap');
+  wrap.querySelectorAll('.tb-tab').forEach(t=>t.classList.toggle('active',+t.dataset.row===ri));
+  wrap.querySelectorAll(':scope>.tb-row').forEach(r=>r.classList.remove('tb-active'));
+  const row=wrap.querySelector('.tb-row[data-row="'+ri+'"]');
+  if(row)row.classList.add('tb-active');
+  sizeToolbar();
+}
+function sizeToolbar(){
   requestAnimationFrame(()=>{
-    const h=document.getElementById('tbOuter').offsetHeight;
-    document.documentElement.style.setProperty('--tb-h',(h+8)+'px');
-    // 桌機等寬對齊；手機由 CSS grid 控制
+    const tb=document.getElementById('tbOuter');
+    if(!tb)return;
+    document.documentElement.style.setProperty('--tb-h',(tb.offsetHeight+8)+'px');
     if(window.innerWidth>860){
-      const btns=[...document.querySelectorAll('.toolbar-outer .tb-item .btn')];
-      btns.forEach(b=>b.style.width='');
-      const maxW=Math.max(...btns.map(b=>b.offsetWidth));
-      if(maxW>0)btns.forEach(b=>{b.style.width=maxW+'px';b.style.justifyContent='center';});
-    }else{
-      applyMobileToolbar();
+      const vis=[...document.querySelectorAll('#tbWrap .tb-row.tb-active .tb-item .btn')];
+      vis.forEach(b=>b.style.width='');
+      const w=Math.max(0,...vis.map(b=>b.offsetWidth));
+      if(w>0)vis.forEach(b=>{b.style.width=w+'px';b.style.justifyContent='center';});
     }
   });
 }
@@ -4915,7 +4963,11 @@ function toggleTbEdit(){
   btn.classList.toggle('on',tbEditing);
   document.getElementById('tbResetBtn').style.display=tbEditing?'':'none';
   document.getElementById('tbOuter').classList.toggle('editing',tbEditing);
+  const wrap=document.getElementById('tbWrap');
+  wrap.classList.toggle('tabs-on',!tbEditing);   // 編輯時展開全部列
+  wrap.classList.toggle('tb-edit-all',tbEditing);
   document.querySelectorAll('.tb-item').forEach(el=>el.setAttribute('draggable',tbEditing?'true':'false'));
+  sizeToolbar();
 }
 function resetTbLayout(){
   if(!confirm('重置工具列為預設排列？'))return;
