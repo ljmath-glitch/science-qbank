@@ -2513,12 +2513,23 @@ function uniqSchoolForLevel(level){
 }
 function allKps(){return [...new Set(DB.flatMap(x=>(x.kp||'').split(/[、，,]/).map(s=>s.trim()).filter(Boolean)))].sort()}
 function fillSelect(el,vals,keep){const cur=keep?el.value:'';el.innerHTML='<option value="">全部</option>'+vals.map(v=>`<option>${esc(v)}</option>`).join('');if(vals.includes(cur))el.value=cur;else el.value='';}
+// 題型篩選：合併代號/代號+中文/純中文為同一代號，統一顯示「代號 中文」
+function fillTypeFilter(){
+  const cur=fType.value;
+  const present=new Set();
+  DB.forEach(x=>{const c=normType(x.type);if(c&&c!=='passage')present.add(c);});
+  const opts=['<option value="">全部</option>'];
+  QTYPES.forEach(t=>{if(present.has(t.code)){opts.push(`<option value="${t.code}">${esc(t.code+' '+t.name)}</option>`);present.delete(t.code);}});
+  [...present].sort().forEach(v=>opts.push(`<option value="${esc(v)}">${esc(v)}</option>`));
+  fType.innerHTML=opts.join('');
+  fType.value=[...fType.options].some(o=>o.value===cur)?cur:'';
+}
 function buildFilters(){
   var _allowedBk=allowedBooksForFilter();
   var _bkVals=getSylVals('book');
   if(_allowedBk)_bkVals=_bkVals.filter(function(b){return _allowedBk.includes(b);});
   setOpts(fBook,_bkVals);setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
-  fillSelect(fKp,allKps());fillSelect(fType,[...new Set(DB.map(x=>x.type).filter(Boolean))].sort());
+  fillSelect(fKp,allKps());fillTypeFilter();
   fillSelect(fYear,[...new Set(DB.map(x=>parseSylYear(x.year)).filter(Boolean))].sort());
   fillSelect(fSchool,uniqSchoolForLevel(fSchoolLevel?fSchoolLevel.value:''),true);fillSelect(fChart,uniq('chart'));}
 function buildFiltersKeep(){
@@ -2757,7 +2768,15 @@ async function _pvResizeEnd(){
   im.width=newW;im.x=newX;
   await _pvSave(type,id);
 }
-function typeName(code){const t=QTYPES.find(x=>x.code===code);return t?code+' '+t.name:code}
+// 把題型正規化成代號：代號、代號+中文、純中文都對應到同一代號
+function normType(t){
+  if(t==null)return '';t=(''+t).trim();
+  if(!t||t==='passage')return t;
+  for(const x of QTYPES){if(t===x.code||t===x.name||t===x.code+' '+x.name||t===x.code+x.name)return x.code;}
+  const m=t.match(/^([A-E][1-3]|填|計)(?=\s|$|[一-鿿])/);
+  return m?m[1]:t;
+}
+function typeName(code){const t=QTYPES.find(x=>x.code===normType(code));return t?t.code+' '+t.name:code}
 function matches(it){
   if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
   const s=fSearch.value.trim();
@@ -2767,7 +2786,7 @@ function matches(it){
   if(fUnit.value&&it.unit!==fUnit.value)return false;
   if(fSub.value&&it.sub!==fSub.value)return false;
   if(fKp.value&&!(it.kp||'').includes(fKp.value))return false;
-  if(fType.value&&it.type!==fType.value)return false;
+  if(fType.value&&normType(it.type)!==fType.value)return false;
   if(fDiff.value&&(it._diff||calcDiff(it.step,it.mem,it.con)).lvl!==fDiff.value)return false;
   if(fYear.value&&(it._sylYear!==undefined?it._sylYear:parseSylYear(it.year))!==fYear.value)return false;
   if(fSem.value&&(it._sylSem!==undefined?it._sylSem:parseSylSem(it.year))!==fSem.value)return false;
