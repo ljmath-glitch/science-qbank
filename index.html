@@ -40,7 +40,7 @@
   header .logo{height:44px;width:auto;flex-shrink:0;filter:drop-shadow(0 1px 3px rgba(0,0,0,.4))}
   header .hdr-text{flex:1}
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
-  .toolbar-outer{margin:20px 0;padding:10px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100;transition:top .28s cubic-bezier(.4,0,.2,1)}
+  .toolbar-outer{margin:13px 0;padding:9px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);position:sticky;top:0;z-index:100;transition:top .28s cubic-bezier(.4,0,.2,1)}
   #tbCollapseBar{margin-top:8px;border-top:1px solid var(--line);padding:3px 0;text-align:center;cursor:pointer;font-size:11px;color:var(--muted);border-radius:0 0 10px 10px;transition:background .15s;user-select:none}
   #tbCollapseBar:hover{background:rgba(0,0,0,.04)}
   #tbCollapseBar.tb-floating{position:fixed;top:0;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:3px 24px;box-shadow:0 3px 8px rgba(0,0,0,.12);z-index:200;margin:0}
@@ -51,7 +51,7 @@
   .tb-row{display:flex;gap:7px;align-items:flex-start;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
   .tb-row+.tb-row{margin-top:6px;padding-top:8px;border-top:1px dashed var(--line)}
   /* ===== 工具列分頁（tab）===== */
-  .tb-tabs{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;border-bottom:2px solid var(--line)}
+  .tb-tabs{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px;border-bottom:2px solid var(--line)}
   .tb-tab{font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.5px;padding:7px 16px 8px;border:1px solid var(--line);border-bottom:none;background:#f1e9db;color:var(--muted);border-radius:9px 9px 0 0;cursor:pointer;margin-bottom:-2px;transition:.15s;white-space:nowrap;user-select:none}
   .tb-tab:hover{background:#ece2d0;color:var(--ink)}
   .tb-tab.active{background:var(--card);color:var(--red);border-color:var(--line);box-shadow:0 -3px 0 var(--red) inset}
@@ -164,7 +164,8 @@
   .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:600;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
-  .float-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .float-btns{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
+  .l-short{display:none}
   .kbd{font-family:ui-monospace,monospace;background:#2a3550;color:#fff;padding:1px 6px;border-radius:4px;font-size:12px}
   .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:inherit;cursor:pointer}
   .typegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:5px;font-family:inherit}
@@ -252,7 +253,10 @@
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
     /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
-    .toolbar-outer{padding:0 0 6px!important}
+    .toolbar-outer{margin-top:10px;margin-bottom:10px;padding:0 0 5px!important}
+    /* 手機分頁列縮小 */
+    #tbWrap .tb-tabs{gap:4px;margin:5px 8px 6px;padding:0}
+    #tbWrap .tb-tab{font-size:12px;padding:6px 12px 7px;letter-spacing:0}
     /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     #tbEditBtn,#tbResetBtn{display:none!important}
@@ -312,14 +316,15 @@
     .tb-more-sol-row>.tb-item{flex:1;min-width:0}
     .tb-more-sol-row .btn{display:flex!important;width:100%!important;height:36px!important;justify-content:center!important;align-items:center!important;font-size:11px!important;padding:0 2px!important;white-space:normal!important;line-height:1.1!important;text-align:center!important;box-sizing:border-box!important}
 
-    /* === 底部浮動列 === */
-    body{padding-bottom:130px}
-    #examProgressCard{margin-bottom:130px}
-    .float{flex-direction:column;padding:7px 12px;gap:5px;align-items:stretch}
+    /* === 底部浮動列（單排緊湊） === */
+    body{padding-bottom:92px}
+    #examProgressCard{margin-bottom:92px}
+    .float{flex-direction:column;padding:6px 10px 8px;gap:4px;align-items:stretch}
     .float .spacer{display:none}
-    .float .n{text-align:center;font-size:12px;padding:0}
-    .float-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%}
-    .float-btns .btn{width:100%!important;height:40px;padding:0 6px;font-size:12px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:9px}
+    .float .n{text-align:center;font-size:11.5px;padding:0}.float .n b{font-size:15px}
+    .float-btns{display:flex;flex-wrap:nowrap;gap:5px;width:100%}
+    .float-btns .btn{flex:1 1 0;width:auto!important;height:36px;padding:0 3px;font-size:12px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:8px}
+    .l-full{display:none}.l-short{display:inline}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -451,11 +456,11 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
-    <button class="btn" onclick="autoMix()">依比例自動選</button>
+    <button class="btn" onclick="autoMix()"><span class="l-full">依比例自動選</span><span class="l-short">自動選</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
-    <button class="btn" onclick="deletePickedItems()">刪除已選</button>
-    <button class="btn" onclick="openPaperDlg()">匯出考卷</button>
-    <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
+    <button class="btn" onclick="deletePickedItems()"><span class="l-full">刪除已選</span><span class="l-short">刪除</span></button>
+    <button class="btn" onclick="openPaperDlg()"><span class="l-full">匯出考卷</span><span class="l-short">匯出</span></button>
+    <button class="btn" onclick="exportPaperCSV()"><span class="l-full">選題CSV</span><span class="l-short">CSV</span></button>
   </div>
 </div>
 
