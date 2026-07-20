@@ -81,12 +81,17 @@
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
   .tb-btn-scroll{display:flex;flex-wrap:wrap;gap:7px;flex:1;align-content:flex-start;min-width:0}
-  .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 1.5px rgba(43,32,28,.05)}
-  .btn:hover{background:#fbf6ee;border-color:#d8bda6;box-shadow:0 3px 10px -4px rgba(133,1,3,.28);transform:translateY(-1px)}
-  .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(43,32,28,.12)}
-  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(133,1,3,.2)}
-  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 6px -2px rgba(133,1,3,.45)}
-  .btn.primary:hover{background:#6a0002;border-color:#6a0002;box-shadow:0 5px 14px -4px rgba(133,1,3,.5)}
+  .btn{font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.3px;padding:9px 16px;border-radius:10px;border:1px solid #e4d8c6;background:linear-gradient(180deg,#ffffff,#faf4ea);color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,color .15s,transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 2px rgba(43,32,28,.07),inset 0 1px 0 #fff}
+  .btn:hover{background:linear-gradient(180deg,#fffdfb,#fbece7);border-color:#c58f89;color:var(--red);box-shadow:0 5px 14px -5px rgba(133,1,3,.38),inset 0 1px 0 #fff;transform:translateY(-1px)}
+  .btn:active{transform:translateY(0);box-shadow:inset 0 2px 4px rgba(43,32,28,.15)}
+  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(133,1,3,.22)}
+  .btn.primary{background:linear-gradient(180deg,#960205,#6d0002);color:#fff;border-color:#5c0102;box-shadow:0 3px 10px -3px rgba(133,1,3,.55),inset 0 1px 0 rgba(255,255,255,.18)}
+  .btn.primary:hover{background:linear-gradient(180deg,#a70a0e,#7c0104);color:#fff;border-color:#5c0102;box-shadow:0 7px 18px -5px rgba(133,1,3,.6),inset 0 1px 0 rgba(255,255,255,.22);transform:translateY(-1px)}
+  .btn.gold{background:linear-gradient(180deg,#c79a3f,#a9801f);color:#fff;border-color:#94700f;box-shadow:0 3px 10px -3px rgba(175,154,107,.5),inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn.gold:hover{background:linear-gradient(180deg,#d3a94c,#b98d26);color:#fff;border-color:#94700f;transform:translateY(-1px)}
+  /* 常用主要動作：柔和強調（淺紅底＋紅字），一致而不刺眼 */
+  .btn.key{background:linear-gradient(180deg,#fdeee9,#f8dbd3);border-color:#e6b0a6;color:var(--red);font-weight:700;box-shadow:0 1px 2px rgba(133,1,3,.12),inset 0 1px 0 rgba(255,255,255,.6)}
+  .btn.key:hover{background:linear-gradient(180deg,#fef2ef,#f5cfc6);border-color:#d68f83;color:#6a0002;box-shadow:0 6px 15px -5px rgba(133,1,3,.4),inset 0 1px 0 rgba(255,255,255,.6);transform:translateY(-1px)}
   .btn.green{background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700}
   .btn.gold{background:var(--phy);color:#fff;border-color:var(--phy)}
   .btn.sm{padding:4px 11px;font-size:12px}
@@ -454,7 +459,7 @@
 
 <!-- 匯入 -->
 <dialog id="importDlg">
-  <div class="dlg-head">匯入題目 (CSV / Excel)<button class="x" onclick="importDlg.close()">×</button></div>
+  <div class="dlg-head">匯入題目 (CSV / Excel)<span style="display:inline-flex;align-items:center;gap:14px"><button onclick="importDlg.close();openAdd()" style="font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.5px;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.16);color:#fff;cursor:pointer">手動新增</button><button class="x" onclick="importDlg.close()">×</button></span></div>
   <div class="dlg-body">
     <p>20 欄順序（建議直接用「轉檔指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
@@ -4765,14 +4770,13 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
-  import:  ()=>`<button class="btn" onclick="openImport()">匯入題目</button>`,
+  import:  ()=>`<button class="btn key" onclick="openImport()">匯入題目</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">詳解匯入</button>`,
-  add:     ()=>`<button class="btn" onclick="openAdd()">手動新增</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
   batchImg: ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
-  claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
+  claude:  ()=>`<button class="btn key" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
@@ -4784,14 +4788,14 @@ const TB_BUTTONS={
   batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:120px;max-width:120px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
   batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:150px;max-width:150px" onchange="saveOllamaModel(this.value)"></select>`,
   batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="batchGenerateSol()">批次生成詳解</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
-  solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
+  solPromptBtn: ()=>`<button class="btn key" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='18';
+const TB_VER='19';
 const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作'];
 const TB_DEFAULT=[
-  ['import','add','progress','backup','restore','reload','sysDoc'],
-  ['claude','guide','raw','batchImg'],
+  ['progress','backup','restore','reload','sysDoc'],
+  ['import','claude','guide','raw','batchImg'],
   ['solPromptBtn','solImport','batchGenBtn','batchProvider','batchGeminiModel','batchOllamaPreset','batchOllamaModel'],
   ['selFilt','selAll','stat'],
 ];
