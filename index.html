@@ -273,14 +273,8 @@
     .tb-row-stat .btn{height:40px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
     .tb-row-stat .stat{width:100%;text-align:center;padding:4px 0}
 
-    /* 功能列：橫向滑動單排（精緻、省空間，右緣淡出提示可滑動） */
-    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:8px;padding:8px 14px 8px 12px;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
-    .tb-row:not(.tb-row-stat) .tb-btn-scroll::-webkit-scrollbar{display:none}
-    .tb-row:not(.tb-row-stat) .tb-item{width:auto!important;flex:0 0 auto!important;display:flex}
-    .tb-row:not(.tb-row-stat) .tb-item>div{display:inline-flex!important;flex-direction:column!important;width:auto!important;align-items:center!important;gap:1px!important}
-    .tb-row:not(.tb-row-stat) .tb-item>div>span{white-space:nowrap!important;text-align:center;font-size:8.5px!important;line-height:1.1!important}
-    .tb-row:not(.tb-row-stat) .btn,.tb-row:not(.tb-row-stat) .btn.sm{height:38px!important;padding:0 16px!important;font-size:12.5px!important;width:auto!important;white-space:nowrap!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important}
-    .tb-row:not(.tb-row-stat) select{height:38px!important;font-size:12px!important;width:auto!important;max-width:none!important;min-width:104px;box-sizing:border-box;flex:0 0 auto}
+    /* 功能列：常用 2 鍵 + 「更多」收合（精緻、省空間、不裁切） */
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:block!important;overflow:visible!important;padding:8px 12px!important;width:100%;box-sizing:border-box}
 
     /* === 統計行 V5.16 === */
     .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
@@ -291,36 +285,26 @@
     .card .tags{gap:6px;margin-bottom:11px}
     .qbody{font-size:15.5px;line-height:1.65}
 
-    /* === 手機工具列緊湊模式 === */
+    /* === 手機工具列：常用 2 鍵 + 「更多」收合 === */
     .tb-row+.tb-row{padding-top:2px}
-    .tb-btn-scroll.mobile-compact{display:flex!important;flex-direction:column!important;gap:5px!important;padding:6px 10px 8px!important}
-    .tb-compact-main{display:flex!important;gap:6px!important;align-items:stretch!important;width:100%!important}
-    /* width:0 在 iOS Safari 會蓋掉 flex:1，改用標準寫法：flex-grow+min-width */
-    .tb-compact-main>.tb-item{flex-grow:1!important;flex-shrink:1!important;flex-basis:0%!important;min-width:0!important;overflow:hidden!important}
-    /* 直接按鈕（無 div 包裝） */
-    .tb-compact-main>.tb-item>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 8px!important;box-sizing:border-box!important;text-align:center!important}
-    /* 有 div 包裝的按鈕（raw / batchGenBtn 等） */
-    .tb-compact-main>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:0!important}
-    .tb-compact-main>.tb-item>div>.btn{display:flex!important;width:100%!important;min-height:46px!important;height:auto!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:normal!important;line-height:1.25!important;padding:4px 8px!important;box-sizing:border-box!important;text-align:center!important}
-    /* 開發中警告標籤：緊湊模式下隱藏 */
-    .tb-compact-main .badge-warn,.tb-compact-main span[style*="9px"]{display:none!important}
-    /* ⋯ 按鈕：明確固定寬度，不生長不縮小 */
-    .tb-more-btn{flex:0 0 40px!important;height:46px!important;width:40px!important;padding:0!important;font-size:18px!important;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:7px!important;display:flex!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;font-weight:600}
-    .tb-more-secondary{display:none;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:5px;max-height:130px;overflow-y:auto}
+    /* 主列：兩顆常用按鈕等寬 + 更多鈕 */
+    .tb-compact-main{display:flex!important;gap:7px!important;align-items:stretch!important;width:100%!important}
+    .tb-compact-main>.tb-item{flex-grow:1!important;flex-shrink:1!important;flex-basis:0%!important;min-width:0!important;display:flex!important}
+    .tb-compact-main>.tb-item>.btn,.tb-compact-main>.tb-item>a.btn{display:flex!important;width:100%!important;height:42px!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:nowrap!important;line-height:1.2!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:1px!important}
+    .tb-compact-main>.tb-item>div>.btn,.tb-compact-main>.tb-item>div>a.btn{display:flex!important;width:100%!important;height:42px!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:nowrap!important;line-height:1.2!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>div>span{font-size:8.5px!important;line-height:1.05!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
+    /* 更多鈕：固定寬、直式「更多▾」 */
+    .tb-more-btn{flex:0 0 52px!important;width:52px!important;height:42px!important;padding:0!important;font-size:12px!important;font-weight:700;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:9px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;line-height:1.05;gap:0}
+    /* 展開面板：雙欄，虛線分隔，使用者點開才占空間 */
+    .tb-more-secondary{display:none;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line)}
     .tb-more-secondary.open{display:grid!important}
-    .tb-more-secondary .tb-item{width:100%!important}
-    .tb-more-secondary .btn{display:flex!important;width:100%!important;height:32px!important;justify-content:center!important;align-items:center!important;font-size:10px!important;padding:0 2px!important;white-space:normal!important;line-height:1.1!important;text-align:center!important}
-    .tb-more-secondary select{width:100%!important;height:32px!important;font-size:10px!important;box-sizing:border-box}
-    .tb-more-secondary .stat{width:100%;text-align:center;font-size:11px;padding:3px 0}
-    /* 詳解工具列自訂展開版型 */
-    .tb-more-secondary-sol{display:none;flex-direction:column;gap:5px;padding:5px 0 3px;margin-top:4px}
-    .tb-more-secondary-sol.open{display:flex!important}
-    .tb-more-ai-row{display:flex;gap:4px;align-items:flex-start;width:100%}
-    .tb-more-ai-row>.tb-item{flex:1;min-width:0}
-    .tb-more-ai-row select{height:36px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important}
-    .tb-more-sol-row{display:flex;gap:4px;width:100%}
-    .tb-more-sol-row>.tb-item{flex:1;min-width:0}
-    .tb-more-sol-row .btn{display:flex!important;width:100%!important;height:36px!important;justify-content:center!important;align-items:center!important;font-size:11px!important;padding:0 2px!important;white-space:normal!important;line-height:1.1!important;text-align:center!important;box-sizing:border-box!important}
+    .tb-more-secondary .tb-item{width:100%!important;display:flex}
+    .tb-more-secondary .btn,.tb-more-secondary a.btn{display:flex!important;width:100%!important;height:40px!important;justify-content:center!important;align-items:center!important;font-size:12.5px!important;padding:0 6px!important;white-space:nowrap!important;line-height:1.2!important;text-align:center!important;box-sizing:border-box!important}
+    .tb-more-secondary>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:1px!important}
+    .tb-more-secondary>.tb-item>div>.btn,.tb-more-secondary>.tb-item>div>a.btn{height:40px!important}
+    .tb-more-secondary>.tb-item>div>span{font-size:8.5px!important;line-height:1.05!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
+    .tb-more-secondary select{width:100%!important;height:40px!important;font-size:12px!important;box-sizing:border-box}
 
     /* === 底部浮動列（單排緊湊） === */
     body{padding-bottom:92px}
@@ -4815,47 +4799,31 @@ const TB_DEFAULT=[
   ['selFilt','selAll','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
+// 手機工具列：每個功能分頁只露 2 顆常用按鈕，其餘收進「更多」下拉，省空間又不裁切
+const TB_MOBILE_PRIMARY=2;
 function applyMobileToolbar(){
-  document.querySelectorAll('.tb-row').forEach(row=>{
+  if(window.innerWidth>860)return;
+  document.querySelectorAll('#tbWrap .tb-row').forEach(row=>{
     if(row.classList.contains('tb-row-stat'))return;
     const scroll=row.querySelector('.tb-btn-scroll');
-    if(!scroll||scroll.classList.contains('mobile-compact'))return;
+    if(!scroll||scroll.querySelector(':scope>.tb-compact-main'))return; // 已處理
     const items=[...scroll.querySelectorAll(':scope>.tb-item')];
     if(!items.length)return;
-    scroll.classList.add('mobile-compact');
     const main=document.createElement('div');
     main.className='tb-compact-main';
-    main.appendChild(items[0]);
-    if(items.length>1){
+    items.slice(0,TB_MOBILE_PRIMARY).forEach(it=>main.appendChild(it));
+    const rest=items.slice(TB_MOBILE_PRIMARY);
+    if(rest.length){
       const btn=document.createElement('button');
       btn.type='button';
-      btn.className='btn tb-more-btn';
-      btn.textContent='⋯';
+      btn.className='tb-more-btn';
+      btn.innerHTML='更多<span style="font-size:9px;line-height:1">▾</span>';
       const sec=document.createElement('div');
-      // 詳解工具列（row index 3）：自訂兩列展開版型
-      if(row.dataset.rowIdx==='3'&&items.length>=7){
-        sec.className='tb-more-secondary-sol';
-        // 第一列：AI供應商（items[1]）｜AI模型選擇（items[2~4]）各佔50%
-        const aiRow=document.createElement('div');
-        aiRow.className='tb-more-ai-row';
-        aiRow.appendChild(items[1]);
-        const modelWrap=document.createElement('div');
-        modelWrap.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;gap:3px';
-        items.slice(2,5).forEach(it=>modelWrap.appendChild(it));
-        aiRow.appendChild(modelWrap);
-        sec.appendChild(aiRow);
-        // 第二列：詳解匯入｜詳解匯出｜詳解指令 各佔33%
-        const solRow=document.createElement('div');
-        solRow.className='tb-more-sol-row';
-        items.slice(5).forEach(it=>solRow.appendChild(it));
-        sec.appendChild(solRow);
-      }else{
-        sec.className='tb-more-secondary';
-        items.slice(1).forEach(it=>sec.appendChild(it));
-      }
+      sec.className='tb-more-secondary';
+      rest.forEach(it=>sec.appendChild(it));
       btn.addEventListener('click',()=>{
         const o=sec.classList.toggle('open');
-        btn.textContent=o?'▴':'⋯';
+        btn.innerHTML='更多<span style="font-size:9px;line-height:1">'+(o?'▴':'▾')+'</span>';
       });
       main.appendChild(btn);
       scroll.appendChild(main);
@@ -4900,6 +4868,7 @@ function renderToolbar(){
   setupTbDrag();
   const bp=document.getElementById('batchProvider');
   if(bp){bp.value=localStorage.getItem('batchProvider')||AI_CFG.provider||'gemini';_toggleGeminiModelSel(bp.value,'batchGeminiModel');_toggleBatchOllamaSel(bp.value);}
+  applyMobileToolbar();
   sizeToolbar();
 }
 function buildTbTabs(layout){
@@ -5743,6 +5712,15 @@ function ibLockSubmit(){
     // Reset transition temporarily on resize to avoid janky animation
     window.addEventListener('resize',function(){
       if(layout){layout.style.transition='none';setTimeout(function(){layout.style.transition='';},50);}
+    });
+    // 跨越手機/桌機斷點時重建工具列（桌機一排 ↔ 手機常用2鍵+更多）
+    var _tbWasMobile=window.innerWidth<=860,_tbRz;
+    window.addEventListener('resize',function(){
+      clearTimeout(_tbRz);
+      _tbRz=setTimeout(function(){
+        var m=window.innerWidth<=860;
+        if(m!==_tbWasMobile){_tbWasMobile=m;try{renderToolbar();}catch(e){}}
+      },200);
     });
     setTimeout(updateSideSticky,300);
   })();
