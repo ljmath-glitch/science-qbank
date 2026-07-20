@@ -114,18 +114,18 @@
   .card.picked{box-shadow:0 0 0 2px var(--accent),var(--shadow)}
   .card.flag{background:#fffdf2}
   .card .tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px;font-family:inherit}
-  .tag{font-size:11px;padding:2px 8px;border-radius:18px;font-weight:600;letter-spacing:.3px}
-  .tag.book{background:#eef3ff;color:#3454b4}
-  .tag.unit{background:#fdeeee;color:var(--accent)}
-  .tag.sub{background:#eef7f3;color:var(--bio)}
-  .tag.kp{background:#fff6e0;color:var(--phy)}
-  .tag.type{background:#ece9f7;color:#5b4b9e}
-  .tag.meta{background:#f0ece2;color:var(--muted)}
-  .tag.d1{background:#e8f5e9;color:#2e7d32}
-  .tag.d2{background:#fff8e1;color:#f57f17}
-  .tag.d3{background:#fff0e0;color:#e8740c}
-  .tag.d4{background:#ffebee;color:#c62828}
-  .tag.flagtag{background:#fde7c9;color:#a5600a}
+  .tag{font-size:11px;padding:3px 9px;border-radius:7px;font-weight:600;letter-spacing:.2px;line-height:1.45;background:#f4efe5;color:#6f6353;border:1px solid #ebe2d2}
+  .tag.book{background:#f4ecdd;color:#7c5e22;border-color:#e8dcc3;font-weight:700}
+  .tag.unit{background:#f9ece9;color:#9a4a41;border-color:#f0dbd5}
+  .tag.sub{background:#edf4ef;color:#4d7060;border-color:#dbe8df}
+  .tag.kp{background:#f6f0de;color:#82701f;border-color:#ebe0c0}
+  .tag.type{background:#f0eef7;color:#5f5788;border-color:#e1dbef}
+  .tag.meta{background:#f1ece2;color:#7a7060;border-color:#e7dece}
+  .tag.d1{background:#eef5ef;color:#3f7a45;border-color:#d7e8da}
+  .tag.d2{background:#f8f1dc;color:#957512;border-color:#ecdfba}
+  .tag.d3{background:#f9ecdf;color:#b5641a;border-color:#f0dbc4}
+  .tag.d4{background:#f9e8e7;color:#b3392f;border-color:#f0d3cf}
+  .tag.flagtag{background:#f9ebd4;color:#9a6910;border-color:#efdbb5}
   .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
   .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
@@ -243,10 +243,11 @@
     .filter-tab{display:inline-flex}
 
     /* === 頁首縮小 === */
-    header{padding:8px 12px;z-index:150}
-    header .logo{height:28px}
-    header h1{font-size:14px;letter-spacing:1px}
+    header{padding:10px 12px;z-index:150}
+    header .logo{height:26px}
+    header h1{font-size:15px;letter-spacing:0;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     header .sub{display:none}
+    header .wrap{flex-wrap:nowrap}
     header .wrap{gap:8px;padding:0 12px}
     .hdr-daily{font-size:11px!important;padding:5px 10px!important;letter-spacing:0!important}
 
@@ -276,7 +277,9 @@
     .stat{margin-left:0;font-size:13px;padding:3px 0;white-space:nowrap;text-align:center;flex-shrink:0}
 
     /* === 卡片 === */
-    .card{border-radius:8px;padding:12px 12px;margin-bottom:8px}
+    .card{border-radius:14px;padding:14px 15px;margin-bottom:11px}
+    .card .tags{gap:6px;margin-bottom:11px}
+    .qbody{font-size:15.5px;line-height:1.65}
 
     /* === 手機工具列緊湊模式 === */
     .tb-row+.tb-row{padding-top:2px}
@@ -315,10 +318,8 @@
     .float{flex-direction:column;padding:7px 12px;gap:5px;align-items:stretch}
     .float .spacer{display:none}
     .float .n{text-align:center;font-size:12px;padding:0}
-    .float-btns{display:flex;flex-wrap:wrap;gap:5px;width:100%}
-    .float-btns .btn,.float-btns .btn.sm{height:34px;padding:0 4px;font-size:12px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:7px}
-    .float-btns .btn:nth-child(-n+2){flex:1 1 calc(50% - 3px)}
-    .float-btns .btn:nth-child(n+3){flex:1 1 calc(33.333% - 4px)}
+    .float-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;width:100%}
+    .float-btns .btn{width:100%!important;height:40px;padding:0 6px;font-size:12px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:9px}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -406,7 +407,7 @@
       <div class="ft-tabs">
         <div class="ft-tab active" data-ft="0" onclick="setFilterTab(0)">考卷來源</div>
         <div class="ft-tab" data-ft="1" onclick="setFilterTab(1)">章節分類</div>
-        <div class="ft-tab" data-ft="2" onclick="setFilterTab(2)">其他</div>
+        <div class="ft-tab" data-ft="2" onclick="setFilterTab(2)">題型分類</div>
       </div>
       <div class="ft-panel ft-active" data-ft="0">
         <div class="filt"><label>學制</label><select id="fSchoolLevel" onchange="onFilterSchoolLevel()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
@@ -450,11 +451,11 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
-    <button class="btn sm" onclick="autoMix()">⚖ 依比例自動選</button>
-    <button class="btn sm" onclick="clearPicks()">清空</button>
-    <button class="btn sm" style="background:#c0392b;color:#fff" onclick="deletePickedItems()">🗑 刪除已選</button>
-    <button class="btn gold" onclick="openPaperDlg()">📄 匯出考卷</button>
-    <button class="btn green" onclick="exportPaperCSV()">選題CSV</button>
+    <button class="btn" onclick="autoMix()">依比例自動選</button>
+    <button class="btn" onclick="clearPicks()">清空</button>
+    <button class="btn" onclick="deletePickedItems()">刪除已選</button>
+    <button class="btn" onclick="openPaperDlg()">匯出考卷</button>
+    <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
   </div>
 </div>
 
@@ -4951,6 +4952,8 @@ function sizeToolbar(){
   requestAnimationFrame(()=>{
     const wrap=document.getElementById('tbWrap'),tb=document.getElementById('tbOuter');
     if(!wrap||!tb)return;
+    const fb=[...document.querySelectorAll('.float-btns .btn')];
+    fb.forEach(b=>b.style.width='');
     if(window.innerWidth>860){
       // 量測全部按鈕（含非作用中分頁）的自然寬度，統一成最寬者；同步進行不會有閃爍
       wrap.classList.add('tb-measuring');
@@ -4959,6 +4962,9 @@ function sizeToolbar(){
       const w=Math.max(0,...btns.map(b=>b.offsetWidth));
       wrap.classList.remove('tb-measuring');
       if(w>0)btns.forEach(b=>{b.style.width=w+'px';});
+      // 底部匯出列：同樣統一為最寬者，規則比照工具列
+      const fw=Math.max(0,...fb.map(b=>b.offsetWidth));
+      if(fw>0)fb.forEach(b=>b.style.width=fw+'px');
     }
     document.documentElement.style.setProperty('--tb-h',(tb.offsetHeight+8)+'px');
   });
