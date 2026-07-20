@@ -58,11 +58,12 @@
   /* 分頁模式：只顯示作用中的動作列，統計列（第4列）永遠顯示 */
   #tbWrap.tabs-on>.tb-row:not(.tb-active):not(.tb-row-stat){display:none}
   #tbWrap.tabs-on>.tb-row{margin-top:0;padding-top:2px;border-top:none}
-  #tbWrap.tabs-on>.tb-row-stat{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  #tbWrap.tabs-on>.tb-row-stat{margin-top:10px;padding-top:14px;padding-bottom:9px;border-top:1px dashed var(--line);align-items:center;min-height:52px}
   #tbWrap.tabs-on .tb-row-label{display:none}
   /* 編輯模式：全部展開，方便跨列拖曳 */
   #tbWrap.tb-edit-all>.tb-row{display:flex!important}
-  #tbWrap.tb-edit-all .tb-tabs{opacity:.45;pointer-events:none}
+  #tbWrap.tb-edit-all .tb-tab{cursor:grab;box-shadow:0 0 0 2px var(--phy) inset}
+  #tbWrap.tb-edit-all .tb-tab.tab-dragging{opacity:.4;cursor:grabbing}
   /* 量測用：暫時展開全部列以取得按鈕自然寬度（同步執行、不會被畫出來） */
   #tbWrap.tb-measuring>.tb-row{display:flex!important}
   /* ===== 篩選面板分頁 ===== */
@@ -459,7 +460,7 @@
 
 <!-- 匯入 -->
 <dialog id="importDlg">
-  <div class="dlg-head">匯入題目 (CSV / Excel)<span style="display:inline-flex;align-items:center;gap:14px"><button onclick="importDlg.close();openAdd()" style="font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.5px;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.16);color:#fff;cursor:pointer">手動新增</button><button class="x" onclick="importDlg.close()">×</button></span></div>
+  <div class="dlg-head">匯入題目 (CSV / Excel)<span style="display:inline-flex;align-items:center;gap:14px"><button onclick="importDlg.close();openAdd()" style="font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.5px;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.16);color:#fff;cursor:pointer">單題手動新增</button><button class="x" onclick="importDlg.close()">×</button></span></div>
   <div class="dlg-body">
     <p>20 欄順序（建議直接用「轉檔指令」產生）：<br>
     <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
@@ -2325,7 +2326,7 @@ function onGroupIdChange(){
 
 /* ===== 新增/編輯 ===== */
 function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';document.getElementById('imgTargetWrap').style.display='none';document.getElementById('imgTarget').value='q';}
-function openAdd(){editingId=null;editTitle.firstChild.textContent='手動新增題目';curImgs=[];
+function openAdd(){editingId=null;editTitle.firstChild.textContent='單題手動新增';curImgs=[];
   fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
   fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
@@ -4770,13 +4771,13 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
-  import:  ()=>`<button class="btn key" onclick="openImport()">匯入題目</button>`,
+  import:  ()=>`<button class="btn" onclick="openImport()">匯入題目</button>`,
   solImport: ()=>`<button class="btn" onclick="openSolImport()">詳解匯入</button>`,
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
   batchImg: ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
-  claude:  ()=>`<button class="btn key" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
+  claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
@@ -4788,7 +4789,7 @@ const TB_BUTTONS={
   batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:120px;max-width:120px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
   batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:150px;max-width:150px" onchange="saveOllamaModel(this.value)"></select>`,
   batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="batchGenerateSol()">批次生成詳解</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
-  solPromptBtn: ()=>`<button class="btn key" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
+  solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 const TB_VER='19';
@@ -4894,14 +4895,20 @@ function buildTbTabs(layout){
   tabs=document.createElement('div');
   tabs.className='tb-tabs';
   let active=parseInt(localStorage.getItem('tbActiveTab')||'0',10);
-  const tabRows=[0,1,2].filter(ri=>layout[ri]&&layout[ri].length);
+  let tabRows=[0,1,2].filter(ri=>layout[ri]&&layout[ri].length);
+  // 套用使用者自訂的分頁順序
+  let saved=null;try{saved=JSON.parse(localStorage.getItem('tbTabOrder')||'null');}catch(e){}
+  if(Array.isArray(saved)){
+    const inOrder=saved.filter(ri=>tabRows.includes(ri));
+    tabRows=[...inOrder,...tabRows.filter(ri=>!inOrder.includes(ri))];
+  }
   if(!tabRows.includes(active))active=tabRows.length?tabRows[0]:0;
   tabRows.forEach(ri=>{
     const t=document.createElement('div');
     t.className='tb-tab'+(ri===active?' active':'');
     t.textContent=TB_ROW_LABELS[ri]||('工具'+ri);
     t.dataset.row=ri;
-    t.onclick=()=>setActiveTab(ri);
+    t.onclick=()=>{if(!tbEditing)setActiveTab(ri);};
     tabs.appendChild(t);
   });
   wrap.insertBefore(tabs,wrap.firstChild);
@@ -4910,6 +4917,26 @@ function buildTbTabs(layout){
   wrap.querySelectorAll(':scope>.tb-row').forEach(r=>r.classList.remove('tb-active'));
   const ar=wrap.querySelector('.tb-row[data-row="'+active+'"]');
   if(ar)ar.classList.add('tb-active');
+  setupTabDrag();
+}
+function setupTabDrag(){
+  const tabsEl=document.querySelector('#tbWrap .tb-tabs');
+  if(!tabsEl)return;
+  tabsEl.querySelectorAll('.tb-tab').forEach(tab=>{
+    tab.setAttribute('draggable',tbEditing?'true':'false');
+    tab.ondragstart=e=>{if(!tbEditing){e.preventDefault();return;}tab.classList.add('tab-dragging');e.dataTransfer.effectAllowed='move';};
+    tab.ondragend=()=>{tab.classList.remove('tab-dragging');saveTabOrder();};
+  });
+  tabsEl.ondragover=e=>{
+    if(!tbEditing)return;e.preventDefault();
+    const dragging=tabsEl.querySelector('.tb-tab.tab-dragging');if(!dragging)return;
+    const after=[...tabsEl.querySelectorAll('.tb-tab:not(.tab-dragging)')].find(t=>{const b=t.getBoundingClientRect();return e.clientX<b.left+b.width/2;});
+    if(after)tabsEl.insertBefore(dragging,after);else tabsEl.appendChild(dragging);
+  };
+}
+function saveTabOrder(){
+  const tabsEl=document.querySelector('#tbWrap .tb-tabs');if(!tabsEl)return;
+  localStorage.setItem('tbTabOrder',JSON.stringify([...tabsEl.querySelectorAll('.tb-tab')].map(t=>+t.dataset.row)));
 }
 function setActiveTab(ri){
   localStorage.setItem('tbActiveTab',ri);
@@ -4993,11 +5020,12 @@ function toggleTbEdit(){
   wrap.classList.toggle('tabs-on',!tbEditing);   // 編輯時展開全部列
   wrap.classList.toggle('tb-edit-all',tbEditing);
   document.querySelectorAll('.tb-item').forEach(el=>el.setAttribute('draggable',tbEditing?'true':'false'));
+  setupTabDrag();
   sizeToolbar();
 }
 function resetTbLayout(){
   if(!confirm('重置工具列為預設排列？'))return;
-  localStorage.removeItem('tbLayout');
+  localStorage.removeItem('tbLayout');localStorage.removeItem('tbTabOrder');localStorage.removeItem('tbActiveTab');
   renderToolbar();
 }
 renderToolbar();
