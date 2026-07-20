@@ -81,9 +81,12 @@
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
   .tb-btn-scroll{display:flex;flex-wrap:wrap;gap:7px;flex:1;align-content:flex-start;min-width:0}
-  .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px}
-  .btn:hover{transform:translateY(-1px);box-shadow:0 4px 10px -4px rgba(0,0,0,.3)}
-  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn{font-family:inherit;font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 1.5px rgba(43,32,28,.05)}
+  .btn:hover{background:#fbf6ee;border-color:#d8bda6;box-shadow:0 3px 10px -4px rgba(133,1,3,.28);transform:translateY(-1px)}
+  .btn:active{transform:translateY(0);box-shadow:0 1px 2px rgba(43,32,28,.12)}
+  .btn:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(133,1,3,.2)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 6px -2px rgba(133,1,3,.45)}
+  .btn.primary:hover{background:#6a0002;border-color:#6a0002;box-shadow:0 5px 14px -4px rgba(133,1,3,.5)}
   .btn.green{background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700}
   .btn.gold{background:var(--phy);color:#fff;border-color:var(--phy)}
   .btn.sm{padding:4px 11px;font-size:12px}
@@ -96,7 +99,8 @@
   .panel h2{font-size:14px;letter-spacing:2px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid var(--phy);font-family:inherit;font-weight:700;display:flex;justify-content:space-between;align-items:center}
   .filt{margin-bottom:11px}
   .filt label{display:block;font-size:12px;font-family:inherit;color:var(--muted);margin-bottom:4px;font-weight:600}
-  select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink)}
+  select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  select:focus,input[type=text]:focus,input[type=search]:focus,input[type=number]:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(133,1,3,.14)}
   textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
   textarea.drag-over{border:2px dashed #3498db!important;background:#eaf6ff!important;outline:none}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
@@ -2531,7 +2535,15 @@ function buildFilters(){
   setOpts(fBook,_bkVals);setOpts(fUnit,getSylVals('unit'));setOpts(fSub,getSylVals('sub'));
   fillSelect(fKp,allKps());fillTypeFilter();
   fillSelect(fYear,[...new Set(DB.map(x=>parseSylYear(x.year)).filter(Boolean))].sort());
-  fillSelect(fSchool,uniqSchoolForLevel(fSchoolLevel?fSchoolLevel.value:''),true);fillSelect(fChart,uniq('chart'));}
+  fillSelect(fSchool,uniqSchoolForLevel(fSchoolLevel?fSchoolLevel.value:''),true);fillChartFilter();}
+const CHART_CATS=['運動圖','函數關係圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','統計圖','情境示意圖','表格','其他','無'];
+function fillChartFilter(){
+  const present=new Set(DB.map(x=>(x.chart||'').trim()).filter(Boolean));
+  const cur=fChart.value;
+  const ordered=CHART_CATS.filter(c=>present.has(c)).concat([...present].filter(c=>!CHART_CATS.includes(c)).sort());
+  fChart.innerHTML='<option value="">全部</option>'+ordered.map(v=>`<option>${esc(v)}</option>`).join('');
+  fChart.value=[...fChart.options].some(o=>o.value===cur)?cur:'';
+}
 function buildFiltersKeep(){
   var cur={
     book:fBook.value,field:fField.value,unit:fUnit.value,sub:fSub.value,
@@ -3202,7 +3214,9 @@ function buildPrompt(){const syl=SYL_RAW;
 ▷ 欄14 步驟分：1（1步）/ 2（2步）/ 3（3步以上）
 ▷ 欄15 記憶分：1（背就會）/ 2（需理解）/ 3（陌生情境活用）
 ▷ 欄16 概念分：1（1概念）/ 2（2概念）/ 3（3個以上或跨章）
-▷ 欄17 圖表類型：無 / 折線圖 / 長條圖 / 表格 / 示意圖 / 電路圖 / v-t圖 / 實驗裝置圖 等；沒有圖填「無」
+▷ 欄17 圖表類型：從下列固定分類擇一填入（沒有圖填「無」，不可自創其他寫法）：
+  無 ／ 運動圖 ／ 函數關係圖 ／ 電路圖 ／ 光學圖 ／ 波動圖 ／ 場線／等值線圖 ／ 微觀模型圖 ／ 實驗裝置圖 ／ 統計圖 ／ 情境示意圖 ／ 表格 ／ 其他
+  對照：運動圖(x-t/v-t/a-t/路程)｜函數關係圖(正比反比/實驗曲線如升溫加熱冷卻曲線/散佈圖)｜電路圖(串並聯/電流電壓電阻/電池)｜光學圖(光路/反射折射/透鏡/成像)｜波動圖(波形/駐波/波的傳播)｜場線／等值線圖(磁力線/等高線/等壓線)｜微觀模型圖(原子分子粒子/化學模型/結構式)｜實驗裝置圖(儀器/裝置/流程/器材)｜統計圖(長條圖/折線圖/圓餅圖)｜情境示意圖(生活情境/漫畫/照片/現象/一般示意圖)｜表格(資料表/數據表)｜其他(地科剖面圖/地圖/天氣圖等以上皆非者)
 ▷ 欄18 判斷依據：分類有疑慮時簡述，否則留空
 ▷ 欄19 待確認：沒把握的填 Y，有把握的留空（此欄只能填 Y 或空白，不填其他）
 
@@ -4116,7 +4130,9 @@ function buildPromptHS(){
 ▷ 欄14 步驟分：1（1步）/ 2（2步）/ 3（3步以上）
 ▷ 欄15 記憶分：1（背就會）/ 2（需理解）/ 3（陌生情境活用）
 ▷ 欄16 概念分：1（1概念）/ 2（2概念）/ 3（3個以上或跨章）
-▷ 欄17 圖表類型：無 / 折線圖 / 長條圖 / 表格 / 示意圖 / 電路圖 / v-t圖 / 實驗裝置圖 等；沒有圖填「無」
+▷ 欄17 圖表類型：從下列固定分類擇一填入（沒有圖填「無」，不可自創其他寫法）：
+  無 ／ 運動圖 ／ 函數關係圖 ／ 電路圖 ／ 光學圖 ／ 波動圖 ／ 場線／等值線圖 ／ 微觀模型圖 ／ 實驗裝置圖 ／ 統計圖 ／ 情境示意圖 ／ 表格 ／ 其他
+  對照：運動圖(x-t/v-t/a-t/路程)｜函數關係圖(正比反比/實驗曲線如升溫加熱冷卻曲線/散佈圖)｜電路圖(串並聯/電流電壓電阻/電池)｜光學圖(光路/反射折射/透鏡/成像)｜波動圖(波形/駐波/波的傳播)｜場線／等值線圖(磁力線/等高線/等壓線)｜微觀模型圖(原子分子粒子/化學模型/結構式)｜實驗裝置圖(儀器/裝置/流程/器材)｜統計圖(長條圖/折線圖/圓餅圖)｜情境示意圖(生活情境/漫畫/照片/現象/一般示意圖)｜表格(資料表/數據表)｜其他(地科剖面圖/地圖/天氣圖等以上皆非者)
 ▷ 欄18 判斷依據：分類有疑慮時簡述，否則留空
 ▷ 欄19 待確認：沒把握的填 Y，有把握的留空
 
