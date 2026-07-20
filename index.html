@@ -254,27 +254,33 @@
 
     /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
     .toolbar-outer{margin-top:10px;margin-bottom:10px;padding:0 0 5px!important}
-    /* 手機分頁列縮小 */
-    #tbWrap .tb-tabs{gap:4px;margin:5px 8px 6px;padding:0}
-    #tbWrap .tb-tab{font-size:12px;padding:6px 12px 7px;letter-spacing:0}
+    /* 手機分頁：三等份卡片寬度（中間留小空格） */
+    #tbWrap .tb-tabs{display:flex;flex-wrap:nowrap;gap:6px;margin:6px 10px 7px;padding:0}
+    #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12.5px;padding:8px 4px 9px;letter-spacing:0;white-space:nowrap}
     /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     #tbEditBtn,#tbResetBtn{display:none!important}
 
-    /* === 每列：標籤在上、按鈕 grid 在下 === */
+    /* === 每列：標籤在上、按鈕在下 === */
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:0;clear:both}
     .tb-row+.tb-row{margin-top:0;border-top:1px solid var(--line)}
-    /* 手機緊湊模式下隱藏列標題，減少擠迫感 */
     .tb-row-label{display:none}
-    .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;padding:6px 8px 6px;overflow-x:visible;width:100%;box-sizing:border-box}
-    .tb-row-stat .tb-btn-scroll{grid-template-columns:1fr 1fr!important}
+
+    /* 統計列（選題操作）維持雙欄 */
+    .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:6px 8px 6px;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:1/-1!important;display:flex!important;justify-content:center!important}
-    .toolbar-outer .tb-item{width:100%;display:flex}
-    .toolbar-outer .tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important}
-    .toolbar-outer .tb-item>div>span{white-space:normal!important;text-align:center}
-    .toolbar-outer .btn,.toolbar-outer .btn.sm{height:40px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
-    .toolbar-outer select{height:40px!important;font-size:12px!important;width:100%!important;max-width:100%!important;box-sizing:border-box}
-    .toolbar-outer .stat{width:100%;text-align:center;padding:4px 0}
+    .tb-row-stat .tb-item{width:100%;display:flex}
+    .tb-row-stat .btn{height:40px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+    .tb-row-stat .stat{width:100%;text-align:center;padding:4px 0}
+
+    /* 功能列：橫向滑動單排（精緻、省空間，右緣淡出提示可滑動） */
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:8px;padding:8px 14px 8px 12px;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll::-webkit-scrollbar{display:none}
+    .tb-row:not(.tb-row-stat) .tb-item{width:auto!important;flex:0 0 auto!important;display:flex}
+    .tb-row:not(.tb-row-stat) .tb-item>div{display:inline-flex!important;flex-direction:column!important;width:auto!important;align-items:center!important;gap:1px!important}
+    .tb-row:not(.tb-row-stat) .tb-item>div>span{white-space:nowrap!important;text-align:center;font-size:8.5px!important;line-height:1.1!important}
+    .tb-row:not(.tb-row-stat) .btn,.tb-row:not(.tb-row-stat) .btn.sm{height:38px!important;padding:0 16px!important;font-size:12.5px!important;width:auto!important;white-space:nowrap!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important}
+    .tb-row:not(.tb-row-stat) select{height:38px!important;font-size:12px!important;width:auto!important;max-width:none!important;min-width:104px;box-sizing:border-box;flex:0 0 auto}
 
     /* === 統計行 V5.16 === */
     .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
@@ -322,9 +328,11 @@
     .float{flex-direction:column;padding:6px 10px 8px;gap:4px;align-items:stretch}
     .float .spacer{display:none}
     .float .n{text-align:center;font-size:11.5px;padding:0}.float .n b{font-size:15px}
-    .float-btns{display:flex;flex-wrap:nowrap;gap:5px;width:100%}
-    .float-btns .btn{flex:1 1 0;width:auto!important;height:36px;padding:0 3px;font-size:12px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:8px}
-    .l-full{display:none}.l-short{display:inline}
+    /* 上二下三：自動選·清空 ／ 選題CSV·刪除·匯出 */
+    .float-btns{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;width:100%}
+    .float-btns .btn{width:auto!important;height:37px;padding:0 4px;font-size:12.5px;justify-content:center;min-width:0;box-sizing:border-box;border-radius:8px}
+    .float-btns .btn:nth-child(1),.float-btns .btn:nth-child(2){grid-column:span 3}
+    .float-btns .btn:nth-child(n+3){grid-column:span 2}
   }
   .bell-wrap{position:relative;flex-shrink:0}
   .bell-btn{background:none;border:none;cursor:pointer;font-size:26px;color:#f4f1ea;position:relative;padding:2px 6px;line-height:1}
@@ -458,9 +466,9 @@
   <div class="float-btns">
     <button class="btn" onclick="autoMix()"><span class="l-full">依比例自動選</span><span class="l-short">自動選</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
+    <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
     <button class="btn" onclick="deletePickedItems()"><span class="l-full">刪除已選</span><span class="l-short">刪除</span></button>
-    <button class="btn" onclick="openPaperDlg()"><span class="l-full">匯出考卷</span><span class="l-short">匯出</span></button>
-    <button class="btn" onclick="exportPaperCSV()"><span class="l-full">選題CSV</span><span class="l-short">CSV</span></button>
+    <button class="btn" onclick="openPaperDlg()">匯出考卷</button>
   </div>
 </div>
 
