@@ -1719,15 +1719,41 @@ function precompute(it){
 }
 
 /* ===== 雲端讀取（取代原本的 localStorage load） ===== */
+function sortDB(){
+  DB.sort((a,b)=>{
+    if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
+    if((a.school||'')!==(b.school||''))return (a.school||'').localeCompare(b.school||'');
+    if((a.exam||'')!==(b.exam||''))return (a.exam||'').localeCompare(b.exam||'');
+    return (parseInt(a.no)||0)-(parseInt(b.no)||0);
+  });
+}
 async function load(){
   if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
-  let allQs=[],from=0,pageSize=1000,fetchErr=null;
-  while(true){
-    const {data:qs,error}=await sb.from('questions').select('*').range(from,from+pageSize-1);
-    if(error){fetchErr=error;break;}
-    if(qs&&qs.length)allQs=allQs.concat(qs);
-    if(!qs||qs.length<pageSize)break;
-    from+=pageSize;
+  let allQs=[],pageSize=1000,fetchErr=null;
+  try{
+    // 先取總數，再「平行」抓所有分頁（取代逐頁序列等待，大幅縮短載入時間）
+    const {count,error:cErr}=await sb.from('questions').select('id',{count:'exact',head:true});
+    if(cErr)throw cErr;
+    if(typeof count!=='number'||count<0)throw new Error('無法取得題目總數');
+    const pages=Math.max(1,Math.ceil(count/pageSize));
+    const results=await Promise.all(
+      Array.from({length:pages},(_,p)=>sb.from('questions').select('*').range(p*pageSize,p*pageSize+pageSize-1))
+    );
+    for(const {data:qs,error} of results){
+      if(error)throw error;
+      if(qs&&qs.length)allQs=allQs.concat(qs);
+    }
+  }catch(e){
+    // 保底：平行失敗時退回逐頁序列抓取
+    console.warn('平行載入失敗，改用序列載入',e);
+    allQs=[];let from=0;
+    while(true){
+      const {data:qs,error}=await sb.from('questions').select('*').range(from,from+pageSize-1);
+      if(error){fetchErr=error;break;}
+      if(qs&&qs.length)allQs=allQs.concat(qs);
+      if(!qs||qs.length<pageSize)break;
+      from+=pageSize;
+    }
   }
   if(fetchErr){console.error(fetchErr);alert('讀取雲端題目失敗：'+fetchErr.message);DB=[];PASSAGES={};}
   else{
@@ -1736,12 +1762,7 @@ async function load(){
     all.filter(x=>x.type==='passage').forEach(x=>{if(x.groupId)PASSAGES[x.groupId]=x;});
     DB=all.filter(x=>x.type!=='passage');
     DB.forEach(precompute);
-    DB.sort((a,b)=>{
-      if((a.year||'')!==(b.year||''))return (a.year||'').localeCompare(b.year||'');
-      if((a.school||'')!==(b.school||''))return (a.school||'').localeCompare(b.school||'');
-      if((a.exam||'')!==(b.exam||''))return (a.exam||'').localeCompare(b.exam||'');
-      return (parseInt(a.no)||0)-(parseInt(b.no)||0);
-    });
+    sortDB();
   }
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
   if(e2)console.error(e2);
@@ -2368,12 +2389,24 @@ async function saveEdit(){
       year:'',school:'',exam:'',no:'',book:'',book_name:'',field:'',unit:'',sub:'',kp:'',summary:'',
       step:0,mem:0,con:0,chart:'',basis:'',flag:false,updated_at:new Date().toISOString()};
     await sb.from('questions').upsert(psRow);
+    // 本地同步題組文章（免整庫重載）
+    PASSAGES[gid]={id:pid,groupId:gid,type:'passage',q:passageText,sol:'',ans:'',imgs:uploadedPImgs,
+      year:'',school:'',exam:'',no:'',book:'',bookName:'',field:'',unit:'',sub:'',kp:'',summary:'',
+      step:0,mem:0,con:0,chart:'',basis:'',flag:false};
   }
-  editDlg.close();await load();buildFiltersKeep();render()}
+  // 只更新本地這一筆並重繪，不再整庫重新載入（儲存後立即看到更新）
+  data.updatedAt=new Date().toISOString();
+  precompute(data);
+  const idx=DB.findIndex(x=>x.id===id);
+  if(idx>=0)DB[idx]=data; else DB.push(data);
+  sortDB();
+  editDlg.close();buildFiltersKeep();render()}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
   if(error){alert('刪除失敗：'+error.message);return}
-  PICKS.delete(id);await load();buildFiltersKeep();render()}
+  PICKS.delete(id);
+  const idx=DB.findIndex(x=>x.id===id);if(idx>=0)DB.splice(idx,1);
+  buildFiltersKeep();render()}
 /* deletePickedItems & selectFiltered moved to separate script */
 async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
   it.flag=!it.flag;render();
@@ -5109,7 +5142,10 @@ async function deletePickedItems(){
   var resp=await sb.from('questions').delete().in('id',ids);
   if(resp.error){alert('刪除失敗：'+resp.error.message);return;}
   PICKS.clear();
-  await load();buildFilters();render();
+  // 本地移除已刪的題目，免整庫重載
+  var idset=new Set(ids);
+  DB=DB.filter(function(x){return !idset.has(x.id);});
+  buildFilters();render();
 }
 function selectFiltered(){
   /* 直接複用 matches()，確保與畫面篩選結果完全一致（含所有欄位） */
