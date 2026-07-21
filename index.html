@@ -174,12 +174,13 @@
   .diffbox .seg button.on{background:var(--phy);color:#fff;font-weight:700}
   .diffresult{margin-top:6px;padding:7px 10px;border-radius:6px;font-weight:700;text-align:center;font-size:14px}
   .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
-  .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:600;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
+  .float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);padding:8px 22px;display:flex;align-items:center;gap:13px;z-index:600;border-top:1px solid var(--line);box-shadow:0 -6px 24px -14px rgba(45,48,56,.3);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   /* 往下捲動時自動隱藏底部匯出列，往上捲動才露出 */
   .float.show.float-autohide{transform:translateY(110%)}
-  .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
+  .float .n{font-size:13.5px}.float .n b{font-size:18px;color:var(--red)}.float .spacer{flex:1}
   .float-btns{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
+  .float-btns .btn{white-space:nowrap;height:34px;padding:0 15px;font-size:12.5px}
   .l-short{display:none}
   .kbd{font-family:ui-monospace,monospace;background:#2a3550;color:#fff;padding:1px 6px;border-radius:4px;font-size:12px}
   .chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-family:inherit;cursor:pointer}
