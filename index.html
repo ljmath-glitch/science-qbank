@@ -2514,18 +2514,25 @@ function toggleBellPanel(btnEl){
   const panel=document.getElementById('bellPanel');
   if(_bellOpen){
     const btn=btnEl||document.getElementById('bellBtn');
-    const r=btn.getBoundingClientRect();
     const isFloating=btn.id==='bellBtnFloat';
+    // 漂浮狀態要對齊的是圓形按鈕本身（#bellFloat），不是裡面縮小置中的 icon 按鈕，避免抓錯基準點
+    const r=isFloating?document.getElementById('bellFloat').getBoundingClientRect():btn.getBoundingClientRect();
+    const pw=Math.min(360,window.innerWidth-16); // 面板寬度依視窗夾住，避免窄螢幕溢出
+    panel.style.width=pw+'px';
     if(isFloating){
-      // 漂浮狀態：面板頂端對齊鈴鐺漂浮上緣，面板右側與鈴鐺左側留一點空隙
-      const gap=10;
-      let left=r.left-360-gap;
-      if(left<8)left=8;
-      panel.style.top=r.top+'px';
+      // 漂浮狀態：優先在鈴鐺左側展開（頂端對齊、留一點空隙）；空間不夠（窄螢幕）時改到下方展開，避免卡到奇怪位置
+      const gap=16;
+      let left=r.left-pw-gap;
+      if(left>=8){
+        panel.style.top=r.top+'px';
+      }else{
+        left=Math.max(8,Math.min(r.right-pw,window.innerWidth-pw-8));
+        panel.style.top=(r.bottom+8)+'px';
+      }
       panel.style.left=left+'px';
     }else{
       // 還在頁首橫幅時：面板正常展開在鈴鐺下方
-      let left=r.right-360;
+      let left=r.right-pw;
       if(left<8)left=8;
       panel.style.top=(r.bottom+8)+'px';
       panel.style.left=left+'px';
