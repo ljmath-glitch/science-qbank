@@ -6,15 +6,15 @@
 <title>共編進度表 — 茲茲文教</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--bg:#faf7f0;--card:#fff;--line:#e5ddd0;--text:#2a2016;--muted:#7a6e60;--primary:#4a6fa5;--green:#2d9060;--red:#c0392b}
+:root{--bg:#f6f5f2;--card:#fff;--line:#e6e4de;--text:#2d3038;--muted:#6e6f74;--primary:#850103;--green:#2d9060;--red:#c0392b;--orange:#f9a12c;--ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
-header{background:#2a2016;color:#fff;padding:11px 0}
+body{font-family:var(--ui-font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+header{background:#fffefb;color:var(--text);padding:12px 0;border-bottom:1px solid var(--line);box-shadow:0 1px 2px rgba(45,48,56,.04)}
 .wrap{max-width:1280px;margin:0 auto;padding:0 20px}
 header .wrap{display:flex;align-items:center;gap:10px}
 header h1{font-size:17px;font-weight:700;flex:1}
-.hbtn{padding:6px 13px;border:none;border-radius:7px;font-size:13px;cursor:pointer;background:rgba(255,255,255,.15);color:#fff;font-family:inherit;text-decoration:none;display:inline-block}
-.hbtn:hover{background:rgba(255,255,255,.25)}
+.hbtn{padding:6px 13px;border:1px solid var(--line);border-radius:8px;font-size:13px;cursor:pointer;background:#fff;color:var(--text);font-family:inherit;text-decoration:none;display:inline-block;transition:.15s}
+.hbtn:hover{border-color:var(--primary);color:var(--primary)}
 .toolbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 0;position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .toolbar .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .toolbar label{font-size:13px;font-weight:600;white-space:nowrap}
@@ -23,13 +23,14 @@ header h1{font-size:17px;font-weight:700;flex:1}
 .main{padding:24px 0 60px}
 .tbl-wrap{overflow:auto;border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.07);max-height:calc(100vh - 130px)}
 table{width:100%;border-collapse:collapse;background:var(--card);min-width:860px}
-thead th{background:#f0ece2;font-size:12px;font-weight:700;padding:10px 12px;text-align:center;border-bottom:2px solid var(--line);white-space:nowrap;color:var(--muted);position:sticky;top:0;z-index:2}
+thead th{background:#f2f1ec;font-size:12px;font-weight:700;padding:10px 12px;text-align:center;border-bottom:2px solid var(--line);white-space:nowrap;color:var(--muted);position:sticky;top:0;z-index:2}
+.cheer{background:linear-gradient(90deg,#fff6ec,#fdf2ea);border-bottom:1px solid var(--line);color:#9a6a1a;font-size:13.5px;font-weight:600;text-align:center;padding:9px 20px;letter-spacing:.3px}
 thead th.left{text-align:left}
 tbody td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:#fdfaf5}
 .center{text-align:center}
-.count-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:12px;font-weight:700;background:#e8f0fe;color:#2a5db0}
+.count-badge{display:inline-block;padding:2px 8px;border-radius:5px;font-size:12px;font-weight:700;background:#f6eceb;color:#850103}
 .chk-cell{text-align:center}
 input[type=checkbox]{width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
 .note-inp{width:100%;padding:4px 8px;border:1px solid transparent;border-radius:5px;font-size:12px;font-family:inherit;background:transparent;color:var(--text)}
@@ -48,7 +49,7 @@ th.sort-header:hover{background:#e5ddd0}
 .name-inp-cell:hover{border-color:var(--line)}
 .name-inp-cell:focus{outline:none;border-color:var(--primary);background:#fff}
 .add-btn{margin-top:12px;padding:8px 16px;border:2px dashed var(--line);border-radius:8px;background:transparent;color:var(--muted);font-size:13px;font-family:inherit;cursor:pointer;width:100%;text-align:left}
-.add-btn:hover{border-color:var(--primary);color:var(--primary);background:#f0f4ff}
+.add-btn:hover{border-color:var(--primary);color:var(--primary);background:#faf0ee}
 .del-btn{padding:2px 6px;border:none;border-radius:4px;background:transparent;color:#ccc;cursor:pointer;font-size:14px;line-height:1}
 .del-btn:hover{background:#fee;color:var(--red)}
 </style>
@@ -57,9 +58,9 @@ th.sort-header:hover{background:#e5ddd0}
 
 <header>
   <div class="wrap">
-    <h1>📋 共編進度表</h1>
+    <h1>共編進度表</h1>
     <a class="hbtn" href="index.html">← 回題庫</a>
-    <button class="hbtn" onclick="loadAll()">🔄 重新整理</button>
+    <button class="hbtn" onclick="loadAll()">重新整理</button>
   </div>
 </header>
 
@@ -71,6 +72,8 @@ th.sort-header:hover{background:#e5ddd0}
     <div class="stat" id="statLine"></div>
   </div>
 </div>
+
+<div class="cheer" id="cheer"></div>
 
 <div class="main">
   <div class="wrap">
@@ -161,8 +164,29 @@ async function mergeAndSave(changeFn){
   showSaving(false);
 }
 
+// ── 每次重整跳一句加油的話 ──────────────────────────
+const CHEERS=[
+  '每完成一份，就離完整題庫更近一步，加油！',
+  '細心校對的你，是題庫最重要的功臣 💪',
+  '慢慢來比較快，一份一份穩穩處理就好！',
+  '今天也辛苦了，記得適時休息、喝口水 ☕',
+  '你的每個勾選，都讓後面的人更輕鬆，謝謝你！',
+  '再一份、再一份，完成率正在往上爬 📈',
+  '品質比速度重要，你已經做得很好了！',
+  '穩紮穩打，福大自然題庫就靠你們了！',
+  '每一份考卷都是實力的累積，繼續加油！',
+  '你已經完成很多了，為自己拍拍手 👏',
+  '保持專注，勝利就在不遠處！',
+  '辛苦了，你的努力大家都看得到 ✨',
+];
+function showCheer(){
+  const el=document.getElementById('cheer');
+  if(el) el.textContent='✦ '+CHEERS[Math.floor(Math.random()*CHEERS.length)];
+}
+
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
+  showCheer();
   document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="loading">載入中…</td></tr>';
   document.getElementById('emptyMsg').style.display = 'none';
 
@@ -248,8 +272,9 @@ function render(){
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round)] || {};
     return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
   }).length;
+  const rate = exams.length ? Math.round(doneCount / exams.length * 100) : 0;
   document.getElementById('statLine').textContent =
-    '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份';
+    '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份　·　完成率 ' + rate + '%';
 
   tbody.innerHTML = exams.map(ex => {
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);
