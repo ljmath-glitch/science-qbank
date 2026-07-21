@@ -160,6 +160,11 @@
   .sectionhead{font-family:inherit;font-size:12px;font-weight:700;color:var(--accent);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px dashed var(--line);letter-spacing:1px}
   .dlg-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:#faf8f3;flex-wrap:wrap}
   .x{cursor:pointer;font-size:20px;line-height:1;background:none;border:none;color:#f4f1ea}
+  /* 統一的彈出視窗（與 <dialog> 一致：置中、固定寬、同款標題/內文/底部） */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(19,36,31,.55);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
+  .modal-card{background:#fff;border-radius:14px;width:min(95vw,760px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+  .modal-hint{padding:13px 20px 0;font-size:12.5px;color:var(--muted);line-height:1.6;flex-shrink:0;font-family:inherit}
+  .modal-ta{flex:1;margin:12px 20px;padding:10px;font-size:11px;font-family:ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;resize:none;min-height:220px;color:var(--ink);box-sizing:border-box}
   .diffbox{background:#f7f4ec;border:1px solid var(--line);border-radius:8px;padding:11px;font-family:inherit}
   .diffbox .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
   .diffbox .row span:first-child{flex:1}
@@ -238,6 +243,9 @@
     dialog{width:100%!important;max-width:100%!important;border-radius:14px 14px 0 0;margin:auto auto 0;max-height:92dvh}
     .dlg-body{padding:12px 14px;max-height:calc(92dvh - 110px)}
     .dlg-foot{padding:10px 14px}
+    /* 統一彈窗手機版同樣為底部抽屜 */
+    .modal-overlay{padding:0;align-items:flex-end}
+    .modal-card{width:100%;max-width:100%;border-radius:14px 14px 0 0;max-height:92dvh}
     .grid4{grid-template-columns:1fr 1fr!important;gap:8px}
 
     /* === 版面 === */
@@ -5150,33 +5158,26 @@ buildSeg('segStep','step');buildSeg('segMem','mem');buildSeg('segCon','con');
 </script>
 
 <!-- 指令顯示區（隱藏） -->
-<div id="promptBox" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:9999;padding:20px;box-sizing:border-box">
-  <div style="background:#fff;border-radius:12px;height:100%;display:flex;flex-direction:column;overflow:hidden">
-    <div style="background:#850103;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
-      <span style="font-size:14px;font-weight:700">📋 AI 指令（Claude / ChatGPT / Gemini）</span>
-      <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
-    </div>
-    <div style="padding:10px;flex-shrink:0;font-size:12px;color:#555;font-family:inherit">
-      ① 點「全選複製」② 開新 AI 對話 ③ 上傳段考卷 ④ 貼上指令並填年度學校考試名稱 ⑤ 把 CSV 用「匯入題目」貼回來
-    </div>
-    <textarea id="promptTA" readonly style="flex:1;margin:0 10px 10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none"></textarea>
-    <div style="padding:0 10px 12px;display:flex;gap:8px;flex-shrink:0">
-      <button onclick="var t=document.getElementById('promptTA');t.focus();t.select();t.setSelectionRange(0,99999);var ok=false;try{ok=document.execCommand('copy');}catch(e){}this.textContent=ok?'✓ 已複製！':'✓ 已全選，請按複製';" style="flex:1;padding:10px;background:#c0392b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
-      <button onclick="document.getElementById('promptBox').style.display='none';document.body.style.overflow='';" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer">關閉</button>
+<div id="promptBox" class="modal-overlay" onclick="if(event.target===this)closePromptBox()">
+  <div class="modal-card">
+    <div class="dlg-head">轉檔指令<button class="x" onclick="closePromptBox()">×</button></div>
+    <div class="modal-hint">① 點「全選並複製」② 開新 AI 對話 ③ 上傳段考卷 ④ 貼上指令並填年度學校考試名稱 ⑤ 把 CSV 用「匯入題目」貼回來</div>
+    <textarea id="promptTA" readonly class="modal-ta"></textarea>
+    <div class="dlg-foot">
+      <button class="btn" onclick="closePromptBox()">關閉</button>
+      <button class="btn primary" onclick="copyModalTA('promptTA',this)">全選並複製</button>
     </div>
   </div>
 </div>
 
-<div id="solPromptOverlay" onclick="closeSolPrompt()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9998"></div>
-<div id="solPromptBox" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 8px 40px rgba(0,0,0,.35);z-index:9999;width:min(92vw,680px);max-height:82vh;flex-direction:column;overflow:hidden">
-  <div style="background:#850103;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
-    <span style="font-size:14px;font-weight:700">📋 詳解製作指令（給主管的AI）</span>
-    <button onclick="closeSolPrompt()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1">×</button>
-  </div>
-  <textarea id="solPromptTA" readonly style="flex:1;margin:10px;padding:8px;font-size:11px;font-family:monospace;border:1px solid #ddd;border-radius:6px;resize:none;min-height:360px"></textarea>
-  <div style="padding:0 10px 12px;display:flex;gap:8px;flex-shrink:0">
-    <button onclick="var t=document.getElementById('solPromptTA');t.select();t.setSelectionRange(0,99999);try{document.execCommand('copy');this.textContent='✓ 已複製！';}catch(e){}" style="flex:1;padding:10px;background:#850103;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">全選並複製</button>
-    <button onclick="closeSolPrompt()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer">關閉</button>
+<div id="solPromptBox" class="modal-overlay" onclick="if(event.target===this)closeSolPrompt()">
+  <div class="modal-card">
+    <div class="dlg-head">詳解製作指令<button class="x" onclick="closeSolPrompt()">×</button></div>
+    <textarea id="solPromptTA" readonly class="modal-ta" style="min-height:300px"></textarea>
+    <div class="dlg-foot">
+      <button class="btn" onclick="closeSolPrompt()">關閉</button>
+      <button class="btn primary" onclick="copyModalTA('solPromptTA',this)">全選並複製</button>
+    </div>
   </div>
 </div>
 
@@ -5210,7 +5211,7 @@ function showPromptJH(){
   var p=buildPrompt();
   var ta=document.getElementById('promptTA');
   ta.value=p;
-  document.getElementById('promptBox').style.display='block';
+  document.getElementById('promptBox').style.display='flex';
   document.body.style.overflow='hidden';
   setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},200);
 }
@@ -5243,15 +5244,23 @@ function showSolPrompt(){
   ta.value=text;
   var box=document.getElementById('solPromptBox');
   box.style.display='flex';
-  document.getElementById('solPromptOverlay').style.display='block';
   document.body.style.overflow='hidden';
   setTimeout(function(){ta.focus();ta.select();ta.setSelectionRange(0,99999);},150);
   if(hasImgCount)setTimeout(()=>alert('提醒：勾選的題目中有 '+hasImgCount+' 題含圖，記得另外把原始圖片一起附給 AI，不然詳解可能寫不準確。'),300);
 }
 function closeSolPrompt(){
   document.getElementById('solPromptBox').style.display='none';
-  document.getElementById('solPromptOverlay').style.display='none';
   document.body.style.overflow='';
+}
+function closePromptBox(){
+  document.getElementById('promptBox').style.display='none';
+  document.body.style.overflow='';
+}
+function copyModalTA(id,btn){
+  var t=document.getElementById(id);if(!t)return;
+  t.focus();t.select();t.setSelectionRange(0,99999);
+  var ok=false;try{ok=document.execCommand('copy');}catch(e){}
+  if(btn)btn.textContent=ok?'✓ 已複製！':'✓ 已全選，請按複製';
 }
 </script>
 <script>
