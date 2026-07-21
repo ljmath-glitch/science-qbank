@@ -46,7 +46,7 @@
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
   /* 工具列：一開始（未捲動）在頁面最上方正常顯示；捲動到工具列看不到後，才靠板手圖示以浮動面板叫出（邏輯同鈴鐺/篩選），點外面關閉 */
   .toolbar-outer{margin:13px 0;padding:9px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:100}
-  .toolbar-outer.tb-open{position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(1240px,94vw);margin:0;border-radius:14px;box-shadow:0 24px 60px -16px rgba(45,48,56,.4);z-index:750;max-height:80vh;overflow:auto}
+  .toolbar-outer.tb-open{position:fixed;top:0;left:50%;transform:translateX(-50%);width:min(1240px,94vw);margin:0;border-radius:0 0 14px 14px;box-shadow:0 24px 60px -16px rgba(45,48,56,.4);z-index:750;max-height:80vh;overflow:auto}
   #toolbarOverlay{display:none;position:fixed;inset:0;background:rgba(45,48,56,.35);z-index:740}
   #toolbarOverlay.show{display:block}
   @media(max-width:860px){
