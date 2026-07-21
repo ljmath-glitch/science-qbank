@@ -59,18 +59,19 @@ header .sub{font-size:11px;color:rgba(244,241,234,.72);margin-top:3px;letter-spa
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 /* ══ CHARACTER CARD ══════════════════════════════════════════ */
 .char-card{
-  background:linear-gradient(140deg,#850103 0%,#4a0a0a 100%);
+  background:linear-gradient(145deg,#2c211d 0%,#3a2320 48%,#4a1518 100%);
   border-radius:20px;margin-bottom:14px;
   color:#f4f1ea;position:relative;overflow:hidden;
+  box-shadow:0 10px 30px -14px rgba(43,32,28,.5);
 }
 .char-card::before{
-  content:'';position:absolute;width:260px;height:260px;border-radius:50%;
-  background:radial-gradient(circle,rgba(249,161,44,.2),transparent 70%);
-  top:-80px;right:-60px;pointer-events:none;
+  content:'';position:absolute;width:240px;height:240px;border-radius:50%;
+  background:radial-gradient(circle,rgba(249,161,44,.14),transparent 70%);
+  top:-90px;right:-70px;pointer-events:none;
 }
 .char-card::after{
   content:'';position:absolute;width:200px;height:200px;border-radius:50%;
-  background:radial-gradient(circle,rgba(175,154,107,.18),transparent 70%);
+  background:radial-gradient(circle,rgba(175,154,107,.12),transparent 70%);
   bottom:-70px;left:-50px;pointer-events:none;
 }
 /* 身份區 — liquid glass 面板 */
