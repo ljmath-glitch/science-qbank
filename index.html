@@ -2516,9 +2516,10 @@ function toggleBellPanel(btnEl){
   if(_bellOpen){
     const btn=btnEl||document.getElementById('bellBtn');
     const r=btn.getBoundingClientRect();
-    let left=r.right-360;
+    const gap=10;
+    let left=r.left-360-gap;
     if(left<8)left=8;
-    panel.style.top=(r.bottom+8)+'px';
+    panel.style.top=r.top+'px';
     panel.style.left=left+'px';
     panel.style.right='auto';
     panel.style.display='block';
