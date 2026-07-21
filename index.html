@@ -293,7 +293,7 @@
 
     /* 統計列（選題操作）維持雙欄 */
     .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:2px 8px 2px;width:100%;box-sizing:border-box}
-    .tb-row-stat .tb-btn-scroll>.tb-item:nth-last-child(-n+2){grid-column:1/-1!important;display:flex!important;justify-content:center!important}
+    .tb-row-stat .tb-btn-scroll>.tb-item:nth-last-child(-n+3){grid-column:1/-1!important;display:flex!important;justify-content:center!important}
     .tb-row-stat .tb-item{width:100%;display:flex}
     .tb-row-stat .btn{height:32px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
     .tb-row-stat .stat{width:100%;text-align:center;padding:2px 0 0}
@@ -2916,11 +2916,19 @@ function matches(it){
   return true}
 const RENDER_CAP=60,RENDER_BATCH=60;let _page=0,_lastShown=[],_pinId=null,_pinGroupId=null,_pinExam=null,_renderLimit=RENDER_CAP;
 let _renderTimer=null;
+let HIDE_SOL=localStorage.getItem('hideSol')==='1';
 function renderDebounced(){clearTimeout(_renderTimer);_renderTimer=setTimeout(render,280);}
 function clearPinFilter(){_pinId=null;_pinGroupId=null;_pinExam=null;render();}
 function toggleFlagOnly(checked){
   const f=document.getElementById('fFlag'),t=document.getElementById('tbFlagOnly');
   if(f)f.checked=checked;
+  if(t)t.checked=checked;
+  render();
+}
+function toggleHideSol(checked){
+  HIDE_SOL=checked;
+  localStorage.setItem('hideSol',checked?'1':'0');
+  const t=document.getElementById('tbHideSol');
   if(t)t.checked=checked;
   render();
 }
@@ -2960,7 +2968,7 @@ function renderPage(list,shown,page){
     const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
-    const solHtml=it.sol?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
+    const solHtml=(it.sol&&!HIDE_SOL)?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=it.kp?`<span class="tag kp" style="white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(it.kp)}">${esc(it.kp)}</span>`:'';
     return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}" data-id="${it.id}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
@@ -4914,8 +4922,9 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
   flagOnly:()=>`<label class="chk" id="tbFlagOnlyWrap" style="font-size:12.5px;font-weight:700;white-space:nowrap;gap:6px;flex-shrink:0" title="只顯示待確認(Y)的題目，方便針對特定考卷集中修改"><input type="checkbox" id="tbFlagOnly" onchange="toggleFlagOnly(this.checked)"> 僅待確認</label>`,
+  hideSol: ()=>`<label class="chk" id="tbHideSolWrap" style="font-size:12.5px;font-weight:700;white-space:nowrap;gap:6px;flex-shrink:0" title="隱藏題目卡片中的詳解文字，方便先確認題目本身"><input type="checkbox" id="tbHideSol" onchange="toggleHideSol(this.checked)"> 隱藏詳解</label>`,
 };
-const TB_VER='21';
+const TB_VER='22';
 const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作'];
 // 分頁極簡線條圖示（stroke=currentColor，隨分頁文字顏色變化）
 const _svg=p=>`<svg class="tb-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -4928,7 +4937,7 @@ const TB_DEFAULT=[
   ['progress','backup','restore','reload','sysDoc'],
   ['import','claude','guide','raw','batchImg'],
   ['solPromptBtn','solImport','batchGenBtn'],
-  ['selFilt','selAll','stat','flagOnly'],
+  ['selFilt','selAll','stat','flagOnly','hideSol'],
 ];
 let tbEditing=false,tbDragEl=null;
 // 手機工具列改為橫向滑動單排：按鈕維持原生排列，超出寬度可左右滑（不再收合成「更多」）
@@ -4970,6 +4979,8 @@ function renderToolbar(){
   if(bp){bp.value=localStorage.getItem('batchProvider')||AI_CFG.provider||'gemini';_toggleGeminiModelSel(bp.value,'batchGeminiModel');_toggleBatchOllamaSel(bp.value);}
   const tfo=document.getElementById('tbFlagOnly');
   if(tfo)tfo.checked=!!(document.getElementById('fFlag')&&fFlag.checked);
+  const ths=document.getElementById('tbHideSol');
+  if(ths)ths.checked=HIDE_SOL;
   applyMobileToolbar();
   sizeToolbar();
 }
