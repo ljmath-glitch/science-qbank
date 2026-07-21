@@ -8,7 +8,7 @@
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--line:#e6e4de;--text:#2d3038;--muted:#6e6f74;--primary:#850103;--green:#2d9060;--red:#c0392b;--orange:#f9a12c;--ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--ui-font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+body{font-family:var(--ui-font);font-weight:500;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
 header{background:#fffefb;color:var(--text);padding:12px 0;border-bottom:1px solid var(--line);box-shadow:0 1px 2px rgba(45,48,56,.04)}
 .wrap{max-width:1280px;margin:0 auto;padding:0 20px}
 header .wrap{display:flex;align-items:center;gap:10px}
@@ -164,29 +164,43 @@ async function mergeAndSave(changeFn){
   showSaving(false);
 }
 
-// ── 每次重整跳一句加油的話 ──────────────────────────
-const CHEERS=[
-  '每完成一份，就離完整題庫更近一步，加油！',
-  '細心校對的你，是題庫最重要的功臣 💪',
-  '慢慢來比較快，一份一份穩穩處理就好！',
-  '今天也辛苦了，記得適時休息、喝口水 ☕',
-  '你的每個勾選，都讓後面的人更輕鬆，謝謝你！',
-  '再一份、再一份，完成率正在往上爬 📈',
-  '品質比速度重要，你已經做得很好了！',
-  '穩紮穩打，福大自然題庫就靠你們了！',
-  '每一份考卷都是實力的累積，繼續加油！',
-  '你已經完成很多了，為自己拍拍手 👏',
-  '保持專注，勝利就在不遠處！',
-  '辛苦了，你的努力大家都看得到 ✨',
-];
-function showCheer(){
+// ── 依完成率跳一句加油的話（每次重整換一句） ──────────────
+const CHEERS={
+  low:[ // 未達 80%
+    '精準度滿分！繼續保持！',
+    '今日神速出題手就是你！',
+    '感謝你的專注，品質完美提升！',
+    '每完成一份，就離完整題庫更近一步，加油！',
+    '細心校對的你，是題庫最重要的功臣 💪',
+    '再一份、再一份，完成率正在往上爬 📈',
+    '穩紮穩打，福大自然題庫就靠你們了！',
+  ],
+  s80:[ // 80–89% 終點在望
+    '目標已完成 80%！感謝你的仔細，勝利就在眼前。',
+    '進度條飆升中，最後的哩程，一起衝刺！',
+    '校對與出題辛苦了！再堅持一下，成果即將解鎖。',
+  ],
+  s90:[ // 90–99% 最後衝刺
+    '完成度超過 90%！倒數計時，最後幾題交給你了！',
+    '距離完工只差最後一步，感謝你的專業與耐性！',
+    '終點線就在腳下，把最後的細節完美收尾吧！',
+  ],
+  done:[ // 100% 成就解鎖
+    '恭喜完成！考卷製作順利完工，感謝你的辛苦付出！',
+    '任務達成！感謝你為學生打造優質的試題品質。',
+    '完美收工！辛苦了，給自己一個大大的讚吧！',
+  ],
+};
+let _cheerPending=true;
+function showCheer(rate){
+  const pool = rate>=100?CHEERS.done : rate>=90?CHEERS.s90 : rate>=80?CHEERS.s80 : CHEERS.low;
   const el=document.getElementById('cheer');
-  if(el) el.textContent='✦ '+CHEERS[Math.floor(Math.random()*CHEERS.length)];
+  if(el) el.textContent='✦ '+pool[Math.floor(Math.random()*pool.length)];
 }
 
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
-  showCheer();
+  _cheerPending=true;
   document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="loading">載入中…</td></tr>';
   document.getElementById('emptyMsg').style.display = 'none';
 
@@ -275,6 +289,7 @@ function render(){
   const rate = exams.length ? Math.round(doneCount / exams.length * 100) : 0;
   document.getElementById('statLine').textContent =
     '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份　·　完成率 ' + rate + '%';
+  if(_cheerPending){ showCheer(rate); _cheerPending=false; }
 
   tbody.innerHTML = exams.map(ex => {
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);

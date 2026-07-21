@@ -33,7 +33,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{overflow-x:clip}body{max-width:100vw;overflow-x:clip}
-  body{font-family:var(--ui-font);
+  body{font-family:var(--ui-font);font-weight:500;
     background:var(--paper);
     color:var(--ink);line-height:1.7;padding:0 0 90px}
   header{background:#fffefb;color:var(--ink);padding:13px 28px;border-bottom:1px solid var(--line);position:relative;z-index:150;box-shadow:0 1px 2px rgba(43,32,28,.04)}
@@ -133,7 +133,7 @@
   .tag.d3{background:#f9ecdf;color:#b5641a;border-color:#f0dbc4}
   .tag.d4{background:#f9e8e7;color:#b3392f;border-color:#f0d3cf}
   .tag.flagtag{background:#f9ebd4;color:#9a6910;border-color:#efdbb5}
-  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:inherit}
+  .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:inherit;font-weight:400}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
   .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
   .summary{font-size:12px;color:var(--muted);font-family:inherit;margin-top:6px}
@@ -141,7 +141,7 @@
   .pickbox input{width:19px;height:19px;cursor:pointer;accent-color:var(--accent)}
   .empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:inherit}
   .empty .big{font-size:46px;margin-bottom:10px;opacity:.4}
-  dialog{border:none;border-radius:14px;padding:0;max-width:760px;width:95%;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+  dialog{border:none;border-radius:14px;padding:0;max-width:760px;width:95%;max-height:92vh;margin:auto;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
   dialog::backdrop{background:rgba(45,48,56,.45)}
   .dlg-head{background:#fff;color:var(--ink);padding:15px 20px;font-size:15px;letter-spacing:.5px;font-weight:800;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
   .dlg-body{padding:20px;max-height:74vh;overflow:auto}
@@ -165,7 +165,8 @@
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(45,48,56,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
   .modal-card{background:#fff;border-radius:14px;width:min(95vw,760px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
   .modal-hint{padding:13px 20px 0;font-size:12.5px;color:var(--muted);line-height:1.6;flex-shrink:0;font-family:inherit}
-  .modal-ta{flex:1;margin:12px 20px;padding:10px;font-size:11px;font-family:ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;resize:none;min-height:220px;color:var(--ink);box-sizing:border-box}
+  .modal-ta{flex:1 1 auto;min-height:0;margin:12px 20px;padding:10px;font-size:11.5px;line-height:1.55;font-family:ui-monospace,monospace;border:1px solid var(--line);border-radius:8px;resize:none;color:var(--ink);box-sizing:border-box;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .modal-ta:focus{outline:none;border-color:var(--line);box-shadow:none}
   .diffbox{background:#f7f4ec;border:1px solid var(--line);border-radius:8px;padding:11px;font-family:inherit}
   .diffbox .row{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:13px}
   .diffbox .row span:first-child{flex:1}
@@ -348,8 +349,8 @@
   .bell-item-reason{font-size:12px;color:#c0392b;background:#fff5f5;border-left:3px solid #e74c3c;padding:4px 8px;border-radius:0 5px 5px 0;margin:4px 0;line-height:1.5}
   .bell-item-time{font-size:11px;color:#999;margin-bottom:6px}
   .bell-float{display:none;position:fixed;top:14px;right:16px;z-index:400;background:#fff;border:1px solid var(--line);border-radius:50%;width:46px;height:46px;cursor:pointer;box-shadow:0 4px 16px rgba(45,48,56,.22);align-items:center;justify-content:center}
-  .bell-float .bell-btn{padding:0;color:var(--red)}
-  .bell-float .bell-btn:hover{color:var(--red2,#5e0102)}
+  .bell-float .bell-btn{padding:0;color:var(--ink)}
+  .bell-float .bell-btn:hover{color:var(--red)}
   .bell-float.show{display:flex}
   /* 題庫入口鎖 */
   .ib-lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(170deg,#f8f5f0 0%,#eee8df 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
@@ -524,8 +525,8 @@
 <dialog id="importDlg">
   <div class="dlg-head">匯入題目 (CSV / Excel)<span style="display:inline-flex;align-items:center;gap:14px"><button onclick="importDlg.close();openAdd()" style="font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.5px;padding:6px 14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer">單題手動新增</button><button class="x" onclick="importDlg.close()">×</button></span></div>
   <div class="dlg-body">
-    <p>20 欄順序（建議直接用「轉檔指令」產生）：<br>
-    <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目</span><br>
+    <p>23 欄順序（建議直接用「轉檔指令」產生）：<br>
+    <span class="kbd">年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,詳解,題組文章,題組ID</span><br>
     （選項放在「題目」內以換行分隔即可；難度由三個分數自動計算）</p>
     <input type="file" accept=".csv,.txt,.xlsx,.xls" onchange="loadCsvFile(event)" style="margin-bottom:10px;font-family:inherit;font-size:13px">
     <textarea id="csvArea" style="min-height:200px" placeholder="貼上 CSV 內容，或直接將 CSV / Excel 檔案拖曳至此" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="event.preventDefault();this.classList.remove('drag-over');_dropFileToArea(event,'csvArea')"></textarea>
@@ -5856,6 +5857,31 @@ function ibLockToggleEye(){
     checkTab();
   }
   window.addEventListener('load',function(){setTimeout(hookTab,500);});
+})();
+</script>
+<script>
+/* 統一系統提示：把原生 alert 換成與其他彈窗一致的置中卡片（用 <dialog> 以疊在其他彈窗之上） */
+(function(){
+  function appAlert(msg){
+    try{
+      var d=document.createElement('dialog');
+      d.className='app-alert';
+      d.style.cssText='max-width:420px;width:auto;min-width:min(88vw,300px)';
+      var body=document.createElement('div');
+      body.style.cssText='padding:22px 24px 8px;font-size:14.5px;line-height:1.7;color:var(--ink);white-space:pre-wrap;word-break:break-word;font-weight:500';
+      body.textContent=String(msg==null?'':msg);
+      var foot=document.createElement('div');foot.className='dlg-foot';
+      var ok=document.createElement('button');ok.className='btn primary';ok.textContent='確定';
+      ok.onclick=function(){try{d.close();}catch(e){}};
+      d.addEventListener('close',function(){d.remove();});
+      foot.appendChild(ok);d.appendChild(body);d.appendChild(foot);
+      document.body.appendChild(d);
+      d.showModal();
+      setTimeout(function(){try{ok.focus();}catch(e){}},30);
+    }catch(e){ /* 萬一失敗退回原生 */ window.__nativeAlert&&window.__nativeAlert(msg); }
+  }
+  window.__nativeAlert=window.alert.bind(window);
+  window.alert=appAlert;
 })();
 </script>
 </body>

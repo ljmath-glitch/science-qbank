@@ -7,7 +7,7 @@
 <style>
   :root{--ink:#2d3038;--paper:#f6f5f2;--card:#fff;--line:#e6e4de;--accent:#850103;--bio:#1f6f5c;--phy:#b8860b;--blue:#2e75b6;--muted:#6e6f74;--green:#1f6f5c;--orange:#f9a12c;--red:#850103;--ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--ui-font);background:var(--paper);color:var(--ink);line-height:1.85;padding-bottom:80px}
+  body{font-family:var(--ui-font);font-weight:500;background:var(--paper);color:var(--ink);line-height:1.85;padding-bottom:80px}
   header{background:#fffefb;color:var(--ink);padding:26px 40px;border-bottom:1px solid var(--line);box-shadow:0 1px 2px rgba(45,48,56,.04)}
   header h1{font-size:26px;letter-spacing:3px;font-weight:700}
   header .sub{font-size:13px;color:#b9c2d6;margin-top:6px}
@@ -17,11 +17,12 @@
   nav .back-btn:hover{opacity:.85}
   nav .divider{width:1px;height:20px;background:var(--line);flex-shrink:0}
   nav .nav-links{display:flex;flex-wrap:wrap;gap:0}
-  nav .nav-links a{font-size:12px;color:var(--blue);text-decoration:none;margin-right:14px;line-height:2}
+  nav .nav-links a{font-size:12px;color:var(--muted);text-decoration:none;margin-right:14px;line-height:2;font-weight:600}
+  nav .nav-links a:hover{color:var(--red)}
   nav .nav-links a:hover{text-decoration:underline}
 
   h2{font-size:20px;letter-spacing:2px;color:var(--ink);margin:44px 0 16px;padding:10px 16px;background:linear-gradient(90deg,rgba(184,134,11,.13),transparent);border-left:4px solid var(--phy);font-weight:700}
-  h3{font-size:15px;letter-spacing:1px;color:var(--blue);margin:28px 0 10px;font-weight:700}
+  h3{font-size:15px;letter-spacing:1px;color:var(--ink);margin:28px 0 10px;font-weight:700}
   h4{font-size:13px;color:var(--muted);margin:18px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
   p{margin-bottom:10px;font-size:15px}
   ul,ol{margin:8px 0 14px 22px;font-size:15px}
@@ -67,7 +68,7 @@
   .toc h3{margin:0 0 12px;color:var(--ink);font-size:15px;letter-spacing:1px}
   .toc ol{margin:0 0 0 18px}
   .toc li{margin-bottom:4px;font-size:13px}
-  .toc a{color:var(--blue);text-decoration:none}
+  .toc a{color:var(--red);text-decoration:none;font-weight:600}
   .toc a:hover{text-decoration:underline}
 
   .highlight-box{background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px}
