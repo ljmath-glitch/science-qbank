@@ -268,19 +268,24 @@
     .tb-row+.tb-row{margin-top:0;border-top:1px solid var(--line)}
     .tb-row-label{display:none}
 
+    /* 手機：各區塊貼齊按鈕，去除多餘留白（更簡約、更像 app） */
+    #tbWrap.tabs-on>.tb-row{padding-top:0!important}
+    #tbWrap.tabs-on>.tb-row-stat{margin-top:4px!important;padding-top:6px!important;padding-bottom:2px!important;min-height:0!important}
+    #tbCollapseBar{margin-top:3px!important;padding:4px 0!important}
+
     /* 統計列（選題操作）維持雙欄 */
-    .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:6px 8px 6px;width:100%;box-sizing:border-box}
+    .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:2px 8px 2px;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:1/-1!important;display:flex!important;justify-content:center!important}
     .tb-row-stat .tb-item{width:100%;display:flex}
     .tb-row-stat .btn{height:32px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
-    .tb-row-stat .stat{width:100%;text-align:center;padding:4px 0}
+    .tb-row-stat .stat{width:100%;text-align:center;padding:2px 0 0}
 
     /* 功能列：橫向滑動單排（超出寬度可左右滑，右緣淡出提示） */
-    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;padding:4px 12px!important;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;padding:3px 12px!important;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
     .tb-row:not(.tb-row-stat) .tb-btn-scroll::-webkit-scrollbar{display:none}
 
     /* === 統計行 V5.16 === */
-    .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
+    .tb-row-stat .tb-btn-scroll{gap:6px!important;padding:2px 10px 2px!important}
     .stat{margin-left:0;font-size:13px;padding:3px 0;white-space:nowrap;text-align:center;flex-shrink:0}
 
     /* === 卡片 === */
