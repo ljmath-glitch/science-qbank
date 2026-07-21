@@ -255,8 +255,8 @@
     /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
     .toolbar-outer{margin-top:10px;margin-bottom:10px;padding:0 0 5px!important}
     /* 手機分頁：三等份卡片寬度（中間留小空格） */
-    #tbWrap .tb-tabs{display:flex;flex-wrap:nowrap;gap:6px;margin:6px 10px 7px;padding:0}
-    #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12.5px;padding:8px 4px 9px;letter-spacing:0;white-space:nowrap}
+    #tbWrap .tb-tabs{display:flex;flex-wrap:nowrap;gap:6px;margin:5px 10px 5px;padding:0}
+    #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12px;padding:6px 4px 7px;letter-spacing:0;white-space:nowrap}
     /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     #tbEditBtn,#tbResetBtn{display:none!important}
@@ -270,11 +270,11 @@
     .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:6px 8px 6px;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:1/-1!important;display:flex!important;justify-content:center!important}
     .tb-row-stat .tb-item{width:100%;display:flex}
-    .tb-row-stat .btn{height:40px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+    .tb-row-stat .btn{height:36px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
     .tb-row-stat .stat{width:100%;text-align:center;padding:4px 0}
 
     /* 功能列：常用 2 鍵 + 「更多」收合（精緻、省空間、不裁切） */
-    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:block!important;overflow:visible!important;padding:8px 12px!important;width:100%;box-sizing:border-box}
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:block!important;overflow:visible!important;padding:5px 12px!important;width:100%;box-sizing:border-box}
 
     /* === 統計行 V5.16 === */
     .tb-row-stat .tb-btn-scroll{gap:4px!important;padding:6px 10px 8px!important}
@@ -290,21 +290,21 @@
     /* 主列：兩顆常用按鈕等寬 + 更多鈕 */
     .tb-compact-main{display:flex!important;gap:7px!important;align-items:stretch!important;width:100%!important}
     .tb-compact-main>.tb-item{flex-grow:1!important;flex-shrink:1!important;flex-basis:0%!important;min-width:0!important;display:flex!important}
-    .tb-compact-main>.tb-item>.btn,.tb-compact-main>.tb-item>a.btn{display:flex!important;width:100%!important;height:42px!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:nowrap!important;line-height:1.2!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
-    .tb-compact-main>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:1px!important}
-    .tb-compact-main>.tb-item>div>.btn,.tb-compact-main>.tb-item>div>a.btn{display:flex!important;width:100%!important;height:42px!important;justify-content:center!important;align-items:center!important;font-size:13px!important;white-space:nowrap!important;line-height:1.2!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
-    .tb-compact-main>.tb-item>div>span{font-size:8.5px!important;line-height:1.05!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
+    .tb-compact-main>.tb-item>.btn,.tb-compact-main>.tb-item>a.btn{display:flex!important;width:100%!important;height:34px!important;justify-content:center!important;align-items:center!important;font-size:12px!important;white-space:nowrap!important;line-height:1.15!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:0!important}
+    .tb-compact-main>.tb-item>div>.btn,.tb-compact-main>.tb-item>div>a.btn{display:flex!important;width:100%!important;height:34px!important;justify-content:center!important;align-items:center!important;font-size:12px!important;white-space:nowrap!important;line-height:1.15!important;padding:0 8px!important;box-sizing:border-box!important;text-align:center!important}
+    .tb-compact-main>.tb-item>div>span{font-size:8px!important;line-height:1!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
     /* 更多鈕：固定寬、直式「更多▾」 */
-    .tb-more-btn{flex:0 0 52px!important;width:52px!important;height:42px!important;padding:0!important;font-size:12px!important;font-weight:700;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:9px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;line-height:1.05;gap:0}
+    .tb-more-btn{flex:0 0 46px!important;width:46px!important;height:34px!important;padding:0!important;font-size:11px!important;font-weight:700;background:#f0ece2!important;border:1px solid var(--line)!important;color:var(--ink)!important;border-radius:8px!important;display:flex!important;flex-direction:row!important;gap:2px!important;align-items:center!important;justify-content:center!important;cursor:pointer;font-family:inherit;line-height:1}
     /* 展開面板：雙欄，虛線分隔，使用者點開才占空間 */
-    .tb-more-secondary{display:none;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line)}
+    .tb-more-secondary{display:none;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;padding-top:7px;border-top:1px dashed var(--line)}
     .tb-more-secondary.open{display:grid!important}
     .tb-more-secondary .tb-item{width:100%!important;display:flex}
-    .tb-more-secondary .btn,.tb-more-secondary a.btn{display:flex!important;width:100%!important;height:40px!important;justify-content:center!important;align-items:center!important;font-size:12.5px!important;padding:0 6px!important;white-space:nowrap!important;line-height:1.2!important;text-align:center!important;box-sizing:border-box!important}
-    .tb-more-secondary>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:1px!important}
-    .tb-more-secondary>.tb-item>div>.btn,.tb-more-secondary>.tb-item>div>a.btn{height:40px!important}
-    .tb-more-secondary>.tb-item>div>span{font-size:8.5px!important;line-height:1.05!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
-    .tb-more-secondary select{width:100%!important;height:40px!important;font-size:12px!important;box-sizing:border-box}
+    .tb-more-secondary .btn,.tb-more-secondary a.btn{display:flex!important;width:100%!important;height:34px!important;justify-content:center!important;align-items:center!important;font-size:12px!important;padding:0 6px!important;white-space:nowrap!important;line-height:1.15!important;text-align:center!important;box-sizing:border-box!important}
+    .tb-more-secondary>.tb-item>div{display:flex!important;flex-direction:column!important;width:100%!important;align-items:stretch!important;gap:0!important}
+    .tb-more-secondary>.tb-item>div>.btn,.tb-more-secondary>.tb-item>div>a.btn{height:34px!important}
+    .tb-more-secondary>.tb-item>div>span{font-size:8px!important;line-height:1!important;text-align:center;white-space:nowrap!important;color:var(--muted)}
+    .tb-more-secondary select{width:100%!important;height:34px!important;font-size:12px!important;box-sizing:border-box}
 
     /* === 底部浮動列（單排緊湊） === */
     body{padding-bottom:92px}
