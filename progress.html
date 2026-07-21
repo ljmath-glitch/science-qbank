@@ -52,6 +52,10 @@ th.sort-header:hover{background:#e5ddd0}
 .add-btn:hover{border-color:var(--primary);color:var(--primary);background:#faf0ee}
 .del-btn{padding:2px 6px;border:none;border-radius:4px;background:transparent;color:#ccc;cursor:pointer;font-size:14px;line-height:1}
 .del-btn:hover{background:#fee;color:var(--red)}
+.link-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px;border:none;border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0;text-decoration:none}
+.link-btn:hover{background:#f6eceb;color:var(--primary)}
+.link-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;display:block}
+.link-btn-ph{display:inline-block;width:21px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -221,7 +225,7 @@ async function loadAll(){
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
     const key    = makeId(school, grade, year, round);
-    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0};
+    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0, examRaw: (q.exam||'').trim()};
     grouped[key].count++;
   });
   exams = Object.values(grouped);
@@ -300,9 +304,12 @@ function render(){
     const delBtn = ex.isManual
       ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
       : `<button class="del-btn" title="隱藏此列（題目不會被刪）" onclick="hideEntry('${esc(id)}','${esc(shownName)}')">✕</button>`;
+    const linkBtn = ex.examRaw
+      ? `<a class="link-btn" href="index.html?exam=${encodeURIComponent(ex.examRaw)}" target="_blank" title="在題庫系統中開啟這份考卷的所有題目"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>`
+      : `<span class="link-btn-ph"></span>`;
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">
-      <td style="display:flex;align-items:center;gap:4px">${delBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
+      <td style="display:flex;align-items:center;gap:4px">${delBtn}${linkBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
       <td class="center">${countCell}</td>
       <td class="chk-cell"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
       <td class="chk-cell"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
