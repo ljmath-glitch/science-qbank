@@ -96,6 +96,8 @@
   .btn.green{background:var(--orange);color:#5e0102;border-color:var(--orange);font-weight:700}
   .btn.gold{background:var(--phy);color:#fff;border-color:var(--phy)}
   .btn.sm{padding:4px 11px;font-size:12px}
+  /* 開發中按鈕：內嵌小標籤取代下方說明文字（不增加高度） */
+  .dev-tag{display:inline-block;margin-left:6px;font-size:9px;line-height:1.35;font-style:normal;font-weight:700;letter-spacing:.5px;color:#fff;background:var(--orange);border-radius:5px;padding:0 5px;vertical-align:middle;transform:translateY(-.5px)}
   .toolbar-outer .btn,.toolbar-outer .btn.sm{height:30px;padding:0 12px;box-sizing:border-box;white-space:nowrap;align-items:center}
   .toolbar-outer select{height:30px;box-sizing:border-box;vertical-align:middle}
   .stat{font-family:inherit;font-size:12px;color:var(--muted);margin-left:auto}
@@ -255,8 +257,8 @@
     /* === 工具列內部 padding 清除，讓按鈕填滿卡片寬度 === */
     .toolbar-outer{margin-top:10px;margin-bottom:10px;padding:0 0 5px!important}
     /* 手機分頁：三等份卡片寬度（中間留小空格） */
-    #tbWrap .tb-tabs{display:flex;flex-wrap:nowrap;gap:6px;margin:5px 10px 5px;padding:0}
-    #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12px;padding:6px 4px 7px;letter-spacing:0;white-space:nowrap}
+    #tbWrap .tb-tabs{display:flex;flex-wrap:nowrap;gap:6px;margin:5px 10px 4px;padding:0}
+    #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12px;padding:5px 4px 6px;letter-spacing:0;white-space:nowrap}
     /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     #tbEditBtn,#tbResetBtn{display:none!important}
@@ -270,11 +272,11 @@
     .tb-row-stat .tb-btn-scroll{display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px;padding:6px 8px 6px;width:100%;box-sizing:border-box}
     .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:1/-1!important;display:flex!important;justify-content:center!important}
     .tb-row-stat .tb-item{width:100%;display:flex}
-    .tb-row-stat .btn{height:36px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
+    .tb-row-stat .btn{height:32px!important;padding:0 4px!important;font-size:12px!important;width:100%!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important}
     .tb-row-stat .stat{width:100%;text-align:center;padding:4px 0}
 
     /* 功能列：橫向滑動單排（超出寬度可左右滑，右緣淡出提示） */
-    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:7px;padding:6px 12px!important;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+    .tb-row:not(.tb-row-stat) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;padding:4px 12px!important;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
     .tb-row:not(.tb-row-stat) .tb-btn-scroll::-webkit-scrollbar{display:none}
 
     /* === 統計行 V5.16 === */
@@ -291,8 +293,9 @@
     .tb-row:not(.tb-row-stat) .tb-item{width:auto!important;flex:0 0 auto!important;display:flex}
     .tb-row:not(.tb-row-stat) .tb-item>div{display:inline-flex!important;flex-direction:column!important;width:auto!important;align-items:center!important;gap:0!important}
     .tb-row:not(.tb-row-stat) .tb-item>div>span{white-space:nowrap!important;text-align:center;font-size:8px!important;line-height:1!important;color:var(--muted)}
-    .tb-row:not(.tb-row-stat) .btn,.tb-row:not(.tb-row-stat) a.btn{height:34px!important;padding:0 15px!important;font-size:12.5px!important;width:auto!important;white-space:nowrap!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;text-align:center!important}
-    .tb-row:not(.tb-row-stat) select{height:34px!important;font-size:12px!important;width:auto!important;max-width:none!important;min-width:100px;box-sizing:border-box;flex:0 0 auto}
+    .tb-row:not(.tb-row-stat) .btn,.tb-row:not(.tb-row-stat) a.btn{height:30px!important;padding:0 13px!important;font-size:12px!important;width:auto!important;white-space:nowrap!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;text-align:center!important}
+    .tb-row:not(.tb-row-stat) select{height:30px!important;font-size:12px!important;width:auto!important;max-width:none!important;min-width:100px;box-sizing:border-box;flex:0 0 auto}
+    .tb-row:not(.tb-row-stat) .dev-tag{margin-left:5px;font-size:8.5px!important;padding:0 4px!important}
 
     /* === 底部浮動列（單排緊湊） === */
     body{padding-bottom:92px}
@@ -4795,19 +4798,19 @@ const TB_BUTTONS={
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
-  batchImg: ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
+  batchImg: ()=>`<button class="btn dev-btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目（開發中，請勿使用）">批次貼圖<i class="dev-tag">開發中</i></button>`,
   claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
-  raw:     ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><a class="btn" href="raw.html" style="text-decoration:none;width:100%">考卷前處理</a><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
+  raw:     ()=>`<a class="btn dev-btn" href="raw.html" title="考卷前處理（開發中，請勿使用）" style="text-decoration:none">考卷前處理<i class="dev-tag">開發中</i></a>`,
   selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
   batchProvider: ()=>`<select id="batchProvider" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;width:100px" onchange="localStorage.setItem('batchProvider',this.value);_toggleGeminiModelSel(this.value,'batchGeminiModel');_toggleBatchOllamaSel(this.value)"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama</option></select>`,
   batchGeminiModel: ()=>`<select id="batchGeminiModel" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:130px;max-width:130px" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select>`,
   batchOllamaPreset: ()=>`<select id="batchOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:120px;max-width:120px" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他</option></select>`,
   batchOllamaModel: ()=>`<select id="batchOllamaModel" title="Ollama 模型" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-family:inherit;cursor:pointer;display:none;width:150px;max-width:150px" onchange="saveOllamaModel(this.value)"></select>`,
-  batchGenBtn:  ()=>`<div style="display:inline-flex;flex-direction:column;align-items:center;gap:2px;width:100%"><button class="btn" style="width:100%" onclick="batchGenerateSol()">批次生成詳解</button><span style="font-size:9px;color:var(--muted);font-family:inherit;white-space:nowrap">開發中，請勿使用</span></div>`,
+  batchGenBtn:  ()=>`<button class="btn dev-btn" onclick="batchGenerateSol()" title="批次生成詳解（開發中，請勿使用）">批次生成詳解<i class="dev-tag">開發中</i></button>`,
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
