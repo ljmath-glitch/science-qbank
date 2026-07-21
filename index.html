@@ -45,7 +45,7 @@
   #tbCollapseBar:hover{background:rgba(0,0,0,.04)}
   #tbCollapseBar.tb-floating{position:fixed;top:0;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;padding:3px 24px;box-shadow:0 3px 8px rgba(0,0,0,.12);z-index:200;margin:0}
   @media(max-width:860px){
-    #tbCollapseBar.tb-floating{padding:8px 36px;font-size:13px;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+    #tbCollapseBar.tb-floating{padding:7px 24px;font-size:11px;font-weight:700;letter-spacing:1px;min-width:min(64vw,300px);box-sizing:border-box;box-shadow:0 4px 12px rgba(0,0,0,.18)}
     #tbWrap::after{content:'';pointer-events:none;position:sticky;bottom:0;left:0;right:0;height:28px;display:block;background:linear-gradient(to bottom,transparent,var(--card));margin-top:-28px}
   }
   .tb-row{display:flex;gap:7px;align-items:flex-start;min-height:38px;border-radius:6px;transition:background .15s;padding:2px 0}
@@ -165,6 +165,8 @@
   .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
   .float{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:#fff;padding:11px 24px;display:flex;align-items:center;gap:13px;z-index:600;box-shadow:0 -6px 20px -8px rgba(0,0,0,.5);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
+  /* 往下捲動時自動隱藏底部匯出列，往上捲動才露出 */
+  .float.show.float-autohide{transform:translateY(110%)}
   .float .n{font-size:14px}.float .n b{font-size:19px;color:var(--phy)}.float .spacer{flex:1}
   .float-btns{display:flex;gap:8px;align-items:center;flex-wrap:nowrap}
   .l-short{display:none}
@@ -2944,7 +2946,20 @@ function togglePick(id){const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
   const willPick=!PICKS.has(id);
   ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));render()}
 function clearPicks(){PICKS.clear();render()}
-function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0)}
+function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0);floatbar.classList.remove('float-autohide')}
+// 底部匯出列：手機往下捲動隱藏、往上捲動露出（app 常見行為）
+(function(){
+  var lastY=window.scrollY||0,fb=null;
+  window.addEventListener('scroll',function(){
+    if(window.innerWidth>860)return;
+    fb=fb||document.getElementById('floatbar');
+    if(!fb)return;
+    var y=window.scrollY||0;
+    if(y>lastY+8&&y>140)fb.classList.add('float-autohide');
+    else if(y<lastY-8)fb.classList.remove('float-autohide');
+    lastY=y;
+  },{passive:true});
+})();
 function pickedItems(){const arr=DB.filter(x=>PICKS.has(x.id));return arr}
 function autoMix(){mixDlg.showModal()}
 function doAutoMix(){const pool=DB.filter(matches);const total=+mTotal.value||0;
