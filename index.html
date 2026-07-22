@@ -4947,15 +4947,17 @@ const TB_BUTTONS={
   claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
+  analytics:()=>`<a class="btn" href="analytics.html" target="_blank" style="text-decoration:none">題庫分析</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
   raw:     ()=>`<a class="btn dev-btn" href="raw.html" title="考卷前處理（開發中，請勿使用）" style="text-decoration:none">考卷前處理<i class="dev-tag">開發中</i></a>`,
   selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
+  analyzePicked:()=>`<button class="btn" onclick="analyzePickedItems()" title="把目前勾選的題目帶到題庫分析頁做統計">分析已選</button>`,
   batchGenBtn:  ()=>`<button class="btn dev-btn" onclick="openBatchGenDlg()" title="批次生成詳解（開發中，請勿使用）">批次生成詳解<i class="dev-tag">開發中</i></button>`,
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='23';
+const TB_VER='24';
 const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作'];
 // 分頁極簡線條圖示（stroke=currentColor，隨分頁文字顏色變化）
 const _svg=p=>`<svg class="tb-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -4965,10 +4967,10 @@ const TB_TAB_ICONS=[
   _svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
 ];
 const TB_DEFAULT=[
-  ['progress','backup','restore','reload','sysDoc'],
+  ['progress','analytics','backup','restore','reload','sysDoc'],
   ['import','claude','guide','raw','batchImg'],
   ['solPromptBtn','solImport','batchGenBtn'],
-  ['selFilt','selAll','stat'],
+  ['selFilt','selAll','analyzePicked','stat'],
 ];
 let tbEditing=false,tbDragEl=null;
 // 手機工具列改為橫向滑動單排：按鈕維持原生排列，超出寬度可左右滑（不再收合成「更多」）
@@ -5247,6 +5249,11 @@ function selectFiltered(){
   if(gids.size){const sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>sSet.has(it.id)||(it.groupId&&gids.has(it.groupId)));}
   shown.forEach(it=>PICKS.add(it.id));
   render();
+}
+function analyzePickedItems(){
+  if(!PICKS.size){alert('尚未勾選任何題目，請先在題庫中勾選題目或考卷。');return;}
+  try{localStorage.setItem('analyticsPickedIds',JSON.stringify(Array.from(PICKS)));}catch(e){}
+  window.open('analytics.html','_blank');
 }
 </script>
 <script>

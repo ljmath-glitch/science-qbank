@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/logo.png">
+<title>題庫健檢儀表板 · 茲茲文教</title>
+<style>
+:root{
+  --ink:#2d3038;--paper:#f6f5f2;--card:#fff;--line:#e6e4de;
+  --bio:#1f6f5c;--phy:#b8860b;--earth:#3454b4;
+  --red:#850103;--red2:#5e0102;--orange:#f9a12c;--gold:#af9a6b;--muted:#6e6f74;
+  --shadow:0 2px 0 #eceae4,0 8px 24px -12px rgba(45,48,56,.16);
+  --ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--ui-font);font-weight:500;background:var(--paper);color:var(--ink);line-height:1.6;min-height:100vh;font-size:14px;padding-bottom:60px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 20px}
+header{background:#fffefb;border-bottom:1px solid var(--line);padding:13px 0;box-shadow:0 1px 2px rgba(45,48,56,.04)}
+header .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:18px;font-weight:800;flex:1;min-width:200px}
+header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
+.hbtn{padding:7px 14px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--ink);font-family:inherit;text-decoration:none;display:inline-block;transition:.15s}
+.hbtn:hover{border-color:var(--red);color:var(--red)}
+.hbtn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.hbtn.primary:hover{background:var(--red2);color:#fff}
+
+/* 範圍切換 */
+.scope-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 0}
+.scope-btn{padding:7px 16px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--muted);transition:.15s}
+.scope-btn.active{background:var(--red);color:#fff;border-color:var(--red)}
+.scope-btn:not(.active):hover{border-color:var(--red);color:var(--red)}
+.scope-info{font-size:12px;color:var(--muted);margin-left:auto}
+.scope-info b{color:var(--red);font-size:14px}
+
+/* 篩選列 */
+.filter-bar{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.f-item{display:flex;flex-direction:column;gap:4px;min-width:108px}
+.f-item label{font-size:11px;font-weight:700;color:var(--muted)}
+.f-item select,.f-item input{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--ink)}
+.f-item select:focus,.f-item input:focus{outline:none;border-color:var(--red)}
+.f-clear{align-self:flex-end;padding:6px 12px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;color:var(--muted)}
+.f-clear:hover{border-color:var(--red);color:var(--red)}
+
+/* 卡片 / 區塊 */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px}
+.stat-card .n{font-size:26px;font-weight:800;color:var(--red)}
+.stat-card .lbl{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600}
+.section{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
+.section h2{font-size:15px;font-weight:800;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.section .desc{font-size:12px;color:var(--muted);margin-bottom:14px}
+.section h2 .qtag{font-size:11px;font-weight:600;color:var(--muted);background:#f2f1ec;padding:2px 8px;border-radius:10px}
+
+/* 條狀圖 */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:12.5px}
+.bar-row .lbl{width:130px;flex-shrink:0;color:var(--ink);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-row .bar-wrap{flex:1;background:#f2f1ec;border-radius:5px;height:16px;overflow:hidden;position:relative}
+.bar-row .bar-fill{height:100%;background:linear-gradient(90deg,var(--red),#a83a3c);border-radius:5px}
+.bar-row .val{width:92px;flex-shrink:0;text-align:right;color:var(--muted);font-size:11.5px}
+.bar-row.warn .bar-fill{background:linear-gradient(90deg,var(--orange),#e08e1f)}
+
+/* 章節覆蓋地圖 */
+.chapter-tree details{border-bottom:1px solid var(--line);padding:6px 0}
+.chapter-tree details:last-child{border-bottom:none}
+.chapter-tree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:5px 4px;border-radius:8px;font-weight:700;font-size:13px}
+.chapter-tree summary::-webkit-details-marker{display:none}
+.chapter-tree summary:hover{background:#faf5f0}
+.chapter-tree summary .arrow{font-size:11px;color:var(--muted);transition:transform .15s;flex-shrink:0}
+.chapter-tree details[open]>summary .arrow{transform:rotate(90deg)}
+.chapter-tree .lv1>summary{font-size:14px}
+.chapter-tree .lv2{margin-left:18px}
+.chapter-tree .lv3{margin-left:18px}
+.chapter-tree .leaf{margin-left:18px;display:flex;align-items:center;gap:10px;padding:4px 4px 4px 21px;font-size:12.5px;color:var(--ink)}
+.chapter-tree .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chapter-tree .cnt{color:var(--muted);font-size:11.5px;flex-shrink:0;width:110px;text-align:right}
+.chapter-tree .mini-bar{width:70px;height:8px;background:#f2f1ec;border-radius:4px;overflow:hidden;flex-shrink:0}
+.chapter-tree .mini-bar>div{height:100%;background:var(--red);border-radius:4px}
+.chapter-tree .empty-warn{color:#b23b3b}
+
+/* 待確認清單 */
+.pend-item{border-bottom:1px solid var(--line);padding:10px 4px;font-size:12.5px}
+.pend-item:last-child{border-bottom:none}
+.pend-item .title{font-weight:700;margin-bottom:2px}
+.pend-item .meta{color:var(--muted);font-size:11.5px}
+.pend-item .reason{color:#b23b3b;background:#fdf2f0;border-left:3px solid #e08e1f;padding:4px 8px;border-radius:0 5px 5px 0;margin-top:4px;font-size:12px}
+
+/* 比較報告 */
+.insight-box{background:#fff8ec;border:1px solid #f0dcaf;border-radius:10px;padding:12px 14px;font-size:12.5px;line-height:1.8;color:#7a5b16;margin-bottom:14px}
+.insight-box b{color:#5c4310}
+.cmp-row{display:flex;align-items:center;gap:10px;font-size:12.5px;margin-bottom:8px}
+.cmp-row .lbl{width:130px;flex-shrink:0;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-row .cmp-bars{flex:1;display:flex;flex-direction:column;gap:3px}
+.cmp-row .cmp-line{display:flex;align-items:center;gap:6px}
+.cmp-row .cmp-line .tag{width:44px;flex-shrink:0;font-size:10.5px;color:var(--muted)}
+.cmp-row .cmp-line .bar-wrap{flex:1;background:#f2f1ec;border-radius:4px;height:11px;overflow:hidden}
+.cmp-row .cmp-line .bar-fill{height:100%;border-radius:4px}
+.cmp-row .cmp-line.this .bar-fill{background:var(--red)}
+.cmp-row .cmp-line.base .bar-fill{background:var(--gold)}
+.cmp-row .pct{width:80px;flex-shrink:0;text-align:right;font-size:11px;color:var(--muted)}
+
+.empty-note{text-align:center;color:var(--muted);padding:30px 10px;font-size:13px}
+.loading{text-align:center;color:var(--muted);padding:60px 10px}
+.roadmap{font-size:11.5px;color:var(--muted);text-align:center;padding:10px 0 30px;line-height:1.9}
+@media(max-width:760px){
+  .bar-row .lbl{width:90px}
+  .bar-row .val{width:70px}
+  .cmp-row .lbl{width:90px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap row">
+    <div>
+      <h1>題庫健檢儀表板</h1>
+      <div class="sub">CHAPTER COVERAGE &amp; QUALITY ANALYTICS</div>
+    </div>
+    <a class="hbtn" href="index.html">← 回題庫</a>
+    <button class="hbtn" onclick="loadAll()">重新整理</button>
+  </div>
+</header>
+
+<div class="wrap" style="padding-top:16px">
+
+  <div class="scope-bar">
+    <button class="scope-btn active" id="scopeAllBtn" onclick="setScope('all')">全題庫</button>
+    <button class="scope-btn" id="scopeFilterBtn" onclick="setScope('filtered')">目前篩選結果</button>
+    <button class="scope-btn" id="scopePickedBtn" onclick="setScope('picked')">已選取題目／考卷</button>
+    <div class="scope-info" id="scopeInfo"></div>
+  </div>
+
+  <div class="filter-bar" id="filterBar">
+    <div class="f-item"><label>學制</label><select id="fLevel" onchange="onFilterChange()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
+    <div class="f-item"><label>領域</label><select id="fField" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>冊次</label><select id="fBook" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>大單元</label><select id="fUnit" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>子單元</label><select id="fSub" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>年級</label><select id="fGrade" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>年度</label><select id="fYear" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>來源學校</label><select id="fSchool" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>考試種類</label><select id="fExamType" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>題型</label><select id="fType" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>圖表類型</label><select id="fChart" onchange="onFilterChange()"><option value="">全部</option></select></div>
+    <div class="f-item"><label>難度</label><select id="fDiff" onchange="onFilterChange()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option><option>未評分</option></select></div>
+    <div class="f-item"><label>是否題組</label><select id="fGroup" onchange="onFilterChange()"><option value="">全部</option><option value="y">是</option><option value="n">否</option></select></div>
+    <div class="f-item"><label>是否待確認</label><select id="fFlag" onchange="onFilterChange()"><option value="">全部</option><option value="y">待確認</option><option value="n">已確認</option></select></div>
+    <button class="f-clear" onclick="clearFilters()">清除篩選</button>
+  </div>
+
+  <div id="pickedNote" style="display:none" class="section">
+    <div class="empty-note" id="pickedNoteText"></div>
+  </div>
+
+  <div id="content">
+    <div class="loading">載入中…</div>
+  </div>
+
+  <div class="roadmap">
+    第一版涵蓋：題量總覽・章節覆蓋地圖・題型/圖表/難度分布・待確認清單・題源年份・單卷比較｜規劃中：目標命題藍圖與缺題警示・題目審核流程與使用紀錄
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://esfepufqyeplafzbeeag.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+const QTYPES=[
+  {code:'A1',name:'概念辨識',group:'A 觀念型'},{code:'A2',name:'概念推論',group:'A 觀念型'},{code:'A3',name:'概念比較',group:'A 觀念型'},
+  {code:'B1',name:'圖表判讀',group:'B 圖表型'},{code:'B2',name:'圖表推論',group:'B 圖表型'},{code:'B3',name:'圖表計算',group:'B 圖表型'},
+  {code:'C1',name:'實驗操作',group:'C 實驗型'},{code:'C2',name:'實驗設計',group:'C 實驗型'},{code:'C3',name:'實驗結果推論',group:'C 實驗型'},
+  {code:'D1',name:'單步計算',group:'D 計算型'},{code:'D2',name:'多步計算',group:'D 計算型'},{code:'D3',name:'估算判斷',group:'D 計算型'},
+  {code:'E1',name:'情境判斷',group:'E 素養情境型'},{code:'E2',name:'情境推論',group:'E 素養情境型'},{code:'E3',name:'長文閱讀',group:'E 素養情境型'},
+  {code:'填',name:'填充（非選）',group:'非選擇'},{code:'計',name:'計算（非選）',group:'非選擇'}
+];
+const CHART_CATS=['運動圖','函數關係圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','統計圖','情境示意圖','表格','其他','無'];
+const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
+
+function normType(t){
+  if(t==null)return '';t=(''+t).trim();
+  if(!t)return '';
+  for(const x of QTYPES){if(t===x.code||t===x.name||t===x.code+' '+x.name||t===x.code+x.name)return x.code;}
+  const m=t.match(/^([A-E][1-3]|填|計)(?=\s|$|[一-鿿])/);
+  return m?m[1]:t;
+}
+function qtypeInfo(code){return QTYPES.find(x=>x.code===code)||null;}
+function bookToGrade(book){
+  book=book||'';
+  if(book==='JB1'||book==='JB2')return '七年級';
+  if(book==='JB3'||book==='JB4')return '八年級';
+  if(book==='JB5'||book==='JB6')return '九年級';
+  if(HS_BOOKS.includes(book))return '高中';
+  return '';
+}
+function gradeFromExam(exam,book){
+  exam=exam||'';
+  if(exam){
+    if(exam.includes('九年級')||exam.includes('國三'))return '九年級';
+    if(exam.includes('八年級')||exam.includes('國二'))return '八年級';
+    if(exam.includes('七年級')||exam.includes('國一'))return '七年級';
+    if(exam.includes('高一'))return '高一';
+    if(exam.includes('高二'))return '高二';
+    if(exam.includes('高三'))return '高三';
+    if(exam.includes('高中')||exam.includes('學測')||exam.includes('分科測驗'))return '高中';
+  }
+  return bookToGrade(book);
+}
+function schoolLevelOf(grade){return ['七年級','八年級','九年級'].includes(grade)?'國中':(grade?'高中':'');}
+function examTypeOf(exam,school){
+  exam=exam||'';
+  if(!exam)return '';
+  if(exam.includes('段考'))return '段考';
+  if(exam.includes('模擬')||exam.includes('北模')||exam.includes('全模'))return '模擬考';
+  if(exam.includes('會考'))return '會考';
+  if(exam.includes('學測'))return '學測';
+  if(exam.includes('分科測驗'))return '分科測驗';
+  if(school||/國[中小]|高[中職]/.test(exam))return '段考';
+  return '其他';
+}
+function calcDiffLvl(s,m,c){
+  s=+s||0;m=+m||0;c=+c||0;
+  if(!s||!m||!c)return '未評分';
+  const t=s+m+c;
+  if(t<=4)return '簡單';if(t<=6)return '中等';if(t<=8)return '困難';return '極難';
+}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function pct(n,d){return d?((n/d*100).toFixed(1)):'0.0';}
+
+let ALL=[];       // 全部已 precompute 的題目（不含 passage）
+let scopeMode='all';
+let pickedIds=null;   // Set or null
+let pickedExam=null;  // 單一考卷名稱（若有）
+
+function precompute(r){
+  r.grade=gradeFromExam(r.exam,r.book);
+  r.level=schoolLevelOf(r.grade);
+  r.examTypeC=examTypeOf(r.exam,r.school);
+  r.typeCode=normType(r.type);
+  r.diffLvl=calcDiffLvl(r.step,r.mem,r.con);
+  r.chartC=(r.chart||'').trim()||'（未填寫）';
+  r.hasGroup=!!r.group_id;
+  return r;
+}
+
+async function loadAll(){
+  document.getElementById('content').innerHTML='<div class="loading">載入中…</div>';
+  let rows=[],off=0;
+  while(true){
+    const {data,error}=await sb.from('questions')
+      .select('id,year,school,exam,no,book,book_name,field,unit,sub,type,step,mem,con,chart,flag,group_id,basis,summary')
+      .neq('type','passage')
+      .range(off,off+999);
+    if(error){console.error(error);break;}
+    if(data&&data.length)rows=rows.concat(data);
+    if(!data||data.length<1000)break;
+    off+=1000;
+  }
+  ALL=rows.map(precompute);
+  buildFilterOptions();
+  render();
+}
+
+// ---------- 篩選選單 ----------
+function uniq(arr){return Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>String(a).localeCompare(String(b),'zh-Hant'));}
+function fillSelect(id,values,keepValue){
+  const el=document.getElementById(id);
+  const cur=keepValue!==undefined?keepValue:el.value;
+  el.innerHTML='<option value="">全部</option>'+values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if(values.includes(cur))el.value=cur;
+}
+function buildFilterOptions(){
+  fillSelect('fField',uniq(ALL.map(r=>r.field)));
+  fillSelect('fBook',uniq(ALL.map(r=>r.book_name||r.book)));
+  fillSelect('fUnit',uniq(ALL.map(r=>r.unit)));
+  fillSelect('fSub',uniq(ALL.map(r=>r.sub)));
+  fillSelect('fGrade',uniq(ALL.map(r=>r.grade)));
+  fillSelect('fYear',uniq(ALL.map(r=>r.year)));
+  fillSelect('fSchool',uniq(ALL.map(r=>r.school)));
+  fillSelect('fExamType',uniq(ALL.map(r=>r.examTypeC)));
+  const typeVals=uniq(ALL.map(r=>r.typeCode));
+  const fType=document.getElementById('fType');
+  const curType=fType.value;
+  fType.innerHTML='<option value="">全部</option>'+typeVals.map(v=>{const info=qtypeInfo(v);return `<option value="${esc(v)}">${esc(v)}${info?' '+esc(info.name):''}</option>`;}).join('');
+  if(typeVals.includes(curType))fType.value=curType;
+  fillSelect('fChart',CHART_CATS.filter(c=>ALL.some(r=>r.chartC===c)).concat(ALL.some(r=>r.chartC==='（未填寫）')?['（未填寫）']:[]));
+}
+function onFilterChange(){render();}
+function clearFilters(){
+  ['fLevel','fField','fBook','fUnit','fSub','fGrade','fYear','fSchool','fExamType','fType','fChart','fDiff','fGroup','fFlag'].forEach(id=>{document.getElementById(id).value='';});
+  render();
+}
+
+// ---------- 範圍 ----------
+function setScope(mode){
+  scopeMode=mode;
+  document.getElementById('scopeAllBtn').classList.toggle('active',mode==='all');
+  document.getElementById('scopeFilterBtn').classList.toggle('active',mode==='filtered');
+  document.getElementById('scopePickedBtn').classList.toggle('active',mode==='picked');
+  document.getElementById('filterBar').style.display=mode==='filtered'?'flex':'none';
+  render();
+}
+function applyFilters(rows){
+  const lvl=document.getElementById('fLevel').value;
+  const field=document.getElementById('fField').value;
+  const book=document.getElementById('fBook').value;
+  const unit=document.getElementById('fUnit').value;
+  const sub=document.getElementById('fSub').value;
+  const grade=document.getElementById('fGrade').value;
+  const year=document.getElementById('fYear').value;
+  const school=document.getElementById('fSchool').value;
+  const examTypeV=document.getElementById('fExamType').value;
+  const typeV=document.getElementById('fType').value;
+  const chartV=document.getElementById('fChart').value;
+  const diffV=document.getElementById('fDiff').value;
+  const groupV=document.getElementById('fGroup').value;
+  const flagV=document.getElementById('fFlag').value;
+  return rows.filter(r=>{
+    if(lvl&&r.level!==lvl)return false;
+    if(field&&r.field!==field)return false;
+    if(book&&(r.book_name||r.book)!==book)return false;
+    if(unit&&r.unit!==unit)return false;
+    if(sub&&r.sub!==sub)return false;
+    if(grade&&r.grade!==grade)return false;
+    if(year&&r.year!==year)return false;
+    if(school&&r.school!==school)return false;
+    if(examTypeV&&r.examTypeC!==examTypeV)return false;
+    if(typeV&&r.typeCode!==typeV)return false;
+    if(chartV&&r.chartC!==chartV)return false;
+    if(diffV&&r.diffLvl!==diffV)return false;
+    if(groupV==='y'&&!r.hasGroup)return false;
+    if(groupV==='n'&&r.hasGroup)return false;
+    if(flagV==='y'&&!r.flag)return false;
+    if(flagV==='n'&&r.flag)return false;
+    return true;
+  });
+}
+function getScopedRows(){
+  if(scopeMode==='picked'){
+    if(pickedIds&&pickedIds.size)return ALL.filter(r=>pickedIds.has(r.id));
+    if(pickedExam)return ALL.filter(r=>r.exam===pickedExam);
+    return [];
+  }
+  if(scopeMode==='filtered')return applyFilters(ALL);
+  return ALL;
+}
+function getComparisonRows(){
+  // 單卷比較報告的比較基準：有設篩選就比篩選範圍，否則比全題庫
+  const f=applyFilters(ALL);
+  return f.length?f:ALL;
+}
+
+// ---------- 讀取從題庫頁帶來的已選狀態 ----------
+function loadPickedFromStorage(){
+  try{
+    const idsRaw=localStorage.getItem('analyticsPickedIds');
+    if(idsRaw){const arr=JSON.parse(idsRaw);if(Array.isArray(arr)&&arr.length){pickedIds=new Set(arr);return;}}
+  }catch(e){}
+  const qp=new URLSearchParams(location.search);
+  const examParam=qp.get('exam');
+  if(examParam)pickedExam=examParam;
+}
+
+// ---------- 渲染 ----------
+function render(){
+  const rows=getScopedRows();
+  const examSet=new Set(rows.map(r=>r.exam).filter(Boolean));
+  const groupSet=new Set(rows.map(r=>r.group_id).filter(Boolean));
+  document.getElementById('scopeInfo').innerHTML=`共 <b>${rows.length}</b> 題　·　${examSet.size} 份考卷　·　${groupSet.size} 個題組`;
+
+  const pickedNote=document.getElementById('pickedNote');
+  if(scopeMode==='picked'&&!rows.length){
+    pickedNote.style.display='block';
+    document.getElementById('pickedNoteText').textContent=
+      '尚未帶入任何已選取的題目或考卷。請回題庫頁勾選題目後點「分析已選」，或從共編進度表點考卷連結進入。';
+    document.getElementById('content').innerHTML='';
+    return;
+  }
+  pickedNote.style.display='none';
+
+  if(!rows.length){
+    document.getElementById('content').innerHTML='<div class="section"><div class="empty-note">目前範圍沒有符合條件的題目。</div></div>';
+    return;
+  }
+
+  const html=[
+    buildOverview(rows),
+    buildChapterMap(rows),
+    buildFieldDist(rows),
+    buildTypeDist(rows),
+    buildChartDist(rows),
+    buildDifficulty(rows),
+    buildComparisonIfSingleExam(rows),
+    buildPending(rows),
+    buildSourceYear(rows),
+  ].filter(Boolean).join('');
+  document.getElementById('content').innerHTML=html;
+}
+
+function buildOverview(rows){
+  const examSet=new Set(rows.map(r=>r.exam).filter(Boolean));
+  const groupSet=new Set(rows.map(r=>r.group_id).filter(Boolean));
+  const pending=rows.filter(r=>r.flag).length;
+  const noChart=rows.filter(r=>r.chartC==='無').length;
+  return `<div class="grid">
+    <div class="stat-card"><div class="n">${rows.length}</div><div class="lbl">總題數</div></div>
+    <div class="stat-card"><div class="n">${examSet.size}</div><div class="lbl">考卷數</div></div>
+    <div class="stat-card"><div class="n">${groupSet.size}</div><div class="lbl">題組數</div></div>
+    <div class="stat-card"><div class="n">${pending}</div><div class="lbl">待確認題數（${pct(pending,rows.length)}%）</div></div>
+    <div class="stat-card"><div class="n">${rows.length-noChart}</div><div class="lbl">有圖表素材題（${pct(rows.length-noChart,rows.length)}%）</div></div>
+  </div>`;
+}
+
+function buildChapterMap(rows){
+  // field -> book(冊次) -> unit -> sub -> count
+  const tree={};
+  rows.forEach(r=>{
+    const f=r.field||'（未分類領域）',bk=r.book_name||r.book||'（未分冊）',u=r.unit||'（未分大單元）',s=r.sub||'（未分子單元）';
+    tree[f]=tree[f]||{};
+    tree[f][bk]=tree[f][bk]||{};
+    tree[f][bk][u]=tree[f][bk][u]||{};
+    tree[f][bk][u][s]=(tree[f][bk][u][s]||0)+1;
+  });
+  const total=rows.length;
+  const fields=Object.keys(tree).sort((a,b)=>{
+    const ca=Object.values(tree[a]).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
+    const cb=Object.values(tree[b]).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
+    return cb-ca;
+  });
+  let html='<div class="chapter-tree">';
+  fields.forEach(f=>{
+    const books=tree[f];
+    const fCount=Object.values(books).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
+    html+=`<details class="lv1" open><summary><span class="arrow">▶</span><span class="name">${esc(f)}</span><span class="cnt">${fCount} 題（${pct(fCount,total)}%）</span></summary>`;
+    const bookKeys=Object.keys(books).sort((a,b)=>{
+      const ca=Object.values(books[a]).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
+      const cb=Object.values(books[b]).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
+      return cb-ca;
+    });
+    bookKeys.forEach(bk=>{
+      const units=books[bk];
+      const bkCount=Object.values(units).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
+      html+=`<div class="lv2"><details><summary><span class="arrow">▶</span><span class="name">${esc(bk)}</span><span class="cnt">${bkCount} 題（${pct(bkCount,total)}%）</span></summary>`;
+      const unitKeys=Object.keys(units).sort((a,b)=>{
+        const ca=Object.values(units[a]).reduce((s,v)=>s+v,0),cb=Object.values(units[b]).reduce((s,v)=>s+v,0);
+        return cb-ca;
+      });
+      unitKeys.forEach(u=>{
+        const subs=units[u];
+        const uCount=Object.values(subs).reduce((s,v)=>s+v,0);
+        html+=`<div class="lv3"><details><summary><span class="arrow">▶</span><span class="name">${esc(u)}</span><span class="cnt">${uCount} 題（${pct(uCount,total)}%）</span></summary>`;
+        const subKeys=Object.keys(subs).sort((a,b)=>subs[b]-subs[a]);
+        subKeys.forEach(s=>{
+          const c=subs[s];
+          const warn=c<=2;
+          html+=`<div class="leaf"><span class="name${warn?' empty-warn':''}">${esc(s)}${warn?' ⚠':''}</span><span class="mini-bar"><div style="width:${Math.max(4,c/uCount*100)}%"></div></span><span class="cnt">${c} 題（${pct(c,uCount)}%）</span></div>`;
+        });
+        html+='</details></div>';
+      });
+      html+='</details></div>';
+    });
+    html+='</details>';
+  });
+  html+='</div>';
+  return `<div class="section"><h2>📚 章節覆蓋地圖</h2><div class="desc">依「領域 → 冊次 → 大單元 → 子單元」展開；子單元標示 ⚠ 代表題數偏少（≤2 題），可能是命題缺口。</div>${html}</div>`;
+}
+
+function barList(pairs,total,warnBelow){
+  return pairs.map(([label,count])=>{
+    const w=Math.max(1,count/total*100);
+    const warn=warnBelow!=null&&count<=warnBelow;
+    return `<div class="bar-row${warn?' warn':''}"><div class="lbl" title="${esc(label)}">${esc(label)}</div><div class="bar-wrap"><div class="bar-fill" style="width:${w}%"></div></div><div class="val">${count}（${pct(count,total)}%）</div></div>`;
+  }).join('');
+}
+
+function buildFieldDist(rows){
+  const total=rows.length;
+  const counts={};
+  rows.forEach(r=>{const f=r.field||'（未分類）';counts[f]=(counts[f]||0)+1;});
+  const pairs=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return `<div class="section"><h2>科別／領域分布</h2><div class="desc">生物、理化、地科（或高中物理／化學／生物／地科）比例是否失衡。</div>${barList(pairs,total)}</div>`;
+}
+
+function buildTypeDist(rows){
+  const total=rows.length;
+  const byGroup={};
+  rows.forEach(r=>{
+    const info=qtypeInfo(r.typeCode);
+    const g=info?info.group:'（未分類／舊格式）';
+    byGroup[g]=(byGroup[g]||0)+1;
+  });
+  const groupPairs=Object.entries(byGroup).sort((a,b)=>b[1]-a[1]);
+  const byCode={};
+  rows.forEach(r=>{
+    const info=qtypeInfo(r.typeCode);
+    const label=info?`${info.code} ${info.name}`:(r.typeCode||'（未分類）');
+    byCode[label]=(byCode[label]||0)+1;
+  });
+  const codePairs=Object.entries(byCode).sort((a,b)=>b[1]-a[1]);
+  return `<div class="section"><h2>題型分布 <span class="qtag">A～E 大類＋細項</span></h2><div class="desc">題庫是否幾乎都是概念題，缺圖表、實驗或素養情境題。</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">大類</div>
+    ${barList(groupPairs,total)}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">細項</div>
+    ${barList(codePairs,total)}
+  </div>`;
+}
+
+function buildChartDist(rows){
+  const total=rows.length;
+  const counts={};
+  rows.forEach(r=>{counts[r.chartC]=(counts[r.chartC]||0)+1;});
+  const pairs=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  return `<div class="section"><h2>圖表類型分布</h2><div class="desc">電路、實驗裝置、表格、統計圖等素材題的覆蓋度；「（未填寫）」代表資料品質待補（規則上應明確填「無」）。</div>${barList(pairs,total)}</div>`;
+}
+
+function buildDifficulty(rows){
+  const total=rows.length;
+  const order=['簡單','中等','困難','極難','未評分'];
+  const counts={};
+  rows.forEach(r=>{counts[r.diffLvl]=(counts[r.diffLvl]||0)+1;});
+  const pairs=order.filter(k=>counts[k]).map(k=>[k,counts[k]]);
+  function scoreHist(field,label){
+    const h={};
+    rows.forEach(r=>{const v=+r[field]||0;h[v]=(h[v]||0)+1;});
+    const keys=Object.keys(h).map(Number).sort((a,b)=>a-b);
+    const pairs2=keys.map(k=>[label+' = '+k,h[k]]);
+    return barList(pairs2,total);
+  }
+  return `<div class="section"><h2>難度結構</h2><div class="desc">是否過多背誦題，缺少多步推論／跨章題。整體難度分布（步驟分+記憶分+概念分，三項有一項為 0 視為未評分）：</div>
+    ${barList(pairs,total)}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">步驟分分布</div>${scoreHist('step','步驟分')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">記憶分分布</div>${scoreHist('mem','記憶分')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">概念分分布</div>${scoreHist('con','概念分')}
+  </div>`;
+}
+
+function buildPending(rows){
+  const pend=rows.filter(r=>r.flag).sort((a,b)=>(b.no||'').localeCompare(a.no||''));
+  if(!pend.length)return `<div class="section"><h2>品質與待整理</h2><div class="empty-note">目前範圍內沒有待確認的題目 🎉</div></div>`;
+  const list=pend.slice(0,60).map(r=>{
+    const reason=(r.basis||'').startsWith('[回報]')?r.basis:'';
+    return `<div class="pend-item">
+      <div class="title">${esc(r.summary||'（無摘要）')}</div>
+      <div class="meta">${esc(r.year||'')}・${esc(r.school||'')}・${esc(r.exam||'')}・第${esc(r.no||'?')}題</div>
+      ${reason?`<div class="reason">${esc(reason)}</div>`:''}
+    </div>`;
+  }).join('');
+  const more=pend.length>60?`<div class="empty-note">還有 ${pend.length-60} 題，請至題庫頁用「只看待確認(Y)」篩選查看全部</div>`:'';
+  return `<div class="section"><h2>品質與待整理 <span class="qtag">共 ${pend.length} 題待確認</span></h2><div class="desc">哪些題目需要教師複核。</div>${list}${more}</div>`;
+}
+
+function buildSourceYear(rows){
+  const total=rows.length;
+  const bySchool={};
+  rows.forEach(r=>{const s=r.school||'（未填）';bySchool[s]=(bySchool[s]||0)+1;});
+  const schoolPairs=Object.entries(bySchool).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  const byYear={};
+  rows.forEach(r=>{const y=r.year||'（未填）';byYear[y]=(byYear[y]||0)+1;});
+  const yearPairs=Object.entries(byYear).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+  return `<div class="section"><h2>題源與年份</h2><div class="desc">題目來源是否過度集中於某校或某年度。</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">來源學校（前 12）</div>
+    ${barList(schoolPairs,total)}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">年度分布</div>
+    ${barList(yearPairs,total)}
+  </div>`;
+}
+
+function distMap(rows,keyFn){
+  const total=rows.length,m={};
+  rows.forEach(r=>{const k=keyFn(r);m[k]=(m[k]||0)+1;});
+  const out={};
+  Object.keys(m).forEach(k=>out[k]=m[k]/total);
+  return out;
+}
+function cmpRow(label,thisMap,baseMap,key){
+  const a=(thisMap[key]||0)*100,b=(baseMap[key]||0)*100;
+  const mx=Math.max(a,b,1);
+  return `<div class="cmp-row"><div class="lbl" title="${esc(label)}">${esc(label)}</div>
+    <div class="cmp-bars">
+      <div class="cmp-line this"><span class="tag">本卷</span><div class="bar-wrap"><div class="bar-fill" style="width:${a/mx*100}%"></div></div></div>
+      <div class="cmp-line base"><span class="tag">對照</span><div class="bar-wrap"><div class="bar-fill" style="width:${b/mx*100}%"></div></div></div>
+    </div>
+    <div class="pct">${a.toFixed(1)}% / ${b.toFixed(1)}%</div>
+  </div>`;
+}
+function buildComparisonIfSingleExam(rows){
+  if(scopeMode!=='picked')return '';
+  const exams=new Set(rows.map(r=>r.exam).filter(Boolean));
+  if(exams.size!==1)return '';
+  const examName=[...exams][0];
+  const baseRows=getComparisonRows();
+  if(!baseRows.length)return '';
+
+  const unitThis=distMap(rows,r=>r.unit||'（未分類）');
+  const unitBase=distMap(baseRows,r=>r.unit||'（未分類）');
+  const topUnits=Object.entries(unitThis).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([u])=>u);
+
+  const chartThis=distMap(rows,r=>r.chartC==='無'?'無圖':'有圖');
+  const chartBase=distMap(baseRows,r=>r.chartC==='無'?'無圖':'有圖');
+
+  const diffThis=distMap(rows,r=>r.diffLvl);
+  const diffBase=distMap(baseRows,r=>r.diffLvl);
+
+  const groupThis=distMap(rows,r=>r.hasGroup?'題組':'單題');
+  const groupBase=distMap(baseRows,r=>r.hasGroup?'題組':'單題');
+
+  const typeGroupThis=distMap(rows,r=>{const info=qtypeInfo(r.typeCode);return info?info.group:'（未分類）';});
+  const typeGroupBase=distMap(baseRows,r=>{const info=qtypeInfo(r.typeCode);return info?info.group:'（未分類）';});
+
+  // 自動提示：找出落差最大的 1-2 個章節、有圖比例、記憶分=1 比例
+  const insights=[];
+  const unitGapSorted=topUnits.map(u=>({u,gap:(unitThis[u]||0)-(unitBase[u]||0)})).sort((a,b)=>Math.abs(b.gap)-Math.abs(a.gap));
+  if(unitGapSorted.length){
+    const top=unitGapSorted[0];
+    const dir=top.gap>0?'高於':'低於';
+    insights.push(`「${esc(top.u)}」占本卷 ${( (unitThis[top.u]||0)*100 ).toFixed(0)}%，${dir}對照範圍的 ${((unitBase[top.u]||0)*100).toFixed(0)}%`);
+  }
+  const hasChartThis=(chartThis['有圖']||0)*100, hasChartBase=(chartBase['有圖']||0)*100;
+  insights.push(`圖表題占 ${hasChartThis.toFixed(1)}%，${hasChartThis<hasChartBase?'低於':'高於或持平於'}對照範圍的 ${hasChartBase.toFixed(1)}%${hasChartThis<hasChartBase?'，建議補入圖表判讀／計算題':''}`);
+  const mem1Rate=rows.filter(r=>+r.mem===1).length/rows.length*100;
+  const mem1Base=baseRows.filter(r=>+r.mem===1).length/baseRows.length*100;
+  if(mem1Rate>mem1Base){
+    insights.push(`記憶分為 1（偏背誦）的題目占 ${mem1Rate.toFixed(0)}%，高於對照範圍的 ${mem1Base.toFixed(0)}%，建議補入概念推論或情境題`);
+  }
+  const pendRate=rows.filter(r=>r.flag).length/rows.length*100;
+  if(pendRate>0)insights.push(`本卷待確認題占 ${pendRate.toFixed(0)}%，建議先複核再組卷使用`);
+
+  return `<div class="section">
+    <h2>📊 單卷比較報告 <span class="qtag">${esc(examName)}</span></h2>
+    <div class="desc">本卷共 ${rows.length} 題，與目前對照範圍（${baseRows.length} 題）比較：</div>
+    <div class="insight-box">${insights.map(t=>'・'+t).join('<br>')}</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">章節比例（前 6）</div>
+    ${topUnits.map(u=>cmpRow(u,unitThis,unitBase,u)).join('')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px">題型大類比例</div>
+    ${Object.keys(typeGroupThis).map(g=>cmpRow(g,typeGroupThis,typeGroupBase,g)).join('')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px">圖表使用比例</div>
+    ${cmpRow('有圖',chartThis,chartBase,'有圖')}${cmpRow('無圖',chartThis,chartBase,'無圖')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px">難度／認知層次比例</div>
+    ${Object.keys(diffThis).map(d=>cmpRow(d,diffThis,diffBase,d)).join('')}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px">題組比例</div>
+    ${cmpRow('題組',groupThis,groupBase,'題組')}${cmpRow('單題',groupThis,groupBase,'單題')}
+  </div>`;
+}
+
+// ---------- 啟動 ----------
+loadPickedFromStorage();
+if(pickedIds||pickedExam)setScope('picked');
+else document.getElementById('filterBar').style.display='none';
+loadAll();
+</script>
+</body>
+</html>
