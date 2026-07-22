@@ -64,6 +64,13 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
 .bar-row .val{width:92px;flex-shrink:0;text-align:right;color:var(--muted);font-size:11.5px}
 .bar-row.warn .bar-fill{background:linear-gradient(90deg,var(--orange),#e08e1f)}
 
+/* 國中／高中分開統計 */
+.split-two{display:flex;gap:24px;flex-wrap:wrap}
+.split-two>.split-half{flex:1;min-width:260px}
+.split-label{font-size:12.5px;font-weight:800;color:var(--red);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.split-label .split-n{font-size:11px;font-weight:600;color:var(--muted);background:#f2f1ec;padding:2px 8px;border-radius:10px}
+.chapter-level:not(:last-child){border-bottom:1px solid var(--line);margin-bottom:18px;padding-bottom:16px}
+
 /* 章節覆蓋地圖 */
 .chapter-tree details{border-bottom:1px solid var(--line);padding:6px 0}
 .chapter-tree details:last-child{border-bottom:none}
@@ -205,7 +212,7 @@ const QTYPES=[
   {code:'E1',name:'情境判斷',group:'E 素養情境型'},{code:'E2',name:'情境推論',group:'E 素養情境型'},{code:'E3',name:'長文閱讀',group:'E 素養情境型'},
   {code:'填',name:'填充（非選）',group:'非選擇'},{code:'計',name:'計算（非選）',group:'非選擇'}
 ];
-const CHART_CATS=['運動圖','函數關係圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','統計圖','情境示意圖','表格','其他','無'];
+const CHART_CATS=['無','表格','函數關係圖','運動圖','統計圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','力學示意圖'];
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
 
 function normType(t){
@@ -521,7 +528,15 @@ function buildOverview(rows){
   </div>`;
 }
 
-function buildChapterMap(rows){
+function splitByLevel(rows){
+  return {
+    jh:rows.filter(r=>r.level==='國中'),
+    hs:rows.filter(r=>r.level==='高中'),
+    other:rows.filter(r=>r.level!=='國中'&&r.level!=='高中'),
+  };
+}
+
+function chapterTreeHTML(rows){
   // field -> book(冊次) -> unit -> sub -> count
   const tree={};
   rows.forEach(r=>{
@@ -572,7 +587,17 @@ function buildChapterMap(rows){
     html+='</details>';
   });
   html+='</div>';
-  return `<div class="section"><h2>📚 章節覆蓋地圖</h2><div class="desc">依「領域 → 冊次 → 大單元 → 子單元」展開；子單元標示 ⚠ 代表題數偏少（≤2 題），可能是命題缺口。</div>${html}</div>`;
+  return html;
+}
+
+function buildChapterMap(rows){
+  const {jh,hs,other}=splitByLevel(rows);
+  const blocks=[];
+  if(jh.length)blocks.push(`<div class="chapter-level"><div class="split-label">國中<span class="split-n">${jh.length} 題</span></div>${chapterTreeHTML(jh)}</div>`);
+  if(hs.length)blocks.push(`<div class="chapter-level"><div class="split-label">高中<span class="split-n">${hs.length} 題</span></div>${chapterTreeHTML(hs)}</div>`);
+  if(other.length)blocks.push(`<div class="chapter-level"><div class="split-label">（未標示學制）<span class="split-n">${other.length} 題</span></div>${chapterTreeHTML(other)}</div>`);
+  if(!blocks.length)return '';
+  return `<div class="section"><h2>📚 章節覆蓋地圖</h2><div class="desc">依「領域 → 冊次 → 大單元 → 子單元」展開；子單元標示 ⚠ 代表題數偏少（≤2 題），可能是命題缺口。國中／高中分開統計，避免混在一起看不出各自的覆蓋狀況。</div>${blocks.join('')}</div>`;
 }
 
 function barList(pairs,total,warnBelow){
@@ -583,16 +608,29 @@ function barList(pairs,total,warnBelow){
   }).join('');
 }
 
-function buildFieldDist(rows){
+function fieldDistBlock(label,rows){
   const total=rows.length;
   const counts={};
   rows.forEach(r=>{const f=r.field||'（未分類）';counts[f]=(counts[f]||0)+1;});
   const pairs=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  return `<div class="section"><h2>科別／領域分布</h2><div class="desc">生物、理化、地科（或高中物理／化學／生物／地科）比例是否失衡。</div>
+  return `<div class="split-half">
+    <div class="split-label">${esc(label)}<span class="split-n">${total} 題</span></div>
     <div class="donut-flex">
-      ${donutSVG(pairs,150,26,{n:total,lbl:'題'})}
+      ${donutSVG(pairs,130,22,{n:total,lbl:'題'})}
       <div class="legend">${legendHTML(pairs,total)}</div>
     </div>
+  </div>`;
+}
+
+function buildFieldDist(rows){
+  const {jh,hs,other}=splitByLevel(rows);
+  const parts=[];
+  if(jh.length)parts.push(fieldDistBlock('國中',jh));
+  if(hs.length)parts.push(fieldDistBlock('高中',hs));
+  if(other.length)parts.push(fieldDistBlock('（未標示學制）',other));
+  if(!parts.length)return '';
+  return `<div class="section"><h2>科別／領域分布</h2><div class="desc">國中（生物／理化／地科）與高中（物理／化學／生物／地科）分開統計，避免混在一起看不出各自比例是否失衡。</div>
+    <div class="split-two">${parts.join('')}</div>
   </div>`;
 }
 
