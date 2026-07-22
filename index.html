@@ -4962,13 +4962,12 @@ const TB_BUTTONS={
   raw:     ()=>`<a class="btn dev-btn" href="raw.html" title="考卷前處理（開發中，請勿使用）" style="text-decoration:none">考卷前處理<i class="dev-tag">開發中</i></a>`,
   selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
-  analyzePicked:()=>`<button class="btn" onclick="analyzePickedItems()" title="把目前勾選的題目帶到「題庫分析」分頁做統計">分析已選</button>`,
   analyticsEmbed:()=>`<div class="tb-embed-wrap"><a href="analytics.html" target="_blank" class="tb-embed-openbtn" title="在新分頁開啟完整版">⤢ 開啟完整版</a><iframe id="analyticsFrame" src="analytics.html" loading="lazy"></iframe></div>`,
   batchGenBtn:  ()=>`<button class="btn dev-btn" onclick="openBatchGenDlg()" title="批次生成詳解（開發中，請勿使用）">批次生成詳解<i class="dev-tag">開發中</i></button>`,
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
-const TB_VER='25';
+const TB_VER='26';
 const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作','題庫分析'];
 // 分頁極簡線條圖示（stroke=currentColor，隨分頁文字顏色變化）
 const _svg=p=>`<svg class="tb-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
@@ -4982,7 +4981,7 @@ const TB_DEFAULT=[
   ['progress','backup','restore','reload','sysDoc'],
   ['import','claude','guide','raw','batchImg'],
   ['solPromptBtn','solImport','batchGenBtn'],
-  ['selFilt','selAll','analyzePicked','stat'],
+  ['selFilt','selAll','stat'],
   ['analyticsEmbed'],
 ];
 let tbEditing=false,tbDragEl=null;
@@ -5262,14 +5261,6 @@ function selectFiltered(){
   if(gids.size){const sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>sSet.has(it.id)||(it.groupId&&gids.has(it.groupId)));}
   shown.forEach(it=>PICKS.add(it.id));
   render();
-}
-function analyzePickedItems(){
-  if(!PICKS.size){alert('尚未勾選任何題目，請先在題庫中勾選題目或考卷。');return;}
-  try{localStorage.setItem('analyticsPickedIds',JSON.stringify(Array.from(PICKS)));}catch(e){}
-  if(typeof openToolbarPanel==='function')openToolbarPanel();
-  setActiveTab(4);
-  const frame=document.getElementById('analyticsFrame');
-  if(frame)frame.src='analytics.html?t='+Date.now(); // 強制重新載入，讀取最新勾選內容
 }
 </script>
 <script>
