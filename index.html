@@ -2738,9 +2738,9 @@ function allowedBooksForFilter(){
   return null;
 }
 function bookToGrade(book){
-  if(book==='JB1'||book==='JB2')return '七年級';
-  if(book==='JB3'||book==='JB4')return '八年級';
-  if(book==='JB5'||book==='JB6')return '九年級';
+  if(book==='JB1'||book==='JB2'||book==='B1'||book==='B2')return '七年級';
+  if(book==='JB3'||book==='JB4'||book==='B3'||book==='B4')return '八年級';
+  if(book==='JB5'||book==='JB6'||book==='B5'||book==='B6')return '九年級';
   if(HS_BOOKS.includes(book))return '高中';
   return '';
 }

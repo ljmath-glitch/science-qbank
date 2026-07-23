@@ -71,23 +71,18 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
 .split-label .split-n{font-size:11px;font-weight:600;color:var(--muted);background:#f2f1ec;padding:2px 8px;border-radius:10px}
 .chapter-level:not(:last-child){border-bottom:1px solid var(--line);margin-bottom:18px;padding-bottom:16px}
 
-/* 章節覆蓋地圖 */
-.chapter-tree details{border-bottom:1px solid var(--line);padding:6px 0}
-.chapter-tree details:last-child{border-bottom:none}
-.chapter-tree summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:5px 4px;border-radius:8px;font-weight:700;font-size:13px}
-.chapter-tree summary::-webkit-details-marker{display:none}
-.chapter-tree summary:hover{background:#faf5f0}
-.chapter-tree summary .arrow{font-size:11px;color:var(--muted);transition:transform .15s;flex-shrink:0}
-.chapter-tree details[open]>summary .arrow{transform:rotate(90deg)}
-.chapter-tree .lv1>summary{font-size:14px}
-.chapter-tree .lv2{margin-left:18px}
-.chapter-tree .lv3{margin-left:18px}
-.chapter-tree .leaf{margin-left:18px;display:flex;align-items:center;gap:10px;padding:4px 4px 4px 21px;font-size:12.5px;color:var(--ink)}
-.chapter-tree .name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chapter-tree .cnt{color:var(--muted);font-size:11.5px;flex-shrink:0;width:110px;text-align:right}
-.chapter-tree .mini-bar{width:70px;height:8px;background:#f2f1ec;border-radius:4px;overflow:hidden;flex-shrink:0}
-.chapter-tree .mini-bar>div{height:100%;background:var(--red);border-radius:4px}
-.chapter-tree .empty-warn{color:#b23b3b}
+/* 章節覆蓋地圖：一律展開、不需點擊，用縮排取代 details 摺疊 */
+.chapter-tree{font-size:12.5px}
+.ct-row{display:flex;align-items:center;gap:8px;padding:3px 6px 3px calc(6px + var(--depth,0) * 16px);border-radius:5px}
+.ct-row.ct-node{font-weight:700}
+.ct-row.ct-d0{font-size:13.5px;padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
+.ct-row.ct-d0:first-child{border-top:none;margin-top:0;padding-top:2px}
+.ct-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ct-cnt{color:var(--muted);font-size:11px;flex-shrink:0;white-space:nowrap}
+.ct-row.ct-leaf{font-weight:500}
+.ct-bar{width:56px;height:6px;background:#f2f1ec;border-radius:3px;overflow:hidden;flex-shrink:0}
+.ct-bar>i{display:block;height:100%;background:var(--red);border-radius:3px}
+.ct-warn{color:#b23b3b}
 
 /* 待確認清單 */
 .pend-item{border-bottom:1px solid var(--line);padding:10px 4px;font-size:12.5px}
@@ -225,9 +220,9 @@ function normType(t){
 function qtypeInfo(code){return QTYPES.find(x=>x.code===code)||null;}
 function bookToGrade(book){
   book=book||'';
-  if(book==='JB1'||book==='JB2')return '七年級';
-  if(book==='JB3'||book==='JB4')return '八年級';
-  if(book==='JB5'||book==='JB6')return '九年級';
+  if(book==='JB1'||book==='JB2'||book==='B1'||book==='B2')return '七年級';
+  if(book==='JB3'||book==='JB4'||book==='B3'||book==='B4')return '八年級';
+  if(book==='JB5'||book==='JB6'||book==='B5'||book==='B6')return '九年級';
   if(HS_BOOKS.includes(book))return '高中';
   return '';
 }
@@ -536,58 +531,52 @@ function splitByLevel(rows){
   };
 }
 
-function chapterTreeHTML(rows){
-  // field -> book(冊次) -> unit -> sub -> count
-  const tree={};
+// 每筆題目對應到章節樹的路徑：領域 → [高中額外的必修/選修分組] → 冊次 → 大單元 → 子單元
+function chapterRowPath(r){
+  const field=r.field||'（未分類領域）';
+  const unit=r.unit||'（未分大單元）';
+  const sub=r.sub||'（未分子單元）';
+  if(r.level==='高中'){
+    const book=r.book||r.book_name||'（未分冊）';
+    const m=book.match(/^選修(.+?)([一二三四五])$/);
+    if(m)return [field,'選修'+m[1],book,unit,sub];
+    return [field,book,unit,sub];
+  }
+  const bk=r.book_name||r.book||'（未分冊）';
+  return [field,bk,unit,sub];
+}
+
+function buildPathTree(rows){
+  const root={children:{},count:0};
   rows.forEach(r=>{
-    const f=r.field||'（未分類領域）',bk=r.book_name||r.book||'（未分冊）',u=r.unit||'（未分大單元）',s=r.sub||'（未分子單元）';
-    tree[f]=tree[f]||{};
-    tree[f][bk]=tree[f][bk]||{};
-    tree[f][bk][u]=tree[f][bk][u]||{};
-    tree[f][bk][u][s]=(tree[f][bk][u][s]||0)+1;
-  });
-  const total=rows.length;
-  const fields=Object.keys(tree).sort((a,b)=>{
-    const ca=Object.values(tree[a]).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
-    const cb=Object.values(tree[b]).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
-    return cb-ca;
-  });
-  let html='<div class="chapter-tree">';
-  fields.forEach(f=>{
-    const books=tree[f];
-    const fCount=Object.values(books).reduce((s,bk)=>s+Object.values(bk).reduce((s2,u)=>s2+Object.values(u).reduce((s3,v)=>s3+v,0),0),0);
-    html+=`<details class="lv1" open><summary><span class="arrow">▶</span><span class="name">${esc(f)}</span><span class="cnt">${fCount} 題（${pct(fCount,total)}%）</span></summary>`;
-    const bookKeys=Object.keys(books).sort((a,b)=>{
-      const ca=Object.values(books[a]).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
-      const cb=Object.values(books[b]).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
-      return cb-ca;
+    root.count++;
+    let node=root;
+    chapterRowPath(r).forEach(seg=>{
+      if(!node.children[seg])node.children[seg]={children:{},count:0};
+      node=node.children[seg];
+      node.count++;
     });
-    bookKeys.forEach(bk=>{
-      const units=books[bk];
-      const bkCount=Object.values(units).reduce((s,u)=>s+Object.values(u).reduce((s2,v)=>s2+v,0),0);
-      html+=`<div class="lv2"><details><summary><span class="arrow">▶</span><span class="name">${esc(bk)}</span><span class="cnt">${bkCount} 題（${pct(bkCount,total)}%）</span></summary>`;
-      const unitKeys=Object.keys(units).sort((a,b)=>{
-        const ca=Object.values(units[a]).reduce((s,v)=>s+v,0),cb=Object.values(units[b]).reduce((s,v)=>s+v,0);
-        return cb-ca;
-      });
-      unitKeys.forEach(u=>{
-        const subs=units[u];
-        const uCount=Object.values(subs).reduce((s,v)=>s+v,0);
-        html+=`<div class="lv3"><details><summary><span class="arrow">▶</span><span class="name">${esc(u)}</span><span class="cnt">${uCount} 題（${pct(uCount,total)}%）</span></summary>`;
-        const subKeys=Object.keys(subs).sort((a,b)=>subs[b]-subs[a]);
-        subKeys.forEach(s=>{
-          const c=subs[s];
-          const warn=c<=2;
-          html+=`<div class="leaf"><span class="name${warn?' empty-warn':''}">${esc(s)}${warn?' ⚠':''}</span><span class="mini-bar"><div style="width:${Math.max(4,c/uCount*100)}%"></div></span><span class="cnt">${c} 題（${pct(c,uCount)}%）</span></div>`;
-        });
-        html+='</details></div>';
-      });
-      html+='</details></div>';
-    });
-    html+='</details>';
   });
-  html+='</div>';
-  return html;
+  return root;
+}
+
+function renderChapterNode(node,depth,grandTotal){
+  const keys=Object.keys(node.children).sort((a,b)=>node.children[b].count-node.children[a].count);
+  return keys.map(k=>{
+    const child=node.children[k];
+    const isLeaf=Object.keys(child.children).length===0;
+    if(isLeaf){
+      const warn=child.count<=2;
+      return `<div class="ct-row ct-leaf" style="--depth:${depth}"><span class="ct-name${warn?' ct-warn':''}">${esc(k)}${warn?' ⚠':''}</span><span class="ct-bar"><i style="width:${Math.max(4,child.count/node.count*100)}%"></i></span><span class="ct-cnt">${child.count} 題（${pct(child.count,node.count)}%）</span></div>`;
+    }
+    return `<div class="ct-row ct-node ct-d${depth}" style="--depth:${depth}"><span class="ct-name">${esc(k)}</span><span class="ct-cnt">${child.count} 題（${pct(child.count,grandTotal)}%）</span></div>`
+      + renderChapterNode(child,depth+1,grandTotal);
+  }).join('');
+}
+
+function chapterTreeHTML(rows){
+  const tree=buildPathTree(rows);
+  return `<div class="chapter-tree">${renderChapterNode(tree,0,rows.length)}</div>`;
 }
 
 function buildChapterMap(rows){
@@ -597,7 +586,7 @@ function buildChapterMap(rows){
   if(hs.length)blocks.push(`<div class="chapter-level"><div class="split-label">高中<span class="split-n">${hs.length} 題</span></div>${chapterTreeHTML(hs)}</div>`);
   if(other.length)blocks.push(`<div class="chapter-level"><div class="split-label">（未標示學制）<span class="split-n">${other.length} 題</span></div>${chapterTreeHTML(other)}</div>`);
   if(!blocks.length)return '';
-  return `<div class="section"><h2>📚 章節覆蓋地圖</h2><div class="desc">依「領域 → 冊次 → 大單元 → 子單元」展開；子單元標示 ⚠ 代表題數偏少（≤2 題），可能是命題缺口。國中／高中分開統計，避免混在一起看不出各自的覆蓋狀況。</div>${blocks.join('')}</div>`;
+  return `<div class="section"><h2>📚 章節覆蓋地圖</h2><div class="desc">全部層級直接展開，不需點擊；子單元標示 ⚠ 代表題數偏少（≤2 題），可能是命題缺口。國中／高中分開統計，避免混在一起看不出各自的覆蓋狀況。</div>${blocks.join('')}</div>`;
 }
 
 function barList(pairs,total,warnBelow){
