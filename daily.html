@@ -78,15 +78,39 @@ header .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;
   padding:12px 18px 6px;position:relative;
 }
 .char-top{display:flex;align-items:center;gap:20px}
+/* 頭像 + 進度環 */
+.char-avatar-wrap{position:relative;width:104px;height:104px;flex-shrink:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.char-ring{position:absolute;inset:0;transform:rotate(-90deg);pointer-events:none}
+.char-ring .ring-bg{fill:none;stroke:rgba(255,255,255,.12);stroke-width:5}
+.char-ring .ring-fill{fill:none;stroke:url(#ringGrad);stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)}
 .char-avatar{
+  position:absolute;top:7px;left:7px;
   width:90px;height:90px;border-radius:50%;
   background:rgba(255,255,255,.15);
   border:1.5px solid rgba(255,255,255,.35);
   backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   box-shadow:0 4px 18px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.4);
   display:flex;align-items:center;justify-content:center;font-size:48px;
-  flex-shrink:0;transition:box-shadow .4s;
+  flex-shrink:0;transition:box-shadow .4s,transform .25s;
 }
+.char-avatar-wrap:active .char-avatar{transform:scale(.94)}
+.char-avatar.bounce{animation:charBounce .55s cubic-bezier(.28,.84,.42,1)}
+@keyframes charBounce{0%{transform:scale(1)}30%{transform:scale(1.14) rotate(-6deg)}55%{transform:scale(.95) rotate(4deg)}100%{transform:scale(1) rotate(0)}}
+.char-pct{position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#f9a12c,#d4870c);color:#fff;
+  font-size:10px;font-weight:800;font-family:inherit;padding:2px 8px;border-radius:20px;
+  box-shadow:0 2px 8px rgba(212,135,12,.5);white-space:nowrap;pointer-events:none}
+/* 角色台詞泡泡（從頭像下方冒出，尾巴朝上指向頭像，避免蓋住稱號與名稱） */
+.char-bubble{position:absolute;left:22px;top:104px;z-index:8;
+  max-width:min(230px,64vw);background:#fffdf8;color:#4a2f13;
+  font-family:inherit;font-size:12px;font-weight:600;line-height:1.5;
+  padding:8px 12px;border-radius:3px 12px 12px 12px;
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(-6px) scale(.9);transform-origin:left top;
+  transition:opacity .25s,transform .25s;pointer-events:none}
+.char-bubble.show{opacity:1;transform:translateY(0) scale(1)}
+.char-bubble::before{content:'';position:absolute;left:14px;top:-6px;
+  border-width:0 6px 8px 6px;border-style:solid;border-color:transparent transparent #fffdf8 transparent}
 .char-info{flex:1;min-width:0}
 .char-rank{display:inline-block;background:var(--orange);color:#5e0102;border-radius:20px;
   padding:3px 10px;font-family:inherit;font-size:11px;font-weight:700;letter-spacing:1px;margin-bottom:6px}
@@ -141,6 +165,21 @@ header .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;
 .spec-num{position:absolute;top:-30px;width:60px;text-align:center;left:50%;transform:translateX(-50%);font-size:12px;color:rgba(244,241,234,.4);font-family:inherit;font-weight:600}
 .spec-node.current .spec-num{top:-36px;color:rgba(212,160,23,.75)}
 .spec-emoji.current-glow{filter:drop-shadow(0 0 8px rgba(212,160,23,.9)) drop-shadow(0 0 3px rgba(255,220,80,.7))}
+.spec-node{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.spec-node.locked .spec-emoji{filter:grayscale(1) opacity(.4)}
+.spec-node.locked .spec-glass::after{content:'🔒';position:absolute;right:-2px;bottom:-2px;font-size:11px;filter:none}
+.spec-node.current .spec-glass{animation:specBreathe 2.4s ease-in-out infinite}
+@keyframes specBreathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
+.spec-node.sel .spec-glass{box-shadow:0 0 0 2px rgba(212,160,23,.8),0 0 14px rgba(212,160,23,.5)}
+.spec-pop{margin:2px 18px 0;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:12px;
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
+  color:rgba(244,241,234,.85);display:none;align-items:center;gap:10px}
+.spec-pop.show{display:flex;animation:popIn .3s ease}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.spec-pop .pop-emoji{font-size:26px;flex-shrink:0}
+.spec-pop .pop-name{font-weight:800;color:#f4f1ea;font-size:13px}
+.spec-pop .pop-req{color:rgba(244,241,234,.6);margin-top:2px}
+.spec-pop .pop-req b{color:#d4a017}
 /* 近期作答紀錄 */
 .char-history{
   margin:0 18px 14px;border-radius:12px;padding:9px 14px;
@@ -504,7 +543,18 @@ header .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;
   <div class="char-card" id="charCard">
     <div class="char-body">
       <div class="char-top">
-        <div class="char-avatar" id="charAvatar"></div>
+        <div class="char-avatar-wrap" id="charAvatarWrap" onclick="tapAvatar()">
+          <svg class="char-ring" viewBox="0 0 104 104" aria-hidden="true">
+            <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#af9a6b"/><stop offset="1" stop-color="#f9a12c"/>
+            </linearGradient></defs>
+            <circle class="ring-bg" cx="52" cy="52" r="49"/>
+            <circle class="ring-fill" id="charRingFill" cx="52" cy="52" r="49"/>
+          </svg>
+          <div class="char-avatar" id="charAvatar"></div>
+          <div class="char-pct" id="charPct"></div>
+        </div>
+        <div class="char-bubble" id="charBubble"></div>
         <div class="char-info">
           <div class="char-rank" id="charRank"></div>
           <div class="char-name" id="charName"></div>
@@ -518,6 +568,7 @@ header .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;
     <div class="spec-center-label" id="specCenterLabel"></div>
     <div class="char-progress"><!-- legacy, hidden --></div>
     <div class="level-spectrum" id="levelSpectrum"></div>
+    <div class="spec-pop" id="specPop"></div>
     <div class="char-condition">
       <span class="cond-icon">⚡</span>
       <span id="charCondText"></span>
@@ -1169,12 +1220,46 @@ function getFallback(offset, sidx=0){
 // CHARACTER PROGRESSION
 // ═══════════════════════════════════════════════════════════════
 const LEVELS=[
-  {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  next:15, glow:'rgba(156,163,175,.35)'},
-  {name:'NPC',     emoji:'🤖',rank:'背景角色',threshold:15, next:40, glow:'rgba(59,130,246,.35)'},
-  {name:'人上人',  emoji:'😇',rank:'脫穎而出',threshold:40, next:80, glow:'rgba(139,92,246,.35)'},
-  {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:80, next:null,glow:'rgba(245,158,11,.35)'},
+  {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  next:15, glow:'rgba(156,163,175,.35)',
+   lines:['咕咕…再多練幾題就會了！','菜是原罪，但我每天都在進步！','今天也要努力啄題目～','別看我菜，我可是很拼的！']},
+  {name:'NPC',     emoji:'🤖',rank:'背景角色',threshold:15, next:40, glow:'rgba(59,130,246,.35)',
+   lines:['每天上線刷題，我是稱職的背景角色。','劇情推進中，請繼續作答。','雖然是路人，但我很認真！','嗶嗶—偵測到一位好學的你。']},
+  {name:'人上人',  emoji:'😇',rank:'脫穎而出',threshold:40, next:80, glow:'rgba(139,92,246,.35)',
+   lines:['略懂略懂。','這題？小意思。','再解幾題就要登頂了！','站得高，看得遠～']},
+  {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:80, next:null,glow:'rgba(245,158,11,.35)',
+   lines:['這題我幼稚園就會了。','知識，是我的玩具。','已臻化境，仍不鬆懈。','傳說，由你續寫。']},
 ];
 function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].threshold)i=j;return{index:i,...LEVELS[i]};}
+// 點頭像：彈跳 + 輪播角色台詞
+let _bubbleTimer=null,_lineIdx=0;
+function tapAvatar(){
+  const av=document.getElementById('charAvatar'),bub=document.getElementById('charBubble');
+  if(!av||!bub)return;
+  av.classList.remove('bounce');void av.offsetWidth;av.classList.add('bounce');
+  const lv=getLevel(calcUpgradeScore(getHistory()).upgradeScore);
+  const lines=lv.lines||['繼續加油！'];
+  bub.textContent=lines[_lineIdx%lines.length];_lineIdx++;
+  bub.classList.add('show');
+  clearTimeout(_bubbleTimer);
+  _bubbleTimer=setTimeout(()=>bub.classList.remove('show'),2600);
+}
+// 點光譜節點：顯示該階段解鎖條件
+let _selNode=null;
+function tapSpecNode(idx){
+  const score=calcUpgradeScore(getHistory()).upgradeScore;
+  const curIdx=getLevel(score).index;
+  const l=LEVELS[idx];
+  const pop=document.getElementById('specPop');
+  document.querySelectorAll('.spec-node').forEach((n,i)=>n.classList.toggle('sel',i===idx&&_selNode!==idx));
+  if(_selNode===idx){pop.classList.remove('show');_selNode=null;return;}
+  _selNode=idx;
+  let req;
+  if(idx<curIdx)req=`已解鎖 ✓　達成門檻 ${l.threshold} 題`;
+  else if(idx===curIdx)req=l.threshold===0?'起始階段，你目前在這裡':`目前階段（門檻 ${l.threshold} 題），你在這裡`;
+  else req=`還需不重複答對 <b>${l.threshold-score}</b> 題解鎖`;
+  pop.innerHTML=`<span class="pop-emoji">${l.emoji}</span><span><span class="pop-name">${l.name}</span>　<span style="font-size:11px;color:rgba(244,241,234,.45)">${l.rank}</span><div class="pop-req">${req}</div></span>`;
+  pop.classList.add('show');
+}
 
 // ═══════════════════════════════════════════════════════════════
 // STORAGE
@@ -1272,27 +1357,40 @@ function renderCharacter(){
   document.getElementById('charRank').textContent=lv.rank;
   document.getElementById('charName').textContent=lv.name;
   document.getElementById('charLv').textContent=`Lv.${lv.index+1}`;
+  // 進度環：目前階段 → 下一階段的完成度
+  const ring=document.getElementById('charRingFill');
+  const pctEl=document.getElementById('charPct');
+  const C=2*Math.PI*49;
+  let ringPct;
   if(nextLv){
+    const span=nextLv.threshold-lv.threshold;
+    ringPct=span>0?Math.min(1,(upgradeScore-lv.threshold)/span):0;
     document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
     document.getElementById('charCondText').innerHTML=
       `不重複答對 <b>還差 ${nextLv.threshold-upgradeScore} 題</b> 即可進化為「${nextLv.name}」`;
+    if(pctEl)pctEl.textContent=Math.round(ringPct*100)+'%';
   }else{
+    ringPct=1;
     document.getElementById('charNext').textContent='已達最高階段 🎉';
     document.getElementById('charCondText').textContent='繼續累積，成為傳說！';
+    if(pctEl)pctEl.textContent='MAX';
   }
+  if(ring){ring.style.strokeDasharray=C;ring.style.strokeDashoffset=C*(1-ringPct);}
   // 等級光譜
   const maxT=LEVELS[LEVELS.length-1].threshold;
   const fillPct=Math.min(100,upgradeScore/maxT*100);
   const nodes=LEVELS.map((l,i)=>{
     const pos=l.threshold/maxT*100;
-    const cls=i<lv.index?'done':i===lv.index?'current':'';
+    const cls=i<lv.index?'done':i===lv.index?'current':(i>lv.index?'locked':'');
     const glowCls=i===lv.index?' current-glow':'';
-    return `<div class="spec-node ${cls}" style="left:${pos}%">
+    return `<div class="spec-node ${cls}" style="left:${pos}%" onclick="tapSpecNode(${i})">
       <div class="spec-glass"><span class="spec-emoji${glowCls}">${l.emoji}</span></div>
       <span class="spec-name">${l.name}</span>
       <span class="spec-num">${l.threshold}</span>
     </div>`;
   }).join('');
+  _selNode=null;
+  const _sp=document.getElementById('specPop');if(_sp)_sp.classList.remove('show');
   document.getElementById('levelSpectrum').innerHTML=
     `<div class="spec-track"><div class="spec-fill" style="width:${fillPct}%"></div>${nodes}</div>`;
   // 5題循環點點 → spec-center-label（只顯示每日一題，不含練習）
