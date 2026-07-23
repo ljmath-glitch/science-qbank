@@ -208,6 +208,15 @@
   .pvimg-sw{bottom:-6px;left:-6px;cursor:sw-resize;}
   .pvimg-se{bottom:-6px;right:-6px;cursor:se-resize;}
   @media print{.pvimg-corner{display:none!important}}
+  .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
+  .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
+  .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
+  .pv-fmt-bar{position:sticky;top:48px;z-index:15;display:none;align-items:center;gap:6px;padding:7px 16px;background:#2e75b6;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap}
+  .pv-fmt-bar button{width:30px;height:30px;border:none;border-radius:6px;background:#fff;color:#1a2238;font-family:Georgia,serif;font-size:14px;cursor:pointer}
+  .pv-fmt-bar button:hover{background:#d8e8fb}
+  .pv-fmt-bar select{height:30px;border:none;border-radius:6px;font-family:inherit;font-size:12.5px;padding:0 6px;cursor:pointer}
+  .pv-fmt-bar .hint{margin-left:auto;font-size:11.5px;color:#e3edfa}
+  @media print{.pv-fmt-bar{display:none!important}}
   .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
   .pv-bar .spacer{flex:1}
   .pv-sheet{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
@@ -767,6 +776,22 @@
     <button class="btn green" onclick="exportPaperCSV()">⬇ 下載 CSV</button>
     <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
     <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
+  </div>
+  <div class="pv-fmt-bar noprint" id="pvFmtBar">
+    <button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button>
+    <button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button>
+    <button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button>
+    <select onmousedown="event.preventDefault()" onchange="_pvApplySize(this.value);this.selectedIndex=0">
+      <option value="">字級…</option>
+      <option value="12">12px</option>
+      <option value="14">14px</option>
+      <option value="16">16px（預設）</option>
+      <option value="18">18px</option>
+      <option value="20">20px</option>
+      <option value="24">24px</option>
+      <option value="28">28px</option>
+    </select>
+    <span class="hint">點擊題目文字即可編輯；選取文字後套用格式</span>
   </div>
   <div class="pv-sheet" id="pvSheet"></div>
 </div>
@@ -2833,6 +2858,84 @@ function hlNames(s){
   const wrap=n=>`<span style="text-decoration:underline">${n}</span>`;
   return s.replace(new RegExp(_COUNTRIES.source,'g'),(_,n)=>wrap(n));
 }
+// ── 題目/題組文章的粗體/斜體/底線/字級：存成純文字裡的輕量標記，相容既有 esc()/CSV/AI 流程 ──
+// **粗體** ##斜體## __底線__ {{18}}字級18px{{/}}；一律在 esc() 之後才轉成真正的 tag，避免逸出未跳脫的使用者輸入
+function applyRichMarks(s){
+  s=s.replace(/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}/g,'<span style="font-size:$1px">$2</span>');
+  s=s.replace(/\*\*([\s\S]+?)\*\*/g,'<b>$1</b>');
+  s=s.replace(/##([\s\S]+?)##/g,'<i>$1</i>');
+  s=s.replace(/__([\s\S]+?)__/g,'<u>$1</u>');
+  return s;
+}
+function stripRichMarks(s){
+  if(!s)return s;
+  return s.replace(/\{\{\d+\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/##([\s\S]+?)##/g,'$1').replace(/__([\s\S]+?)__/g,'$1');
+}
+// 解析成 [{t,bold,italic,underline,size}]，供 Word(.docx)/RTF 產生 TextRun 使用；要在 latexToPlain 之前跑，避免 {} 被吃掉
+function richTextSegs(text){
+  const tokens=[];
+  const re=/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}|\*\*([\s\S]+?)\*\*|##([\s\S]+?)##|__([\s\S]+?)__/g;
+  let last=0,m;
+  while((m=re.exec(text))!==null){
+    if(m.index>last)tokens.push({t:text.slice(last,m.index)});
+    if(m[1]!==undefined)tokens.push({t:m[2],size:parseInt(m[1])});
+    else if(m[3]!==undefined)tokens.push({t:m[3],bold:true});
+    else if(m[4]!==undefined)tokens.push({t:m[4],italic:true});
+    else if(m[5]!==undefined)tokens.push({t:m[5],underline:true});
+    last=re.lastIndex;
+  }
+  if(last<text.length)tokens.push({t:text.slice(last)});
+  return tokens;
+}
+// 供 Word(.docx) 匯出用：把 **粗體**##斜體##__底線__{{18}}字級{{/}} 標記轉成 TextRun 陣列；沒有標記的部分沿用原本的關鍵字自動底線偵測
+function buildRichRuns(rawText,defaultSize,trFn,TextRunClass,UnderlineTypeClass){
+  const runs=[];
+  richTextSegs(rawText).forEach(seg=>{
+    const plain=latexToPlain(seg.t);
+    const lines=plain.split('\n');
+    const hasExplicit=seg.bold||seg.italic||seg.underline||seg.size;
+    lines.forEach((line,li)=>{
+      if(li>0)runs.push(new TextRunClass({break:1}));
+      if(hasExplicit){
+        if(!line)return;
+        const opts={text:line,size:seg.size?Math.round(seg.size*1.5):defaultSize};
+        if(seg.bold)opts.bold=true;
+        if(seg.italic)opts.italics=true;
+        if(seg.underline)opts.underline={type:UnderlineTypeClass.SINGLE};
+        runs.push(trFn(opts));
+      }else{
+        _textSegs(line).forEach(s2=>{
+          if(!s2.t)return;
+          const ul=s2.s==='d'?{type:UnderlineTypeClass.DOUBLE}:s2.s==='s'?{type:UnderlineTypeClass.SINGLE}:undefined;
+          runs.push(trFn({text:s2.t,size:defaultSize,...(ul?{underline:ul}:{})}));
+        });
+      }
+    });
+  });
+  return runs;
+}
+// contentEditable 的已 sanitize DOM → 存回純文字標記（未知標籤只保留文字內容，等同白名單過濾貼上內容）
+function serializeRichText(container){
+  function walk(node){
+    let out='';
+    node.childNodes.forEach(child=>{
+      if(child.nodeType===Node.TEXT_NODE){out+=child.textContent;return;}
+      if(child.nodeType!==Node.ELEMENT_NODE)return;
+      const tag=child.tagName;
+      if(tag==='BR'){out+='\n';return;}
+      if(tag==='DIV'||tag==='P'){const t=walk(child);out+=(out?'\n':'')+t;return;}
+      const inner=walk(child);
+      if(!inner)return;
+      if(tag==='B'||tag==='STRONG')out+='**'+inner+'**';
+      else if(tag==='I'||tag==='EM')out+='##'+inner+'##';
+      else if(tag==='U')out+='__'+inner+'__';
+      else if(tag==='SPAN'&&child.style&&child.style.fontSize)out+='{{'+parseInt(child.style.fontSize)+'}}'+inner+'{{/}}';
+      else out+=inner;
+    });
+    return out;
+  }
+  return walk(container);
+}
 function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
 // ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
 let _pvDrag=null,_pvResize=null;
@@ -2849,6 +2952,38 @@ async function _pvSave(type,id){
   pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
   if(pv)pv.scrollTop=sy;
   _rebuildLastPaperHTML();
+}
+// ── 預覽文字：直接點擊題目/題組文章即可編輯，搭配上方格式工具列（粗體/斜體/底線/字級）──
+function _pvRawText(type,id){
+  if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.q||it.summary||''):'';}
+  const ps=PASSAGES[id];return ps?(ps.q||''):'';
+}
+function _pvTextFocus(el){
+  el.dataset.editing='1';
+  el.innerHTML=applyRichMarks(esc(_pvRawText(el.dataset.rtype,el.dataset.rid))).replace(/\n/g,'<br>');
+  const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='flex';
+}
+async function _pvTextBlur(el){
+  if(!el.dataset.editing)return;
+  delete el.dataset.editing;
+  const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='none';
+  const type=el.dataset.rtype,id=el.dataset.rid;
+  const markup=serializeRichText(el);
+  if(type==='q'){const it=DB.find(x=>x.id===id);if(it)it.q=markup;}
+  else{const ps=PASSAGES[id];if(ps)ps.q=markup;}
+  await _pvSave(type,id);
+}
+function _pvFmt(cmd){document.execCommand(cmd,false,null);}
+function _pvApplySize(px){
+  if(!px)return;
+  const sel=window.getSelection();
+  if(!sel||!sel.rangeCount||sel.isCollapsed)return;
+  const range=sel.getRangeAt(0);
+  const span=document.createElement('span');
+  span.style.fontSize=px+'px';
+  try{range.surroundContents(span);}
+  catch(e){span.appendChild(range.extractContents());range.insertNode(span);}
+  sel.removeAllRanges();
 }
 function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
 function imgHtmlPreview(im,type,id,idx){
@@ -3004,12 +3139,12 @@ function renderPage(list,shown,page){
       _shownPs.add(_gid);
       const _ps=PASSAGES[_gid];
       const _pImgs=(_ps.imgs||[]).map(imgHtml).join('');
-      const _pText=esc(fixLatex(_ps.q||'')).replace(/\n/g,'<br>');
+      const _pText=applyRichMarks(esc(fixLatex(_ps.q||''))).replace(/\n/g,'<br>');
       passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:inherit;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
     }
     const d=calcDiff(it.step,it.mem,it.con);
     const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
-    const optEsc=esc(cleanQ).replace(/\n/g,'<br>');
+    const optEsc=applyRichMarks(esc(cleanQ)).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(imgHtml).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=(it.sol&&!HIDE_SOL)?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
@@ -3199,7 +3334,9 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
         const r=groupRanges[gid];
         const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
         const hdrLine=rangeStr?`<div style="margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
-        passageHtml=`<div class="passage-block">${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>')}${pImgs}</div></div>`;
+        const pTextInner=applyRichMarks(esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>'));
+        const pText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="p" data-rid="${gid}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${pTextInner}</span>`:pTextInner;
+        passageHtml=`<div class="passage-block">${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${pText}${pImgs}</div></div>`;
       }
     }
     qNum++;
@@ -3218,7 +3355,9 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
       }
     }
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
-    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>')))}${imgs}${extra}${src}</div>`;
+    const qTextInner=applyRichMarks(hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))));
+    const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
+    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
   });
   const body=bodyParts.join('');
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
@@ -4759,13 +4898,13 @@ async function generateSol(){
     let groupCtx='';
     if(gid){
       const ps=PASSAGES[gid];
-      if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+ps.q+'\n';
+      if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+stripRichMarks(ps.q)+'\n';
       const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));
       if(siblings.length>1)
-        groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';
+        groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${stripRichMarks(s.q)}`).join('\n')+'\n';
     }
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-    const {sys,msg}=makeSolPrompt(q,ans,meta,groupCtx);
+    const {sys,msg}=makeSolPrompt(stripRichMarks(q),ans,meta,groupCtx);
     let result;
     const qImgs=[...(curImgs||[]),..._getGroupImgs(gid,curImgs)];
     if(provider==='claude')result=await callClaude(sys,msg,key,qImgs);
@@ -4906,9 +5045,9 @@ async function batchGenerateSol(){
     const typeTxt=(QTYPES.find(x=>x.code===it.type)||{}).name||'';
     const gid=it.groupId||'';
     let groupCtx='';
-    if(gid){const ps=PASSAGES[gid];if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+ps.q+'\n';const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${s.q}`).join('\n')+'\n';}
+    if(gid){const ps=PASSAGES[gid];if(ps&&ps.q)groupCtx+='\n\n【題組閱讀材料】\n'+stripRichMarks(ps.q)+'\n';const siblings=DB.filter(x=>x.groupId===gid&&x.q).sort((a,b)=>(+a.no||0)-(+b.no||0));if(siblings.length>1)groupCtx+='\n【本題屬題組，各小題如下】\n'+siblings.map(s=>`（第${s.no||'?'}題）${stripRichMarks(s.q)}`).join('\n')+'\n';}
     const meta=[field&&'領域：'+field,unit&&'單元：'+unit+(sub?'＞'+sub:''),kp&&'知識點：'+kp,summary&&'題目摘要：'+summary,typeTxt&&'題型：'+typeTxt,ans&&'正確答案：'+ans].filter(Boolean).join('　');
-    const {sys:s2,msg:m2}=makeSolPrompt(q,ans,meta,groupCtx);
+    const {sys:s2,msg:m2}=makeSolPrompt(stripRichMarks(q),ans,meta,groupCtx);
     const itImgs=[...(it.imgs||[]),..._getGroupImgs(it.groupId||'',it.imgs)];
     let result,success=false;
     for(let attempt=0;attempt<=3;attempt++){
@@ -5285,10 +5424,10 @@ function buildSolBatchPrompt(items){
   const qList=items.length?items.map((it,i)=>{
     const gid=it.groupId||'';
     let ctx='';
-    if(gid&&PASSAGES[gid]&&PASSAGES[gid].q)ctx='【題組閱讀材料】\n'+PASSAGES[gid].q+'\n\n';
+    if(gid&&PASSAGES[gid]&&PASSAGES[gid].q)ctx='【題組閱讀材料】\n'+stripRichMarks(PASSAGES[gid].q)+'\n\n';
     const hasImg=(it.imgs&&it.imgs.length)?'　⚠️此題含圖，請參考我另外附上的圖片再寫詳解':'';
     const meta=[it.field&&'領域：'+it.field,it.unit&&'單元：'+it.unit,it.kp&&'知識點：'+it.kp].filter(Boolean).join('　');
-    return `【第 ${i+1} 題】考試名稱：${it.exam}　題號：${it.no}${hasImg}\n${meta}\n答案：${it.ans||'（未提供，請自行判斷）'}\n${ctx}題目：\n${it.q}`;
+    return `【第 ${i+1} 題】考試名稱：${it.exam}　題號：${it.no}${hasImg}\n${meta}\n答案：${it.ans||'（未提供，請自行判斷）'}\n${ctx}題目：\n${stripRichMarks(it.q)}`;
   }).join('\n\n'+'─'.repeat(40)+'\n\n'):
     '【請把題目資料貼在這裡，格式如下，可貼多題】\n\n【第 1 題】考試名稱：＿＿＿　題號：＿＿＿\n領域：＿＿＿　單元：＿＿＿　知識點：＿＿＿\n答案：＿＿＿\n題目：\n＿＿＿（把題目文字貼在這裡，含圖的話另外附上圖片）';
   const countTxt=items.length?`以下共有 ${items.length} 道題目需要撰寫詳解：`:'請為以下題目撰寫詳解（可自行貼上題目內容，沒有勾選特定題目時用此範本手動複製）：';
@@ -5713,9 +5852,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
           const rW=groupRangesW[gid];
           if(rW){const rStr=rW.min===rW.max?`第${rW.min}題`:`${rW.min}～${rW.max}題`;children.push(new Paragraph({children:[tr({text:`閱讀下列敘述後，回答${rStr}`,size:22})],spacing:{before:160,after:60}}));}
           const pCells=[];
-          const pLines=latexToPlain(ps.q||'').split('\n');
-          const pRuns=[];
-          pLines.forEach((line,li)=>{if(li>0)pRuns.push(new TextRun({break:1}));pRuns.push(tr({text:line,size:22}));});
+          const pRuns=buildRichRuns(ps.q||'',22,tr,TextRun,UnderlineType);
           pCells.push(new Paragraph({children:pRuns,spacing:{before:80,after:80}}));
           for(const img of (ps.imgs||[])){await addImgToList(pCells,img);}
           children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[new TableCell({borders:{top:PB,bottom:PB,left:PB,right:PB},shading:{fill:'FFFFFF'},children:pCells})]})]  }));
@@ -5725,16 +5862,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       if(showTag&&(it.unit||it.sub)){
         children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));
       }
-      {const qLines=latexToPlain(it.q||it.summary||'').split('\n');
-      const qRuns=[];
-      qLines.forEach((line,li)=>{
-        if(li>0)qRuns.push(new TextRun({break:1}));
-        _textSegs(line).forEach(seg=>{
-          if(!seg.t)return;
-          const ul=seg.s==='d'?{type:UnderlineType.DOUBLE}:seg.s==='s'?{type:UnderlineType.SINGLE}:undefined;
-          qRuns.push(tr({text:seg.t,size:24,...(ul?{underline:ul}:{})}));
-        });
-      });
+      {const qRuns=buildRichRuns(it.q||it.summary||'',24,tr,TextRun,UnderlineType);
       children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:qRuns,spacing:{before:180,after:0}}));}
       for(const img of (it.imgs||[])){await addImgToList(children,img);}
       if((ansMode==='inline'||ansMode==='full')&&it.ans){
