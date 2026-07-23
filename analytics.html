@@ -792,6 +792,8 @@ function heatmapTable(rowLabels,colLabels,valueFn,opts){
 // ---------- 範圍 ----------
 function setScope(mode){
   scopeMode=mode;
+  // 切到「已選取題目／考卷」時，重新讀一次題庫頁最新的勾選（同源共用 localStorage，iframe 常駐不重載）
+  if(mode==='picked'){pickedIds=null;pickedExam=null;loadPickedFromStorage();}
   document.getElementById('scopeAllBtn').classList.toggle('active',mode==='all');
   document.getElementById('scopeFilterBtn').classList.toggle('active',mode==='filtered');
   document.getElementById('scopePickedBtn').classList.toggle('active',mode==='picked');
@@ -858,6 +860,12 @@ function loadPickedFromStorage(){
   const examParam=qp.get('exam');
   if(examParam)pickedExam=examParam;
 }
+// 題庫頁（父視窗，同源）更新勾選時會寫入 localStorage → 觸發本 iframe 的 storage 事件；若正在看「已選取」範圍就即時重繪
+window.addEventListener('storage',e=>{
+  if(e.key==='analyticsPickedIds'&&scopeMode==='picked'){
+    pickedIds=null;pickedExam=null;loadPickedFromStorage();render();
+  }
+});
 
 // ---------- 渲染 ----------
 function render(){

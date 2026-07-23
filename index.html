@@ -2727,7 +2727,12 @@ function toggleHideSol(checked){
   if(f)f.checked=checked;
   render();
 }
+// 把目前勾選的題目同步到 localStorage，讓內嵌的「題庫分析」分頁（同源 iframe）可即時讀到「已選取題目／考卷」
+function syncPicksToAnalytics(){
+  try{localStorage.setItem('analyticsPickedIds',JSON.stringify(Array.from(PICKS)));}catch(e){}
+}
 function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
+  syncPicksToAnalytics();
   // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
   if(_gids.size){const _sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>_sSet.has(it.id)||(it.groupId&&_gids.has(it.groupId)));}
