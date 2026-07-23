@@ -137,6 +137,47 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
 .line-chart-wrap{overflow-x:auto}
 .line-chart-wrap svg{display:block}
 
+/* 可排序表格 */
+.dt-wrap{overflow-x:auto;margin-bottom:6px}
+table.dt{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+table.dt th{text-align:left;padding:7px 10px;border-bottom:2px solid var(--line);color:var(--muted);font-weight:700;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--card)}
+table.dt th:hover{color:var(--red)}
+table.dt th.sorted::after{content:' ▾';color:var(--red)}
+table.dt th.sorted.asc::after{content:' ▴'}
+table.dt td{padding:6px 10px;border-bottom:1px solid var(--line)}
+table.dt tr.clickable{cursor:pointer}
+table.dt tr.clickable:hover td{background:#faf5f0}
+table.dt td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt td.warn{color:#b23b3b;font-weight:700}
+.pp-up{color:#1f6f5c;font-weight:700}
+.pp-down{color:#b23b3b;font-weight:700}
+
+/* 熱度圖 */
+.heat-wrap{overflow-x:auto}
+table.heat{border-collapse:collapse;font-size:11px}
+table.heat th{padding:5px 8px;color:var(--muted);font-weight:700;white-space:nowrap;position:sticky;top:0;background:var(--card)}
+table.heat th.rowhead{text-align:left;position:sticky;left:0;background:var(--card);z-index:2;max-width:160px;overflow:hidden;text-overflow:ellipsis}
+table.heat td{padding:5px 8px;text-align:center;cursor:pointer;white-space:nowrap;border:1px solid #fff;min-width:64px}
+table.heat td:hover{outline:2px solid var(--ink)}
+table.heat td .n{font-weight:700}
+table.heat td .p{font-size:9.5px;opacity:.85}
+table.heat td.empty{background:#f2f1ec!important;color:var(--muted);cursor:default}
+table.heat td.empty:hover{outline:none}
+
+/* 控制列小標籤 */
+.yc-note{font-size:11px;color:var(--muted);background:#f2f1ec;border-radius:6px;padding:3px 8px;display:inline-block;margin:0 0 8px}
+.yc-warn-note{font-size:11.5px;color:#7a5b16;background:#fff8ec;border:1px solid #f0dcaf;border-radius:8px;padding:6px 10px;margin-bottom:10px}
+
+/* 資料品質 */
+.dq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:6px}
+.dq-card{background:#fdfaf5;border:1px solid #ecdfc2;border-radius:10px;padding:11px 13px;cursor:pointer;transition:.12s}
+.dq-card:hover{border-color:var(--red)}
+.dq-card .n{font-size:20px;font-weight:800;color:#a8641c}
+.dq-card .n.zero{color:var(--muted);font-weight:600}
+.dq-card .lbl{font-size:11.5px;color:#7a6e60;margin-top:2px;line-height:1.4}
+.dq-samples{font-size:11.5px;color:var(--muted);margin-top:16px}
+.dq-samples .row{padding:5px 4px;border-bottom:1px solid var(--line)}
+
 </style>
 </head>
 <body>
@@ -180,6 +221,22 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
     <button class="f-clear" onclick="clearFilters()">清除篩選</button>
   </div>
 
+  <div class="filter-bar" id="yearCtrlBar">
+    <div class="f-item"><label>年度學制</label><select id="ycLevel" onchange="render()"><option value="">全部</option><option>國中</option><option>高中</option></select></div>
+    <div class="f-item"><label>時間範圍</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <input id="ycFrom" type="text" placeholder="起，如112" style="width:64px" onchange="render()">
+        <span style="color:var(--muted)">–</span>
+        <input id="ycTo" type="text" placeholder="迄，如114" style="width:64px" onchange="render()">
+      </div>
+    </div>
+    <div class="f-item"><label>顯示粒度</label><select id="ycGranularity" onchange="render()"><option value="merged">年度合併</option><option value="split">上／下學期分開</option></select></div>
+    <div class="f-item"><label>統計方式</label><select id="ycWeight" onchange="render()"><option value="q">題目加權</option><option value="exam">考卷加權</option></select></div>
+    <div class="f-item"><label>顯示方式</label><select id="ycDisplay" onchange="render()"><option value="count">題數</option><option value="pct">年度內比例</option><option value="diff">與前一年差異(pp)</option></select></div>
+    <button class="f-clear" onclick="clearYearCtrl()">重設年度控制</button>
+    <span style="margin-left:auto;font-size:11px;color:var(--muted);max-width:320px">此列控制「年度總覽／年度比較」相關圖表；不影響上方學制篩選以外的其他篩選條件</span>
+  </div>
+
   <div id="pickedNote" style="display:none" class="section">
     <div class="empty-note" id="pickedNoteText"></div>
   </div>
@@ -189,10 +246,11 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
   </div>
 
   <div class="roadmap">
-    第一版涵蓋：題量總覽・章節覆蓋地圖・題型/圖表/難度分布・待確認清單・題源年份・單卷比較｜規劃中：目標命題藍圖與缺題警示・題目審核流程與使用紀錄
+    涵蓋：年度總覽・章節覆蓋地圖與年度比較・年度科目冊次・年度題型/圖表/難度・資料品質診斷・題源偏差・單卷比較・目標命題藍圖（讀取比較）｜規劃中：可自訂目標藍圖寫入・使用次數紀錄
   </div>
 </div>
 
+<script src="syllabus.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL='https://esfepufqyeplafzbeeag.supabase.co';
@@ -209,6 +267,50 @@ const QTYPES=[
 ];
 const CHART_CATS=['無','表格','函數關係圖','運動圖','統計圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','力學示意圖'];
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
+const TYPE_GROUP_ORDER=['A 觀念型','B 圖表型','C 實驗型','D 計算型','E 素養情境型','非選擇'];
+const JH_FIELDS=['生物','理化','地科'];
+const HS_FIELDS=['物理','化學','生物','地科'];
+
+// ── 依 syllabus.js（翰林版國中＋龍騰版高中課綱）建立冊次→領域對照、單元/子單元的課綱順序 ──
+// 國中比對 book_name 欄（如「八上理化」）；高中比對 book 欄（如「必修物理」，資料庫的 book 欄本身就是乾淨的冊次名稱）
+const SYL_ROWS=(typeof HANLIN_SYLLABUS!=='undefined'?HANLIN_SYLLABUS:'').split('\n').filter(Boolean).map(l=>{
+  const [book,book_name,field,unit,sub]=l.split('|');
+  return {book,book_name,field,unit,sub};
+});
+const SYL_FIELD_OF_BOOK={};   // dbBookKey -> 課綱認定的正確領域
+const SYL_UNIT_LIST={};       // dbBookKey -> [大單元,...]（課綱順序）
+const SYL_SUB_LIST={};        // dbBookKey+''+大單元 -> [子單元,...]（課綱順序）
+const SYL_BOOK_ORDER_JH=[],SYL_BOOK_ORDER_HS=[];
+SYL_ROWS.forEach(r=>{
+  const isHS=HS_BOOKS.includes(r.book);
+  const key=isHS?r.book:r.book_name;
+  if(!(key in SYL_FIELD_OF_BOOK)){
+    SYL_FIELD_OF_BOOK[key]=r.field;
+    (isHS?SYL_BOOK_ORDER_HS:SYL_BOOK_ORDER_JH).push(key);
+  }
+  (SYL_UNIT_LIST[key]=SYL_UNIT_LIST[key]||[]);
+  if(!SYL_UNIT_LIST[key].includes(r.unit))SYL_UNIT_LIST[key].push(r.unit);
+  const uk=key+''+r.unit;
+  (SYL_SUB_LIST[uk]=SYL_SUB_LIST[uk]||[]);
+  if(!SYL_SUB_LIST[uk].includes(r.sub))SYL_SUB_LIST[uk].push(r.sub);
+});
+function dbBookKey(r){return r.level==='高中'?(r.book||r.book_name||''):(r.book_name||r.book||'');}
+function syllabusIdx(list,val){const i=(list||[]).indexOf(val);return i<0?9999:i;}
+
+// ── 年度正規化：112上、113-下學期、114學測、114分科測驗、114會考…→ {aca(學年度), term(學期/考試類型), valid} ──
+// 只用於統計用的計算欄位，不改寫原始資料
+function normalizeYear(rawYear,examTypeC){
+  const y=(rawYear||'').trim();
+  if(!y)return {aca:null,term:null,valid:false,raw:rawYear||''};
+  let m;
+  if(m=y.match(/^(\d{2,3})\s*學測$/))return {aca:m[1],term:'學測',valid:true,raw:y};
+  if(m=y.match(/^(\d{2,3})\s*分科測驗$/))return {aca:m[1],term:'分科測驗',valid:true,raw:y};
+  if(m=y.match(/^(\d{2,3})\s*會考$/))return {aca:m[1],term:'會考',valid:true,raw:y};
+  if(m=y.match(/^(\d{2,3})[-－]?\s*上(學期)?$/))return {aca:m[1],term:'上',valid:true,raw:y};
+  if(m=y.match(/^(\d{2,3})[-－]?\s*下(學期)?$/))return {aca:m[1],term:'下',valid:true,raw:y};
+  if(m=y.match(/^(\d{2,3})$/))return {aca:m[1],term:examTypeC||'未辨識',valid:true,raw:y};
+  return {aca:null,term:null,valid:false,raw:y};
+}
 
 function normType(t){
   if(t==null)return '';t=(''+t).trim();
@@ -351,7 +453,29 @@ function precompute(r){
   r.typeCode=normType(r.type);
   r.diffLvl=calcDiffLvl(r.step,r.mem,r.con);
   r.chartC=(r.chart||'').trim()||'（未填寫）';
+  r.chartValid=CHART_CATS.includes(r.chartC);
   r.hasGroup=!!r.group_id;
+  r.yr=normalizeYear(r.year,r.examTypeC);
+  const bk=dbBookKey(r);
+  const sylField=SYL_FIELD_OF_BOOK[bk];
+  const dq={
+    noLevel:!r.level,
+    noField:!r.field,
+    noBook:!(r.book||r.book_name),
+    noUnit:!r.unit,
+    noSub:!r.sub,
+    chartInvalid:!r.chartValid,
+    yearInvalid:!r.yr.valid,
+    diffMissing:(!(+r.step)||!(+r.mem)||!(+r.con)),
+    diffInvalid:[r.step,r.mem,r.con].some(v=>v!=null&&v!==''&&(+v<0||+v>5)),
+    fieldBookMismatch:!!(r.level&&r.field&&bk&&sylField&&sylField!==r.field),
+    notInSyllabus:!!(r.level&&bk&&!(bk in SYL_FIELD_OF_BOOK)),
+    missingImgRef:(!r.imgs||!r.imgs.length)&&/如圖|如下圖|附圖|見圖|上圖/.test(r.q||''),
+    aiAnswer:/【AI\s*判斷答案】/.test(r.sol||''),
+    flag:!!r.flag,
+  };
+  dq.any=dq.noLevel||dq.noField||dq.noBook||dq.noUnit||dq.noSub||dq.chartInvalid||dq.yearInvalid||dq.diffInvalid||dq.diffMissing||dq.fieldBookMismatch||dq.missingImgRef||dq.aiAnswer||dq.flag;
+  r.dq=dq;
   return r;
 }
 
@@ -360,7 +484,7 @@ async function loadAll(){
   let rows=[],off=0;
   while(true){
     const {data,error}=await sb.from('questions')
-      .select('id,year,school,exam,no,book,book_name,field,unit,sub,type,step,mem,con,chart,flag,group_id,basis,summary')
+      .select('id,year,school,exam,no,book,book_name,field,unit,sub,type,step,mem,con,chart,flag,group_id,basis,summary,q,sol,imgs')
       .neq('type','passage')
       .range(off,off+999);
     if(error){console.error(error);break;}
@@ -369,6 +493,12 @@ async function loadAll(){
     off+=1000;
   }
   ALL=rows.map(precompute);
+  const groupCount={};
+  ALL.forEach(r=>{if(r.group_id)groupCount[r.group_id]=(groupCount[r.group_id]||0)+1;});
+  ALL.forEach(r=>{
+    r.dq.orphanGroup=!!(r.group_id&&groupCount[r.group_id]===1);
+    r.dq.any=r.dq.any||r.dq.orphanGroup;
+  });
   buildFilterOptions();
   render();
 }
@@ -401,6 +531,142 @@ function onFilterChange(){render();}
 function clearFilters(){
   ['fLevel','fField','fBook','fUnit','fSub','fGrade','fYear','fSchool','fExamType','fType','fChart','fDiff','fGroup','fFlag'].forEach(id=>{document.getElementById(id).value='';});
   render();
+}
+function clearYearCtrl(){
+  document.getElementById('ycLevel').value='';
+  document.getElementById('ycFrom').value='';
+  document.getElementById('ycTo').value='';
+  document.getElementById('ycGranularity').value='merged';
+  document.getElementById('ycWeight').value='q';
+  document.getElementById('ycDisplay').value='count';
+  render();
+}
+function getYearCtrl(){
+  return {
+    level:document.getElementById('ycLevel').value,
+    from:parseInt(document.getElementById('ycFrom').value)||null,
+    to:parseInt(document.getElementById('ycTo').value)||null,
+    granularity:document.getElementById('ycGranularity').value,
+    weight:document.getElementById('ycWeight').value,
+    display:document.getElementById('ycDisplay').value,
+  };
+}
+// 依年度控制列篩出「有效年度」的題目，並算出每筆的「年度分桶鍵」（合併模式=學年度；分開模式=學年度+學期）
+function yearScopedRows(rows,yc){
+  yc=yc||getYearCtrl();
+  return rows.filter(r=>{
+    if(!r.yr.valid)return false;
+    if(yc.level&&r.level!==yc.level)return false;
+    const aca=+r.yr.aca;
+    if(yc.from&&aca<yc.from)return false;
+    if(yc.to&&aca>yc.to)return false;
+    return true;
+  }).map(r=>{
+    r._yk=yc.granularity==='split'?(r.yr.aca+(['上','下'].includes(r.yr.term)?r.yr.term:'')):r.yr.aca;
+    return r;
+  });
+}
+function sortedYearKeys(rows){
+  return Array.from(new Set(rows.map(r=>r._yk))).sort((a,b)=>{
+    const na=parseInt(a),nb=parseInt(b);
+    if(na!==nb)return na-nb;
+    return String(a).localeCompare(String(b),'zh-Hant');
+  });
+}
+function ppFmt(v){return (v>=0?'+':'−')+Math.abs(v).toFixed(1)+'pp';}
+// 考卷加權：每份考卷先算內部比例，再對考卷取平均（每份考卷權重相同）；回傳 {key:比例0~1}
+function examWeightedDist(rows,keyFn){
+  const byExam={};
+  rows.forEach(r=>{const e=r.exam||'（未命名考卷）';(byExam[e]=byExam[e]||[]).push(r);});
+  const exams=Object.keys(byExam);
+  if(!exams.length)return {};
+  const sums={};
+  exams.forEach(e=>{
+    const list=byExam[e];
+    const local={};
+    list.forEach(r=>{const k=keyFn(r);local[k]=(local[k]||0)+1;});
+    Object.keys(local).forEach(k=>{sums[k]=(sums[k]||0)+local[k]/list.length;});
+  });
+  const out={};
+  Object.keys(sums).forEach(k=>out[k]=sums[k]/exams.length);
+  return out;
+}
+// 題目加權：直接算比例
+function qWeightedDist(rows,keyFn){
+  const total=rows.length||1,m={};
+  rows.forEach(r=>{const k=keyFn(r);m[k]=(m[k]||0)+1;});
+  const out={};
+  Object.keys(m).forEach(k=>out[k]=m[k]/total);
+  return out;
+}
+function weightedDist(rows,keyFn,weight){return weight==='exam'?examWeightedDist(rows,keyFn):qWeightedDist(rows,keyFn);}
+// 依目前範圍導回題庫頁：帶 exam 或直接開新分頁靠使用者自行在題庫篩選（此頁本身已有篩選器，優先套用在本頁篩選列）
+function jumpToBankWithExam(examName){
+  if(!examName)return;
+  window.open('index.html?exam='+encodeURIComponent(examName),'_blank');
+}
+// 套用「年度＋（可選）領域/冊次/大單元/子單元」回到本頁的篩選結果範圍，方便直接往下看章節覆蓋地圖等既有區塊
+function applyDrillFilter(patch){
+  setScope('filtered');
+  let skipped=[];
+  Object.keys(patch).forEach(k=>{
+    const el=document.getElementById('f'+k);
+    if(!el)return;
+    const val=patch[k];
+    if(val===''||[...el.options].some(o=>o.value===val))el.value=val;
+    else skipped.push(k+'='+val);
+  });
+  render();
+  document.getElementById('filterBar').scrollIntoView({behavior:'smooth',block:'start'});
+  if(skipped.length)console.warn('drill filter 值不在下拉選單中，已略過：',skipped.join(', '));
+}
+// ---------- 可排序表格 ----------
+function sortableTable(id,columns,rows,opts){
+  opts=opts||{};
+  const state=_dtState[id]=_dtState[id]||{col:opts.defaultCol||0,dir:opts.defaultDir||'desc'};
+  const sorted=[...rows].sort((a,b)=>{
+    const col=columns[state.col];
+    let va=col.sortVal?col.sortVal(a):a[col.key],vb=col.sortVal?col.sortVal(b):b[col.key];
+    if(typeof va==='string')return state.dir==='asc'?String(va).localeCompare(String(vb),'zh-Hant'):String(vb).localeCompare(String(va),'zh-Hant');
+    return state.dir==='asc'?va-vb:vb-va;
+  });
+  const thead=columns.map((c,i)=>`<th class="${state.col===i?'sorted '+state.dir:''}" onclick="_dtSort('${id}',${i})">${esc(c.label)}</th>`).join('');
+  const tbody=sorted.map(row=>{
+    const cells=columns.map(c=>`<td class="${c.num?'num':''}${c.warnFn&&c.warnFn(row)?' warn':''}">${c.render?c.render(row):esc(row[c.key])}</td>`).join('');
+    const click=opts.onRowClick?` class="clickable" onclick='${opts.onRowClick}(${JSON.stringify(opts.rowKey?opts.rowKey(row):row).replace(/'/g,"&#39;")})'`:'';
+    return `<tr${click}>${cells}</tr>`;
+  }).join('');
+  return `<div class="dt-wrap"><table class="dt" id="dt-${id}"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>`;
+}
+const _dtState={};
+function _dtSort(id,i){
+  const st=_dtState[id];
+  if(st.col===i)st.dir=st.dir==='asc'?'desc':'asc';
+  else{st.col=i;st.dir='desc';}
+  render();
+}
+// ---------- 熱度圖（年度 × 分類項目） ----------
+function heatColor(p){
+  // p: 0~1，白到紅漸層
+  const t=Math.min(1,p*3.2);
+  const r=Math.round(255-(255-133)*t),g=Math.round(250-(250-2)*t),b=Math.round(245-(245-3)*t);
+  return `rgb(${r},${g},${b})`;
+}
+function heatmapTable(rowLabels,colLabels,valueFn,opts){
+  opts=opts||{};
+  const head='<th class="rowhead"></th>'+colLabels.map(c=>`<th>${esc(c)}</th>`).join('');
+  const body=rowLabels.map(rl=>{
+    const cells=colLabels.map(cl=>{
+      const v=valueFn(rl,cl);
+      if(!v||!v.n)return '<td class="empty">–</td>';
+      const bg=heatColor(v.p);
+      const click=opts.onClick?` onclick='${opts.onClick}(${JSON.stringify({row:rl,col:cl}).replace(/'/g,"&#39;")})'`:'';
+      const title=`${rl} / ${cl}：${v.n} 題（${(v.p*100).toFixed(1)}%）${v.examN?'，'+v.examN+' 份考卷':''}${v.diff!=null?'，較前一年 '+ppFmt(v.diff):''}`;
+      return `<td style="background:${bg}" title="${esc(title)}"${click}><div class="n">${v.n}</div><div class="p">${(v.p*100).toFixed(1)}%</div></td>`;
+    }).join('');
+    return `<tr><th class="rowhead" title="${esc(rl)}">${esc(rl)}</th>${cells}</tr>`;
+  }).join('');
+  return `<div class="heat-wrap"><table class="heat"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 // ---------- 範圍 ----------
@@ -497,13 +763,20 @@ function render(){
 
   const html=[
     buildOverview(rows),
+    buildYearOverview(rows),
     buildChapterMap(rows),
+    buildYearChapter(rows),
     buildFieldDist(rows),
+    buildYearFieldBook(rows),
     buildTypeDist(rows),
+    buildYearTypeDist(rows),
     buildChartDist(rows),
+    buildYearChartDist(rows),
     buildDifficulty(rows),
+    buildYearDifficulty(rows),
+    buildDataQuality(rows),
     buildComparisonIfSingleExam(rows),
-    buildPending(rows),
+    buildBlueprint(rows),
     buildSourceYear(rows),
   ].filter(Boolean).join('');
   document.getElementById('content').innerHTML=html;
@@ -693,35 +966,42 @@ function buildDifficulty(rows){
   </div>`;
 }
 
-function buildPending(rows){
-  const pend=rows.filter(r=>r.flag).sort((a,b)=>(b.no||'').localeCompare(a.no||''));
-  if(!pend.length)return `<div class="section"><h2>品質與待整理</h2><div class="empty-note">目前範圍內沒有待確認的題目 🎉</div></div>`;
-  const list=pend.slice(0,60).map(r=>{
-    const reason=(r.basis||'').startsWith('[回報]')?r.basis:'';
-    return `<div class="pend-item">
-      <div class="title">${esc(r.summary||'（無摘要）')}</div>
-      <div class="meta">${esc(r.year||'')}・${esc(r.school||'')}・${esc(r.exam||'')}・第${esc(r.no||'?')}題</div>
-      ${reason?`<div class="reason">${esc(reason)}</div>`:''}
-    </div>`;
-  }).join('');
-  const more=pend.length>60?`<div class="empty-note">還有 ${pend.length-60} 題，請至題庫頁用「只看待確認(Y)」篩選查看全部</div>`:'';
-  return `<div class="section"><h2>品質與待整理 <span class="qtag">共 ${pend.length} 題待確認</span></h2><div class="desc">哪些題目需要教師複核。</div>${list}${more}</div>`;
-}
-
 function buildSourceYear(rows){
   const total=rows.length;
   const bySchool={};
   rows.forEach(r=>{const s=r.school||'（未填）';bySchool[s]=(bySchool[s]||0)+1;});
   const schoolPairs=Object.entries(bySchool).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  const byYear={};
-  rows.forEach(r=>{const y=r.year||'（未填）';byYear[y]=(byYear[y]||0)+1;});
-  const yearPairs=Object.entries(byYear).filter(([y])=>y!=='（未填）').sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
-  const noYear=byYear['（未填）']||0;
-  return `<div class="section"><h2>題源與年份</h2><div class="desc">題目來源是否過度集中於某校或某年度；年度為時間趨勢，改用折線圖較容易看出成長或下滑。</div>
-    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">來源學校（前 12）</div>
+  // 年度題源偏差表
+  const yc=getYearCtrl();
+  const yrows=yearScopedRows(rows,yc);
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);yrows.forEach(r=>byYear[r._yk].push(r));
+  const OFFICIAL=['會考','學測','分科測驗','模擬考'];
+  const biasRows=keys.map(k=>{
+    const list=byYear[k];const n=list.length;
+    const sc={};list.forEach(r=>{const s=(r.school||'').trim();if(s)sc[s]=(sc[s]||0)+1;});
+    const scPairs=Object.entries(sc).sort((a,b)=>b[1]-a[1]);
+    const maxShare=scPairs.length?scPairs[0][1]/n:0;
+    const top3=scPairs.slice(0,3).reduce((s,[,v])=>s+v,0)/n;
+    const official=list.filter(r=>OFFICIAL.includes(r.examTypeC)).length/n;
+    const noSrc=list.filter(r=>!(r.school||'').trim()&&!OFFICIAL.includes(r.examTypeC)).length/n;
+    return {yk:k,schoolN:scPairs.length,maxShare,top3,official,noSrc,concentrated:maxShare>0.6};
+  });
+  const cols=[
+    {label:'年度',key:'yk',sortVal:r=>parseInt(r.yk)},
+    {label:'來源學校數',key:'schoolN',num:true},
+    {label:'最大來源校占比',key:'maxShare',num:true,warnFn:r=>r.concentrated,render:r=>(r.maxShare*100).toFixed(1)+'%'+(r.concentrated?' ⚠':'')},
+    {label:'前 3 校占比',key:'top3',num:true,render:r=>(r.top3*100).toFixed(1)+'%'},
+    {label:'官方試題占比',key:'official',num:true,render:r=>(r.official*100).toFixed(1)+'%'},
+    {label:'未填來源占比',key:'noSrc',num:true,render:r=>(r.noSrc*100).toFixed(1)+'%'},
+  ];
+  const biasTable=biasRows.length?sortableTable('srcBias',cols,biasRows,{defaultCol:0,defaultDir:'asc'}):'<div class="empty-note">目前範圍沒有可辨識年度的題源資料</div>';
+  const invalidYear=rows.filter(r=>!r.yr.valid).length;
+  return `<div class="section"><h2>🏫 題源偏差</h2>${ycNote(yc)}
+    <div class="desc">判斷某年度題目是否過度集中於單一學校，或某年結構變化其實只是因某校大量匯入。官方試題＝會考／學測／分科測驗／模擬考。最大來源校占比 &gt;60% 標警示。${invalidYear?`另有 ${invalidYear} 題年度無法辨識，未列入。`:''}</div>
+    ${biasTable}
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:16px 0 6px">來源學校（整體前 12）</div>
     ${barList(schoolPairs,total)}
-    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 6px">年度趨勢${noYear?`<span style="font-weight:500;color:var(--muted)">（另有 ${noYear} 題未填年度，未列入趨勢圖）</span>`:''}</div>
-    ${yearPairs.length?lineSVG(yearPairs):'<div class="empty-note">目前範圍沒有可用的年度資料</div>'}
   </div>`;
 }
 
@@ -799,6 +1079,381 @@ function buildComparisonIfSingleExam(rows){
     ${Object.keys(diffThis).map(d=>cmpRow(d,diffThis,diffBase,d)).join('')}
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 8px">題組比例</div>
     ${cmpRow('題組',groupThis,groupBase,'題組')}${cmpRow('單題',groupThis,groupBase,'單題')}
+  </div>`;
+}
+
+// ═══════════════ 年度趨勢分析 ═══════════════
+
+function ycNote(yc){
+  const bits=[];
+  bits.push(yc.granularity==='split'?'上／下學期分開':'年度合併');
+  bits.push(yc.weight==='exam'?'考卷加權':'題目加權');
+  bits.push({count:'題數',pct:'年度內比例',diff:'與前一年差異(pp)'}[yc.display]);
+  if(yc.level)bits.push('僅'+yc.level);
+  return `<span class="yc-note">目前：${bits.join('　·　')}</span>`;
+}
+function lowExamWarn(ykRows){
+  const examN=new Set(ykRows.map(r=>r.exam).filter(Boolean)).size;
+  return examN>0&&examN<5?`此年度僅收錄 ${examN} 份考卷，趨勢僅供參考。`:'';
+}
+
+// A. 年度總覽
+function buildYearOverview(rows){
+  const yc=getYearCtrl();
+  const yrows=yearScopedRows(rows,yc);
+  const invalidYear=rows.filter(r=>!r.yr.valid).length;
+  if(!yrows.length){
+    return `<div class="section"><h2>📅 年度總覽</h2>${ycNote(yc)}<div class="empty-note">目前範圍沒有可辨識年度的題目${invalidYear?`（另有 ${invalidYear} 題年度無法辨識，已列入下方資料品質）`:''}。</div></div>`;
+  }
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);
+  yrows.forEach(r=>byYear[r._yk].push(r));
+  const tableRows=keys.map(k=>{
+    const list=byYear[k];
+    const examN=new Set(list.map(r=>r.exam).filter(Boolean)).size;
+    const schoolN=new Set(list.map(r=>r.school).filter(Boolean)).size;
+    const subN=new Set(list.map(r=>r.sub).filter(Boolean)).size;
+    const imgRate=list.filter(r=>r.chartC!=='無'&&r.chartValid).length/list.length;
+    const pendRate=list.filter(r=>r.flag).length/list.length;
+    const dqRate=list.filter(r=>r.dq.any).length/list.length;
+    return {yk:k,examN,qN:list.length,schoolN,subN,imgRate,pendRate,dqRate,lowExam:examN<5};
+  });
+  const cols=[
+    {label:'年度',key:'yk',sortVal:r=>parseInt(r.yk)},
+    {label:'考卷數',key:'examN',num:true,warnFn:r=>r.lowExam,render:r=>r.examN+(r.lowExam?' ⚠':'')},
+    {label:'題數',key:'qN',num:true},
+    {label:'來源學校數',key:'schoolN',num:true},
+    {label:'已覆蓋子單元數',key:'subN',num:true},
+    {label:'有圖題比例',key:'imgRate',num:true,render:r=>(r.imgRate*100).toFixed(1)+'%'},
+    {label:'待確認率',key:'pendRate',num:true,render:r=>(r.pendRate*100).toFixed(1)+'%'},
+    {label:'資料異常率',key:'dqRate',num:true,warnFn:r=>r.dqRate>0.3,render:r=>(r.dqRate*100).toFixed(1)+'%'},
+  ];
+  const table=sortableTable('yearOv',cols,tableRows,{defaultCol:0,defaultDir:'asc',onRowClick:'ycRowJump',rowKey:r=>({yk:r.yk})});
+  const qnPairs=keys.map(k=>[k,byYear[k].length]);
+  const examPairs=keys.map(k=>[k,new Set(byYear[k].map(r=>r.exam).filter(Boolean)).size]);
+  const imgPairs=keys.map(k=>[k,Math.round(byYear[k].filter(r=>r.chartC!=='無'&&r.chartValid).length/byYear[k].length*1000)/10]);
+  const dqPairs=keys.map(k=>[k,Math.round(byYear[k].filter(r=>r.dq.any).length/byYear[k].length*1000)/10]);
+  const warns=keys.filter(k=>{const e=new Set(byYear[k].map(r=>r.exam).filter(Boolean)).size;return e<5;});
+  return `<div class="section"><h2>📅 年度總覽</h2>${ycNote(yc)}
+    <div class="desc">每年題庫收錄量、來源、覆蓋與品質變化；點年度可回題庫查看該年度題目。${invalidYear?`另有 <b>${invalidYear}</b> 題年度無法辨識（見下方資料品質）。`:''}</div>
+    ${warns.length?`<div class="yc-warn-note">⚠ ${warns.map(k=>`${k} 年僅 ${new Set(byYear[k].map(r=>r.exam).filter(Boolean)).size} 份考卷`).join('、')}，趨勢僅供參考。</div>`:''}
+    ${table}
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:14px">
+      <div style="flex:1;min-width:280px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">題數趨勢</div>${lineSVG(qnPairs)}</div>
+      <div style="flex:1;min-width:280px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">考卷數趨勢</div>${lineSVG(examPairs)}</div>
+    </div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap;margin-top:14px">
+      <div style="flex:1;min-width:280px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">有圖題比例 %</div>${lineSVG(imgPairs)}</div>
+      <div style="flex:1;min-width:280px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">資料異常率 %</div>${lineSVG(dqPairs)}</div>
+    </div>
+  </div>`;
+}
+function ycRowJump(o){
+  // 點年度 → 把年度控制列的時間範圍鎖到該學年度，讓所有年度圖表聚焦此年
+  const aca=String(o.yk).replace(/[上下]$/,'');
+  document.getElementById('ycFrom').value=aca;
+  document.getElementById('ycTo').value=aca;
+  render();
+  document.getElementById('yearCtrlBar').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// 通用：年度 × 分類 100% 堆疊長條（支援 題數/比例/前一年差異）
+function yearStackSection(title,desc,rows,catFn,catOrder,opts){
+  opts=opts||{};
+  const yc=getYearCtrl();
+  const yrows=yearScopedRows(rows,yc).filter(r=>!opts.levelFilter||r.level===opts.levelFilter);
+  if(!yrows.length)return '';
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);
+  yrows.forEach(r=>byYear[r._yk].push(r));
+  // 每年各分類的比例
+  const dists={};keys.forEach(k=>dists[k]=weightedDist(byYear[k],catFn,yc.weight));
+  const cats=(catOrder&&catOrder.length)?catOrder.filter(c=>keys.some(k=>dists[k][c]>0)):Array.from(new Set(keys.flatMap(k=>Object.keys(dists[k]))));
+  const colorOf=c=>CHART_COLORS[cats.indexOf(c)%CHART_COLORS.length];
+  const legend=cats.map(c=>`<span><i style="background:${colorOf(c)}"></i>${esc(c)}</span>`).join('');
+  const bars=keys.map((k,ki)=>{
+    const list=byYear[k];
+    const examN=new Set(list.map(r=>r.exam).filter(Boolean)).size;
+    const dist=dists[k];
+    let inner;
+    if(yc.display==='diff'){
+      const prev=ki>0?dists[keys[ki-1]]:null;
+      inner=cats.map(c=>{
+        const cur=(dist[c]||0)*100;
+        if(!prev)return `<span style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 3px 0;font-size:11px"><i style="width:9px;height:9px;border-radius:2px;background:${colorOf(c)};display:inline-block"></i>${esc(c)} —</span>`;
+        const d=cur-(prev[c]||0)*100;
+        return `<span style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 3px 0;font-size:11px"><i style="width:9px;height:9px;border-radius:2px;background:${colorOf(c)};display:inline-block"></i>${esc(c)} <b class="${d>=0?'pp-up':'pp-down'}">${ppFmt(d)}</b></span>`;
+      }).join('');
+      return `<div style="margin-bottom:8px"><div style="font-size:12px;font-weight:700;margin-bottom:2px">${esc(k)}${examN<5?` <span style="color:#b23b3b;font-weight:500">（${examN}卷，僅供參考）</span>`:''}</div><div>${inner}</div></div>`;
+    }
+    const segs=cats.map(c=>{
+      const p=dist[c]||0;
+      const w=yc.display==='count'?0:p*100;
+      return {c,p,n:list.filter(r=>catFn(r)===c).length};
+    });
+    if(yc.display==='count'){
+      const maxN=Math.max(...keys.map(kk=>byYear[kk].length),1);
+      const totalN=list.length;
+      inner=`<div class="stack-bar" style="width:${Math.max(8,totalN/maxN*100)}%" title="${esc(k)}：${totalN} 題">`+segs.map(s=>s.n>0?`<div style="width:${s.n/totalN*100}%;background:${colorOf(s.c)}" title="${esc(s.c)}：${s.n} 題">${s.n/totalN>=0.1?s.n:''}</div>`:'').join('')+`</div>`;
+    }else{
+      inner=`<div class="stack-bar" title="${esc(k)}：${list.length} 題／${examN} 卷">`+segs.map(s=>s.p>0?`<div style="width:${s.p*100}%;background:${colorOf(s.c)}" title="${esc(s.c)}：${s.n} 題（${(s.p*100).toFixed(1)}%）">${s.p>=0.08?(s.p*100).toFixed(0)+'%':''}</div>`:'').join('')+`</div>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><div style="width:70px;flex-shrink:0;font-size:12px;font-weight:700">${esc(k)}</div><div style="flex:1">${inner}</div><div style="width:110px;flex-shrink:0;font-size:11px;color:var(--muted);text-align:right">${list.length}題／${examN}卷${examN<5?' ⚠':''}</div></div>`;
+  }).join('');
+  return `<div style="margin-bottom:6px">
+    <div style="font-size:12.5px;font-weight:800;color:var(--red);margin-bottom:8px">${esc(title)}</div>
+    ${desc?`<div class="desc">${desc}</div>`:''}
+    <div class="stack-legend" style="margin-bottom:10px">${legend}</div>
+    ${bars}
+  </div>`;
+}
+
+// B. 年度章節編排變化（熱度圖 + 變動榜 + 集中度）
+let _chapLevel='unit';
+function setChapLevel(v){_chapLevel=v;render();}
+function buildYearChapter(rows){
+  const yc=getYearCtrl();
+  const yrows=yearScopedRows(rows,yc);
+  if(!yrows.length)return '';
+  const levelSel=['field','book','unit','sub'];
+  const levelName={field:'領域',book:'冊次',unit:'大單元',sub:'子單元'};
+  const catFn=r=>({field:r.field||'（未分領域）',book:dbBookKey(r)||'（未分冊）',unit:r.unit||'（未分大單元）',sub:r.sub||'（未分子單元）'})[_chapLevel];
+  // 熱度圖只在單一學制下才有意義（避免國高中混同分母）；若年度控制列沒選學制，預設用國中，另提示
+  const useLevel=yc.level||'國中';
+  const scoped=yrows.filter(r=>r.level===useLevel);
+  const keys=sortedYearKeys(scoped);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);
+  scoped.forEach(r=>byYear[r._yk].push(r));
+  const dists={};keys.forEach(k=>dists[k]=weightedDist(byYear[k],catFn,yc.weight));
+  const catTotals={};
+  scoped.forEach(r=>{const c=catFn(r);catTotals[c]=(catTotals[c]||0)+1;});
+  const cats=Object.keys(catTotals).sort((a,b)=>catTotals[b]-catTotals[a]).slice(0,25);
+  const heat=keys.length?heatmapTable(cats,keys,(cat,yk)=>{
+    const list=byYear[yk];const n=list.filter(r=>catFn(r)===cat).length;
+    if(!n)return null;
+    const p=dists[yk][cat]||0;
+    const ki=keys.indexOf(yk);const prevP=ki>0?(dists[keys[ki-1]][cat]||0):null;
+    return {n,p,examN:new Set(list.map(r=>r.exam).filter(Boolean)).size,diff:prevP!=null?(p-prevP)*100:null};
+  },{onClick:'chapHeatJump'}):'<div class="empty-note">此學制無可辨識年度資料</div>';
+  // 變動榜（用最後兩個年度）
+  let boards='';
+  if(keys.length>=2){
+    const cur=keys[keys.length-1],prev=keys[keys.length-2];
+    const subCur=weightedDist(byYear[cur],r=>r.sub||'（未分）',yc.weight);
+    const subPrev=weightedDist(byYear[prev],r=>r.sub||'（未分）',yc.weight);
+    const allSubs=new Set([...Object.keys(subCur),...Object.keys(subPrev)]);
+    const changes=[...allSubs].map(s=>({s,prev:(subPrev[s]||0)*100,cur:(subCur[s]||0)*100,diff:((subCur[s]||0)-(subPrev[s]||0))*100}));
+    const inc=changes.filter(c=>c.diff>0).sort((a,b)=>b.diff-a.diff).slice(0,5);
+    const dec=changes.filter(c=>c.diff<0).sort((a,b)=>a.diff-b.diff).slice(0,5);
+    const neu=changes.filter(c=>c.prev===0&&c.cur>0).sort((a,b)=>b.cur-a.cur).slice(0,5);
+    const mkBoard=(title,arr,showNew)=>`<div style="flex:1;min-width:240px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px">${title}</div>${arr.length?arr.map(c=>`<div style="display:flex;justify-content:space-between;font-size:11.5px;padding:3px 0;border-bottom:1px solid var(--line)"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px" title="${esc(c.s)}">${esc(c.s)}</span><span>${showNew?`${c.cur.toFixed(1)}%`:`${c.prev.toFixed(1)}%→${c.cur.toFixed(1)}% <b class="${c.diff>=0?'pp-up':'pp-down'}">${ppFmt(c.diff)}</b>`}</span></div>`).join(''):'<div class="empty-note" style="padding:10px">無</div>'}</div>`;
+    boards=`<div style="font-size:12.5px;font-weight:800;color:var(--red);margin:16px 0 8px">章節變動榜（${prev} → ${cur}，子單元）</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">${mkBoard('增加最多',inc)}${mkBoard('減少最多',dec)}${mkBoard('新出現',neu,true)}</div>`;
+  }
+  // 集中度（用課綱全部子單元數當分母）
+  const allSubsSyl=new Set();
+  SYL_ROWS.forEach(sr=>{const isHS=HS_BOOKS.includes(sr.book);if((isHS?'高中':'國中')===useLevel)allSubsSyl.add((isHS?sr.book:sr.book_name)+''+sr.sub);});
+  const coveredSubs=new Set(scoped.map(r=>dbBookKey(r)+''+(r.sub||'')));
+  const subCounts={};scoped.forEach(r=>{const k=r.sub||'（未分）';subCounts[k]=(subCounts[k]||0)+1;});
+  const zeroSubs=[...allSubsSyl].filter(k=>!coveredSubs.has(k)).length;
+  const oneTwoSubs=Object.values(subCounts).filter(n=>n<=2).length;
+  const unitCounts={};scoped.forEach(r=>{const k=r.unit||'（未分）';unitCounts[k]=(unitCounts[k]||0)+1;});
+  const unitSorted=Object.entries(unitCounts).sort((a,b)=>b[1]-a[1]);
+  const top3=unitSorted.slice(0,3).reduce((s,[,n])=>s+n,0),top5=unitSorted.slice(0,5).reduce((s,[,n])=>s+n,0);
+  const concentr=`<div style="font-size:12.5px;font-weight:800;color:var(--red);margin:16px 0 8px">章節集中度（${useLevel}）</div>
+    <div class="grid">
+      <div class="stat-card"><div class="n">${coveredSubs.size}<span style="font-size:14px;color:var(--muted)">/${allSubsSyl.size||'?'}</span></div><div class="lbl">已覆蓋子單元數</div></div>
+      <div class="stat-card"><div class="n">${zeroSubs}</div><div class="lbl">課綱中 0 題子單元</div></div>
+      <div class="stat-card"><div class="n">${oneTwoSubs}</div><div class="lbl">1～2 題子單元</div></div>
+      <div class="stat-card"><div class="n">${pct(top3,scoped.length)}%</div><div class="lbl">前 3 大單元占比</div></div>
+      <div class="stat-card"><div class="n">${pct(top5,scoped.length)}%</div><div class="lbl">前 5 大單元占比</div></div>
+    </div>`;
+  return `<div class="section"><h2>📈 年度章節編排變化</h2>${ycNote(yc)}
+    <div class="desc">熱度圖：橫軸年度、縱軸章節、顏色為該年度內比例；滑鼠移上去看題數/比例/考卷數/與前一年差異。點格子可回題庫套用篩選。${yc.level?'':'（未指定學制，熱度圖預設顯示國中，可用上方「年度學制」切換）'}</div>
+    <div style="margin-bottom:10px">層級：${levelSel.map(l=>`<button class="scope-btn${_chapLevel===l?' active':''}" style="padding:4px 12px" onclick="setChapLevel('${l}')">${levelName[l]}</button>`).join(' ')}　<span style="font-size:11px;color:var(--muted)">目前顯示：${useLevel}</span></div>
+    ${heat}
+    ${boards}
+    ${concentr}
+  </div>`;
+}
+function chapHeatJump(o){
+  const patch={};
+  if(_chapLevel==='field')patch.Field=o.row;
+  else if(_chapLevel==='unit')patch.Unit=o.row;
+  else if(_chapLevel==='sub')patch.Sub=o.row;
+  else if(_chapLevel==='book')patch.Book=o.row;
+  applyDrillFilter(patch);
+}
+
+// C. 年度科目與冊次安排（國中／高中各自 100% 堆疊）
+function buildYearFieldBook(rows){
+  const yc=getYearCtrl();
+  if(!yearScopedRows(rows,yc).length)return '';
+  const blocks=[];
+  [['國中',JH_FIELDS],['高中',HS_FIELDS]].forEach(([lv,fieldOrder])=>{
+    if(yc.level&&yc.level!==lv)return;
+    const fieldSec=yearStackSection(`${lv}・年度 × 領域`,'',rows,r=>r.field||'（未分領域）',fieldOrder,{levelFilter:lv});
+    const bookOrder=lv==='國中'?SYL_BOOK_ORDER_JH:SYL_BOOK_ORDER_HS;
+    const bookSec=yearStackSection(`${lv}・年度 × 冊次`,'',rows,r=>dbBookKey(r)||'（未分冊）',bookOrder,{levelFilter:lv});
+    if(fieldSec||bookSec)blocks.push(`<div class="chapter-level">${fieldSec}${bookSec}</div>`);
+  });
+  if(!blocks.length)return '';
+  return `<div class="section"><h2>📊 年度科目與冊次安排</h2>${ycNote(yc)}<div class="desc">國中與高中各自獨立、領域順序固定；可用上方控制列切換題數／比例／前一年差異。</div>${blocks.join('')}</div>`;
+}
+
+// D. 年度題型分布
+function buildYearTypeDist(rows){
+  const yc=getYearCtrl();
+  if(!yearScopedRows(rows,yc).length)return '';
+  const groupSec=yearStackSection('年度 × 題型大類','固定順序：A 觀念型、B 圖表型、C 實驗型、D 計算型、E 素養情境型、非選擇。',rows,r=>{const info=qtypeInfo(r.typeCode);return info?info.group:'（未分類）';},TYPE_GROUP_ORDER.concat('（未分類）'));
+  // 細項熱度圖
+  const yrows=yearScopedRows(rows,yc);
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);yrows.forEach(r=>byYear[r._yk].push(r));
+  const dists={};keys.forEach(k=>dists[k]=weightedDist(byYear[k],r=>r.typeCode||'（未分類）',yc.weight));
+  const codeOrder=QTYPES.map(q=>q.code).filter(c=>keys.some(k=>dists[k][c]>0));
+  const codeLabels=codeOrder.map(c=>{const i=qtypeInfo(c);return i?`${c} ${i.name}`:c;});
+  const codeByLabel={};codeOrder.forEach((c,i)=>codeByLabel[codeLabels[i]]=c);
+  const heat=keys.length?heatmapTable(codeLabels,keys,(lbl,yk)=>{
+    const c=codeByLabel[lbl];const list=byYear[yk];const n=list.filter(r=>r.typeCode===c).length;
+    if(!n)return null;const p=dists[yk][c]||0;const ki=keys.indexOf(yk);const prevP=ki>0?(dists[keys[ki-1]][c]||0):null;
+    return {n,p,examN:new Set(list.map(r=>r.exam).filter(Boolean)).size,diff:prevP!=null?(p-prevP)*100:null};
+  },{onClick:'typeHeatJump'}):'';
+  return `<div class="section"><h2>🧩 年度題型分布</h2>${ycNote(yc)}
+    ${groupSec}
+    <div style="font-size:12.5px;font-weight:800;color:var(--red);margin:16px 0 8px">題型細項 × 年度</div>
+    ${heat}
+  </div>`;
+}
+function typeHeatJump(o){const c=o.row.split(' ')[0];applyDrillFilter({Type:c});}
+
+// E. 年度圖表類型分布
+let _chartBase='all';
+function setChartBase(v){_chartBase=v;render();}
+function buildYearChartDist(rows){
+  const yc=getYearCtrl();
+  const yrows=yearScopedRows(rows,yc);
+  if(!yrows.length)return '';
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);yrows.forEach(r=>byYear[r._yk].push(r));
+  // 有圖題比例趨勢
+  const imgPairs=keys.map(k=>[k,Math.round(byYear[k].filter(r=>r.chartValid&&r.chartC!=='無').length/byYear[k].length*1000)/10]);
+  // 12 類 × 年度熱度（底數：全部或有圖題）
+  const base12=r=>_chartBase==='img'?(r.chartValid&&r.chartC!=='無'):true;
+  const denom={};keys.forEach(k=>denom[k]=byYear[k].filter(base12).length||1);
+  const cats=CHART_CATS.filter(c=>_chartBase==='img'?c!=='無':true).filter(c=>keys.some(k=>byYear[k].some(r=>r.chartC===c)));
+  const heat=heatmapTable(cats,keys,(cat,yk)=>{
+    const n=byYear[yk].filter(r=>r.chartC===cat).length;if(!n)return null;
+    const p=n/denom[yk];const ki=keys.indexOf(yk);
+    const prevN=ki>0?byYear[keys[ki-1]].filter(r=>r.chartC===cat).length:null;
+    const prevP=prevN!=null?prevN/denom[keys[ki-1]]:null;
+    return {n,p,examN:new Set(byYear[yk].map(r=>r.exam).filter(Boolean)).size,diff:prevP!=null?(p-prevP)*100:null};
+  },{onClick:'chartHeatJump'});
+  return `<div class="section"><h2>🖼 年度圖表類型分布</h2>${ycNote(yc)}
+    <div class="desc">固定 12 類圖表類型 × 年度；未填／無效值不列入此圖，改列於下方資料品質。</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">有圖題比例趨勢 %</div>${lineSVG(imgPairs)}
+    <div style="margin:12px 0 8px">底數：<button class="scope-btn${_chartBase==='all'?' active':''}" style="padding:4px 12px" onclick="setChartBase('all')">占全部題目</button> <button class="scope-btn${_chartBase==='img'?' active':''}" style="padding:4px 12px" onclick="setChartBase('img')">占有圖題</button></div>
+    ${heat}
+  </div>`;
+}
+function chartHeatJump(o){applyDrillFilter({Chart:o.row});}
+
+// F. 年度難度與認知結構
+function buildYearDifficulty(rows){
+  const yc=getYearCtrl();
+  if(!yearScopedRows(rows,yc).length)return '';
+  const scoreSec=(field,label)=>yearStackSection(`${label}（1／2／3）`,'',rows,r=>{const v=+r[field];return (v>=1&&v<=3)?String(v):'（無效／缺）';},['1','2','3','（無效／缺）']);
+  const diffSec=yearStackSection('綜合難度','簡單／中等／困難／極難／未評分。',rows,r=>r.diffLvl,['簡單','中等','困難','極難','未評分']);
+  // 年度平均分折線（僅計有效分）
+  const yrows=yearScopedRows(rows,yc);
+  const keys=sortedYearKeys(yrows);
+  const byYear={};keys.forEach(k=>byYear[k]=[]);yrows.forEach(r=>byYear[r._yk].push(r));
+  const avgLine=(field,label)=>{
+    const pairs=keys.map(k=>{const vals=byYear[k].map(r=>+r[field]).filter(v=>v>=1&&v<=3);return [k,vals.length?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length*100)/100:0];});
+    return `<div style="flex:1;min-width:260px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px">${label}年度平均</div>${lineSVG(pairs)}</div>`;
+  };
+  return `<div class="section"><h2>🎚 年度難度與認知結構</h2>${ycNote(yc)}
+    <div class="desc">分數缺漏、0 分或超出 1～3 者列為「無效／缺」，不併入「簡單」。</div>
+    ${diffSec}
+    <div style="margin-top:14px"></div>${scoreSec('step','步驟分')}
+    <div style="margin-top:14px"></div>${scoreSec('mem','記憶分')}
+    <div style="margin-top:14px"></div>${scoreSec('con','概念分')}
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:14px">${avgLine('step','步驟分')}${avgLine('mem','記憶分')}${avgLine('con','概念分')}</div>
+  </div>`;
+}
+
+// G. 資料品質與待整理
+const DQ_DEFS=[
+  {key:'flag',lbl:'待確認 Y',filter:{Flag:'y'}},
+  {key:'chartInvalid',lbl:'圖表類型未填／無效',filter:{Chart:'（未填寫）'}},
+  {key:'missingImgRef',lbl:'含圖敘述但未上傳圖片',filter:{}},
+  {key:'yearInvalid',lbl:'年度無法辨識',filter:{}},
+  {key:'noLevel',lbl:'學制未標示',filter:{}},
+  {key:'noField',lbl:'領域缺漏',filter:{}},
+  {key:'noBook',lbl:'冊次缺漏',filter:{}},
+  {key:'noUnit',lbl:'大單元缺漏',filter:{}},
+  {key:'noSub',lbl:'子單元缺漏',filter:{}},
+  {key:'fieldBookMismatch',lbl:'領域與冊次不一致',filter:{}},
+  {key:'diffMissing',lbl:'難度分數缺漏（含 0）',filter:{}},
+  {key:'diffInvalid',lbl:'難度分數超出範圍',filter:{}},
+  {key:'orphanGroup',lbl:'題組 ID 僅出現一題',filter:{}},
+  {key:'aiAnswer',lbl:'答案由 AI 推論',filter:{}},
+];
+function buildDataQuality(rows){
+  const yc=getYearCtrl();
+  const cards=DQ_DEFS.map(d=>{
+    const n=rows.filter(r=>r.dq[d.key]).length;
+    return {...d,n};
+  });
+  const grid=cards.map(c=>`<div class="dq-card" onclick='dqJump(${JSON.stringify(c.key)})'>
+    <div class="n${c.n===0?' zero':''}">${c.n}</div>
+    <div class="lbl">${esc(c.lbl)}</div>
+  </div>`).join('');
+  // 舉例：領域與冊次不一致 前幾筆
+  const mism=rows.filter(r=>r.dq.fieldBookMismatch).slice(0,8);
+  const mismList=mism.length?`<div class="dq-samples"><div style="font-weight:700;color:#b23b3b;margin-bottom:4px">領域與冊次不一致（前 ${mism.length} 筆，僅診斷不改資料）</div>${mism.map(r=>`<div class="row">${esc(r.summary||'（無摘要）')}｜資料領域：<b>${esc(r.field)}</b>、冊次：<b>${esc(dbBookKey(r))}</b>（課綱該冊為 ${esc(SYL_FIELD_OF_BOOK[dbBookKey(r)]||'?')}）｜${esc(r.exam||'')} 第${esc(r.no||'?')}題</div>`).join('')}</div>`:'';
+  const anyN=rows.filter(r=>r.dq.any).length;
+  return `<div class="section"><h2>🩺 資料品質與待整理 <span class="qtag">${anyN} 題有待整理</span></h2>
+    <div class="desc">每一種問題點卡片即可回題庫套用對應篩選；此頁只做診斷與導覽，不會改動原始資料。「0」代表有資料且為 0，灰字代表目前範圍內沒有此問題。</div>
+    <div class="dq-grid">${grid}</div>
+    ${mismList}
+  </div>`;
+}
+function dqJump(key){
+  const def=DQ_DEFS.find(d=>d.key===key);
+  if(def&&def.filter&&Object.keys(def.filter).length){applyDrillFilter(def.filter);}
+  else{alert('此類資料異常沒有對應的題庫篩選欄位，請於本頁「目前篩選結果」搭配下方清單檢視，或回題庫用「只看待確認(Y)」查找。');}
+}
+
+// I. 目標命題藍圖（只讀取與比較，不寫入）
+function buildBlueprint(rows){
+  // 僅在「已選取題目／考卷」範圍且有資料時提供；目標值先用「全題庫同學制平均」當基準示意，供比較
+  if(scopeMode!=='picked'||!rows.length)return '';
+  const lv=rows[0].level;
+  const base=ALL.filter(r=>r.level===lv);
+  if(!base.length)return '';
+  const rowsD=(fn)=>qWeightedDist(rows,fn),baseD=(fn)=>qWeightedDist(base,fn);
+  const metrics=[];
+  const typeGroupFn=r=>{const i=qtypeInfo(r.typeCode);return i?i.group:'（未分類）';};
+  const rt=rowsD(typeGroupFn),bt=baseD(typeGroupFn);
+  TYPE_GROUP_ORDER.forEach(g=>metrics.push({name:'題型・'+g,actual:(rt[g]||0)*100,target:(bt[g]||0)*100}));
+  const imgActual=rows.filter(r=>r.chartValid&&r.chartC!=='無').length/rows.length*100;
+  const imgTarget=base.filter(r=>r.chartValid&&r.chartC!=='無').length/base.length*100;
+  metrics.push({name:'有圖題比例',actual:imgActual,target:imgTarget});
+  ['step','mem','con'].forEach((f,i)=>{
+    const nm=['步驟分','記憶分','概念分'][i];
+    const a=rows.map(r=>+r[f]).filter(v=>v>=1&&v<=3);const b=base.map(r=>+r[f]).filter(v=>v>=1&&v<=3);
+    metrics.push({name:nm+'平均',actual:a.length?a.reduce((s,v)=>s+v,0)/a.length:0,target:b.length?b.reduce((s,v)=>s+v,0)/b.length:0,unit:'分'});
+  });
+  const rowsHtml=metrics.map(m=>{
+    const diff=m.actual-m.target;const ad=Math.abs(diff);
+    const status=ad<=3?'<span class="pp-up">合理</span>':ad<=8?'<span style="color:#c48a1a;font-weight:700">注意</span>':'<span class="pp-down">'+(diff>0?'偏高':'不足')+'</span>';
+    const u=m.unit||'%';
+    return `<tr><td>${esc(m.name)}</td><td class="num">${m.target.toFixed(1)}${u}</td><td class="num">${m.actual.toFixed(1)}${u}</td><td class="num">${(diff>=0?'+':'−')+ad.toFixed(1)}${m.unit?'':'pp'}</td><td>${status}</td></tr>`;
+  }).join('');
+  return `<div class="section"><h2>🎯 目標命題藍圖（讀取與比較）</h2>
+    <div class="desc">以「全題庫同學制（${esc(lv||'?')}）平均」作為暫定目標基準，與目前選取的題目／考卷比較。狀態規則：差異 ≤3pp 合理、3～8pp 注意、>8pp 不足或偏高。此版本僅比較、不寫入自訂目標。</div>
+    <div class="dt-wrap"><table class="dt"><thead><tr><th>指標</th><th>目標(基準)</th><th>實際</th><th>差異</th><th>狀態</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
   </div>`;
 }
 
