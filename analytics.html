@@ -48,7 +48,7 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
 
 /* 卡片 / 區塊 */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
-.stat-card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:14px 16px;text-align:center}
 .stat-card .n{font-size:26px;font-weight:800;color:var(--red)}
 .stat-card .lbl{font-size:12px;color:var(--muted);margin-top:2px;font-weight:600}
 .section{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
@@ -78,7 +78,7 @@ header .sub{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
 .ct-row.ct-d0{font-size:13.5px;padding-top:9px;margin-top:5px;border-top:1px solid var(--line)}
 .ct-row.ct-d0:first-child{border-top:none;margin-top:0;padding-top:2px}
 .ct-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ct-cnt{color:var(--muted);font-size:11px;flex-shrink:0;white-space:nowrap}
+.ct-cnt{color:var(--muted);font-size:11px;flex-shrink:0;white-space:nowrap;width:130px;text-align:center;font-variant-numeric:tabular-nums}
 .ct-row.ct-leaf{font-weight:500}
 .ct-bar{width:56px;height:6px;background:#f2f1ec;border-radius:3px;overflow:hidden;flex-shrink:0}
 .ct-bar>i{display:block;height:100%;background:var(--red);border-radius:3px}
@@ -147,7 +147,7 @@ table.dt th.sorted.asc::after{content:' ▴'}
 table.dt td{padding:6px 10px;border-bottom:1px solid var(--line)}
 table.dt tr.clickable{cursor:pointer}
 table.dt tr.clickable:hover td{background:#faf5f0}
-table.dt td.num{text-align:right;font-variant-numeric:tabular-nums}
+table.dt th.num,table.dt td.num{text-align:center;font-variant-numeric:tabular-nums}
 table.dt td.warn{color:#b23b3b;font-weight:700}
 .pp-up{color:#1f6f5c;font-weight:700}
 .pp-down{color:#b23b3b;font-weight:700}
@@ -296,6 +296,41 @@ SYL_ROWS.forEach(r=>{
 });
 function dbBookKey(r){return r.level==='高中'?(r.book||r.book_name||''):(r.book_name||r.book||'');}
 function syllabusIdx(list,val){const i=(list||[]).indexOf(val);return i<0?9999:i;}
+// 各學制的「大單元／子單元」全域課綱順序（把各冊的單元依冊次順序串起來）
+const SYL_UNIT_ORDER_JH=[],SYL_SUB_ORDER_JH=[],SYL_UNIT_ORDER_HS=[],SYL_SUB_ORDER_HS=[];
+[['JH',SYL_BOOK_ORDER_JH,SYL_UNIT_ORDER_JH,SYL_SUB_ORDER_JH],['HS',SYL_BOOK_ORDER_HS,SYL_UNIT_ORDER_HS,SYL_SUB_ORDER_HS]].forEach(([,books,unitOut,subOut])=>{
+  books.forEach(bk=>{
+    (SYL_UNIT_LIST[bk]||[]).forEach(u=>{
+      if(!unitOut.includes(u))unitOut.push(u);
+      (SYL_SUB_LIST[bk+u]||[]).forEach(s=>{if(!subOut.includes(s))subOut.push(s);});
+    });
+  });
+});
+// 數字感知比較（"C1"<"C2"、"2-1"<"10-1"、"第一章"依中文數字），供課綱外項目的次序 fallback
+const _CJK_NUM={'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'十':10};
+function _cjkChapterNum(s){const m=String(s).match(/第([一二三四五六七八九十]+)章/);if(!m)return null;let t=m[1],v=0;if(t.includes('十')){const p=t.split('十');v=(p[0]?(_CJK_NUM[p[0]]||1):1)*10+(p[1]?(_CJK_NUM[p[1]]||0):0);}else v=_CJK_NUM[t]||0;return v;}
+function naturalCmp(a,b){
+  const ca=_cjkChapterNum(a),cb=_cjkChapterNum(b);
+  if(ca!=null&&cb!=null&&ca!==cb)return ca-cb;
+  return String(a).localeCompare(String(b),'zh-Hant',{numeric:true});
+}
+// 依課綱順序排序某層級的分類鍵；不在課綱者排最後，並以數字感知比較收尾
+function chapterOrderList(level,chapLevel){
+  const isHS=level==='高中';
+  if(chapLevel==='field')return isHS?HS_FIELDS:JH_FIELDS;
+  if(chapLevel==='book')return isHS?SYL_BOOK_ORDER_HS:SYL_BOOK_ORDER_JH;
+  if(chapLevel==='unit')return isHS?SYL_UNIT_ORDER_HS:SYL_UNIT_ORDER_JH;
+  if(chapLevel==='sub')return isHS?SYL_SUB_ORDER_HS:SYL_SUB_ORDER_JH;
+  return [];
+}
+function sortByChapter(cats,level,chapLevel){
+  const ord=chapterOrderList(level,chapLevel);
+  return [...cats].sort((a,b)=>{
+    const ia=syllabusIdx(ord,a),ib=syllabusIdx(ord,b);
+    if(ia!==ib)return ia-ib;
+    return naturalCmp(a,b);
+  });
+}
 
 // ── 年度正規化：112上、113-下學期、114學測、114分科測驗、114會考…→ {aca(學年度), term(學期/考試類型), valid} ──
 // 只用於統計用的計算欄位，不改寫原始資料
@@ -630,7 +665,7 @@ function sortableTable(id,columns,rows,opts){
     if(typeof va==='string')return state.dir==='asc'?String(va).localeCompare(String(vb),'zh-Hant'):String(vb).localeCompare(String(va),'zh-Hant');
     return state.dir==='asc'?va-vb:vb-va;
   });
-  const thead=columns.map((c,i)=>`<th class="${state.col===i?'sorted '+state.dir:''}" onclick="_dtSort('${id}',${i})">${esc(c.label)}</th>`).join('');
+  const thead=columns.map((c,i)=>`<th class="${c.num?'num ':''}${state.col===i?'sorted '+state.dir:''}" onclick="_dtSort('${id}',${i})">${esc(c.label)}</th>`).join('');
   const tbody=sorted.map(row=>{
     const cells=columns.map(c=>`<td class="${c.num?'num':''}${c.warnFn&&c.warnFn(row)?' warn':''}">${c.render?c.render(row):esc(row[c.key])}</td>`).join('');
     const click=opts.onRowClick?` class="clickable" onclick='${opts.onRowClick}(${JSON.stringify(opts.rowKey?opts.rowKey(row):row).replace(/'/g,"&#39;")})'`:'';
@@ -804,19 +839,31 @@ function splitByLevel(rows){
   };
 }
 
-// 每筆題目對應到章節樹的路徑：領域 → [高中額外的必修/選修分組] → 冊次 → 大單元 → 子單元
-function chapterRowPath(r){
+// 每筆題目對應到章節樹的路徑，每一段帶課綱順序 ord：領域 → [高中必修/選修分組] → 冊次 → 大單元 → 子單元
+function chapterRowSegs(r){
+  const isHS=r.level==='高中';
   const field=r.field||'（未分類領域）';
   const unit=r.unit||'（未分大單元）';
   const sub=r.sub||'（未分子單元）';
-  if(r.level==='高中'){
+  const segs=[{label:field,ord:syllabusIdx(isHS?HS_FIELDS:JH_FIELDS,field)}];
+  if(isHS){
     const book=r.book||r.book_name||'（未分冊）';
     const m=book.match(/^選修(.+?)([一二三四五])$/);
-    if(m)return [field,'選修'+m[1],book,unit,sub];
-    return [field,book,unit,sub];
+    if(m){
+      segs.push({label:'選修'+m[1],ord:1}); // 必修=0、選修=1
+      segs.push({label:book,ord:'一二三四五'.indexOf(m[2])});
+    }else{
+      segs.push({label:book,ord:book.startsWith('必修')?0:2});
+    }
+    segs.push({label:unit,ord:syllabusIdx(SYL_UNIT_LIST[book],unit)});
+    segs.push({label:sub,ord:syllabusIdx(SYL_SUB_LIST[book+unit],sub)});
+  }else{
+    const bk=r.book_name||r.book||'（未分冊）';
+    segs.push({label:bk,ord:syllabusIdx(SYL_BOOK_ORDER_JH,bk)});
+    segs.push({label:unit,ord:syllabusIdx(SYL_UNIT_LIST[bk],unit)});
+    segs.push({label:sub,ord:syllabusIdx(SYL_SUB_LIST[bk+unit],sub)});
   }
-  const bk=r.book_name||r.book||'（未分冊）';
-  return [field,bk,unit,sub];
+  return segs;
 }
 
 function buildPathTree(rows){
@@ -824,17 +871,23 @@ function buildPathTree(rows){
   rows.forEach(r=>{
     root.count++;
     let node=root;
-    chapterRowPath(r).forEach(seg=>{
-      if(!node.children[seg])node.children[seg]={children:{},count:0};
-      node=node.children[seg];
+    chapterRowSegs(r).forEach(seg=>{
+      if(!node.children[seg.label])node.children[seg.label]={children:{},count:0,ord:seg.ord};
+      node=node.children[seg.label];
       node.count++;
+      if(seg.ord<node.ord)node.ord=seg.ord; // 取最小 ord（同一節點多次出現時）
     });
   });
   return root;
 }
 
 function renderChapterNode(node,depth,grandTotal){
-  const keys=Object.keys(node.children).sort((a,b)=>node.children[b].count-node.children[a].count);
+  // 依課綱順序（ord）排序，課綱外項目排最後並以數字感知比較收尾
+  const keys=Object.keys(node.children).sort((a,b)=>{
+    const oa=node.children[a].ord,ob=node.children[b].ord;
+    if(oa!==ob)return oa-ob;
+    return naturalCmp(a,b);
+  });
   return keys.map(k=>{
     const child=node.children[k];
     const isLeaf=Object.keys(child.children).length===0;
@@ -1227,7 +1280,7 @@ function buildYearChapter(rows){
   const dists={};keys.forEach(k=>dists[k]=weightedDist(byYear[k],catFn,yc.weight));
   const catTotals={};
   scoped.forEach(r=>{const c=catFn(r);catTotals[c]=(catTotals[c]||0)+1;});
-  const cats=Object.keys(catTotals).sort((a,b)=>catTotals[b]-catTotals[a]).slice(0,25);
+  const cats=sortByChapter(Object.keys(catTotals),useLevel,_chapLevel).slice(0,30);
   const heat=keys.length?heatmapTable(cats,keys,(cat,yk)=>{
     const list=byYear[yk];const n=list.filter(r=>catFn(r)===cat).length;
     if(!n)return null;
