@@ -178,6 +178,15 @@ table.heat td.empty:hover{outline:none}
 .dq-samples{font-size:11.5px;color:var(--muted);margin-top:16px}
 .dq-samples .row{padding:5px 4px;border-bottom:1px solid var(--line)}
 .dq-card .pctline{font-size:10.5px;color:#9a8b74;margin-top:1px}
+.dq-card.open{border-color:var(--red);box-shadow:0 0 0 1px var(--red) inset}
+.dq-card .dq-caret{font-size:10px;color:#b9a27a;margin-left:4px}
+.dq-panel{margin-top:14px;border:1px solid var(--line);border-radius:10px;background:#fffdf8;overflow:hidden}
+.dq-panel-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 13px;background:#fbf4e8;border-bottom:1px solid var(--line);font-size:12.5px}
+.dq-hit{padding:7px 13px;border-bottom:1px solid var(--line);cursor:pointer}
+.dq-hit:last-child{border-bottom:none}
+.dq-hit:hover{background:#faf5f0}
+.dq-hit .dq-hit-t{display:block;font-weight:700;font-size:12.5px;color:var(--ink)}
+.dq-hit .dq-hit-m{display:block;font-size:11px;color:var(--muted);margin-top:1px}
 
 /* sticky 區段導覽 */
 .secnav{position:sticky;top:0;z-index:30;background:rgba(246,245,242,.94);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);display:flex;gap:4px;flex-wrap:wrap;padding:8px 4px;margin:0 -4px 14px}
@@ -1645,26 +1654,60 @@ const DQ_DEFS=[
 function buildDataQuality(rows){
   const total=rows.length;
   const cards=DQ_DEFS.map(d=>({...d,n:rows.filter(r=>r.dq[d.key]).length}));
-  const grid=cards.map(c=>`<div class="dq-card" onclick='dqJump(${JSON.stringify(c.key)})'>
+  const grid=cards.map(c=>`<div class="dq-card${_dqOpen===c.key?' open':''}" onclick='dqToggle(${JSON.stringify(c.key)})'>
     <div class="n${c.n===0?' zero':''}">${c.n}</div>
-    <div class="lbl">${esc(c.lbl)}</div>
+    <div class="lbl">${esc(c.lbl)}${c.n?'<span class="dq-caret">▾</span>':''}</div>
     <div class="pctline">${c.n?'占目前範圍 '+pct(c.n,total)+'%':'目前範圍內沒有'}</div>
   </div>`).join('');
-  const mism=rows.filter(r=>r.dq.fieldBookMismatch).slice(0,6);
-  const mismList=mism.length?`<div class="dq-samples"><div style="font-weight:700;color:#b23b3b;margin-bottom:4px">領域與冊次不一致（前 ${mism.length} 筆，僅診斷不改資料）</div>${mism.map(r=>`<div class="row">${esc(r.summary||'（無摘要）')}｜資料領域：<b>${esc(r.field)}</b>、冊次：<b>${esc(dbBookKey(r))}</b>（課綱該冊為 ${esc(SYL_FIELD_OF_BOOK[dbBookKey(r)]||'?')}）｜${esc(r.exam||'')} 第${esc(r.no||'?')}題</div>`).join('')}</div>`:'';
+  // 點開的卡片 → 內嵌顯示前幾筆問題題目 + 查看全部
+  let panel='';
+  if(_dqOpen){
+    const def=DQ_DEFS.find(d=>d.key===_dqOpen);
+    const hits=rows.filter(r=>r.dq[_dqOpen]);
+    if(def&&hits.length){
+      const list=hits.slice(0,15).map(r=>`<div class="row dq-hit" onclick='jumpToBankWithExam(${JSON.stringify(r.exam||'')})' title="回題庫查看這份考卷">
+        <span class="dq-hit-t">${esc(r.summary||'（無摘要）')}</span>
+        <span class="dq-hit-m">${esc(r.year||'')}${r.school?'・'+esc(r.school):''}・${esc(r.exam||'')} 第${esc(r.no||'?')}題　<b style="color:#b23b3b">${esc(dqDetail(r,_dqOpen))}</b></span>
+      </div>`).join('');
+      const more=hits.length>15?`還有 ${hits.length-15} 筆`:'';
+      const jumpBtn=(def.filter&&Object.keys(def.filter).length)
+        ?`<button class="hbtn primary" style="padding:5px 12px;font-size:12px" onclick='applyDrillFilter(${JSON.stringify(def.filter)})'>查看全部（回本頁套用篩選）</button>`
+        :`<span style="font-size:11.5px;color:var(--muted)">此類無對應下拉篩選；點任一列可回題庫查看該考卷</span>`;
+      panel=`<div class="dq-panel"><div class="dq-panel-h"><b>${esc(def.lbl)}</b>　共 ${hits.length} 筆　${more?'（顯示前 15 筆，'+more+'）':''}<span style="margin-left:auto">${jumpBtn}</span></div>${list}</div>`;
+    }
+  }
   const anyN=rows.filter(r=>r.dq.any).length;          // 去重題目數
   const recN=cards.reduce((s,c)=>s+c.n,0);              // 問題紀錄總數（可重複）
   const chapterN=rows.filter(r=>r.dq.chapterNonStd).length;
   return `<div class="section"><h2>🩺 資料品質與待整理 <span class="badge"><b>${anyN}</b> 題至少一項問題　·　共 <b>${recN}</b> 筆問題紀錄</span></h2>
-    <div class="desc">「${anyN} 題」為去重後的題目數；「${recN} 筆問題紀錄」為所有卡片計數加總，同一題可能同時落在多張卡片，故兩者不同。點卡片可回題庫套用對應篩選；此頁只診斷、不改資料。其中章節分類待正規化 <b>${chapterN}</b> 題（下列非標準大單元／子單元／跨章／冊次不在骨架者）。</div>
+    <div class="desc">「${anyN} 題」為去重後的題目數；「${recN} 筆問題紀錄」為所有卡片計數加總，同一題可能同時落在多張卡片，故兩者不同。點卡片展開該類問題題目清單；此頁只診斷、不改資料。其中章節分類待正規化 <b>${chapterN}</b> 題。</div>
     <div class="dq-grid">${grid}</div>
-    ${mismList}
+    ${panel}
   </div>`;
 }
-function dqJump(key){
-  const def=DQ_DEFS.find(d=>d.key===key);
-  if(def&&def.filter&&Object.keys(def.filter).length){applyDrillFilter(def.filter);}
-  else{alert('此類資料異常沒有對應的題庫下拉篩選欄位，請在本頁切到「目前篩選結果」搭配上方篩選，或回題庫用「只看待確認(Y)」查找。');}
+let _dqOpen=null;
+function dqToggle(key){_dqOpen=(_dqOpen===key?null:key);render();}
+// 各問題類型要在清單裡補顯示的關鍵欄位值
+function dqDetail(r,key){
+  switch(key){
+    case 'chartInvalid':return '圖表：'+(r.chart||'（空白）');
+    case 'fieldBookMismatch':return `領域 ${r.field}／冊次 ${dbBookKey(r)}（課綱應為 ${SYL_FIELD_OF_BOOK[dbBookKey(r)]||'?'}）`;
+    case 'nonStdUnit':return '大單元：'+(r.unit||'（空白）');
+    case 'nonStdSub':return '子單元：'+(r.sub||'（空白）');
+    case 'crossChapter':return (r.unit&&/／|\//.test(r.unit)?'大單元：'+r.unit:'子單元：'+r.sub);
+    case 'notInSyllabus':return '冊次：'+(dbBookKey(r)||'（空白）');
+    case 'yearInvalid':return '年度：'+(r.year||'（空白）');
+    case 'diffMissing':case 'diffInvalid':return `步驟${r.step??'-'}／記憶${r.mem??'-'}／概念${r.con??'-'}`;
+    case 'noField':return '領域空白';
+    case 'noBook':return '冊次空白';
+    case 'noUnit':return '大單元空白';
+    case 'noSub':return '子單元空白';
+    case 'noLevel':return '學制無法判定';
+    case 'missingImgRef':return '題目提及圖但未上傳';
+    case 'orphanGroup':return '題組ID：'+(r.group_id||'');
+    case 'aiAnswer':return 'AI 判斷答案';
+    default:return '';
+  }
 }
 
 // I. 目標命題藍圖（只讀取與比較，不寫入）
