@@ -234,6 +234,41 @@ body.embedded .secnav{top:0}
 .cov-rate{font-size:12px;color:var(--muted);margin-bottom:8px}
 .cov-rate b{color:var(--red);font-size:14px}
 
+/* ── 手機／窄版（含內嵌 iframe 依自身寬度觸發）：卡片填滿寬度、縮小留白 ── */
+@media(max-width:600px){
+  .wrap{padding:0 10px}
+  body.embedded .wrap{padding:0 6px}
+  .scope-bar{gap:6px;padding:10px 0}
+  .scope-btn{padding:6px 13px;font-size:12px}
+  .scope-info{margin-left:0;flex-basis:100%;order:9}
+  .section{padding:14px 12px;margin-bottom:12px}
+  .section h2{font-size:14px}
+  /* 篩選/控制列：每欄各佔半排，填滿寬度 */
+  .filter-bar{padding:12px;gap:9px 10px}
+  .f-item{flex:1 1 44%;min-width:0}
+  .f-item select,.f-item input{width:100%}
+  /* KPI 卡：兩欄填滿；單數時最後一張跨整排不留空 */
+  .grid{grid-template-columns:1fr 1fr;gap:8px}
+  .grid>.stat-card:last-child:nth-child(odd){grid-column:1/-1}
+  .stat-card{padding:11px 8px}
+  .stat-card .n{font-size:22px}
+  /* 品質卡：兩欄填滿；單數時最後一張跨整排 */
+  .dq-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .dq-grid>.dq-card:last-child:nth-child(odd){grid-column:1/-1}
+  .dq-card{padding:9px 10px}
+  .dq-card .n{font-size:18px}
+  /* 領域分布國高中並排改為上下堆疊，各自填滿 */
+  .split-two{gap:14px}
+  .split-two>.split-half{min-width:0;flex:1 1 100%}
+  .donut-flex{gap:16px;justify-content:center}
+  .legend{min-width:0}
+}
+@media(max-width:380px){
+  .grid,.dq-grid{grid-template-columns:1fr}
+  .grid>.stat-card:last-child:nth-child(odd),.dq-grid>.dq-card:last-child:nth-child(odd){grid-column:auto}
+  .f-item{flex-basis:100%}
+}
+
 </style>
 </head>
 <body>
