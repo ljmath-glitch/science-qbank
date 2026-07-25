@@ -171,6 +171,11 @@ header .sub{font-size:11px;color:var(--muted);margin-top:3px;letter-spacing:1px;
 .spec-node.current .spec-glass{animation:specBreathe 2.4s ease-in-out infinite}
 @keyframes specBreathe{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
 .spec-node.sel .spec-glass{box-shadow:0 0 0 2px rgba(212,160,23,.8),0 0 14px rgba(212,160,23,.5)}
+/* 圖片角色圖示（如愛因斯坦）：與 emoji 尺寸相稱 */
+.spec-img{width:24px;height:24px;object-fit:contain;display:block;position:relative}
+.spec-node.current .spec-img{width:30px;height:30px}
+.spec-img.current-glow{filter:drop-shadow(0 0 8px rgba(212,160,23,.9)) drop-shadow(0 0 3px rgba(255,220,80,.7))}
+.spec-img.spec-sil{filter:brightness(0) opacity(.55)}   /* 隱藏角色黑色剪影「猜猜我是誰」 */
 .spec-pop{margin:2px 18px 0;border-radius:12px;padding:10px 14px;font-family:inherit;font-size:12px;
   background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
   color:rgba(244,241,234,.85);display:none;align-items:center;gap:10px}
@@ -1220,16 +1225,28 @@ function getFallback(offset, sidx=0){
 // CHARACTER PROGRESSION
 // ═══════════════════════════════════════════════════════════════
 const LEVELS=[
-  {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  next:15, glow:'rgba(156,163,175,.35)',
+  {name:'菜雞',    emoji:'🐔',rank:'初出茅廬',threshold:0,  glow:'rgba(156,163,175,.35)',
    lines:['咕咕…再多練幾題就會了！','菜是原罪，但我每天都在進步！','今天也要努力啄題目～','別看我菜，我可是很拼的！']},
-  {name:'NPC',     emoji:'🤖',rank:'背景角色',threshold:15, next:40, glow:'rgba(59,130,246,.35)',
+  {name:'NPC',     emoji:'🤖',rank:'背景角色',threshold:25, glow:'rgba(59,130,246,.35)',
    lines:['每天上線刷題，我是稱職的背景角色。','劇情推進中，請繼續作答。','雖然是路人，但我很認真！','嗶嗶—偵測到一位好學的你。']},
-  {name:'人上人',  emoji:'😇',rank:'脫穎而出',threshold:40, next:80, glow:'rgba(139,92,246,.35)',
+  {name:'人上人',  emoji:'😇',rank:'脫穎而出',threshold:50, glow:'rgba(139,92,246,.35)',
    lines:['略懂略懂。','這題？小意思。','再解幾題就要登頂了！','站得高，看得遠～']},
-  {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:80, next:null,glow:'rgba(245,158,11,.35)',
+  {name:'天才兒童',emoji:'🧠',rank:'天賦異稟',threshold:100,glow:'rgba(245,158,11,.35)',
    lines:['這題我幼稚園就會了。','知識，是我的玩具。','已臻化境，仍不鬆懈。','傳說，由你續寫。']},
+  {name:'愛因斯坦',img:'einstein.png',rank:'相對論宗師',threshold:200,hidden:true,glow:'rgba(212,160,23,.5)',
+   lines:['E=mc²，你懂的。','想像力比知識更重要。','我沒有特別聰明，只是願意鑽研久一點。','複利是世界第八大奇蹟，刷題也是。']},
 ];
 function getLevel(n){let i=0;for(let j=0;j<LEVELS.length;j++)if(n>=LEVELS[j].threshold)i=j;return{index:i,...LEVELS[i]};}
+// 隱藏角色：尚未達到門檻前不洩漏名稱/圖案（顯示黑色剪影「猜猜我是誰」）
+function isRevealed(idx,curIdx){return !LEVELS[idx].hidden || idx<=curIdx;}
+// 依 level 產生圖示 HTML（圖片或 emoji）；sil=true 時顯示黑色剪影
+function lvIconHTML(lv,px,sil){
+  px=px||24;
+  const st=`width:${px}px;height:${px}px;object-fit:contain;vertical-align:middle${sil?';filter:brightness(0)':''}`;
+  if(lv&&lv.img)return `<img src="${lv.img}" alt="${sil?'':(lv.name||'')}" style="${st}">`;
+  return `<span style="font-size:${px}px;line-height:1${sil?';filter:brightness(0)':''}">${lv?lv.emoji:''}</span>`;
+}
+function setLvIcon(elId,lv,px,sil){const el=document.getElementById(elId);if(el)el.innerHTML=lvIconHTML(lv,px||24,sil);}
 // 點頭像：彈跳 + 輪播角色台詞
 let _bubbleTimer=null,_lineIdx=0;
 function tapAvatar(){
@@ -1253,11 +1270,15 @@ function tapSpecNode(idx){
   document.querySelectorAll('.spec-node').forEach((n,i)=>n.classList.toggle('sel',i===idx&&_selNode!==idx));
   if(_selNode===idx){pop.classList.remove('show');_selNode=null;return;}
   _selNode=idx;
+  const revealed=isRevealed(idx,curIdx);
   let req;
   if(idx<curIdx)req=`已解鎖 ✓　達成門檻 ${l.threshold} 題`;
   else if(idx===curIdx)req=l.threshold===0?'起始階段，你目前在這裡':`目前階段（門檻 ${l.threshold} 題），你在這裡`;
-  else req=`還需不重複答對 <b>${l.threshold-score}</b> 題解鎖`;
-  pop.innerHTML=`<span class="pop-emoji">${l.emoji}</span><span><span class="pop-name">${l.name}</span>　<span style="font-size:11px;color:rgba(244,241,234,.45)">${l.rank}</span><div class="pop-req">${req}</div></span>`;
+  else req=`還需不重複答對 <b>${l.threshold-score}</b> 題${l.hidden?'解鎖神秘角色':'解鎖'}`;
+  const nm=revealed?l.name:'？？？';
+  const rk=revealed?l.rank:'神秘隱藏角色';
+  const iconHTML=l.img?`<span class="pop-emoji" style="width:30px;text-align:center">${lvIconHTML(l,28,!revealed)}</span>`:`<span class="pop-emoji">${l.emoji}</span>`;
+  pop.innerHTML=`${iconHTML}<span><span class="pop-name">${nm}</span>　<span style="font-size:11px;color:rgba(244,241,234,.45)">${rk}</span><div class="pop-req">${req}</div></span>`;
   pop.classList.add('show');
 }
 
@@ -1352,7 +1373,8 @@ function renderCharacter(){
   const lv=getLevel(upgradeScore);
   const nextLv=LEVELS[lv.index+1];
   const avatar=document.getElementById('charAvatar');
-  avatar.textContent=lv.emoji;
+  // 目前階段一定已解鎖，直接顯示（圖片角色用 img，其餘用 emoji）
+  avatar.innerHTML=lv.img?`<img src="${lv.img}" alt="${lv.name}" style="width:68px;height:68px;object-fit:contain">`:lv.emoji;
   avatar.style.boxShadow=`0 0 0 3px ${lv.glow},0 0 24px ${lv.glow},0 8px 20px rgba(0,0,0,.35)`;
   document.getElementById('charRank').textContent=lv.rank;
   document.getElementById('charName').textContent=lv.name;
@@ -1365,9 +1387,17 @@ function renderCharacter(){
   if(nextLv){
     const span=nextLv.threshold-lv.threshold;
     ringPct=span>0?Math.min(1,(upgradeScore-lv.threshold)/span):0;
-    document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji}`;
-    document.getElementById('charCondText').innerHTML=
-      `不重複答對 <b>還差 ${nextLv.threshold-upgradeScore} 題</b> 即可進化為「${nextLv.name}」`;
+    const nextRevealed=isRevealed(lv.index+1,lv.index); // 下一階段若是隱藏角色則不洩漏
+    const remain=nextLv.threshold-upgradeScore;
+    if(nextRevealed){
+      document.getElementById('charNext').textContent=`下一階段：${nextLv.name} ${nextLv.emoji||''}`;
+      document.getElementById('charCondText').innerHTML=
+        `不重複答對 <b>還差 ${remain} 題</b> 即可進化為「${nextLv.name}」`;
+    }else{
+      document.getElementById('charNext').textContent='下一階段：？？？（神秘隱藏角色）';
+      document.getElementById('charCondText').innerHTML=
+        `神秘隱藏角色現身中…不重複答對 <b>還差 ${remain} 題</b> 即可解鎖`;
+    }
     if(pctEl)pctEl.textContent=Math.round(ringPct*100)+'%';
   }else{
     ringPct=1;
@@ -1376,16 +1406,25 @@ function renderCharacter(){
     if(pctEl)pctEl.textContent='MAX';
   }
   if(ring){ring.style.strokeDasharray=C;ring.style.strokeDashoffset=C*(1-ringPct);}
-  // 等級光譜
-  const maxT=LEVELS[LEVELS.length-1].threshold;
-  const fillPct=Math.min(100,upgradeScore/maxT*100);
+  // 等級光譜（節點等距排列，避免門檻差距大時擠在一起；填色到目前階段＋往下一階段的進度）
+  const N=LEVELS.length;
+  const frac=nextLv?ringPct:0;
+  const fillPct=N>1?((lv.index+frac)/(N-1))*100:100;
   const nodes=LEVELS.map((l,i)=>{
-    const pos=l.threshold/maxT*100;
-    const cls=i<lv.index?'done':i===lv.index?'current':(i>lv.index?'locked':'');
+    const pos=N>1?(i/(N-1))*100:0;
+    const cls=i<lv.index?'done':i===lv.index?'current':'locked';
     const glowCls=i===lv.index?' current-glow':'';
+    const revealed=isRevealed(i,lv.index);
+    let iconInner;
+    if(l.img){
+      iconInner=`<img class="spec-img${revealed?glowCls:' spec-sil'}" src="${l.img}" alt="">`;
+    }else{
+      iconInner=`<span class="spec-emoji${glowCls}">${l.emoji}</span>`;
+    }
+    const nameTxt=revealed?l.name:'？？？';
     return `<div class="spec-node ${cls}" style="left:${pos}%" onclick="tapSpecNode(${i})">
-      <div class="spec-glass"><span class="spec-emoji${glowCls}">${l.emoji}</span></div>
-      <span class="spec-name">${l.name}</span>
+      <div class="spec-glass">${iconInner}</div>
+      <span class="spec-name">${nameTxt}</span>
       <span class="spec-num">${l.threshold}</span>
     </div>`;
   }).join('');
@@ -1874,11 +1913,11 @@ function showDemotion(daysDiff,fromIdx){
   const fromLv=LEVELS[fromIdx];
   const toLv=LEVELS[fromIdx-1];
   document.getElementById('demotionAbsent').textContent=`已失聯 ${daysDiff} 天`;
-  document.getElementById('demotionFromEmoji').textContent=fromLv.emoji;
+  setLvIcon('demotionFromEmoji',fromLv,34);
   document.getElementById('demotionFromName').textContent=fromLv.name;
-  document.getElementById('demotionToEmoji').textContent=toLv.emoji;
+  setLvIcon('demotionToEmoji',toLv,34);
   document.getElementById('demotionToName').textContent=toLv.name;
-  document.getElementById('demotionNow').textContent=`${toLv.emoji} ${toLv.name}`;
+  document.getElementById('demotionNow').innerHTML=`${lvIconHTML(toLv,20)} ${toLv.name}`;
   document.getElementById('demotionScreen').style.display='flex';
 }
 function closeDemotion(){
@@ -2009,8 +2048,10 @@ function scrollToQuestion(){
 // ═══════════════════════════════════════════════════════════════
 function showToast(lvIdx){
   const lv=LEVELS[lvIdx];
-  document.getElementById('toastEmoji').textContent=lv.emoji;
-  document.getElementById('toastMsg').textContent=`恭喜進化為「${lv.name}」！`;
+  const te=document.getElementById('toastEmoji');
+  if(lv.img)te.innerHTML=`<img src="${lv.img}" alt="${lv.name}" style="width:1.15em;height:1.15em;object-fit:contain;vertical-align:middle">`;
+  else te.textContent=lv.emoji;
+  document.getElementById('toastMsg').textContent=lv.hidden?`解鎖隱藏角色「${lv.name}」！`:`恭喜進化為「${lv.name}」！`;
   const t=document.getElementById('toast'); t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),3000);
 }
