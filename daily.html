@@ -1406,12 +1406,11 @@ function renderCharacter(){
     if(pctEl)pctEl.textContent='MAX';
   }
   if(ring){ring.style.strokeDasharray=C;ring.style.strokeDashoffset=C*(1-ringPct);}
-  // 等級光譜（節點等距排列，避免門檻差距大時擠在一起；填色到目前階段＋往下一階段的進度）
-  const N=LEVELS.length;
-  const frac=nextLv?ringPct:0;
-  const fillPct=N>1?((lv.index+frac)/(N-1))*100:100;
+  // 等級光譜（橫坐標依門檻比例排列，讓 100→200 到愛因斯坦的大跳距真的看起來遠）
+  const maxT=LEVELS[LEVELS.length-1].threshold||1;
+  const fillPct=Math.min(100,upgradeScore/maxT*100);
   const nodes=LEVELS.map((l,i)=>{
-    const pos=N>1?(i/(N-1))*100:0;
+    const pos=l.threshold/maxT*100;
     const cls=i<lv.index?'done':i===lv.index?'current':'locked';
     const glowCls=i===lv.index?' current-glow':'';
     const revealed=isRevealed(i,lv.index);
