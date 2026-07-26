@@ -18,7 +18,7 @@ body{font-family:var(--ui-font);font-weight:500;background:var(--paper);color:va
 .wrap{max-width:1320px;margin:0 auto;padding:0 20px}
 header{background:#fffefb;border-bottom:1px solid var(--line);padding:13px 0;box-shadow:0 1px 2px rgba(45,48,56,.04)}
 body.embedded header{display:none}
-body.embedded{padding-bottom:20px}
+body.embedded{padding-bottom:20px;min-height:0}   /* 內嵌時高度貼合內容，交由父視窗自動長高 */
 body.embedded .wrap{padding:0 4px}
 body.embedded .wrap[style]{padding-top:4px!important}
 header .row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
@@ -1783,6 +1783,20 @@ function buildBlueprint(rows){
     <div class="desc">以「全題庫同學制（${esc(lv||'?')}）平均」作為暫定目標基準，與目前選取的題目／考卷比較。狀態規則：差異 ≤3pp 合理、3～8pp 注意、>8pp 不足或偏高。此版本僅比較、不寫入自訂目標。</div>
     <div class="dt-wrap"><table class="dt"><thead><tr><th>指標</th><th>目標(基準)</th><th>實際</th><th>差異</th><th>狀態</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
   </div>`;
+}
+
+// ---------- 內嵌時回報內容高度給父視窗（題庫頁），讓 iframe 自動長高，不留空白 ----------
+if(window!==window.top){
+  let _lastH=0;
+  const postHeight=()=>{
+    const h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight);
+    if(Math.abs(h-_lastH)<4)return;   // 避免微小抖動反覆回報
+    _lastH=h;
+    try{window.parent.postMessage({type:'analyticsHeight',height:h},'*');}catch(e){}
+  };
+  if('ResizeObserver' in window)new ResizeObserver(postHeight).observe(document.body);
+  window.addEventListener('load',postHeight);
+  [200,700,1500,3000].forEach(t=>setTimeout(postHeight,t));
 }
 
 // ---------- 啟動 ----------

@@ -61,7 +61,7 @@
   .tb-embed-wrap{position:relative;width:100%}
   .tb-embed-openbtn{position:absolute;top:8px;right:8px;z-index:2;background:#fff;border:1px solid var(--line);border-radius:7px;padding:5px 11px;font-size:11.5px;font-weight:700;color:var(--muted);text-decoration:none;box-shadow:0 2px 6px rgba(45,48,56,.14);transition:.15s}
   .tb-embed-openbtn:hover{border-color:var(--red);color:var(--red)}
-  #analyticsFrame{width:100%;height:min(66vh,640px);border:1px solid var(--line);border-radius:10px;display:block;background:var(--paper)}
+  #analyticsFrame{width:100%;height:640px;min-height:420px;border:1px solid var(--line);border-radius:10px;display:block;background:var(--paper)}
   /* ===== 工具列分頁（tab）===== */
   .tb-tabs{display:flex;gap:5px;flex-wrap:wrap;align-items:flex-end;margin-bottom:7px;border-bottom:2px solid var(--line)}
   .tb-tab{font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.5px;padding:6px 14px 7px;border:1px solid var(--line);border-bottom:none;background:#f1e9db;color:var(--muted);border-radius:9px 9px 0 0;cursor:pointer;margin-bottom:-2px;transition:.15s;white-space:nowrap;user-select:none;display:inline-flex;align-items:center;gap:6px}
@@ -318,7 +318,6 @@
     .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll::-webkit-scrollbar{display:none}
     .tb-row-embed .tb-btn-scroll{display:block!important;width:100%;padding:6px 10px!important}
     .tb-row-embed .tb-item{width:100%}
-    #analyticsFrame{height:min(55vh,480px)}
 
     /* === 統計行 V5.16 === */
     .tb-row-stat .tb-btn-scroll{gap:6px!important;padding:2px 10px 2px!important}
@@ -4729,6 +4728,12 @@ const TB_BUTTONS={
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
+// 內嵌「題庫分析」iframe 自動長高：由 analytics.html 回報內容高度，避免手機上變成小視窗＋一堆空白
+window.addEventListener('message',e=>{
+  if(!e.data||e.data.type!=='analyticsHeight')return;
+  const fr=document.getElementById('analyticsFrame');
+  if(fr&&e.data.height)fr.style.height=Math.max(360,Math.round(e.data.height))+'px';
+});
 const TB_VER='26';
 const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作','題庫分析'];
 // 分頁極簡線條圖示（stroke=currentColor，隨分頁文字顏色變化）
