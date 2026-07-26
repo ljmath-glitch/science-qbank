@@ -294,6 +294,8 @@
     #tbWrap .tb-tab{flex:1 1 0;min-width:0;text-align:center;justify-content:center;font-size:12px;padding:5px 4px 6px;letter-spacing:0;white-space:nowrap}
     /* overflow 放在 #tbWrap 而非 .toolbar-outer，確保 #tbCollapseBar position:fixed 正確吃 viewport */
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+    /* 題庫分析分頁：解除高度上限與內部捲動，讓內嵌 iframe 自動長高、整頁自然捲動，不被夾成小視窗 */
+    #tbWrap.embed-active{max-height:none;overflow:visible}
     #tbEditBtn,#tbResetBtn{display:none!important}
 
     /* === 每列：標籤在上、按鈕在下 === */
@@ -4821,6 +4823,7 @@ function buildTbTabs(layout){
   wrap.querySelectorAll(':scope>.tb-row').forEach(r=>r.classList.remove('tb-active'));
   const ar=wrap.querySelector('.tb-row[data-row="'+active+'"]');
   if(ar)ar.classList.add('tb-active');
+  wrap.classList.toggle('embed-active',!!(ar&&ar.classList.contains('tb-row-embed')));
   setupTabDrag();
 }
 function setupTabDrag(){
@@ -4849,6 +4852,8 @@ function setActiveTab(ri){
   wrap.querySelectorAll(':scope>.tb-row').forEach(r=>r.classList.remove('tb-active'));
   const row=wrap.querySelector('.tb-row[data-row="'+ri+'"]');
   if(row)row.classList.add('tb-active');
+  // 內嵌「題庫分析」分頁：解除工具列在手機上的高度限制，讓 iframe 自動長高、不被夾成小視窗
+  wrap.classList.toggle('embed-active',!!(row&&row.classList.contains('tb-row-embed')));
   sizeToolbar();
 }
 function sizeToolbar(){
