@@ -318,7 +318,7 @@
     /* 功能列：橫向滑動單排（超出寬度可左右滑，右緣淡出提示） */
     .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;gap:6px;padding:3px 12px!important;width:100%;box-sizing:border-box;align-items:center;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
     .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll::-webkit-scrollbar{display:none}
-    .tb-row-embed .tb-btn-scroll{display:block!important;width:100%;padding:6px 10px!important}
+    .tb-row-embed .tb-btn-scroll{display:block!important;width:100%;padding:6px 4px!important}
     .tb-row-embed .tb-item{width:100%}
 
     /* === 統計行 V5.16 === */
@@ -332,8 +332,11 @@
 
     /* === 手機工具列：橫向滑動單排 === */
     .tb-row+.tb-row{padding-top:2px}
-    .tb-row:not(.tb-row-stat) .tb-item{width:auto!important;flex:0 0 auto!important;display:flex}
-    .tb-row:not(.tb-row-stat) .tb-item>div{display:inline-flex!important;flex-direction:column!important;width:auto!important;align-items:center!important;gap:0!important}
+    .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-item{width:auto!important;flex:0 0 auto!important;display:flex}
+    .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-item>div{display:inline-flex!important;flex-direction:column!important;width:auto!important;align-items:center!important;gap:0!important}
+    /* 內嵌題庫分析：tb-item 與其內容都填滿寬度，iframe 才不會只佔左側一小塊、右邊留白 */
+    .tb-row-embed .tb-item{width:100%!important;flex:1 1 100%!important;display:block!important}
+    .tb-row-embed .tb-item>div{width:100%!important;display:block!important}
     .tb-row:not(.tb-row-stat) .tb-item>div>span{white-space:nowrap!important;text-align:center;font-size:8px!important;line-height:1!important;color:var(--muted)}
     .tb-row:not(.tb-row-stat) .btn,.tb-row:not(.tb-row-stat) a.btn{height:30px!important;padding:0 13px!important;font-size:12px!important;width:auto!important;white-space:nowrap!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;text-align:center!important}
     .tb-row:not(.tb-row-stat) select{height:30px!important;font-size:12px!important;width:auto!important;max-width:none!important;min-width:100px;box-sizing:border-box;flex:0 0 auto}
