@@ -23,6 +23,13 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 .wrap{max-width:680px;margin:0 auto;padding:28px 20px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 24px;box-shadow:var(--shadow);margin-bottom:16px}
 .card-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.workflow-intro{background:linear-gradient(135deg,#fffdf7,#f5faf7);border:1px solid #dce8df;border-radius:14px;padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow)}
+.workflow-intro h2{font-size:18px;margin-bottom:5px}.workflow-intro p{font-size:13px;color:var(--muted);line-height:1.65}
+.stage{position:relative;margin:0 0 28px;padding:20px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.52)}
+.stage-head{display:flex;gap:12px;align-items:flex-start;margin:0 0 18px}.stage-no{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:#fff;background:var(--raw);font-weight:800;font-size:15px}.stage:nth-of-type(3) .stage-no{background:var(--phy)}.stage:nth-of-type(4) .stage-no{background:var(--earth)}
+.stage-head h2{font-size:17px;line-height:1.4}.stage-head p{font-size:12.5px;line-height:1.55;color:var(--muted);margin-top:2px}
+.stage-guide{padding:14px 16px;border-radius:10px;background:#fffdf8;border:1px solid #eee7d9;font-size:13px;line-height:1.75;color:#52545b}.stage-guide ol{padding-left:20px}.stage-guide b{color:var(--ink)}
+.stage-pending{opacity:.72;background:#fbfbfa}.stage-pending .card{box-shadow:none;margin-bottom:0}
 
 /* 上傳區 */
 .drop-zone{border:2px dashed #c8b89a;border-radius:10px;padding:32px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;user-select:none}
@@ -99,6 +106,18 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 
 <div class="wrap">
 
+  <div class="workflow-intro">
+    <h2>考卷匯入工作流程</h2>
+    <p>一份考卷依序完成「題目匯入 → 詳解匯入 → 圖表貼圖」。每一區只做一件事，完成後再往下一區走。</p>
+  </div>
+
+  <section class="stage" id="questionStage">
+    <div class="stage-head">
+      <div class="stage-no">1</div>
+      <div><h2>匯入考卷題目</h2><p>把清稿考卷交給 AI 生成題目 CSV，再直接送進題庫。</p></div>
+    </div>
+    <div class="stage-guide" style="margin-bottom:16px"><b>工讀生操作：</b><ol><li>上傳試卷寶清稿 PDF 或 DOCX。</li><li>按「整理」後複製題目轉檔指令，連同考卷檔案交給 Claude、Gemini 或 ChatGPT。</li><li>把 AI 回傳的題目 CSV 貼回來，按「直接匯入題庫」。</li></ol></div>
+
   <!-- 上傳 -->
   <div class="card">
     <div class="card-title">考卷檔案（試卷寶清稿 PDF 或 DOCX）</div>
@@ -117,7 +136,7 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
   <div id="imgSection" style="display:none;margin-bottom:16px">
     <div class="card">
       <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
-        <span id="imgSectionTitle">考卷圖片</span>
+        <span id="imgSectionTitle">AI 判讀用原始頁面／媒體</span>
         <button class="btn btn-bio" id="imgDlBtn" onclick="downloadAllImages()" disabled
                 style="font-size:12px;padding:6px 14px">⬇ 下載全部（ZIP）</button>
       </div>
@@ -234,6 +253,24 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
       批次轉換並下載 ZIP
     </button>
   </div>
+
+  </section>
+
+  <section class="stage stage-pending" id="solutionStage">
+    <div class="stage-head">
+      <div class="stage-no">2</div>
+      <div><h2>生成並匯入詳解</h2><p>題目匯入完成後，使用同一份考卷的題目資料生成詳解 CSV，只更新詳解欄位。</p></div>
+    </div>
+    <div class="stage-guide"><b>下一步會放入：</b><ol><li>詳解生成指令與明確的 AI 操作說明。</li><li>貼上「考試名稱、題號、詳解」CSV 的區域。</li><li>直接開啟題庫既有「詳解匯入」視窗，讓工讀生最後確認。</li></ol></div>
+  </section>
+
+  <section class="stage stage-pending" id="assetStage">
+    <div class="stage-head">
+      <div class="stage-no">3</div>
+      <div><h2>圖表素材與批次貼圖</h2><p>只處理有題號的圖與表；確認後直接交給題庫的批次貼圖。</p></div>
+    </div>
+    <div class="stage-guide"><b>下一步會放入：</b><ol><li>每張圖／表的縮圖、題號與人工確認狀態。</li><li>固定命名：<code>Q題號_描述.png</code>；未知題號不自動上傳。</li><li>一鍵帶入題庫的批次貼圖，依考卷名稱與題號對應。</li></ol></div>
+  </section>
 
 </div>
 
@@ -420,7 +457,7 @@ async function extractAndShowImages(file){
         div.appendChild(img);const label=document.createElement('div');label.className='img-fname';label.textContent=`第 ${n} 頁`;
         div.appendChild(label);gallery.appendChild(div);
       }
-      title.textContent=`PDF 頁面圖片（共 ${pdf.numPages} 頁）`;dlBtn.disabled=false;dlBtn.textContent=`⬇ 下載全部 ${pdf.numPages} 頁（ZIP）`;return;
+      title.textContent=`AI 判讀用 PDF 頁面（共 ${pdf.numPages} 頁；非題庫圖片）`;dlBtn.disabled=false;dlBtn.textContent=`⬇ 下載 AI 頁面包（ZIP）`;return;
     }catch(e){gallery.innerHTML=`<div style="color:var(--accent);font-size:13px">PDF 轉頁失敗：${e.message}</div>`;return;}
   }
 
@@ -432,7 +469,7 @@ async function extractAndShowImages(file){
 
     if(!mediaFiles.length){
       gallery.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">此 DOCX 沒有找到圖片</div>';
-      title.textContent='考卷圖片（0 張）';
+      title.textContent='DOCX 附帶媒體（0 張）';
       return;
     }
 
@@ -479,9 +516,9 @@ async function extractAndShowImages(file){
       gallery.appendChild(div);
     }
 
-    title.textContent=`考卷圖片（共 ${mediaFiles.length} 張）`;
+    title.textContent=`DOCX 附帶媒體（共 ${mediaFiles.length} 張；含 logo，尚非題庫素材）`;
     dlBtn.disabled=false;
-    dlBtn.textContent=`⬇ 下載全部 ${mediaFiles.length} 張（ZIP）`;
+    dlBtn.textContent=`⬇ 下載 AI 媒體包（ZIP）`;
   }catch(e){
     gallery.innerHTML=`<div style="color:var(--accent);font-size:13px">萃取失敗：${e.message}</div>`;
   }
