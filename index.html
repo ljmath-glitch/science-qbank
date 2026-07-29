@@ -1879,7 +1879,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     }
   });
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
-    const rawExam=g(2),school=g(1),year=g(0),book=g(5),_field=g(7);
+    const rawExam=g(2),school=normalizeSchool(g(1)),year=g(0),book=g(5),_field=g(7);
     const grade=gradeFromExam(rawExam,book);
     const round=examRound(rawExam);
     // 正規化：year 欄裡的「上」/「下」改成獨立的「上學期」/「下學期」字串
@@ -2009,7 +2009,7 @@ function composeExam(){
     const yearDisplay=examYear.length?examYear[1]+'-'+examYear[2]+'學期':rawYear;
     const rec=SYL.find(k=>k.book===eBook.value);
     const subject=rec?rec.field:'';
-    const parts=[eSchool.value.trim(),eGrade.value,yearDisplay,round,subject].filter(Boolean);
+    const parts=[normalizeSchool(eSchool.value.trim()),eGrade.value,yearDisplay,round,subject].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
   }
 }
@@ -5237,6 +5237,8 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
 }
 function normalizeSchool(s){
   if(!s)return s;
+  // 「XX附中」在本題庫一律使用國中校名，避免同校出現兩種考試名稱。
+  if(/附中$/.test(s))return s.replace(/附中$/,'國中');
   // "XX高中國中部" / "XX高中附設國中部" / "XX高級中學國中部" → "XX國中"
   var m=s.match(/^(.+?)(?:高中|高級中學)(?:附設)?國中部$/);
   if(m)return m[1]+'國中';
