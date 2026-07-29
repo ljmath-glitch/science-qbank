@@ -90,7 +90,7 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 <header>
   <div>
     <h1>📄 raw考卷前處理</h1>
-    <div class="sub">試卷寶 DOCX → 整理 Markdown → AI 生成 CSV → 匯入題庫</div>
+    <div class="sub">清稿 PDF／DOCX → AI 題目 CSV → 匯入題庫</div>
   </div>
 </header>
 <nav>
@@ -145,7 +145,7 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
         <div class="bubble idle" id="bub2">2</div>
         <div class="step-body">
           <div class="step-title">複製 Prompt → 貼進 AI（或用本機 Ollama 自動處理）</div>
-          <div class="step-desc">自動嵌入考卷內容與 22 欄分析規則</div>
+          <div class="step-desc">DOCX 自動嵌入文字；掃描 PDF 請同時把原 PDF 或步驟一下載的 ZIP 附給 AI</div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:6px 0">
             <select id="ocrOllamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;font-family:inherit" onchange="onOcrPresetChange(this.value)">
               <option value="mac">福大 Mac</option>
@@ -214,16 +214,16 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 
   <!-- 批次卡 -->
   <div class="card">
-    <div class="card-title">一次上傳多份考卷 → 下載所有 Prompt（ZIP）</div>
+    <div class="card-title">一次上傳多份清稿 PDF／DOCX → 下載所有 AI 考卷包（ZIP）</div>
     <div class="drop-zone" id="batchDropZone"
          onclick="document.getElementById('batchFileInput').click()"
          ondragover="event.preventDefault();this.classList.add('drag-over')"
          ondragleave="this.classList.remove('drag-over')"
          ondrop="onBatchDrop(event)">
-      <input type="file" id="batchFileInput" accept=".docx" multiple style="display:none"
+      <input type="file" id="batchFileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple style="display:none"
              onchange="onBatchSelect(this.files)">
       <div class="drop-icon">📂</div>
-      <div class="drop-label" id="batchDropLabel">點擊選擇多份 .docx，或將檔案拖放到這裡</div>
+      <div class="drop-label" id="batchDropLabel">點擊選擇多份清稿 PDF／DOCX，或將檔案拖放到這裡</div>
     </div>
     <div id="batchList" style="margin-top:12px;display:none"></div>
     <button class="btn btn-raw" id="batchBtn" onclick="runBatch()" disabled
@@ -641,7 +641,7 @@ async function step1(){
       folder.file(`${basename}.txt`,`# ${basename}\n\n此為 ${pdf.numPages} 頁清稿 PDF。請以附上的逐頁圖片判讀題目、圖表與表格；不可省略圖片題。`);
       const blob=await zip.generateAsync({type:'blob'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=basename+'.zip';a.click();URL.revokeObjectURL(url);
       docContent=`# ${basename}\n\n此為 ${pdf.numPages} 頁清稿 PDF，題目、圖表與表格請依附圖原樣判讀。`;csvFilename=basename;
-      setBub(1,'done');setMsg(1,`完成：已建立 ${pdf.numPages} 張高解析頁面圖片`,'ok');setBub(2,'waiting');document.getElementById('btn2').disabled=false;document.getElementById('btnOcrAuto').disabled=false;setActive(2);return;
+      setBub(1,'done');setMsg(1,`完成：已建立 ${pdf.numPages} 張高解析頁面圖片；下一步請把原 PDF 或 ZIP 一起附給 AI`,'ok');setBub(2,'waiting');document.getElementById('btn2').disabled=false;document.getElementById('btnOcrAuto').disabled=false;setActive(2);return;
     }catch(e){appendLog('PDF 處理錯誤：'+e.message);setBub(1,'error');setMsg(1,'PDF 處理失敗，請查看執行記錄','err');document.getElementById('btn1').disabled=false;return;}
   }
 
@@ -996,7 +996,7 @@ function onBatchDrop(ev){
 }
 
 function onBatchSelect(fileList){
-  batchFiles=Array.from(fileList).filter(f=>f.name.toLowerCase().endsWith('.docx'));
+  batchFiles=Array.from(fileList).filter(f=>/\.(pdf|docx)$/i.test(f.name));
   const list=document.getElementById('batchList');
   const btn=document.getElementById('batchBtn');
   if(!batchFiles.length){list.style.display='none';btn.disabled=true;return;}
@@ -1013,7 +1013,23 @@ function onBatchSelect(fileList){
     </div>`
   ).join('');
   btn.disabled=false;
-  btn.textContent='批次轉換並下載 ZIP';
+  btn.textContent='批次整理並下載 ZIP';
+}
+
+async function addPdfToBatchZip(file, zip, basename){
+  if(!window.pdfjsLib)throw new Error('PDF 處理元件尚未載入');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const folder=zip.folder(basename);
+  for(let n=1;n<=pdf.numPages;n++){
+    const page=await pdf.getPage(n),viewport=page.getViewport({scale:2});
+    const canvas=document.createElement('canvas');
+    canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+    await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+    folder.file(`page-${String(n).padStart(2,'0')}.png`,canvas.toDataURL('image/png').split(',')[1],{base64:true});
+  }
+  folder.file(`${basename}.txt`, `# ${basename}\n\n此為 ${pdf.numPages} 頁清稿 PDF。請依附上的逐頁圖片逐題判讀；圖表、表格、題組與承上題不可省略。`);
+  return pdf.numPages;
 }
 
 async function runBatch(){
@@ -1028,19 +1044,22 @@ async function runBatch(){
     document.getElementById('bst_'+i).textContent='⏳';
     document.getElementById('bmsg_'+i).textContent='轉換中…';
     try{
-      const basename=f.name.replace(/\.docx$/i,'');
-      const {markdown, images}=await docxToMarkdown(f);
-      const content=`# ${basename}\n\n${markdown}`;
-      const imgCount=Object.keys(images).length;
-
-      // 每份考卷放進子資料夾
-      zip.file(`${basename}/${basename}.txt`, content);
-      Object.entries(images).forEach(([name,b64])=>{
-        zip.file(`${basename}/images/${name}`, b64, {base64:true});
-      });
+      const basename=f.name.replace(/\.(pdf|docx)$/i,'');
+      let imgCount=0;
+      if(/\.pdf$/i.test(f.name)){
+        imgCount=await addPdfToBatchZip(f,zip,basename);
+      }else{
+        const {markdown, images}=await docxToMarkdown(f);
+        const content=`# ${basename}\n\n${markdown}`;
+        imgCount=Object.keys(images).length;
+        zip.file(`${basename}/${basename}.txt`, content);
+        Object.entries(images).forEach(([name,b64])=>{
+          zip.file(`${basename}/images/${name}`, b64, {base64:true});
+        });
+      }
 
       document.getElementById('bst_'+i).textContent='✅';
-      document.getElementById('bmsg_'+i).textContent=`${imgCount} 張圖片`;
+      document.getElementById('bmsg_'+i).textContent=/\.pdf$/i.test(f.name)?`${imgCount} 頁圖片`:`${imgCount} 張圖片`;
       ok++;
     }catch(e){
       document.getElementById('bst_'+i).textContent='❌';
@@ -1059,7 +1078,7 @@ async function runBatch(){
   }else{
     btn.textContent='所有檔案都失敗了';
   }
-  setTimeout(()=>{btn.disabled=false;btn.textContent='批次轉換並下載 ZIP';},4000);
+  setTimeout(()=>{btn.disabled=false;btn.textContent='批次整理並下載 ZIP';},4000);
 }
 
 // ── 步驟 4：下載 CSV ─────────────────────────────────────────────────
