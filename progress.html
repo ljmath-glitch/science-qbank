@@ -57,6 +57,34 @@ th.sort-header:hover{background:#e5ddd0}
 .link-btn:hover{background:#f6eceb;color:var(--primary)}
 .link-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;display:block}
 .link-btn-ph{display:inline-block;width:21px;flex-shrink:0}
+/* ── 手機版：表格轉卡片，避免橫向捲動 ── */
+@media(max-width:600px){
+  .wrap{padding:0 14px}
+  header .wrap{gap:8px}
+  .brand-logo{height:30px;width:30px;padding-right:9px}
+  .brand-copy h1{font-size:13.5px;line-height:1.25}
+  .brand-copy .sub{display:none}
+  .hbtn{padding:6px 11px;font-size:12px}
+  .toolbar .wrap{gap:8px}
+  .stat{margin-left:0;flex-basis:100%}
+  .main{padding:16px 0 48px}
+  .tbl-wrap{max-height:none;overflow:visible;border:none;box-shadow:none;border-radius:0;background:transparent}
+  table{min-width:0;background:transparent}
+  thead{display:none}
+  tbody,tbody tr,tbody td{display:block}
+  tbody tr{background:var(--card);border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);margin-bottom:13px;padding:2px 2px 6px}
+  tbody tr:hover td{background:transparent}
+  tbody td{border:none;border-bottom:1px solid #f0ede6;padding:10px 15px;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px}
+  tbody td:last-child{border-bottom:none}
+  tbody td:before{content:attr(data-label);font-size:12.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  tbody td.pg-name{border-bottom:1px solid var(--line);padding:12px 14px 10px}
+  .name-inp-cell{min-width:0;font-size:15px;font-weight:700}
+  .chk-cell input[type=checkbox]{width:24px;height:24px}
+  .count-badge{font-size:13px}
+  .note-inp{width:auto;flex:1;text-align:right;font-size:13px}
+  .ts-cell{white-space:normal;text-align:right;line-height:1.4}
+  .ts-cell b{font-weight:700}
+}
 </style>
 </head>
 <body>
@@ -311,16 +339,16 @@ function render(){
       : `<span class="link-btn-ph"></span>`;
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">
-      <td style="display:flex;align-items:center;gap:4px">${delBtn}${linkBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
-      <td class="center">${countCell}</td>
-      <td class="chk-cell"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="題幹敘述確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="題組/承上題確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
-      <td class="chk-cell"><input type="checkbox" title="其他確認" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
-      <td><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
-      <td class="ts-cell">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
+      <td class="pg-name" style="display:flex;align-items:center;gap:4px">${delBtn}${linkBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
+      <td class="center" data-label="題數">${countCell}</td>
+      <td class="chk-cell" data-label="確認公式"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
+      <td class="chk-cell" data-label="上傳圖片"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell" data-label="製作詳解"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
+      <td class="chk-cell" data-label="題幹敘述確認"><input type="checkbox" title="題幹敘述確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell" data-label="題組/承上題確認"><input type="checkbox" title="題組/承上題確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
+      <td class="chk-cell" data-label="其他確認"><input type="checkbox" title="其他確認" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
+      <td data-label="備註"><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
+      <td class="ts-cell" data-label="最後更新">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
     </tr>`;
   }).join('');
 }
