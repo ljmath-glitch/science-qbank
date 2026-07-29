@@ -45,7 +45,7 @@
   header .hdr-text{flex:1}
   .wrap{max-width:1240px;margin:0 auto;padding:0 24px}
   /* 工具列：一開始（未捲動）在頁面最上方正常顯示；捲動到工具列看不到後，才靠板手圖示以浮動面板叫出（邏輯同鈴鐺/篩選），點外面關閉 */
-  .toolbar-outer{margin:13px 0;padding:9px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:100}
+  .toolbar-outer{position:relative;margin:13px 0;padding:9px 14px 0;background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);z-index:100}
   .toolbar-outer.tb-open{position:fixed;top:0;left:50%;transform:translateX(-50%);width:min(1240px,94vw);margin:0;border-radius:0 0 14px 14px;box-shadow:0 24px 60px -16px rgba(45,48,56,.4);z-index:750;max-height:80vh;overflow:auto}
   #toolbarOverlay{display:none;position:fixed;inset:0;background:rgba(45,48,56,.35);z-index:740}
   #toolbarOverlay.show{display:block}
@@ -86,13 +86,21 @@
   .ft-tab.active{background:var(--card);color:var(--red);box-shadow:0 -3px 0 var(--red) inset}
   .ft-panel{display:none}
   .ft-panel.ft-active{display:block}
-  .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
+  .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s,transform .15s;user-select:none;-webkit-user-select:none}
   .tb-item.dragging{opacity:.25;pointer-events:none}
   .tb-item.tb-picked{box-shadow:0 0 0 3px var(--red)!important;background:#fff3ef;border-radius:7px}
   .tb-row.drag-over{background:rgba(184,134,11,.09)}
-  .tb-edit-toggle{position:absolute;top:8px;right:10px;font-size:11px;padding:3px 9px;background:transparent;border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--muted);font-family:inherit;line-height:1.6}
+  .tb-edit-toggle{display:none;position:absolute;top:8px;right:10px;font-size:11px;padding:3px 9px;background:transparent;border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--muted);font-family:inherit;line-height:1.6}
+  .editing #tbEditBtn{display:block;background:var(--red);border-color:var(--red);color:#fff}
   .tb-edit-toggle.on{background:var(--phy);color:#fff;border-color:var(--phy)}
   .editing .tb-item{cursor:grab;box-shadow:0 0 0 2px var(--phy);border-radius:7px}
+  .editing .tb-row:not(.tb-row-embed) .tb-item{animation:tb-wiggle .18s ease-in-out infinite alternate}
+  .editing .tb-row:not(.tb-row-embed) .tb-item:nth-child(2n){animation-delay:.08s}
+  .editing .tb-row:not(.tb-row-embed) .tb-item:nth-child(3n){animation-delay:.14s}
+  .editing .tb-item.tb-touch-drag{opacity:.52;transform:scale(1.05)!important;animation:none;cursor:grabbing}
+  @keyframes tb-wiggle{from{transform:rotate(-.7deg)}to{transform:rotate(.7deg)}}
+  .tb-arrange-hint{display:none;position:absolute;right:82px;top:10px;font-size:11px;color:var(--red);font-weight:700}
+  .editing .tb-arrange-hint{display:block}
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
   .tb-btn-scroll{display:flex;flex-wrap:wrap;gap:7px;flex:1;align-content:flex-start;min-width:0}
@@ -298,9 +306,8 @@
     /* 題庫分析分頁：解除高度上限與內部捲動，讓內嵌 iframe 自動長高、整頁自然捲動，不被夾成小視窗 */
     #tbWrap.embed-active{max-height:none;overflow:visible}
     /* 手機也保留排序入口：Safari 不支援原生拖曳，會改用「先點要移動的功能、再點目標位置」 */
-    #tbEditBtn{display:block!important;z-index:3;top:7px;right:9px;background:var(--card)}
-    #tbResetBtn{display:block!important;z-index:3;top:7px;right:67px;background:var(--card)}
-    #tbResetBtn[style*="display: none"]{display:none!important}
+    .editing #tbEditBtn{display:block!important;z-index:3;top:7px;right:9px;background:var(--red)}
+    .editing #tbResetBtn{display:block!important;z-index:3;top:7px;right:67px;background:var(--card)}
     #tbWrap .tb-tabs{margin-right:76px}
 
     /* === 每列：標籤在上、按鈕在下 === */
@@ -459,6 +466,7 @@
   <div class="toolbar-outer" id="tbOuter">
     <button class="tb-edit-toggle" id="tbEditBtn" onclick="toggleTbEdit()">⋮ 排列</button>
     <button class="tb-edit-toggle" id="tbResetBtn" onclick="resetTbLayout()" style="right:72px;display:none">↺ 重置</button>
+    <span class="tb-arrange-hint" aria-live="polite">按住並拖曳排序</span>
     <input type="file" id="restoreFile" accept=".json" hidden onchange="restoreJSON(event)">
     <div id="tbWrap">
       <div class="tb-row" data-row="0"></div>
@@ -4861,7 +4869,16 @@ const TB_DEFAULT=[
   ['selFilt','selAll','stat'],
   ['analyticsEmbed'],
 ];
-let tbEditing=false,tbDragEl=null,tbPickedEl=null;
+let tbEditing=false,tbDragEl=null,tbPickedEl=null,tbLongPressTimer=null,tbTouchDrag=null,tbIgnoreClick=false;
+function endTbTouchDrag(){
+  if(!tbTouchDrag)return;
+  tbTouchDrag.item.classList.remove('tb-touch-drag');
+  tbTouchDrag=null;saveTbLayout();
+}
+function beginTbTouchDrag(item,e){
+  tbTouchDrag={item,pointerId:e.pointerId};item.classList.add('tb-touch-drag');
+  try{item.setPointerCapture(e.pointerId)}catch(err){}
+}
 // 手機工具列改為橫向滑動單排：按鈕維持原生排列，超出寬度可左右滑（不再收合成「更多」）
 function applyMobileToolbar(){}
 function renderToolbar(){
@@ -4997,6 +5014,7 @@ function setupTbDrag(){
     // 手機 Safari 不支援 HTML5 drag-and-drop：排序模式中可先點要移動的功能，再點目標功能。
     // 用 capture 攔下按鈕原本的動作，避免整理工具列時誤開匯入視窗。
     item.addEventListener('click',e=>{
+      if(tbIgnoreClick){tbIgnoreClick=false;e.preventDefault();e.stopPropagation();return;}
       if(!tbEditing)return;
       e.preventDefault();e.stopPropagation();
       if(!tbPickedEl){
@@ -5009,6 +5027,33 @@ function setupTbDrag(){
       targetRow.querySelector('.tb-btn-scroll').insertBefore(source,item);
       source.classList.remove('tb-picked');tbPickedEl=null;saveTbLayout();
     },true);
+    item.addEventListener('pointerdown',e=>{
+      if(e.button!==undefined&&e.button!==0)return;
+      if(tbEditing){beginTbTouchDrag(item,e);return;}
+      // 長按任一功能即可進入 iPhone 式排列模式；短按仍照常執行原功能。
+      tbLongPressTimer=setTimeout(()=>{
+        tbLongPressTimer=null;
+        if(!tbEditing)toggleTbEdit();
+        beginTbTouchDrag(item,e);
+        tbIgnoreClick=true;
+      },520);
+    });
+    item.addEventListener('pointermove',e=>{
+      if(!tbTouchDrag||tbTouchDrag.pointerId!==e.pointerId)return;
+      e.preventDefault();
+      const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.tb-item');
+      const source=tbTouchDrag.item;
+      if(!target||target===source)return;
+      const targetRow=target.closest('.tb-row'),scroll=targetRow?.querySelector('.tb-btn-scroll');
+      if(!scroll)return;
+      const box=target.getBoundingClientRect();
+      scroll.insertBefore(source,e.clientX<box.left+box.width/2?target:target.nextSibling);
+    });
+    const stopPointer=e=>{
+      if(tbLongPressTimer){clearTimeout(tbLongPressTimer);tbLongPressTimer=null;}
+      if(tbTouchDrag&&tbTouchDrag.pointerId===e.pointerId)endTbTouchDrag();
+    };
+    item.addEventListener('pointerup',stopPointer);item.addEventListener('pointercancel',stopPointer);
     item.addEventListener('dragstart',e=>{
       if(!tbEditing)return e.preventDefault();
       tbDragEl=item;e.dataTransfer.effectAllowed='move';
@@ -5048,6 +5093,7 @@ function saveTbLayout(){
 }
 function toggleTbEdit(){
   tbEditing=!tbEditing;
+  endTbTouchDrag();
   if(tbPickedEl){tbPickedEl.classList.remove('tb-picked');tbPickedEl=null;}
   const btn=document.getElementById('tbEditBtn');
   btn.textContent=tbEditing?'✓ 完成':'⋮ 排列';
