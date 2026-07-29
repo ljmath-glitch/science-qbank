@@ -201,7 +201,7 @@
   .pvimg-wrap{margin:10px 0;line-height:0;}
   .pvimg-draggable{display:inline-block;position:relative;cursor:move;user-select:none;}
   .pvimg-draggable img{display:block;width:100%;}
-  .pvimg-corner{position:absolute;width:12px;height:12px;background:#2e75b6;border:2px solid #fff;border-radius:2px;opacity:0;transition:opacity .15s;z-index:10;}
+  .pvimg-corner{position:absolute;width:12px;height:12px;background:var(--red);border:2px solid #fff;border-radius:2px;opacity:0;transition:opacity .15s;z-index:10;}
   .pvimg-draggable:hover .pvimg-corner,.pvimg-draggable.pv-active .pvimg-corner{opacity:1;}
   .pvimg-nw{top:-6px;left:-6px;cursor:nw-resize;}
   .pvimg-ne{top:-6px;right:-6px;cursor:ne-resize;}
@@ -210,7 +210,7 @@
   @media print{.pvimg-corner{display:none!important}}
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
-  .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
+  .pvq-text:focus{outline:none;box-shadow:0 0 0 2px var(--red);background:#fdf6f4}
   .pv-fmt-bar{position:sticky;top:48px;z-index:15;display:none;align-items:center;gap:2px;padding:6px 14px;background:#fffefb;border-bottom:1px solid var(--line);box-shadow:0 5px 14px -10px rgba(45,48,56,.28);flex-wrap:wrap}
   .pv-fmt-bar button{min-width:30px;height:30px;padding:0 7px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);font-family:var(--ui-font);font-size:14px;font-weight:600;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}
   .pv-fmt-bar button:hover{background:#fbece7;color:var(--red);border-color:#eccfca}
@@ -758,7 +758,7 @@
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -785,7 +785,7 @@
     <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
     <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
     <button class="btn green" onclick="exportPaperCSV()">⬇ 下載 CSV</button>
-    <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
+    <button class="btn" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
     <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
@@ -3101,7 +3101,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   const bodyParts=sorted.map(it=>{
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
-    const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
+    const src=srcText?`<span style="font-size:11px;color:#6f6353;background:#f4efe5;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
     const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
@@ -5523,7 +5523,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
     'h1{text-align:center;font-size:18pt;margin-bottom:6pt}'+
     '.meta{text-align:right;color:#888;font-size:10pt;margin-bottom:24pt}'+
     '.tag{color:#999;font-size:9pt;font-style:italic;margin-bottom:2pt}'+
-    '.src{font-size:9pt;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;font-family:inherit}'+
+    '.src{font-size:9pt;color:#6f6353;background:#f4efe5;border-radius:3px;padding:1px 5px;font-family:inherit}'+
     '.q{margin-bottom:14pt}'+
     '.qtext{font-size:12pt}'+
     '.ans{color:#c0392b;font-size:10pt;margin-top:2pt}'+
