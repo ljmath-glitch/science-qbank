@@ -1424,6 +1424,7 @@ async function applyGroupIdTool(){
 }
 
 let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
+window.__qbankDataReady=false;
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
@@ -1723,6 +1724,36 @@ async function _bimgConfirm(){
   btn.disabled=false;btn.textContent='🖼 貼圖到題庫';
   msg.textContent=`完成！成功 ${done} 張${failed?`，失敗 ${failed} 張`:''}`;
   if(done>0){render();if(failed===0)setTimeout(()=>batchImgDlg.close(),1800);}
+}
+
+// 供 raw.html 的「考卷前處理」直接交接已確認的圖表素材；不開啟批次貼圖視窗。
+async function importBatchHandoffImages(payload){
+  for(let i=0;i<80&&!window.__qbankDataReady;i++)await new Promise(ok=>setTimeout(ok,100));
+  if(!window.__qbankDataReady)throw new Error('題庫資料尚未載入，請稍後再試');
+  const exam=payload?.exam||'';
+  const images=Array.isArray(payload?.images)?payload.images:[];
+  if(!exam)throw new Error('缺少考卷名稱');
+  const examQs=DB.filter(it=>it.exam===exam&&it.type!=='passage');
+  const groups={};let unmatched=0;
+  for(const image of images){
+    const q=Number.isInteger(image.qno)?examQs.find(it=>Number(it.no)===image.qno):null;
+    if(!q){unmatched++;continue;}
+    (groups[q.id]??={q,items:[]}).items.push(image);
+  }
+  let done=0,failed=0;
+  for(const group of Object.values(groups)){
+    try{
+      const imgs=group.items.map(image=>({src:image.src,width:600,align:'center'}));
+      const uploaded=await uploadImgs(imgs,group.q.id);
+      const merged=[...(group.q.imgs||[]),...uploaded];
+      const {error}=await sb.from('questions').update({imgs:JSON.stringify(merged),updated_at:new Date().toISOString()}).eq('id',group.q.id);
+      if(error)throw error;
+      const local=DB.find(it=>it.id===group.q.id);if(local)local.imgs=merged;
+      done+=group.items.length;
+    }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;}
+  }
+  if(done)render();
+  return {done,failed,unmatched};
 }
 
 function _bimgCopyNamingPrompt(mode){
@@ -4765,7 +4796,7 @@ const TB_BUTTONS={
   reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
   backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
-  batchImg: ()=>`<button class="btn dev-btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目（開發中，請勿使用）">批次貼圖<i class="dev-tag">開發中</i></button>`,
+  batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button>`,
   claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
@@ -5024,7 +5055,7 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
       <span style="font-size:12px">（取得方式：Supabase → Project Settings → API）</span></div>`;
     return;
   }
-  await loadAIConfig();await load();buildFilters();
+  await loadAIConfig();await load();window.__qbankDataReady=true;buildFilters();
   let rawHandoff='';
   try{
     const qp=new URLSearchParams(location.search);
@@ -5053,6 +5084,26 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
         showToast('已從考卷前處理帶入詳解 CSV，確認後按「匯入詳解」');
       }
     }catch(e){console.warn('讀取 raw 詳解 CSV 交接失敗',e);}
+  }
+  if(rawHandoff==='batch-images'){
+    openBatchImgDlg();
+    const receiveBatchImages=(event)=>{
+      const payload=event.data;
+      if(!payload||payload.type!=='qbank-batch-images'||!Array.isArray(payload.images))return;
+      window.removeEventListener('message',receiveBatchImages);
+      const sel=document.getElementById('bimgExam');
+      const exact=[...sel.options].some(o=>o.value===payload.exam);
+      if(exact)sel.value=payload.exam;
+      _bimgFiles=payload.images.map(image=>{
+        const mime=(image.src.match(/^data:(.*?)[;,]/)||[])[1]||'image/png';
+        return {file:new File([dataURLtoBlob(image.src)],image.filename,{type:mime}),src:image.src,qno:null,isPassage:false,matched:null,passageId:null,skip:false,manifest:{primary_question:Number.isInteger(image.qno)?image.qno:null,needs_review:image.needs_review===true}};
+      });
+      _bimgBuildTable();
+      if(exact)showToast(`已帶入 ${_bimgFiles.length} 張素材，並自動選擇「${payload.exam}」`);
+      else showToast(`已帶入 ${_bimgFiles.length} 張素材；找不到完全相同的考卷名稱，請確認一次。`);
+    };
+    window.addEventListener('message',receiveBatchImages);
+    if(window.opener)window.opener.postMessage({type:'qbank-request-batch-images'},'*');
   }
 })();
 </script>
