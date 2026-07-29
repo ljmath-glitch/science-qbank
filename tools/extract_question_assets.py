@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import shutil
@@ -57,6 +58,57 @@ def merge_boxes(boxes: list[tuple[float, float, float, float]], gap: float = 10)
                     break
         merged.append((x0, top, x1, bottom))
     return merged
+
+
+def merge_image_groups(images: list[dict], gap: float = 10) -> list[list[dict]]:
+    """依版面位置把同一張圖的多個 PDF image XObject 分群。"""
+    pending = images[:]
+    groups: list[list[dict]] = []
+    while pending:
+        group = [pending.pop(0)]
+        changed = True
+        while changed:
+            changed = False
+            x0 = min(item["x0"] for item in group); top = min(item["top"] for item in group)
+            x1 = max(item["x1"] for item in group); bottom = max(item["bottom"] for item in group)
+            for index, item in enumerate(pending):
+                if not (item["x1"] + gap < x0 or x1 + gap < item["x0"] or item["bottom"] + gap < top or bottom + gap < item["top"]):
+                    group.append(pending.pop(index)); changed = True; break
+        groups.append(group)
+    return groups
+
+
+def raw_pdf_image(image: dict) -> Image.Image:
+    """直接還原 PDF 影像 XObject，不經過整頁渲染，因此不會混入題幹文字。"""
+    width, height = image["srcsize"]
+    data = image["stream"].get_data()
+    if data.startswith(b"\xff\xd8\xff") or data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return Image.open(io.BytesIO(data)).convert("RGB")
+    color = str(image.get("colorspace") or "")
+    if "DeviceRGB" in color:
+        mode, channels = "RGB", 3
+    elif "DeviceCMYK" in color:
+        mode, channels = "CMYK", 4
+    else:
+        mode, channels = "L", 1
+    expected = width * height * channels
+    if len(data) != expected:
+        raise ValueError(f"影像資料長度不符（{len(data)} / {expected}）")
+    return Image.frombytes(mode, (width, height), data).convert("RGB")
+
+
+def render_raw_group(group: list[dict], box: tuple[float, float, float, float], dpi: int) -> Image.Image:
+    """以原始影像物件拼合圖片；不渲染 PDF 的文字層。"""
+    x0, top, x1, bottom = box
+    scale = max(dpi / 72, *(item["srcsize"][0] / max(item["width"], 1) for item in group))
+    margin = round(5 * scale)
+    canvas = Image.new("RGB", (round((x1 - x0) * scale) + margin * 2, round((bottom - top) * scale) + margin * 2), "white")
+    for item in group:
+        source = raw_pdf_image(item)
+        size = (max(1, round(item["width"] * scale)), max(1, round(item["height"] * scale)))
+        source = source.resize(size, Image.Resampling.LANCZOS)
+        canvas.paste(source, (margin + round((item["x0"] - x0) * scale), margin + round((item["top"] - top) * scale)))
+    return canvas
 
 
 def question_anchors(words: list[dict]) -> list[tuple[int, float]]:
@@ -150,18 +202,22 @@ def main() -> int:
             for image in page.images:
                 box = (image["x0"], image["top"], image["x1"], image["bottom"])
                 if (box[2] - box[0]) * (box[3] - box[1]) >= 900:  # 排除極小裝飾物與圖示
-                    raw_images.append(box)
-            image_boxes = merge_boxes(raw_images)
+                    raw_images.append(image)
+            image_groups = merge_image_groups(raw_images)
 
             table_boxes = []
             try:
                 table_boxes = [tuple(table.bbox) for table in page.find_tables()]
             except Exception:
                 pass
-            candidates = [("表格", box) for box in table_boxes]
-            candidates += [("圖表", box) for box in image_boxes if not any(overlap(box, table) > .55 for table in table_boxes)]
+            candidates = [("表格", box, None) for box in table_boxes]
+            for group in image_groups:
+                box = (min(item["x0"] for item in group), min(item["top"] for item in group),
+                       max(item["x1"] for item in group), max(item["bottom"] for item in group))
+                if not any(overlap(box, table) > .55 for table in table_boxes):
+                    candidates.append(("圖表", box, group))
 
-            for kind, original_box in candidates:
+            for kind, original_box, raw_group in candidates:
                 # 頁首 logo、考卷名稱帶常被 Word 輸出成 image XObject；絕不可視為第 1 題素材。
                 if anchors and original_box[1] < anchors[0][1] - 8:
                     skipped_unlinked += 1
@@ -170,23 +226,25 @@ def main() -> int:
                 if owner is None:
                     skipped_unlinked += 1
                     continue
-                caption = nearby_caption(words, original_box)
                 x0, top, x1, bottom = original_box
-                if caption:
-                    x0, top, x1, bottom = min(x0, caption[0]), min(top, caption[1]), max(x1, caption[2]), max(bottom, caption[3])
-                margin = 8
-                x0, top = max(0, x0 - margin), max(0, top - margin)
-                x1, bottom = min(page.width, x1 + margin), min(page.height, bottom + margin)
+                # PDF image XObject 已是原圖範圍；只在向量表格的頁面裁切加入白邊。
+                if raw_group is None:
+                    margin = 8
+                    x0, top = max(0, x0 - margin), max(0, top - margin)
+                    x1, bottom = min(page.width, x1 + margin), min(page.height, bottom + margin)
                 primary = f"Q{owner}" if owner is not None else "Q未知"
                 base = f"{primary}_{kind}_請人工確認"
                 used_names[base] += 1
                 suffix = "" if used_names[base] == 1 else f"_{used_names[base]}"
                 filename = f"{base}{suffix}.png"
-                page_image_path = render_page(pdf_path, page_index, args.dpi, render_dir)
-                with Image.open(page_image_path) as page_image:
-                    scale = args.dpi / 72
-                    pixels = tuple(round(value * scale) for value in (x0, top, x1, bottom))
-                    page_image.crop(pixels).save(output / filename)
+                if raw_group is not None:
+                    render_raw_group(raw_group, original_box, args.dpi).save(output / filename)
+                else:
+                    page_image_path = render_page(pdf_path, page_index, args.dpi, render_dir)
+                    with Image.open(page_image_path) as page_image:
+                        scale = args.dpi / 72
+                        pixels = tuple(round(value * scale) for value in (x0, top, x1, bottom))
+                        page_image.crop(pixels).save(output / filename)
                 manifest.append({
                     "file": filename, "page": page_index, "kind": kind, "primary_question": owner,
                     "shared_questions": [], "needs_review": True,
