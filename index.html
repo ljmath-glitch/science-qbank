@@ -5044,6 +5044,16 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
       }
     }catch(e){console.warn('讀取 raw 題目 CSV 交接失敗',e);}
   }
+  if(rawHandoff==='solutions'){
+    try{
+      const csv=localStorage.getItem('qbank_handoff_solutions')||'';
+      if(csv){
+        localStorage.removeItem('qbank_handoff_solutions');
+        openSolImport();solCsvArea.value=csv;
+        showToast('已從考卷前處理帶入詳解 CSV，確認後按「匯入詳解」');
+      }
+    }catch(e){console.warn('讀取 raw 詳解 CSV 交接失敗',e);}
+  }
 })();
 </script>
 
