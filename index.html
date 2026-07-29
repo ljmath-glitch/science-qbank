@@ -220,13 +220,13 @@
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
-  .pv-fmt-bar{position:sticky;top:48px;z-index:15;display:none;align-items:center;gap:6px;padding:7px 16px;background:#2e75b6;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap}
-  .pv-fmt-bar button{width:30px;height:30px;border:none;border-radius:6px;background:#fff;color:#1a2238;font-family:Georgia,serif;font-size:14px;cursor:pointer}
+  .pv-fmt-bar{position:sticky;top:48px;z-index:15;display:none;align-items:center;gap:5px;padding:7px 16px;background:#1f2b40;box-shadow:0 2px 10px rgba(0,0,0,.15);flex-wrap:wrap}
+  .pv-fmt-bar button{width:31px;min-width:31px;height:31px;border:none;border-radius:6px;background:#fff;color:#1a2238;font-family:Georgia,serif;font-size:14px;cursor:pointer;flex:0 0 auto}
   .pv-fmt-bar button:hover{background:#d8e8fb}
-  .pv-fmt-bar select{height:30px;border:none;border-radius:6px;font-family:inherit;font-size:12.5px;padding:0 6px;cursor:pointer}
-  .pv-fmt-bar .hint{margin-left:auto;font-size:11.5px;color:#e3edfa}
+  .pv-fmt-bar select{width:auto!important;min-width:58px;height:31px;border:none;border-radius:6px;font-family:inherit;font-size:12.5px;padding:0 7px;cursor:pointer;flex:0 0 auto}
+  .pv-fmt-bar .hint{margin-left:auto;font-size:11.5px;color:#e3edfa}.pv-fmt-bar .sep{width:1px;height:22px;background:#72819a;margin:0 2px}.pv-fmt-bar .pv-break{flex-basis:100%;height:0}.pv-fmt-bar .math-btn{width:auto;padding:0 9px;font-family:var(--ui-font);font-weight:700}.pv-fmt-bar .toggle-on{background:#f9a12c!important;color:#4b2700!important}.pv-edit-label{font-size:11px;color:#cbd8ec;white-space:nowrap}.pv-sol-block,.pv-answer-block{margin:8px 0 0 1.5em;padding:9px 12px;border-left:3px solid #1f6f5c;background:#f1faf6;font-size:13px;line-height:1.75}.pv-answer-block{border-color:#c0392b;background:#fff6f4}.pv-sol-title,.pv-answer-title{font-weight:800;color:#1f6f5c;font-size:12px;margin-bottom:3px}.pv-answer-title{color:#c0392b}.pv-latex-help{display:none;position:fixed;z-index:950;inset:0;background:rgba(20,28,40,.42);align-items:center;justify-content:center;padding:20px}.pv-latex-help.show{display:flex}.pv-latex-card{width:min(680px,96vw);max-height:82vh;overflow:auto;background:#fff;border-radius:14px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.28)}.pv-latex-card h3{margin:0 0 8px;color:#1f2b40}.pv-latex-card p{margin:0 0 12px;color:var(--muted);font-size:13px}.pv-latex-grid{display:grid;grid-template-columns:150px 1fr;gap:7px 12px;font-size:13px;align-items:center}.pv-latex-grid code{display:block;padding:6px 8px;background:#f6f5f2;border-radius:6px;color:#850103;white-space:nowrap;overflow:auto}.pv-latex-close{float:right;border:0;background:none;font-size:22px;cursor:pointer;color:var(--muted)}
   @media print{.pv-fmt-bar{display:none!important}}
-  .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}
+  .pv-bar{position:sticky;top:0;display:flex;gap:9px;align-items:center;padding:10px 16px;background:var(--ink);box-shadow:0 2px 10px rgba(0,0,0,.2);flex-wrap:wrap}.pv-bar .btn{height:30px!important;padding:0 12px!important;font-size:12px!important;background:linear-gradient(180deg,#fff,#faf4ea)!important;border-color:#e4d8c6!important;color:var(--ink)!important;box-shadow:0 1px 2px rgba(43,32,28,.07),inset 0 1px 0 #fff!important}.pv-bar .btn:hover{background:linear-gradient(180deg,#fffdfb,#fbece7)!important;border-color:#c58f89!important;color:var(--red)!important;box-shadow:0 5px 14px -5px rgba(133,1,3,.38),inset 0 1px 0 #fff!important}
   .pv-bar .spacer{flex:1}
   .pv-sheet{font-family:'HuaKangTNR',"Noto Sans TC",system-ui,sans-serif;width:794px;margin:24px auto 60px;padding:48px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.8;color:#1a2238;font-size:12pt;}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
@@ -245,6 +245,7 @@
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
   .pv-sheet .sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
+  .edit-rich-toolbar{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:9px 12px;margin:4px 0 12px;border:1px solid #1d1d1d;border-radius:8px;background:#292929;box-shadow:inset 0 1px 0 rgba(255,255,255,.07)}.edit-rich-toolbar button{height:31px;min-width:31px;border:0;border-radius:4px;background:transparent;color:#e8e8e8;padding:0 8px;font:700 16px var(--ui-font);cursor:pointer}.edit-rich-toolbar button:hover{background:#4a4a4a;color:#fff}.edit-rich-toolbar button:active{background:#5d5d5d}.edit-rich-toolbar .edit-math{font-size:13px;min-width:auto}.edit-rich-toolbar select{height:31px;min-width:72px;border:1px solid #4c4c4c;border-radius:4px;background:#353535;color:#f0f0f0;padding:0 8px;font:600 14px var(--ui-font);cursor:pointer}.edit-rich-toolbar .edit-sep{width:1px;height:27px;background:#5a5a5a;margin:0 5px}.edit-rich-toolbar .edit-break{flex-basis:100%;height:0}.edit-rich-toolbar .edit-target{font-size:11px;color:#b8b8b8;margin-left:auto}.edit-latex-help{margin:-4px 0 12px;padding:8px 10px;border:1px solid #e1d7c7;border-radius:8px;background:#fffdf9;font-size:12px;color:var(--muted)}.edit-latex-help summary{cursor:pointer;font-weight:700;color:#850103}.edit-latex-help code{display:inline-block;margin:5px 5px 0 0;padding:2px 5px;border-radius:4px;background:#f3f0eb;color:#850103}
   .statbar{height:14px;background:var(--phy);border-radius:3px}
   table.report{width:100%;border-collapse:collapse;font-family:inherit;font-size:13px}
   table.report th,table.report td{border:1px solid var(--line);padding:6px 9px;text-align:left}
@@ -626,7 +627,7 @@
       <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
     </div>
     <div class="grid2">
-      <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
+      <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A" onfocus="editRichSetTarget(this)"></div>
       <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-九年級-112-上學期-第一次段考-理化-7" oninput="onGroupIdChange()"></div>
     </div>
     <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
@@ -666,8 +667,15 @@
     <label class="chk"><input type="checkbox" id="eFlag"> 待確認（Y）— 先標記，之後集中審查</label>
 
     <div class="sectionhead">題目內容</div>
-    <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px"></textarea></div>
-    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center;flex-wrap:wrap"><select id="ollamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他（自訂網址）</option></select><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址，可用逗號分隔多個網址依序容錯" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><select id="ollamaModel" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:130px;font-family:inherit" onchange="saveOllamaModel(this.value)"></select><button type="button" onclick="ollamaHelpDlg.showModal()" title="使用說明" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">❓</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px"></textarea></div>
+    <div class="edit-rich-toolbar" id="editRichToolbar">
+      <select title="字級" onchange="if(this.value)editRichSize(this.value);this.value=''"><option value="">12</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option></select><button type="button" onclick="editRichSize(16)" title="放大字級">A↑</button><button type="button" onclick="editRichSize(12)" title="縮小字級">A↓</button><span class="edit-sep"></span>
+      <button type="button" class="edit-math" onclick="editInsertLatex('$')" title="插入公式">ƒₓ</button><button type="button" class="edit-math" onclick="editInsertLatex('\\frac{}{}')" title="插入分數">▱⁄▱</button><button type="button" class="edit-math" onclick="editInsertLatex('\\rightarrow')" title="插入箭頭">→</button><span class="edit-sep"></span><button type="button" class="edit-math" onclick="editRichWrap('• ','')" title="項目符號">•≡</button><button type="button" class="edit-math" onclick="editRichWrap('1. ','')" title="編號清單">1≡</button><span class="edit-break"></span>
+      <button type="button" onclick="editRichWrap('**','**')" title="粗體">B</button><button type="button" style="font-style:italic" onclick="editRichWrap('##','##')" title="斜體">I</button><button type="button" style="text-decoration:underline" onclick="editRichWrap('__','__')" title="底線">U</button><button type="button" class="edit-math" onclick="editInsertLatex('^{}')" title="上標">x²</button><button type="button" class="edit-math" onclick="editInsertLatex('_{}')" title="下標">x₂</button><span class="edit-sep"></span>
+      <button type="button" class="edit-math" onclick="editInsertLatex('\\mathrm{}')" title="化學式">H₂O</button><button type="button" class="edit-math" onclick="editRichWrap('$','$')" title="公式外框">$…$</button><span class="edit-target" id="editRichTarget">目前：題目</span>
+    </div>
+    <details class="edit-latex-help"><summary>公式／Word 輸入小抄</summary><div>題庫公式一律用 <code>$v=\frac{d}{t}$</code>；分數 <code>$\frac{分子}{分母}$</code>；上下標 <code>$x^{2}$、$H_2O$</code>；單位 <code>$30\text{ m/s}$</code>；化學式 <code>$\mathrm{Cu^{2+}}$</code>；箭頭 <code>$A\rightarrow B$</code>。在 Word 手動編輯時按 <code>Alt+=</code> 建立公式框，再貼入錢號內的內容。</div></details>
+    <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label><textarea id="eQ" style="min-height:90px" onfocus="editRichSetTarget(this)"></textarea></div>
+    <div class="field"><label style="display:flex;align-items:center;justify-content:space-between">詳解（可留空）<span style="display:flex;gap:5px;align-items:center;flex-wrap:wrap"><select id="aiProvider" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="saveAIProvider()"><option value="claude">Claude</option><option value="gemini">Gemini</option><option value="openai">ChatGPT</option><option value="ollama">Ollama（本機）</option></select><select id="geminiModel" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit;display:none" onchange="saveGeminiModel(this.value)"><option value="gemini-2.5-flash">2.5 Flash（預設）</option><option value="gemini-2.0-flash">2.0 Flash</option><option value="gemini-1.5-flash">1.5 Flash</option><option value="gemini-1.5-pro">1.5 Pro</option></select><span id="ollamaSettingsWrap" style="display:none;gap:3px;align-items:center;flex-wrap:wrap"><select id="ollamaPreset" title="選擇要連去哪一台電腦的 Ollama" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:auto;font-family:inherit" onchange="onOllamaPresetChange(this.value)"><option value="company">大南路櫃2</option><option value="mac">福大 Mac</option><option value="custom">其他（自訂網址）</option></select><input id="ollamaUrl" type="text" placeholder="http://localhost:11434" title="Ollama 伺服器位址，可用逗號分隔多個網址依序容錯" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:155px;font-family:inherit" oninput="localStorage.setItem('ollamaUrl',this.value)"><select id="ollamaModel" title="Ollama 模型名稱" style="font-size:11px;padding:2px 5px;border:1px solid var(--line);border-radius:5px;width:130px;font-family:inherit" onchange="saveOllamaModel(this.value)"></select><button type="button" onclick="ollamaHelpDlg.showModal()" title="使用說明" style="font-size:11px;padding:2px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:pointer;font-family:inherit">❓</button></span><button type="button" id="genSolBtn" class="btn sm" style="font-size:11px;padding:3px 10px;height:auto;font-family:inherit" onclick="generateSol()">✨ AI 生成詳解</button></span></label><textarea id="eSol" style="min-height:160px" onfocus="editRichSetTarget(this)"></textarea></div>
     <div id="solChatWrap" class="sol-chat-wrap" style="display:none">
       <div class="sol-chat-head">💬 詳解有誤？與 AI 討論修正</div>
       <div class="sol-chat-log" id="solChatLog"></div>
@@ -766,7 +774,7 @@
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn green" onclick="exportPaperCSV();paperDlg.close()">⬇ 下載 CSV</button><button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordFromDlg()">📝 下載 Word</button><button class="btn gold" onclick="showPaperPreview()">📄 預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn" onclick="exportPaperCSV();paperDlg.close()">儲存 CSV</button><button class="btn" onclick="downloadWordFromDlg()">儲存 Word</button><button class="btn" onclick="showPaperPreview()">預覽考卷</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -790,18 +798,16 @@
 <!-- 考卷預覽 -->
 <div id="paperView" class="paperview">
   <div class="pv-bar noprint">
-    <button class="btn" onclick="closePaper()">← 返回</button><span class="spacer"></span>
-    <button class="btn gold" onclick="window.print()">🖨 列印 / 存 PDF</button>
-    <button class="btn green" onclick="exportPaperCSV()">⬇ 下載 CSV</button>
-    <button class="btn" style="background:#2e75b6;color:#fff" onclick="downloadWordDoc()">📝 下載 Word (.docx)</button>
-    <button class="btn" onclick="downloadPaper()">⬇ 下載 HTML</button>
+    <button class="btn" onclick="closePaper()">返回</button><span class="spacer"></span>
+    <button class="btn" onclick="window.print()">儲存 PDF</button>
+    <button class="btn" onclick="exportPaperCSV()">儲存 CSV</button>
+    <button class="btn" onclick="downloadWordDoc()">儲存 Word</button>
+    <button class="btn" onclick="downloadPaper()">儲存 HTML</button>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
-    <button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button>
-    <button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button>
-    <button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button>
+    <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('undo')" title="復原">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('redo')" title="重做">↷</button><span class="sep"></span>
     <select onmousedown="event.preventDefault()" onchange="_pvApplySize(this.value);this.selectedIndex=0">
-      <option value="">字級…</option>
+      <option value="">12</option>
       <option value="12">12px</option>
       <option value="14">14px</option>
       <option value="16">16px（預設）</option>
@@ -810,10 +816,25 @@
       <option value="24">24px</option>
       <option value="28">28px</option>
     </select>
-    <span class="hint">點擊題目文字即可編輯；選取文字後套用格式</span>
+    <button type="button" onmousedown="event.preventDefault()" onclick="_pvApplySize(16)" title="放大字級">A↑</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvApplySize(12)" title="縮小字級">A↓</button><span class="sep"></span>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('$')" title="插入行內公式">ƒₓ</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\frac{}{}')" title="分數">▱⁄▱</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\rightarrow')" title="反應箭頭">→</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('insertUnorderedList')" title="項目清單">•≡</button><span class="pv-break"></span>
+    <button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button>
+    <button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button>
+    <button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('^{}')" title="上標">x²</button>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('_{}')" title="下標">x₂</button>
+    <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyLeft')" title="靠左">≡</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyCenter')" title="置中">☰</button><span class="sep"></span>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\mathrm{}')" title="化學式直立字">H₂O</button>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">▧ 圖片</button>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvLatexHelp()" title="LaTeX／Word 公式小抄">? 公式</button>
+    <button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button>
+    <button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button>
+    <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
   <div class="pv-sheet" id="pvSheet"></div>
+  <input id="pvInlineImage" type="file" accept="image/*" hidden onchange="pvInlineImageChange(this)">
 </div>
+<div class="pv-latex-help noprint" id="pvLatexHelp" onclick="if(event.target===this)togglePvLatexHelp(false)"><div class="pv-latex-card"><button class="pv-latex-close" onclick="togglePvLatexHelp(false)">×</button><h3>公式輸入小抄</h3><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>25℃（直接輸入，不放入公式）</code></div></div></div>
 
 <script src="syllabus.js"></script>
 <script>
@@ -2180,6 +2201,26 @@ function onGroupIdChange(){
 }
 
 /* ===== 新增/編輯 ===== */
+let editRichTargetId='eQ';
+function editRichSetTarget(el){
+  editRichTargetId=el.id;
+  const label=document.getElementById('editRichTarget');if(label)label.textContent='目前：'+(el.id==='eSol'?'詳解':el.id==='eAns'?'答案':'題目');
+}
+function _editRichTarget(){const el=document.getElementById(editRichTargetId)||document.getElementById('eQ');el.focus();return el;}
+function editRichWrap(before,after){
+  const el=_editRichTarget(),start=el.selectionStart,end=el.selectionEnd,selected=el.value.slice(start,end);
+  el.setRangeText(before+selected+after,start,end,'end');
+  const pos=selected?start+before.length+selected.length+after.length:start+before.length;el.setSelectionRange(pos,pos);
+}
+function editRichSize(px){editRichWrap('{{'+px+'}}','{{/}}');}
+function editInsertLatex(kind){
+  const el=_editRichTarget(),start=el.selectionStart,end=el.selectionEnd,selected=el.value.slice(start,end);let text=kind,caret=-1;
+  if(kind==='$'){text=selected?`$${selected}$`:'$公式$';caret=selected?-1:2;}
+  else if(kind==='\\frac{}{}'){text=selected?`\\frac{${selected}}{}`:'\\frac{分子}{分母}';caret=selected?text.length-1:6;}
+  else if(kind==='^{}'||kind==='_{}'){caret=kind.indexOf('{')+1;}
+  else if(kind==='\\mathrm{}'){text=selected?`\\mathrm{${selected}}`:'\\mathrm{化學式}';caret=selected?-1:8;}
+  el.setRangeText(text,start,end,'end');const pos=caret>=0?start+caret:start+text.length;el.setSelectionRange(pos,pos);
+}
 function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';document.getElementById('imgTargetWrap').style.display='none';document.getElementById('imgTarget').value='q';}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='單題手動新增';curImgs=[];
   fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
@@ -2676,34 +2717,35 @@ function _getPreviewImg(type,id,idx){
 }
 async function _pvSave(type,id){
   if(!requireCloud())return;
-  if(type==='q'){const it=DB.find(x=>x.id===id);if(it)await sb.from('questions').upsert(toRow(it));}
+  if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(it)await sb.from('questions').upsert(toRow(it));}
   else{const ps=PASSAGES[id];if(ps)await sb.from('questions').upsert(toRow(ps));}
   const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
   pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
   if(pv)pv.scrollTop=sy;
   _rebuildLastPaperHTML();
 }
-// ── 預覽文字：直接點擊題目/題組文章即可編輯，搭配上方格式工具列（粗體/斜體/底線/字級）──
+// ── 預覽文字：題目、答案、詳解皆可直接編輯；格式以輕量標記存回資料庫──
+let _pvActiveEdit=null,PV_SHOW_ANS=false,PV_SHOW_SOL=false;
 function _pvRawText(type,id){
-  if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.q||it.summary||''):'';}
+  if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(!it)return '';return type==='q'?(it.q||it.summary||''):(it[type]||'');}
   const ps=PASSAGES[id];return ps?(ps.q||''):'';
 }
 function _pvTextFocus(el){
-  el.dataset.editing='1';
+  _pvActiveEdit=el;el.dataset.editing='1';
   el.innerHTML=applyRichMarks(esc(_pvRawText(el.dataset.rtype,el.dataset.rid))).replace(/\n/g,'<br>');
   const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='flex';
 }
 async function _pvTextBlur(el){
   if(!el.dataset.editing)return;
   delete el.dataset.editing;
-  const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='none';
   const type=el.dataset.rtype,id=el.dataset.rid;
   const markup=serializeRichText(el);
-  if(type==='q'){const it=DB.find(x=>x.id===id);if(it)it.q=markup;}
+  if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(it){if(type==='q')it.q=markup;else it[type]=markup;}}
   else{const ps=PASSAGES[id];if(ps)ps.q=markup;}
+  if(_pvActiveEdit===el)_pvActiveEdit=null;
   await _pvSave(type,id);
 }
-function _pvFmt(cmd){document.execCommand(cmd,false,null);}
+function _pvFmt(cmd){if(_pvActiveEdit)document.execCommand(cmd,false,null);}
 function _pvApplySize(px){
   if(!px)return;
   const sel=window.getSelection();
@@ -2715,6 +2757,38 @@ function _pvApplySize(px){
   catch(e){span.appendChild(range.extractContents());range.insertNode(span);}
   sel.removeAllRanges();
 }
+function _pvInsertLatex(kind){
+  const el=_pvActiveEdit;
+  if(!el){alert('請先點擊要修改的題目、答案或詳解文字。');return;}
+  const sel=window.getSelection();let range;
+  if(sel&&sel.rangeCount&&el.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0);else{range=document.createRange();range.selectNodeContents(el);range.collapse(false);}
+  const selected=range.toString();let text=kind,focusAt=-1;
+  if(kind==='$'){text=selected?`$${selected}$`:'$公式$';focusAt=selected?-1:2;}
+  else if(kind==='\\frac{}{}'){text=selected?`\\frac{${selected}}{}`:'\\frac{分子}{分母}';focusAt=selected?text.length-1:6;}
+  else if(kind==='^{}'||kind==='_{}'){text=kind;focusAt=kind.indexOf('{')+1;}
+  else if(kind==='\\mathrm{}'){text=selected?`\\mathrm{${selected}}`:'\\mathrm{化學式}';focusAt=selected?-1:8;}
+  range.deleteContents();const node=document.createTextNode(text);range.insertNode(node);
+  const next=document.createRange(),pos=focusAt>=0?focusAt:text.length;next.setStart(node,pos);next.collapse(true);sel.removeAllRanges();sel.addRange(next);el.focus();
+}
+function togglePvLatexHelp(force){const box=document.getElementById('pvLatexHelp');const show=force===undefined?!box.classList.contains('show'):!!force;box.classList.toggle('show',show);}
+function pvAddPreviewImage(){
+  if(!_pvActiveEdit){alert('請先點擊要加入圖片的題目或題組文章。');return;}
+  const input=document.getElementById('pvInlineImage');
+  input.dataset.rtype=_pvActiveEdit.dataset.rtype==='p'?'p':'q';input.dataset.rid=_pvActiveEdit.dataset.rid;input.click();
+}
+function pvInlineImageChange(input){
+  const file=input.files&&input.files[0],type=input.dataset.rtype,id=input.dataset.rid;input.value='';
+  if(!file||!id)return;
+  const reader=new FileReader();reader.onload=async()=>{
+    const target=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);if(!target)return;
+    target.imgs=target.imgs||[];target.imgs.push({src:reader.result,width:65,align:'center',x:17.5,y:0});
+    await _pvSave(type,id);
+  };reader.readAsDataURL(file);
+}
+function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0;pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle');if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);}
+async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
+async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
+async function togglePvSolutions(){await _pvCommitActive();PV_SHOW_SOL=!PV_SHOW_SOL;_pvRebuild();}
 function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
 function imgHtmlPreview(im,type,id,idx){
   const w=im.width||65;
@@ -3075,8 +3149,11 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
       }
     }
     qNum++;
-    let extra='';if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
-    if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
+    let extra='';
+    if(forPreview&&PV_SHOW_ANS){const ansInner=applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-answer-block"><div class="pv-answer-title">答案（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="ans" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${ansInner||'（尚未填寫）'}</span></div>`;}
+    else if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
+    if(forPreview&&PV_SHOW_SOL){const solInner=applyRichMarks(esc(fixLatex(it.sol||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-sol-block"><div class="pv-sol-title">詳解（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="sol" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${solInner||'（尚未填寫）'}</span></div>`;}
+    else if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     // 非選題（填充/計算）依題目內偵測到的子問句數量各留一格手寫作答空白，答案卷模式（已顯示答案/詳解）就不用留空白
     if((it.type==='填'||it.type==='計')&&ansMode!=='inline'&&ansMode!=='full'){
       const subN=_countSubQuestions(it.q||it.summary||'');
@@ -3130,9 +3207,9 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function showPaperPreview(){if(!PICKS.size)return;
   pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
-  document.getElementById('paperView').classList.add('show');renderMath(pvSheet);window.scrollTo(0,0);
+  document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';renderMath(pvSheet);window.scrollTo(0,0);
   _rebuildLastPaperHTML();}
-function closePaper(){document.getElementById('paperView').classList.remove('show')}
+function closePaper(){document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';}
 function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
 
 /* ===== 備份/還原 ===== */
