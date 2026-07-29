@@ -606,7 +606,7 @@
     <div class="grid4">
       <div class="field"><label>年度（學期）</label><input type="text" id="eYear" placeholder="114上" onblur="composeExam()"></div>
       <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="士林國中" onblur="composeExam()"></div>
-      <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114上-第一次段考"></div>
+      <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114-上學期-第一次段考-理化"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
     <div class="grid2">
@@ -614,7 +614,7 @@
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A"></div>
-      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-九年級-112上-第一次段考-7" oninput="onGroupIdChange()"></div>
+      <div class="field"><label>題組 ID（同一大題的小題填相同代碼，可留空）</label><input type="text" id="eGroupId" placeholder="如 百齡國中-九年級-112-上學期-第一次段考-理化-7" oninput="onGroupIdChange()"></div>
     </div>
     <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
       <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:inherit;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
@@ -625,7 +625,7 @@
     <div class="sectionhead">B 課程對應（翰林版）</div>
     <div class="grid4">
       <div class="field"><label>年級</label><select id="eGrade" onchange="onEditGrade()"><option value="">— 請選 —</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
-      <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook()"></select></div>
+      <div class="field"><label>冊數</label><select id="eBook" onchange="syncByBook();composeExam()"></select></div>
       <div class="field"><label>冊名／領域</label><input type="text" id="eBookName" readonly style="background:#f0ece2"></div>
       <div class="field"><label>大單元</label><select id="eUnit" onchange="syncBySub()"></select></div>
     </div>
@@ -1820,9 +1820,8 @@ async function doImportSol(){
     alert('找不到必要欄位：檔案第一列（標題列）必須包含「考試名稱」「題號」「詳解」這三個欄位名稱');
     return;
   }
-  // 正規化考試名稱，使 AI 產出的考試名稱格式（如「介壽國中-八年級-113上-第二次段考-理化」）
-  // 能對應到 DB 裡的格式（如「介壽國中-八年級-113-第二次段考」）
-  function _normExam(e){return e.replace(/-?(理化|生物|地科|自然科?|物理|化學)$/,'').replace(/-?(上學期|下學期)/g,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
+  // 正規化學期的舊／新寫法；科目保留在比對鍵中，避免同校同次的理化、地科同題號互相覆蓋。
+  function _normExam(e){return e.replace(/-?(上學期|下學期)/g,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
   const _dbExamNormMap=new Map();DB.forEach(x=>{if(x.exam)_dbExamNormMap.set(_normExam(x.exam)+'|||'+String(x.no),x);});
   const toAdd=[],toReplace=[],notFound=[];
   for(let i=1;i<rows.length;i++){
@@ -1839,7 +1838,7 @@ async function doImportSol(){
   const total=toAdd.length+toReplace.length;
   if(!total){
     const hint=notFound.length?'\n\n找不到對應題目（共 '+notFound.length+' 筆）：\n'+notFound.slice(0,5).join('\n')+(notFound.length>5?'\n…':''):''
-    +'\n\n提示：請確認「考試名稱」欄與題庫中一致，例如「介壽國中-八年級-113-第二次段考」（不含學期、不含科目）。';
+    +'\n\n提示：請確認「考試名稱」欄與題庫中一致，例如「介壽國中-八年級-113-下學期-第二次段考-理化」。';
     alert('沒有可匯入的詳解'+hint);
     return;
   }
@@ -1880,19 +1879,21 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     }
   });
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
-    const rawExam=g(2),school=g(1),year=g(0),book=g(5);
+    const rawExam=g(2),school=g(1),year=g(0),book=g(5),_field=g(7);
     const grade=gradeFromExam(rawExam,book);
     const round=examRound(rawExam);
     // 正規化：year 欄裡的「上」/「下」改成獨立的「上學期」/「下學期」字串
     const yr=(year||'').replace(/[上下]$/,'');
     const sem=parseSylSem(year,rawExam);
     const semStr=sem?sem+'學期':'';
-    const fmtExam=round==='會考'?(yr||'')+'會考':round==='學測'?(yr||'')+'學測':round==='分科測驗'?(yr||'')+'分科測驗':[school,grade,yr,semStr,round].filter(Boolean).join('-')||rawExam;
-    const key=round==='會考'?'會考|||'+(yr||''):round==='學測'?'學測|||'+(yr||''):round==='分科測驗'?'分科測驗|||'+(yr||''):[school||'',grade||'',yr||'',semStr||'',round||''].join('|||');
+    // 考卷名稱末段的科目是正式命名的一部分；優先沿用 AI／raw 頁傳來的名稱，缺少時才使用領域欄。
+    const namedSubject=(rawExam.match(/(?:^|-)(理化|生物|地科|自然|物理|化學)(?:-|$)/)||[])[1]||_field;
+    const fmtBase=round==='會考'?(yr||'')+'會考':round==='學測'?(yr||'')+'學測':round==='分科測驗'?(yr||'')+'分科測驗':[school,grade,yr,semStr,round].filter(Boolean).join('-')||rawExam;
+    const fmtExam=(round==='會考'||round==='學測'||round==='分科測驗')?fmtBase:[fmtBase,namedSubject].filter(Boolean).join('-');
+    const key=round==='會考'?'會考|||'+(yr||''):round==='學測'?'學測|||'+(yr||''):round==='分科測驗'?'分科測驗|||'+(yr||''):[school||'',grade||'',yr||'',semStr||'',round||'',namedSubject||''].join('|||');
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
     // 往回找舊格式（如「113上」嵌在年度欄的舊 exam 名稱）以避免重複匯入
-    const _field=g(7);
     // 往回找舊格式（如「113上」嵌在年度欄的舊 exam 名稱）以避免重複匯入
     const _oldFmt=fmtExam.replace(/-上學期-/g,'上-').replace(/-下學期-/g,'下-').replace(/-上學期$/,'上').replace(/-下學期$/,'下');
     const dup=existingByExamNo.get(fmtExam+'|||'+_field+'|||'+g(3))||existingByExamNo.get(_oldFmt+'|||'+_field+'|||'+g(3));
@@ -2003,7 +2004,12 @@ function composeExam(){
   } else if(round==='分科測驗'){
     eExam.value=(eYear.value.trim()||'')+'分科測驗';
   } else {
-    const parts=[eSchool.value.trim(),eGrade.value,eYear.value.trim(),round].filter(Boolean);
+    const rawYear=eYear.value.trim();
+    const examYear=(rawYear.match(/^(\d+)([上下])$/)||[]);
+    const yearDisplay=examYear.length?examYear[1]+'-'+examYear[2]+'學期':rawYear;
+    const rec=SYL.find(k=>k.book===eBook.value);
+    const subject=rec?rec.field:'';
+    const parts=[eSchool.value.trim(),eGrade.value,yearDisplay,round,subject].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
   }
 }
@@ -3122,8 +3128,9 @@ function buildPrompt(){const syl=SYL_RAW;
   const et=fExamType.value||'';
   const rnd=fRound.value||'';
   const examDesc=[et,rnd].filter(Boolean).join('');
-  const exParts=[sc,gr,yr,examDesc].filter(Boolean);
-  const ex=exParts.length?exParts.join('-'):'（如：士林國中-九年級-114上-第一次段考）';
+  const examYear=fYear.value&&fSem.value?fYear.value+'-'+fSem.value+'學期':yr;
+  const exParts=[sc,gr,examYear,examDesc].filter(Boolean);
+  const ex=exParts.length?exParts.join('-'):'（如：士林國中-九年級-114-上學期-第一次段考-理化）';
   return `你是一位臺灣自然科教師助手，請把附上的自然科考卷（可能是國中段考卷，也可能是高中段考卷／學測／分科測驗試題），逐題整理成 CSV，供我匯入題庫系統。
 
 ⚠️⚠️【第一步，最重要：先判斷這份卷子是「國中」還是「高中」，之後全程依判斷結果套用對應規則】
@@ -3165,7 +3172,8 @@ function buildPrompt(){const syl=SYL_RAW;
 ▷ 欄1 年度：如 114上、113下（學年+上/下）；高中學測填 114學測、分科測驗填 114分科測驗
 ▷ 欄2 來源學校：國中填國中校名如 士林國中（若封面寫「某某高中國中部／附設國中部」只填「某某國中」）；高中段考填高中校名如 建中；學測／分科測驗留空
 ▷ 欄3 考試名稱：
-  - 國中／高中段考格式：學校-年級-學年學期-考試次，如 百齡國中-九年級-112上-第一次段考、建中-高一-114上-第一次段考
+  - 國中／高中段考格式：學校-年級-學年度-上／下學期-考試次-科目，如 百齡國中-九年級-112-上學期-第一次段考-理化、建中-高一-114-上學期-第一次段考-物理
+  - 科目（理化／生物／地科／物理／化學）僅在同校同次段考分科出卷時加在最後；未分科時不加。
   - 學測格式：114學測；分科測驗格式：114分科測驗
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：
@@ -4052,8 +4060,9 @@ function buildPromptHS(){
   const rnd=fRound.value||'';
   const bk=fBook.value||'';
   const examDesc=[et,rnd].filter(Boolean).join('');
-  const exParts=[sc,gr||'高中',yr,examDesc].filter(Boolean);
-  const ex=exParts.length?exParts.join('-'):'（如：建中-高一-114上-第一次段考 或 114學測）';
+  const examYear=fYear.value&&fSem.value?fYear.value+'-'+fSem.value+'學期':yr;
+  const exParts=[sc,gr||'高中',examYear,examDesc].filter(Boolean);
+  const ex=exParts.length?exParts.join('-'):'（如：建中-高一-114-上學期-第一次段考-物理 或 114學測）';
   return `你是一位臺灣自然科教師助手，請把附上的高中自然科考卷（或學測試題），逐題整理成 CSV，供我匯入題庫系統。
 
 【卷子資訊（請以上傳的卷子內容為準，下方僅供參考）】
@@ -4086,7 +4095,7 @@ function buildPromptHS(){
 ▷ 欄3 考試名稱：
   - 學測格式：114學測
   - 分科測驗格式：114分科測驗
-  - 段考格式：學校-年級-學年學期-考試次，如 建中-高一-114上-第一次段考
+  - 段考格式：學校-年級-學年度-上／下學期-考試次-科目，如 建中-高一-114-上學期-第一次段考-物理
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：
   - 單選題：A/B/C/D；卷子有附答案直接填入，沒有請判斷並填入，不可留空
