@@ -88,6 +88,7 @@
   .ft-panel.ft-active{display:block}
   .tb-item{display:inline-flex;align-items:stretch;border-radius:7px;transition:opacity .15s}
   .tb-item.dragging{opacity:.25;pointer-events:none}
+  .tb-item.tb-picked{box-shadow:0 0 0 3px var(--red)!important;background:#fff3ef;border-radius:7px}
   .tb-row.drag-over{background:rgba(184,134,11,.09)}
   .tb-edit-toggle{position:absolute;top:8px;right:10px;font-size:11px;padding:3px 9px;background:transparent;border:1px solid var(--line);border-radius:5px;cursor:pointer;color:var(--muted);font-family:inherit;line-height:1.6}
   .tb-edit-toggle.on{background:var(--phy);color:#fff;border-color:var(--phy)}
@@ -296,7 +297,11 @@
     #tbWrap{max-height:52dvh;overflow-y:auto;-webkit-overflow-scrolling:touch}
     /* 題庫分析分頁：解除高度上限與內部捲動，讓內嵌 iframe 自動長高、整頁自然捲動，不被夾成小視窗 */
     #tbWrap.embed-active{max-height:none;overflow:visible}
-    #tbEditBtn,#tbResetBtn{display:none!important}
+    /* 手機也保留排序入口：Safari 不支援原生拖曳，會改用「先點要移動的功能、再點目標位置」 */
+    #tbEditBtn{display:block!important;z-index:3;top:7px;right:9px;background:var(--card)}
+    #tbResetBtn{display:block!important;z-index:3;top:7px;right:67px;background:var(--card)}
+    #tbResetBtn[style*="display: none"]{display:none!important}
+    #tbWrap .tb-tabs{margin-right:76px}
 
     /* === 每列：標籤在上、按鈕在下 === */
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:0;clear:both}
@@ -4856,7 +4861,7 @@ const TB_DEFAULT=[
   ['selFilt','selAll','stat'],
   ['analyticsEmbed'],
 ];
-let tbEditing=false,tbDragEl=null;
+let tbEditing=false,tbDragEl=null,tbPickedEl=null;
 // 手機工具列改為橫向滑動單排：按鈕維持原生排列，超出寬度可左右滑（不再收合成「更多」）
 function applyMobileToolbar(){}
 function renderToolbar(){
@@ -4989,6 +4994,21 @@ function setFilterTab(i){
 function setupTbDrag(){
   document.querySelectorAll('.tb-item').forEach(item=>{
     item.setAttribute('draggable',tbEditing?'true':'false');
+    // 手機 Safari 不支援 HTML5 drag-and-drop：排序模式中可先點要移動的功能，再點目標功能。
+    // 用 capture 攔下按鈕原本的動作，避免整理工具列時誤開匯入視窗。
+    item.addEventListener('click',e=>{
+      if(!tbEditing)return;
+      e.preventDefault();e.stopPropagation();
+      if(!tbPickedEl){
+        tbPickedEl=item;item.classList.add('tb-picked');
+        return;
+      }
+      if(tbPickedEl===item){item.classList.remove('tb-picked');tbPickedEl=null;return;}
+      const targetRow=item.closest('.tb-row');
+      const source=tbPickedEl;
+      targetRow.querySelector('.tb-btn-scroll').insertBefore(source,item);
+      source.classList.remove('tb-picked');tbPickedEl=null;saveTbLayout();
+    },true);
     item.addEventListener('dragstart',e=>{
       if(!tbEditing)return e.preventDefault();
       tbDragEl=item;e.dataTransfer.effectAllowed='move';
@@ -5028,6 +5048,7 @@ function saveTbLayout(){
 }
 function toggleTbEdit(){
   tbEditing=!tbEditing;
+  if(tbPickedEl){tbPickedEl.classList.remove('tb-picked');tbPickedEl=null;}
   const btn=document.getElementById('tbEditBtn');
   btn.textContent=tbEditing?'✓ 完成':'⋮ 排列';
   btn.classList.toggle('on',tbEditing);
@@ -5037,6 +5058,7 @@ function toggleTbEdit(){
   wrap.classList.toggle('tabs-on',!tbEditing);   // 編輯時展開全部列
   wrap.classList.toggle('tb-edit-all',tbEditing);
   document.querySelectorAll('.tb-item').forEach(el=>el.setAttribute('draggable',tbEditing?'true':'false'));
+  btn.title=tbEditing?'電腦可拖曳；手機請先點要移動的功能，再點目的位置':'排列工具列';
   setupTabDrag();
   sizeToolbar();
 }
