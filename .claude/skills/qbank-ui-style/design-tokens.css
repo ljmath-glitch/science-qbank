@@ -1,0 +1,83 @@
+/* ============================================================
+   茲茲文教設計系統 · design tokens + 基礎元件
+   與課務系統／人資系統一致：淺色留白、米白底、白卡、細線、
+   深紅主色點綴、hover 轉紅。可整段複製進頁面 <style>，或以
+   <link rel="stylesheet" href="design-tokens.css"> 引入。
+   ============================================================ */
+:root{
+  /* 中性 */
+  --ink:#2d3038;      /* 主文字（不要用純黑） */
+  --muted:#6e6f74;    /* 次要文字 */
+  --paper:#f6f5f2;    /* 頁面底色（米白，不要用純白當頁底） */
+  --card:#ffffff;     /* 卡片/面板底 */
+  --line:#e6e4de;     /* 分隔線/邊框 */
+  /* 品牌主色與點綴 */
+  --red:#850103;      /* 主色：按鈕主要動作、選中、重點數字 */
+  --red2:#5e0102;     /* 主色加深（hover/漸層下緣） */
+  --orange:#f9a12c;   /* 點綴：警示/強調 */
+  --gold:#af9a6b;     /* 點綴：中性金 */
+  --accent:#850103;   /* = red，語意別名 */
+  /* 領域色（生物/理化/地科），用於卡片左側色條或圖表 */
+  --bio:#1f6f5c; --phy:#b8860b; --earth:#3454b4;
+  /* 字型：UI 一律用系統字型；華康中圓體 HuaKangTNR 只保留給考卷預覽/列印/匯出，UI 絕不使用 */
+  --ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+  /* 陰影：極淺，兩層（底部實線 + 大範圍柔和） */
+  --shadow:0 2px 0 #eceae4, 0 8px 24px -12px rgba(45,48,56,.16);
+}
+
+*{box-sizing:border-box}
+body{font-family:var(--ui-font);font-weight:500;background:var(--paper);color:var(--ink);line-height:1.6;font-size:14px}
+
+/* 按鈕：預設淺色（白→米白漸層），hover 轉紅色調並微浮起 */
+.btn{font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.3px;padding:9px 16px;border-radius:10px;
+  border:1px solid #e4d8c6;background:linear-gradient(180deg,#fff,#faf4ea);color:var(--ink);cursor:pointer;
+  transition:background .15s,border-color .15s,box-shadow .15s,color .15s,transform .1s;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  box-shadow:0 1px 2px rgba(43,32,28,.07),inset 0 1px 0 #fff}
+.btn:hover{background:linear-gradient(180deg,#fffdfb,#fbece7);border-color:#c58f89;color:var(--red);
+  box-shadow:0 5px 14px -5px rgba(133,1,3,.38),inset 0 1px 0 #fff;transform:translateY(-1px)}
+/* 主要動作（深紅填色，白字）— 每個畫面最多一個主按鈕，其餘用預設淺色 */
+.btn.primary{background:linear-gradient(180deg,#960205,#6d0002);color:#fff;border-color:#5c0102;
+  box-shadow:0 3px 10px -3px rgba(133,1,3,.55),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn.primary:hover{background:linear-gradient(180deg,#a70a0e,#7c0104);color:#fff;transform:translateY(-1px)}
+/* 金/褐點綴按鈕（次要強調，例如「預覽」「匯出」） */
+.btn.gold{background:linear-gradient(180deg,#c79a3f,#a9801f);color:#fff;border-color:#94700f}
+.btn.gold:hover{background:linear-gradient(180deg,#d3a94c,#b98d26);color:#fff;transform:translateY(-1px)}
+
+/* 卡片/面板 */
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);
+  padding:16px 18px;margin-bottom:13px;position:relative}
+.card.bio{border-left:4px solid var(--bio)} .card.phy{border-left:4px solid var(--phy)} .card.earth{border-left:4px solid var(--earth)}
+
+/* 標籤/膠囊（中性，用於冊別、單元、知識點等 meta） */
+.tag{display:inline-block;font-size:11px;padding:3px 9px;border-radius:7px;font-weight:600;letter-spacing:.2px;line-height:1.45;
+  background:#f4efe5;color:#6f6353;border:1px solid #ebe2d2}
+
+/* 表單元件 */
+input[type=text],input[type=number],select,textarea{font-family:inherit;font-size:13px;color:var(--ink);
+  padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+.chk{display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer}
+.chk input[type=checkbox]{accent-color:var(--red)}
+
+/* 對話框：桌機置中，手機為底部 sheet */
+dialog{border:none;border-radius:14px;padding:0;max-width:760px;width:95%;max-height:92vh;margin:auto;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.5);color:var(--ink)}
+dialog::backdrop{background:rgba(45,48,56,.45)}
+.dlg-head{background:#fff;color:var(--ink);padding:15px 20px;font-size:15px;letter-spacing:.5px;font-weight:800;
+  display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+.dlg-head .x{cursor:pointer;border:none;background:none;font-size:20px;color:var(--muted);line-height:1}
+
+/* 區塊標題 */
+.section{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:18px 20px;margin-bottom:16px}
+.section h2{font-size:15px;font-weight:800;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.section .desc{font-size:12px;color:var(--muted);margin-bottom:14px}
+
+/* 空狀態 */
+.empty-note{text-align:center;color:var(--muted);padding:30px 10px;font-size:13px}
+
+@media(max-width:600px){
+  dialog{width:100%!important;max-width:100%!important;border-radius:14px 14px 0 0;margin:auto auto 0;max-height:92dvh}
+  .card{border-radius:14px;padding:14px 15px}
+  .section{padding:14px 13px}
+}
