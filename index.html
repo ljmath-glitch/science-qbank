@@ -67,7 +67,7 @@
   .tb-embed-openbtn:hover{border-color:var(--red);color:var(--red)}
   #analyticsFrame{width:100%;height:640px;min-height:420px;border:1px solid var(--line);border-radius:10px;display:block;background:var(--paper)}
   /* ===== 工具列分頁（tab）===== */
-  .tb-tabs{display:flex;gap:5px;flex-wrap:nowrap;align-items:flex-end;margin-bottom:7px;border-bottom:2px solid var(--line)}
+  .tb-tabs{display:flex;gap:6px;flex-wrap:nowrap;align-items:flex-end;margin-bottom:8px;border-bottom:2px solid var(--line)}
   .tb-tab{flex:1 1 0;min-width:0;justify-content:center;font-family:inherit;font-size:12px;font-weight:700;letter-spacing:.5px;padding:6px 14px 7px;border:1px solid var(--line);border-bottom:none;background:#f1e9db;color:var(--muted);border-radius:9px 9px 0 0;cursor:pointer;margin-bottom:-2px;transition:.15s;white-space:nowrap;user-select:none;display:inline-flex;align-items:center;gap:6px}
   .tb-tab-ic{width:14px;height:14px;flex-shrink:0;opacity:.85}
   .tb-tab:hover{background:#ece2d0;color:var(--ink)}
@@ -108,6 +108,7 @@
   .editing .tb-item:hover{background:rgba(184,134,11,.06)}
   .tb-row-label{font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;padding:0 8px 0 2px;border-right:2px solid var(--line);margin-right:2px;letter-spacing:.5px;align-self:stretch;display:flex;align-items:center;width:60px;flex-shrink:0;justify-content:center}
   .tb-btn-scroll{display:flex;flex-wrap:wrap;gap:7px;flex:1;align-content:flex-start;min-width:0}
+  @media(min-width:861px){#tbWrap.tabs-on>.tb-row.tb-active:not(.tb-row-stat) .tb-btn-scroll{display:flex;width:100%;flex-wrap:nowrap;justify-content:flex-start;gap:9px;align-items:center}#tbWrap.tabs-on>.tb-row.tb-active:not(.tb-row-stat) .tb-item,#tbWrap.tabs-on>.tb-row.tb-active:not(.tb-row-stat) .tb-item .btn{width:auto;min-width:0}}
   .btn{font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.3px;padding:9px 16px;border-radius:10px;border:1px solid #e4d8c6;background:linear-gradient(180deg,#ffffff,#faf4ea);color:var(--ink);cursor:pointer;transition:background .15s,border-color .15s,box-shadow .15s,color .15s,transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 1px 2px rgba(43,32,28,.07),inset 0 1px 0 #fff}
   .btn:hover{background:linear-gradient(180deg,#fffdfb,#fbece7);border-color:#c58f89;color:var(--red);box-shadow:0 5px 14px -5px rgba(133,1,3,.38),inset 0 1px 0 #fff;transform:translateY(-1px)}
   .btn:active{transform:translateY(0);box-shadow:inset 0 2px 4px rgba(43,32,28,.15)}
@@ -4991,23 +4992,20 @@ function download(name,content,type){const blob=new Blob([content],{type});const
 
 /* ===== 工具列拖曳排列 ===== */
 const TB_BUTTONS={
-  home:    ()=>`<a class="btn" href="home.html" style="text-decoration:none" aria-label="回到首頁" title="回到首頁">⌂</a>`,
   import:  ()=>`<button class="btn" onclick="openImport()">匯入題目</button>`,
-  solImport: ()=>`<button class="btn" onclick="openSolImport()">詳解匯入</button>`,
-  reload:  ()=>`<button class="btn" onclick="reloadCloud()">重新整理</button>`,
-  backup:  ()=>`<button class="btn" onclick="exportJSON()">備份</button>`,
+  solImport: ()=>`<button class="btn" onclick="openSolImport()">匯入詳解</button>`,
+  backup:  ()=>`<button class="btn" onclick="exportJSON()">系統備份</button>`,
   restore: ()=>`<button class="btn" onclick="document.getElementById('restoreFile').click()">匯入備份</button>`,
   batchImg: ()=>`<button class="btn" onclick="openBatchImgDlg()" title="依檔名批次貼圖到對應題目">批次貼圖</button>`,
   claude:  ()=>`<button class="btn" onclick="showPrompt()" title="國中／高中自然科考卷轉CSV指令（同一指令自動判斷國中或高中）">轉檔指令</button>`,
   sysDoc:  ()=>`<button class="btn" onclick="copySystemDoc()">系統文件</button>`,
-  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">共編進度表</a>`,
+  progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">考卷進度</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
-  raw:     ()=>`<a class="btn dev-btn" href="raw.html" title="考卷前處理（開發中，請勿使用）" style="text-decoration:none">考卷前處理<i class="dev-tag">開發中</i></a>`,
+  raw:     ()=>`<a class="btn" href="raw.html" title="開啟考卷前處理流程" style="text-decoration:none">考卷處理</a>`,
   selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
   selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
-  analyticsEmbed:()=>`<div class="tb-embed-wrap"><a href="analytics.html" target="_blank" class="tb-embed-openbtn" title="在新分頁開啟完整版">⤢ 開啟完整版</a><iframe id="analyticsFrame" src="analytics.html" loading="lazy"></iframe></div>`,
-  batchGenBtn:  ()=>`<button class="btn dev-btn" onclick="openBatchGenDlg()" title="批次生成詳解（開發中，請勿使用）">批次生成詳解<i class="dev-tag">開發中</i></button>`,
-  solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給AI製作詳解；沒有勾選題目時顯示空白範本，可手動貼上題目內容">詳解製作指令</button>`,
+  batchGenBtn:  ()=>`<button class="btn" onclick="openBatchGenDlg()" title="批次生成勾選題目的詳解">批次生成</button>`,
+  solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給 AI 製作詳解">詳解指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
 };
 // 內嵌「題庫分析」iframe 自動長高：由 analytics.html 回報內容高度，避免手機上變成小視窗＋一堆空白
@@ -5016,22 +5014,21 @@ window.addEventListener('message',e=>{
   const fr=document.getElementById('analyticsFrame');
   if(fr&&e.data.height)fr.style.height=Math.max(360,Math.round(e.data.height))+'px';
 });
-const TB_VER='26';
-const TB_ROW_LABELS=['資料管理','考卷工具','詳解工具','選題操作','題庫分析'];
+const TB_VER='28';
+const TB_ROW_LABELS=['考卷工具','詳解工具','資料管理','',''];
 // 分頁極簡線條圖示（stroke=currentColor，隨分頁文字顏色變化）
 const _svg=p=>`<svg class="tb-tab-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 const TB_TAB_ICONS=[
-  _svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/>'),
   _svg('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/>'),
   _svg('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+  _svg('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3"/>'),
 ];
-TB_TAB_ICONS[4]=_svg('<path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/>');
 const TB_DEFAULT=[
-  ['home','progress','backup','restore','reload','sysDoc'],
-  ['import','claude','guide','raw','batchImg'],
-  ['solPromptBtn','solImport','batchGenBtn'],
+  ['raw','claude','import','batchImg'],
+  ['batchGenBtn','solPromptBtn','solImport'],
+  ['progress','backup','restore','sysDoc','guide'],
   ['selFilt','selAll','stat'],
-  ['analyticsEmbed'],
+  [],
 ];
 let tbEditing=false,tbDragEl=null,tbPickedEl=null,tbLongPressTimer=null,tbTouchDrag=null,tbIgnoreClick=false;
 function endTbTouchDrag(){
@@ -5049,7 +5046,7 @@ function renderToolbar(){
   let layout=JSON.parse(localStorage.getItem('tbLayout')||'null');
   // 版本或列數不符時自動重置
   if(!layout||layout.length!==5||localStorage.getItem('tbLayoutVer')!==TB_VER){
-    layout=TB_DEFAULT;localStorage.setItem('tbLayoutVer',TB_VER);localStorage.removeItem('tbLayout');
+    layout=TB_DEFAULT;localStorage.setItem('tbLayoutVer',TB_VER);localStorage.removeItem('tbLayout');localStorage.removeItem('tbTabOrder');localStorage.removeItem('tbActiveTab');
   }
   // 確保 TB_BUTTONS 裡的新 key 不被 localStorage 快取漏掉
   const allKeys=layout.flat();
@@ -5067,6 +5064,7 @@ function renderToolbar(){
     rows[ri].dataset.rowIdx=ri;
     const scroll=document.createElement('div');
     scroll.className='tb-btn-scroll';
+    scroll.style.setProperty('--tb-cols',Math.max(1,row.length));
     rows[ri].appendChild(scroll);
     row.forEach(key=>{
       if(!TB_BUTTONS[key])return;
@@ -5090,7 +5088,7 @@ function buildTbTabs(layout){
   tabs=document.createElement('div');
   tabs.className='tb-tabs';
   let active=parseInt(localStorage.getItem('tbActiveTab')||'0',10);
-  let tabRows=[0,1,2,4].filter(ri=>layout[ri]&&layout[ri].length);
+  let tabRows=[0,1,2].filter(ri=>layout[ri]&&layout[ri].length);
   // 套用使用者自訂的分頁順序
   let saved=null;try{saved=JSON.parse(localStorage.getItem('tbTabOrder')||'null');}catch(e){}
   if(Array.isArray(saved)){
@@ -5152,13 +5150,9 @@ function sizeToolbar(){
     const fb=[...document.querySelectorAll('.float-btns .btn')];
     fb.forEach(b=>b.style.width='');
     if(window.innerWidth>860){
-      // 量測全部按鈕（含非作用中分頁）的自然寬度，統一成最寬者；同步進行不會有閃爍
-      wrap.classList.add('tb-measuring');
       const btns=[...wrap.querySelectorAll('.tb-item .btn')];
+      // 主分頁依各工具群組的按鈕數平均分欄；不再強迫所有按鈕同一寬度。
       btns.forEach(b=>{b.style.width='';b.style.justifyContent='center';});
-      const w=Math.max(0,...btns.map(b=>b.offsetWidth));
-      wrap.classList.remove('tb-measuring');
-      if(w>0)btns.forEach(b=>{b.style.width=w+'px';});
       // 底部匯出列：同樣統一為最寬者，規則比照工具列
       const fw=Math.max(0,...fb.map(b=>b.offsetWidth));
       if(fw>0)fb.forEach(b=>b.style.width=fw+'px');
