@@ -1726,6 +1726,29 @@ async function _bimgConfirm(){
   if(done>0){render();if(failed===0)setTimeout(()=>batchImgDlg.close(),1800);}
 }
 
+function _batchExamCanonical(value){
+  return String(value||'').replace(/附中/g,'國中').replace(/(1\d{2})\s*([上下])(?!學期)/g,'$1-$2學期').replace(/第\s*([123一二三])\s*次?\s*段/g,'第$1次段考').replace(/[\s_－—–]+/g,'-').replace(/-+/g,'-').replace(/[^\u4e00-\u9fff0-9-]/g,'').replace(/-$/,'');
+}
+function _batchExamTerms(value){
+  const raw=String(value||'').replace(/附中/g,'國中');
+  const grade=(raw.match(/[七八九]年級|高[一二三]/)||[])[0]||'';
+  const year=(raw.match(/1\d{2}/)||[])[0]||'';
+  const term=(raw.match(/[上下](?:學期)?/)||[])[0]?.[0]||'';
+  const round=(raw.match(/第?[一二三123]次?段考|[一二三123]段/)||[])[0]||'';
+  const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
+  const school=(raw.match(/^(.+?)(?=[-_\s]*(?:[七八九]年級|高[一二三]|1\d{2}))/)||[])[1]||'';
+  return {school:school.replace(/[-_\s]/g,''),grade,year,term,round,subject};
+}
+function _findBatchExam(exam){
+  const names=[...new Set(DB.map(it=>it.exam).filter(Boolean))];
+  if(names.includes(exam))return exam;
+  const canonical=_batchExamCanonical(exam);
+  const canonicalMatches=names.filter(name=>_batchExamCanonical(name)===canonical);
+  if(canonicalMatches.length===1)return canonicalMatches[0];
+  const target=_batchExamTerms(exam);
+  const softMatches=names.filter(name=>{const t=_batchExamTerms(name);return ['school','grade','year','term','round','subject'].every(key=>!target[key]||target[key]===t[key])});
+  return softMatches.length===1?softMatches[0]:'';
+}
 // 供 raw.html 的「考卷前處理」直接交接已確認的圖表素材；不開啟批次貼圖視窗。
 async function importBatchHandoffImages(payload){
   for(let i=0;i<80&&!window.__qbankDataReady;i++)await new Promise(ok=>setTimeout(ok,100));
@@ -1733,7 +1756,8 @@ async function importBatchHandoffImages(payload){
   const exam=payload?.exam||'';
   const images=Array.isArray(payload?.images)?payload.images:[];
   if(!exam)throw new Error('缺少考卷名稱');
-  const examQs=DB.filter(it=>it.exam===exam&&it.type!=='passage');
+  const matchedExam=_findBatchExam(exam);
+  const examQs=DB.filter(it=>it.exam===matchedExam&&it.type!=='passage');
   const groups={};let unmatched=0;
   for(const image of images){
     const q=Number.isInteger(image.qno)?examQs.find(it=>Number(it.no)===image.qno):null;
@@ -1753,7 +1777,7 @@ async function importBatchHandoffImages(payload){
     }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;}
   }
   if(done)render();
-  return {done,failed,unmatched};
+  return {done,failed,unmatched,matchedExam};
 }
 
 function _bimgCopyNamingPrompt(mode){
