@@ -24,6 +24,8 @@ from PIL import Image
 # Word 產出的 PDF 常把「1.(C)」拆成「1.(」「C」「)」，故不可只接受 1.。
 QUESTION_RE = re.compile(r"^(\d+)\.?(?:\(|（)?$")
 CAPTION_RE = re.compile(r"^(圖|表|附表|Figure|Table)")
+# 不把「波形、圖書」這類單字當成題目圖片證據；必須是題幹真的指向圖或表。
+REFERENCE_RE = re.compile(r"如下圖|如圖|下圖|圖所示|圖中|題圖|圖示|附表|如下表|下表|表所示|表中")
 
 
 def safe_name(text: str) -> str:
@@ -68,7 +70,8 @@ def question_anchors(words: list[dict]) -> list[tuple[int, float]]:
 
 def owner_question(top: float, anchors: list[tuple[int, float]], page_height: float) -> int | None:
     for index, (number, start) in enumerate(anchors):
-        end = anchors[index + 1][1] if index + 1 < len(anchors) else page_height
+        # 題幹的 baseline 偶爾比題號高 0.x pt；預留邊界避免下一題文字被併入本題。
+        end = anchors[index + 1][1] - 4 if index + 1 < len(anchors) else page_height
         if start - 5 <= top < end:
             return number
     return None
@@ -78,13 +81,13 @@ def referenced_question(box: tuple[float, float, float, float], anchors: list[tu
     """優先使用題幹的「如下圖／附表」語意，處理圖放在題號上方的 Word 排版。"""
     sections: list[tuple[int, float, float, str]] = []
     for index, (number, start) in enumerate(anchors):
-        end = anchors[index + 1][1] if index + 1 < len(anchors) else page_height
+        end = anchors[index + 1][1] - 4 if index + 1 < len(anchors) else page_height
         text = "".join(word["text"] for word in words if start - 3 <= word["top"] < end)
         sections.append((number, start, end, text))
     centre = (box[1] + box[3]) / 2
     candidates = []
     for number, start, end, text in sections:
-        if re.search(r"(?:如下)?圖|附表|如下表|題圖", text):
+        if REFERENCE_RE.search(text):
             distance = 0 if start - 15 <= centre <= end + 15 else min(abs(centre - start), abs(centre - end))
             candidates.append((distance, number))
     if candidates:
@@ -92,7 +95,8 @@ def referenced_question(box: tuple[float, float, float, float], anchors: list[tu
         # 只有當題幹確實在圖旁時才覆蓋依位置得到的題號，避免拿到遙遠的其他題圖。
         if distance < 140:
             return number
-    return owner_question(centre, anchors, page_height)
+    # 沒有題幹引用就不猜。這會排除頁首、出版社 logo、裝飾圖片與答案標記。
+    return None
 
 
 def nearby_caption(words: list[dict], box: tuple[float, float, float, float]) -> tuple[float, float, float, float] | None:
@@ -136,6 +140,7 @@ def main() -> int:
     render_dir.mkdir(exist_ok=True)
     manifest: list[dict] = []
     used_names: defaultdict[str, int] = defaultdict(int)
+    skipped_unlinked = 0
 
     with pdfplumber.open(pdf_path) as document:
         for page_index, page in enumerate(document.pages, start=1):
@@ -157,7 +162,14 @@ def main() -> int:
             candidates += [("圖表", box) for box in image_boxes if not any(overlap(box, table) > .55 for table in table_boxes)]
 
             for kind, original_box in candidates:
+                # 頁首 logo、考卷名稱帶常被 Word 輸出成 image XObject；絕不可視為第 1 題素材。
+                if anchors and original_box[1] < anchors[0][1] - 8:
+                    skipped_unlinked += 1
+                    continue
                 owner = referenced_question(original_box, anchors, words, page.height)
+                if owner is None:
+                    skipped_unlinked += 1
+                    continue
                 caption = nearby_caption(words, original_box)
                 x0, top, x1, bottom = original_box
                 if caption:
@@ -182,7 +194,8 @@ def main() -> int:
                     "bbox_pt": {"x0": round(x0, 1), "top": round(top, 1), "x1": round(x1, 1), "bottom": round(bottom, 1)},
                 })
 
-    (output / "manifest.json").write_text(json.dumps({"source_pdf": str(pdf_path), "dpi": args.dpi, "assets": manifest}, ensure_ascii=False, indent=2), encoding="utf-8")
+    (output / "manifest.json").write_text(json.dumps({"source_pdf": str(pdf_path), "dpi": args.dpi, "assets": manifest,
+        "skipped_unlinked_candidates": skipped_unlinked}, ensure_ascii=False, indent=2), encoding="utf-8")
     (output / "README.txt").write_text(
         "本資料夾的 PNG 都是由原始 PDF 頁面裁切而來，沒有重繪或補圖。\n"
         "檔名暫以 Q題號_圖表／表格_請人工確認 命名；確認後可改成具體描述，再匯入題庫。\n"
@@ -193,7 +206,7 @@ def main() -> int:
             if path.is_file():
                 archive.write(path, path.name)
     shutil.rmtree(render_dir, ignore_errors=True)
-    print(f"完成：{len(manifest)} 張素材，輸出至 {output}\n可直接匯入題庫的 ZIP：{zip_path}")
+    print(f"完成：{len(manifest)} 張素材，略過 {skipped_unlinked} 張未被題幹引用的候選，輸出至 {output}\n可直接匯入題庫的 ZIP：{zip_path}")
     return 0
 
 
