@@ -7,6 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 @font-face{font-family:'GenSenRounded';font-weight:400;font-display:swap;src:local('源泉圓體'),local('GenSenRounded-R'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-R.ttc') format('truetype');}
 @font-face{font-family:'GenSenRounded';font-weight:700;font-display:swap;src:local('GenSenRounded-B'),url('https://cdn.jsdelivr.net/gh/ButTaiwan/gensen-font@0.40/GenSenRounded-B.ttc') format('truetype');}
@@ -100,15 +101,15 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
 
   <!-- 上傳 -->
   <div class="card">
-    <div class="card-title">考卷檔案（試卷寶匯出的 .docx）</div>
+    <div class="card-title">考卷檔案（試卷寶清稿 PDF 或 DOCX）</div>
     <div class="drop-zone" id="dropZone"
          onclick="document.getElementById('fileInput').click()"
          ondragover="event.preventDefault();this.classList.add('drag-over')"
          ondragleave="this.classList.remove('drag-over')"
          ondrop="onDrop(event)">
-      <input type="file" id="fileInput" accept=".docx" style="display:none" onchange="onFileSelect(this.files[0])">
+      <input type="file" id="fileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none" onchange="onFileSelect(this.files[0])">
       <div class="drop-icon">📁</div>
-      <div class="drop-label" id="dropLabel">點擊選擇 .docx，或將檔案拖放到這裡</div>
+      <div class="drop-label" id="dropLabel">點擊選擇清稿 PDF 或 .docx，或將檔案拖放到這裡</div>
     </div>
   </div>
 
@@ -130,8 +131,8 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
       <div class="step" id="step1">
         <div class="bubble idle" id="bub1">1</div>
         <div class="step-body">
-          <div class="step-title">DOCX → 文字＋圖片打包</div>
-          <div class="step-desc">提取純文字（不含表格）、截取表格為圖片、萃取所有圖片，打包成 ZIP 下載</div>
+          <div class="step-title">考卷 → 文字＋頁面圖片打包</div>
+          <div class="step-desc">DOCX 會萃取圖片與表格；PDF 會逐頁轉成高解析圖片，作為後續題號配對與裁切依據</div>
           <div class="step-msg" id="msg1"></div>
         </div>
         <button class="btn btn-raw" id="btn1" onclick="step1()" disabled>整理並下載 ZIP</button>
@@ -371,7 +372,7 @@ function resetAll(){
 // ── 檔案選擇 ──────────────────────────────────────────────────────────
 function onFileSelect(file){
   if(!file) return;
-  if(!file.name.toLowerCase().endsWith('.docx')){alert('請選擇 .docx 檔案');return;}
+  if(!/\.(pdf|docx)$/i.test(file.name)){alert('請選擇清稿 PDF 或 .docx 檔案');return;}
   selectedFile=file;
   document.getElementById('dropZone').classList.add('has-file');
   document.getElementById('dropLabel').textContent='📄 '+file.name;
@@ -397,6 +398,27 @@ async function extractAndShowImages(file){
   gallery.innerHTML='<div style="color:var(--muted);font-size:13px;padding:8px 0">萃取圖片中⋯</div>';
   dlBtn.disabled=true;
   currentImages={};
+
+  if(/\.pdf$/i.test(file.name)){
+    try{
+      if(!window.pdfjsLib)throw new Error('PDF 處理元件尚未載入，請重新整理後再試');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+      gallery.innerHTML='';
+      for(let n=1;n<=pdf.numPages;n++){
+        const page=await pdf.getPage(n),vp=page.getViewport({scale:2});
+        const c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+        await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+        const b64=c.toDataURL('image/png').split(',')[1],name=`page-${String(n).padStart(2,'0')}.png`;
+        currentImages[name]=b64;
+        const div=document.createElement('div');div.className='img-thumb';
+        const img=document.createElement('img');img.src=`data:image/png;base64,${b64}`;img.title=`第 ${n} 頁`;
+        div.appendChild(img);const label=document.createElement('div');label.className='img-fname';label.textContent=`第 ${n} 頁`;
+        div.appendChild(label);gallery.appendChild(div);
+      }
+      title.textContent=`PDF 頁面圖片（共 ${pdf.numPages} 頁）`;dlBtn.disabled=false;dlBtn.textContent=`⬇ 下載全部 ${pdf.numPages} 頁（ZIP）`;return;
+    }catch(e){gallery.innerHTML=`<div style="color:var(--accent);font-size:13px">PDF 轉頁失敗：${e.message}</div>`;return;}
+  }
 
   try{
     const ab=await file.arrayBuffer();
@@ -603,6 +625,25 @@ async function step1(){
   setBub(1,'running'); setMsg(1,'處理中⋯'); setActive(1);
   document.getElementById('btn1').disabled=true;
   ocrImages=[];
+
+  if(/\.pdf$/i.test(selectedFile.name)){
+    try{
+      if(!window.pdfjsLib)throw new Error('PDF 處理元件尚未載入');
+      pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const basename=selectedFile.name.replace(/\.pdf$/i,''),pdf=await pdfjsLib.getDocument({data:await selectedFile.arrayBuffer()}).promise,zip=new JSZip(),folder=zip.folder(basename);
+      setMsg(1,`正在轉換 ${pdf.numPages} 頁清稿 PDF⋯`);
+      for(let n=1;n<=pdf.numPages;n++){
+        const page=await pdf.getPage(n),vp=page.getViewport({scale:2}),c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+        await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+        const b64=c.toDataURL('image/png').split(',')[1],name=`page-${String(n).padStart(2,'0')}.png`;
+        folder.file(name,b64,{base64:true});ocrImages.push({name,mime:'image/png',b64});
+      }
+      folder.file(`${basename}.txt`,`# ${basename}\n\n此為 ${pdf.numPages} 頁清稿 PDF。請以附上的逐頁圖片判讀題目、圖表與表格；不可省略圖片題。`);
+      const blob=await zip.generateAsync({type:'blob'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=basename+'.zip';a.click();URL.revokeObjectURL(url);
+      docContent=`# ${basename}\n\n此為 ${pdf.numPages} 頁清稿 PDF，題目、圖表與表格請依附圖原樣判讀。`;csvFilename=basename;
+      setBub(1,'done');setMsg(1,`完成：已建立 ${pdf.numPages} 張高解析頁面圖片`,'ok');setBub(2,'waiting');document.getElementById('btn2').disabled=false;document.getElementById('btnOcrAuto').disabled=false;setActive(2);return;
+    }catch(e){appendLog('PDF 處理錯誤：'+e.message);setBub(1,'error');setMsg(1,'PDF 處理失敗，請查看執行記錄','err');document.getElementById('btn1').disabled=false;return;}
+  }
 
   try{
     const basename=selectedFile.name.replace(/\.docx$/i,'');

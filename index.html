@@ -693,9 +693,9 @@
          ondragleave="this.classList.remove('drag-over')"
          ondrop="event.preventDefault();this.classList.remove('drag-over');_bimgAddFiles(event.dataTransfer.files)">
       <div style="font-size:28px;margin-bottom:6px">📁</div>
-      <div style="font-size:13px;color:#666">拖拉圖片到這裡，或點此選擇圖片（可多選）</div>
-      <div style="font-size:11px;color:#aaa;margin-top:4px">檔名格式：Q3_圖.png / 第3題_描述.jpg / P_文章圖.png</div>
-      <input type="file" id="bimgFileIn" multiple accept="image/*" style="display:none" onchange="_bimgAddFiles(this.files);this.value=''">
+      <div style="font-size:13px;color:#666">拖拉圖片或「自動裁切 ZIP」到這裡，或點此選擇</div>
+      <div style="font-size:11px;color:#aaa;margin-top:4px">支援：Q3_圖.png / 第3題_描述.jpg / P_文章圖.png；ZIP 會讀取 manifest.json</div>
+      <input type="file" id="bimgFileIn" multiple accept="image/*,.zip,application/zip" style="display:none" onchange="_bimgAddFiles(this.files);this.value=''">
     </div>
     <div id="bimgTableWrap" style="display:none" class="bimg-table-wrap">
       <div class="bimg-summary" id="bimgSummary"></div>
@@ -1575,9 +1575,32 @@ function _bimgParseName(fname){
   return{isPassage:false,qno:null};
 }
 
-function _bimgAddFiles(files){
+async function _bimgAddFiles(files){
   _bimgFiles=[];
-  for(const f of files){if(!f.type.startsWith('image/'))continue;_bimgFiles.push({file:f,src:null,qno:null,isPassage:false,matched:null,passageId:null,skip:false});}
+  const incoming=[...files];
+  for(const f of incoming){
+    if(f.type.startsWith('image/')){
+      _bimgFiles.push({file:f,src:null,qno:null,isPassage:false,matched:null,passageId:null,skip:false,manifest:null});
+      continue;
+    }
+    if(!/\.zip$/i.test(f.name))continue;
+    if(typeof JSZip==='undefined'){alert('無法讀取 ZIP：頁面載入的 JSZip 元件尚未就緒');continue;}
+    try{
+      const zip=await JSZip.loadAsync(f);
+      let manifest={};
+      const manifestEntry=Object.values(zip.files).find(entry=>!entry.dir&&/(^|\/)manifest\.json$/i.test(entry.name));
+      if(manifestEntry){try{manifest=JSON.parse(await manifestEntry.async('text'));}catch(_){}}
+      const assetByPath=new Map((manifest.assets||[]).map(asset=>[asset.file,asset]));
+      const imageEntries=Object.values(zip.files).filter(entry=>!entry.dir&&/\.(png|jpe?g|webp)$/i.test(entry.name));
+      for(const entry of imageEntries){
+        const filename=entry.name.split('/').pop();
+        const blob=await entry.async('blob');
+        const imageFile=new File([blob],filename,{type:blob.type||'image/png'});
+        _bimgFiles.push({file:imageFile,src:null,qno:null,isPassage:false,matched:null,passageId:null,skip:false,manifest:assetByPath.get(filename)||null});
+      }
+      if(!imageEntries.length)alert(`ZIP「${f.name}」中沒有可上傳的圖片`);
+    }catch(e){alert(`無法讀取 ZIP「${f.name}」：${e.message}`);}
+  }
   if(!_bimgFiles.length)return;
   let done=0;
   _bimgFiles.forEach(item=>{
@@ -1597,7 +1620,9 @@ function _bimgBuildTable(){
     });
   }
   _bimgFiles.forEach(item=>{
-    const{isPassage,qno}=_bimgParseName(item.file.name);
+    const parsed=_bimgParseName(item.file.name);
+    const isPassage=item.manifest?.primary_question===null&&/^[Pp][_-]/.test(item.file.name)?true:parsed.isPassage;
+    const qno=Number.isInteger(item.manifest?.primary_question)?item.manifest.primary_question:parsed.qno;
     item.isPassage=isPassage;item.qno=qno;item.matched=null;item.passageId=null;
     if(!exam){return;}
     if(isPassage){
@@ -1612,13 +1637,14 @@ function _bimgBuildTable(){
     const thumb=item.src?`<img src="${item.src}" class="bimg-thumb" alt="">`:'';
     const qnoStr=item.isPassage?'題組文章':(item.qno?`第 ${item.qno} 題`:'<span class="bimg-err">無法解析</span>');
     let matchHtml='';
+    const caution=item.manifest?.needs_review?'<span class="bimg-warn">需確認裁切／題號</span> ':'';
     if(item.isPassage){
       const gids=Object.keys(passageItems);
       matchHtml=gids.length>1
         ?`<span class="bimg-warn">多個題組，請選擇：${gids.map(gid=>`<button class="btn" style="font-size:11px;padding:2px 7px;margin-left:4px" onclick="_bimgPickPassage(${i},'${gid}')">題組${gid.slice(-4)}</button>`).join('')}</span>`
         :`<span class="bimg-ok">題組文章</span>`;
     }else if(item.matched){
-      matchHtml=`<span class="bimg-ok">✓ 第 ${esc(item.matched.no)} 題：${esc((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
+      matchHtml=`${caution}<span class="bimg-ok">✓ 第 ${esc(item.matched.no)} 題：${esc((item.matched.summary||item.matched.q||'').slice(0,30))}…</span>`;
     }else if(item.qno){
       matchHtml=`<span class="bimg-err">找不到第 ${item.qno||'?'} 題</span>`;
     }else if(!exam){
