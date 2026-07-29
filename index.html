@@ -5016,13 +5016,25 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
     return;
   }
   await loadAIConfig();await load();buildFilters();
+  let rawHandoff='';
   try{
     const qp=new URLSearchParams(location.search);
     const examParam=qp.get('exam');
+    rawHandoff=qp.get('handoff')||'';
     if(examParam){_pinExam=examParam;history.replaceState(null,'',location.pathname);}
   }catch(e){}
   render();
   updateBell();
+  if(rawHandoff==='questions'){
+    try{
+      const csv=localStorage.getItem('qbank_handoff_questions')||'';
+      if(csv){
+        localStorage.removeItem('qbank_handoff_questions');
+        openImport();csvArea.value=csv;
+        showToast('已從考卷前處理帶入題目 CSV，確認後按「匯入」');
+      }
+    }catch(e){console.warn('讀取 raw 題目 CSV 交接失敗',e);}
+  }
 })();
 </script>
 

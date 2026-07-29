@@ -182,11 +182,14 @@ nav{background:var(--card);border-bottom:1px solid var(--line);padding:10px 24px
       <div class="step" id="step4">
         <div class="bubble idle" id="bub4">4</div>
         <div class="step-body">
-          <div class="step-title">貼上 CSV → 下載</div>
-          <div class="step-desc">將 AI 輸出的 CSV 貼到下方，點「下載 CSV」</div>
+          <div class="step-title">貼上題目 CSV → 直接匯入題庫</div>
+          <div class="step-desc">將 AI 輸出的題目 CSV 貼到下方；會開啟題庫既有的匯入視窗供最後確認</div>
           <div class="step-msg" id="msg4"></div>
         </div>
-        <button class="btn btn-bio" id="btn4" onclick="downloadCSV()" disabled>下載 CSV</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-bio" id="btn4" onclick="sendQuestionsToQbank()" disabled>⬆ 直接匯入題庫</button>
+          <button class="btn" id="btn4Download" onclick="downloadCSV()" disabled style="font-size:12px;padding:6px 12px">⬇ 下載 CSV 備份</button>
+        </div>
       </div>
     </div>
   </div>
@@ -325,7 +328,7 @@ async function runOllamaOCR(){
     setBub(3,'done');setMsg3Skip();
     document.getElementById('csvCard').style.display='block';
     setActive(4);
-    setBub(4,'waiting');document.getElementById('btn4').disabled=false;
+    setBub(4,'waiting');document.getElementById('btn4').disabled=false;document.getElementById('btn4Download').disabled=false;
   }catch(e){
     appendLog('Ollama OCR 失敗：'+e.message);
     setBub(2,'error');setMsg(2,'失敗：'+e.message+'（可改用下方「複製 Prompt」手動處理）','err');
@@ -363,6 +366,7 @@ function resetAll(){
   [1,2,3,4].forEach(i=>{setBub(i,'idle');setMsg(i,'');document.getElementById('step'+i).classList.remove('active');});
   document.getElementById('btn1').disabled=true;
   [2,3,4].forEach(i=>document.getElementById('btn'+i).disabled=true);
+  document.getElementById('btn4Download').disabled=true;
   document.getElementById('btnOcrAuto').disabled=true;
   document.getElementById('csvCard').style.display='none';
   document.getElementById('csvArea').value='';
@@ -981,6 +985,7 @@ function step3(){
   setBub(3,'done'); setMsg(3,'好的，請在下方貼上 CSV','ok');
   document.getElementById('btn3').disabled=true;
   setBub(4,'waiting'); document.getElementById('btn4').disabled=false;
+  document.getElementById('btn4Download').disabled=false;
   document.getElementById('csvCard').style.display='block';
   setActive(4);
   setTimeout(()=>document.getElementById('csvArea').focus(),100);
@@ -1081,7 +1086,16 @@ async function runBatch(){
   setTimeout(()=>{btn.disabled=false;btn.textContent='批次整理並下載 ZIP';},4000);
 }
 
-// ── 步驟 4：下載 CSV ─────────────────────────────────────────────────
+// ── 步驟 4：交接題目 CSV 至題庫 ───────────────────────────────────────
+function sendQuestionsToQbank(){
+  const csv=document.getElementById('csvArea').value.trim();
+  if(!csv){setMsg(4,'請先貼上 CSV 內容','err');return;}
+  // raw.html 和 index.html 同網域；只暫存於此瀏覽器，題庫開啟後立即讀取並清除。
+  localStorage.setItem('qbank_handoff_questions',csv);
+  const url=`index.html?handoff=questions&exam=${encodeURIComponent(csvFilename||'')}`;
+  window.open(url,'_blank');
+  setBub(4,'done');setMsg(4,'已開啟題庫匯入視窗，請在題庫確認後按「匯入」','ok');
+}
 function downloadCSV(){
   const csv=document.getElementById('csvArea').value.trim();
   if(!csv){setMsg(4,'請先貼上 CSV 內容','err');return;}
