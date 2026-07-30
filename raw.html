@@ -18,6 +18,13 @@
     .drop{border:2px dashed #c8b89a;border-radius:10px;padding:18px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;background:#fff}.drop.drag{border-color:var(--red);background:#fff6f2}.status{font-size:12px;margin-top:8px;color:var(--muted)}.preview{display:none;margin-top:10px;padding:10px 12px;background:#fff;border-radius:8px;font-size:12px;line-height:1.6}.hide{display:none}.tool-link{min-height:30px!important;padding:0 10px!important;font-size:12px!important;color:#5c5f66!important}
     .file-state{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.55}.precision-warn{margin-top:8px;padding:8px 10px;border-radius:7px;background:#fff6e5;border-left:3px solid #d18b13;color:#855400;font-size:12px;line-height:1.6}.key-panel{margin-top:11px;padding:12px;border:1px solid #e6ddd2;background:#fffdf9;border-radius:10px}.key-panel input{margin:7px 0}.locked-note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:7px}.ready-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#aaa;margin-right:5px}.ready-dot.ok{background:var(--green)}
     .crop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:11px;margin-top:12px}.crop-card{border:1px solid #e3ddd5;border-radius:10px;padding:8px;background:#fff}.crop-card.review{border-color:#d8a446}.crop-card.reject{opacity:.58}.crop-card img{width:100%;height:118px;object-fit:contain;background:#f5f4f1;border-radius:6px;display:block}.crop-name{font-size:11px;font-weight:700;line-height:1.45;margin-top:7px;word-break:break-all}.crop-meta{font-size:11px;color:var(--muted);line-height:1.45;margin-top:3px}.crop-pill{display:inline-block;margin-top:5px;border-radius:99px;padding:2px 6px;font-size:10px;font-weight:700;background:#eef7f2;color:#177052}.crop-pill.review{background:#fff5df;color:#96610a}.crop-pill.reject{background:#fcede9;color:#a14736}.crop-actions{display:flex;gap:6px;margin-top:7px}.crop-actions .btn{padding:5px 7px;font-size:11px}.crop-summary{margin-top:10px;padding:9px 10px;border-radius:8px;background:#f6faf7;border-left:3px solid var(--green);font-size:12px;line-height:1.6}
+    .crop-pages{margin-top:14px;display:flex;flex-direction:column;gap:16px}.crop-hint{font-size:12px;color:var(--muted);line-height:1.7;margin:6px 0 2px}
+    .crop-page{position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff;box-shadow:0 2px 8px -5px rgba(0,0,0,.2);cursor:crosshair;user-select:none;line-height:0}
+    .crop-page canvas{display:block;width:100%;height:auto}
+    .crop-page .crop-page-no{position:absolute;top:6px;left:8px;background:rgba(45,48,56,.72);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;pointer-events:none;line-height:1.4;z-index:3}
+    .crop-page .sel{position:absolute;border:2px solid var(--red);background:rgba(133,1,3,.14);pointer-events:none;display:none;z-index:4}
+    .crop-page .box{position:absolute;border:2px solid var(--green);background:rgba(31,111,92,.10);z-index:2}
+    .crop-page .box .lbl{position:absolute;top:-10px;left:-2px;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;line-height:1.4}
     .detail-title{font-size:14px;font-weight:800;margin-bottom:3px}@media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
 </head>
@@ -109,7 +116,7 @@
         </li>
         <li data-step="3"><b>檢查並確認圖表素材</b>系統會先列出自動裁切候選圖表，再由 AI 標示「可保留／需人工確認／略過」。確認後才會建立可批次貼圖的素材包。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help">系統會<b>優先用精準方式</b>抽圖：有試卷寶 Word 就抽 Word 原始圖片；只有 PDF 就直接抽 PDF 內嵌圖片物件（座標取自檔案本身，不靠 AI 猜）。只有掃描型 PDF（抽不到內嵌圖）才退回 AI 偵測，此時精準度較低、請逐張確認。題號依版面自動對應，抓不到時標「Q未知＿請人工確認」。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">開始抽圖</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="status" id="cropReviewState">等待選擇檔案。有 Word 或數位 PDF 會精準抽圖；掃描檔才需要 AI。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div></div>
+          <div class="step-detail"><p class="help"><b>推薦「手動框選裁切」</b>：能 100% 精準處理題組共用圖、整張表格（含 ABCD）、整組選項圖 (A)(B)(C)(D)（連標籤一起框、但不框題幹）——這些是自動偵測做不好的地方。載入頁面後在圖上拖曳框選、放開輸入題號即可。<br>「開始抽圖（自動）」則是快速版：有 Word 抽 Word 原圖、數位 PDF 抽內嵌圖、掃描檔退回 AI（精準度較低）；抽完仍可用框選補齊或調整。</p><div class="action-row"><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">✂ 手動框選裁切（最準）</button><button class="btn" id="startCropReviewBtn" onclick="startCropReview()">開始抽圖（自動）</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="status" id="cropReviewState">等待選擇檔案。要精準處理題組共用圖／整張表格／整組選項圖，建議用「手動框選裁切」。</div><div id="cropPageArea" class="crop-pages"></div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div></div>
         </li>
         <li data-step="4"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -162,6 +169,48 @@
     function toggleCropSkip(i){cropCandidates[i].skip=!cropCandidates[i].skip;renderCropCandidates()}
     function clearCropResults(){if(!cropCandidates.length)return;if(!confirm('確定清除本次生成的所有縮圖、題號調整與待貼圖結果嗎？已選的 PDF、Word 與考卷名稱會保留。'))return;cropCandidates=[];document.getElementById('cropPreviewGrid').innerHTML='';document.getElementById('cropSummary').classList.add('hide');document.getElementById('downloadCropZipBtn').disabled=true;document.getElementById('toBatchImageBtn').disabled=true;document.getElementById('clearCropResultsBtn').disabled=true;document.getElementById('batchImportState').textContent='';document.getElementById('cropReviewState').textContent='已清除本次結果；可重新開始截圖或匯入新的 Python 初篩 ZIP。'}
     function editCropQuestion(i){const item=cropCandidates[i];const result=prompt('輸入正確題號；留空代表題號未知。',item.qno??'');if(result===null)return;const n=Number(result);item.qno=Number.isInteger(n)&&n>0?n:null;const base=item.qno===null?'Q未知':`Q${item.qno}`;item.filename=`${base}_${safeCropLabel(item.label)}${item.qno===null?'_請人工確認':''}.png`;item.verdict=item.qno===null?'review':item.verdict;renderCropCandidates()}
+    // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
+    async function startManualCrop(){
+      if(!cropFiles.pdf){alert('手動框選需要 PDF（掃描或數位皆可）。若只有 Word，請用「開始抽圖（自動）」抽 Word 原圖。');return;}
+      const status=document.getElementById('cropReviewState'),area=document.getElementById('cropPageArea'),btn=document.getElementById('manualCropBtn');
+      btn.disabled=true;area.innerHTML='';status.textContent='正在載入 PDF 頁面…';
+      try{
+        const pdfjs=await loadPdfJs();const doc=await pdfjs.getDocument({data:new Uint8Array(await cropFiles.pdf.arrayBuffer())}).promise;
+        const hint=document.createElement('div');hint.className='crop-hint';hint.innerHTML='在每頁上<b>拖曳框選</b>要的內容：整張圖／整張表格（含 ABCD）／整組選項圖 (A)(B)(C)(D)（連標籤一起框、但不要框到題幹）。放開後輸入題號即加入下方清單；<b>題組共用圖</b>填代表題號即可。';area.appendChild(hint);
+        for(let pageNo=1;pageNo<=doc.numPages;pageNo++){
+          status.textContent=`正在渲染第 ${pageNo}/${doc.numPages} 頁…`;
+          const page=await doc.getPage(pageNo);const viewport=page.getViewport({scale:2});
+          const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+          await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+          const wrap=document.createElement('div');wrap.className='crop-page';
+          wrap.appendChild(canvas);
+          const no=document.createElement('div');no.className='crop-page-no';no.textContent='第 '+pageNo+' 頁';wrap.appendChild(no);
+          const sel=document.createElement('div');sel.className='sel';wrap.appendChild(sel);
+          area.appendChild(wrap);_bindManualCrop(wrap,canvas,sel,pageNo);
+        }
+        status.textContent=`已載入 ${doc.numPages} 頁。請在頁面上拖曳框選；框好放開後輸入題號。`;
+      }catch(e){console.error(e);status.textContent='載入 PDF 失敗：'+(e.message||e);}
+      finally{btn.disabled=false;}
+    }
+    function _bindManualCrop(wrap,canvas,sel,pageNo){
+      let start=null;
+      const rel=(e)=>{const r=canvas.getBoundingClientRect();return{dx:e.clientX-r.left,dy:e.clientY-r.top,rw:r.width,rh:r.height};};
+      canvas.addEventListener('mousedown',e=>{if(e.button!==0)return;e.preventDefault();const p=rel(e);start=p;sel.style.display='block';sel.style.left=p.dx+'px';sel.style.top=p.dy+'px';sel.style.width='0';sel.style.height='0';});
+      window.addEventListener('mousemove',e=>{if(!start)return;const p=rel(e);const x=Math.min(start.dx,p.dx),y=Math.min(start.dy,p.dy),w=Math.abs(p.dx-start.dx),h=Math.abs(p.dy-start.dy);sel.style.left=x+'px';sel.style.top=y+'px';sel.style.width=w+'px';sel.style.height=h+'px';});
+      window.addEventListener('mouseup',e=>{if(!start)return;const p=rel(e);const s=start;start=null;sel.style.display='none';const x=Math.min(s.dx,p.dx),y=Math.min(s.dy,p.dy),w=Math.abs(p.dx-s.dx),h=Math.abs(p.dy-s.dy);const sc=canvas.width/s.rw;let cx=x*sc,cy=y*sc,cw=w*sc,ch=h*sc;cx=Math.max(0,cx);cy=Math.max(0,cy);cw=Math.min(canvas.width-cx,cw);ch=Math.min(canvas.height-cy,ch);if(cw<20||ch<20)return;_addManualCrop(canvas,pageNo,{x:cx,y:cy,w:cw,h:ch},wrap,sc);});
+    }
+    function _addManualCrop(canvas,pageNo,rect,wrap,sc){
+      const q=prompt('這張圖／表屬於第幾題？（題組共用圖填代表題號；留空＝未知，稍後可改）','');
+      if(q===null)return;
+      const n=parseInt(String(q).trim(),10);const qno=Number.isInteger(n)&&n>0?n:null;
+      const out=document.createElement('canvas');out.width=Math.round(rect.w);out.height=Math.round(rect.h);
+      out.getContext('2d').drawImage(canvas,Math.round(rect.x),Math.round(rect.y),Math.round(rect.w),Math.round(rect.h),0,0,out.width,out.height);
+      const src=out.toDataURL('image/png'),label='手動框選';
+      cropCandidates.push({src,page:pageNo,qno,kind:'手動裁切',label,verdict:qno===null?'review':'pass',reason:qno===null?'題號未填，請人工確認':'手動框選',skip:false,filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`});
+      const box=document.createElement('div');box.className='box';box.style.left=(rect.x/sc)+'px';box.style.top=(rect.y/sc)+'px';box.style.width=(rect.w/sc)+'px';box.style.height=(rect.h/sc)+'px';
+      const lbl=document.createElement('span');lbl.className='lbl';lbl.textContent=qno?('第'+qno+'題'):'未知';box.appendChild(lbl);wrap.appendChild(box);
+      renderCropCandidates();
+    }
     async function startCropReview(){
       if(!cropFiles.pdf&&!cropFiles.word){alert('請先在第 1 步選擇乾淨 PDF 或試卷寶 Word。');return}
       const btn=document.getElementById('startCropReviewBtn'),status=document.getElementById('cropReviewState');
