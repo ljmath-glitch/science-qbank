@@ -679,6 +679,14 @@
       <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
       <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:inherit;font-size:13px">
+      <div class="bimg-drop" style="margin:8px 0 0;padding:14px 12px"
+           onclick="this.previousElementSibling.click()"
+           ondragover="event.preventDefault();this.classList.add('drag-over')"
+           ondragleave="this.classList.remove('drag-over')"
+           ondrop="onEditImgDrop(event)">
+        <div style="font-size:22px;margin-bottom:4px">📁</div>
+        <div style="font-size:12px;color:#666">或把圖片直接拖拉到這裡（可多張、也可拖整批選取）</div>
+      </div>
       <div class="imgprev" id="eImgPrev" style="margin-top:8px"></div>
     </div>
   </div>
@@ -1794,6 +1802,17 @@ function _findBatchExam(exam){
   return softMatches.length===1?softMatches[0]:'';
 }
 // 供 raw.html 的「考卷前處理」直接交接已確認的圖表素材；不開啟批次貼圖視窗。
+function _batchExamSuggestions(exam){
+  const names=[...new Set(DB.map(it=>it.exam).filter(Boolean))];
+  const target=_batchExamTerms(exam);
+  return names.map(name=>({name,score:['school','grade','year','term','round','subject'].filter(k=>target[k]&&target[k]===_batchExamTerms(name)[k]).length}))
+    .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.name);
+}
+function listBatchExamStatus(examGuess){
+  const exam=examGuess||'';
+  const matchedExam=_findBatchExam(exam);
+  return {matchedExam,ok:!!matchedExam,suggestions:matchedExam?[]:_batchExamSuggestions(exam)};
+}
 async function importBatchHandoffImages(payload){
   for(let i=0;i<80&&!window.__qbankDataReady;i++)await new Promise(ok=>setTimeout(ok,100));
   if(!window.__qbankDataReady)throw new Error('題庫資料尚未載入，請稍後再試');
@@ -1801,11 +1820,18 @@ async function importBatchHandoffImages(payload){
   const images=Array.isArray(payload?.images)?payload.images:[];
   if(!exam)throw new Error('缺少考卷名稱');
   const matchedExam=_findBatchExam(exam);
+  if(!matchedExam){
+    const suggestions=_batchExamSuggestions(exam);
+    const err=new Error(suggestions.length?`題庫裡找不到考卷「${exam}」。最接近的是：${suggestions.join('、')}。請確認「自動校正後的題庫考試名稱」欄位，跟這份考卷實際匯入題庫時用的名稱是否一致（可直接修改該欄位成上面其中一個名稱後再試一次）。`:`題庫裡完全找不到接近「${exam}」的考卷。請確認第 I 區的題目是否已經匯入題庫，或考試名稱欄位是否正確。`);
+    err.suggestions=suggestions;
+    throw err;
+  }
   const examQs=DB.filter(it=>it.exam===matchedExam&&it.type!=='passage');
-  const groups={};let unmatched=0;
+  const groups={};let unmatched=0;let unknownQno=0;const unmatchedQnos=new Set();
   for(const image of images){
-    const q=Number.isInteger(image.qno)?examQs.find(it=>Number(it.no)===image.qno):null;
-    if(!q){unmatched++;continue;}
+    if(!Number.isInteger(image.qno)){unmatched++;unknownQno++;continue;}
+    const q=examQs.find(it=>Number(it.no)===image.qno);
+    if(!q){unmatched++;unmatchedQnos.add(image.qno);continue;}
     (groups[q.id]??={q,items:[]}).items.push(image);
   }
   let done=0,failed=0;
@@ -1821,7 +1847,7 @@ async function importBatchHandoffImages(payload){
     }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;}
   }
   if(done)render();
-  return {done,failed,unmatched,matchedExam};
+  return {done,failed,unmatched,unknownQno,unmatchedQnos:[...unmatchedQnos].sort((a,b)=>a-b),matchedExam};
 }
 
 function _bimgCopyNamingPrompt(mode){
@@ -2152,11 +2178,11 @@ function compress(d,maxW){
   });
 }
 function _imgTargetIsPassage(){const el=document.getElementById('imgTarget');return el&&el.value==='p';}
-async function addImages(e){
-  var files=e.target.files;
-  if(!files.length)return;
+async function addImageFiles(files){
+  if(!files||!files.length)return;
   const toPassage=_imgTargetIsPassage();
   for(var i=0;i<files.length;i++){
+    if(files[i].type&&files[i].type.indexOf('image')!==0)continue;
     try{
       var d=await fileToDataURL(files[i]);
       var c=await compress(d,IMG_MAXW);
@@ -2167,7 +2193,14 @@ async function addImages(e){
     }
   }
   if(toPassage)renderPassageImgPrev();else renderImgPrev();
+}
+async function addImages(e){
+  await addImageFiles(e.target.files);
   e.target.value='';
+}
+function onEditImgDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove('drag-over');
+  addImageFiles(e.dataTransfer.files);
 }
 async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
