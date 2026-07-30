@@ -60,7 +60,7 @@
           <div class="step-detail">
             <div class="detail-title">題目轉檔指令</div><p class="help">使用與題庫系統相同的完整轉檔指令；複製後開啟一個 AI，先上傳清稿 PDF，再貼上指令。</p>
             <div class="row"><button class="btn primary" onclick="copyQuestionPrompt()">📋 一鍵複製題目轉檔指令</button></div>
-            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('ChatGPT','https://chatgpt.com');return false">📱</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener">Anthropic Claude ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Claude','https://claude.ai/new');return false">📱</a></div>
+            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div>
             <textarea id="promptPreview" class="hide" readonly></textarea>
           </div>
         </li>
@@ -88,7 +88,7 @@
         </li>
         <li data-step="3"><b>交給 AI 生成詳解</b>開啟其中一個 AI，貼上詳解製作指令，並將第 1 步的乾淨 PDF 同時貼上；AI 會輸出三欄 CSV。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('ChatGPT','https://chatgpt.com');return false">📱</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener">Anthropic Claude ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Claude','https://claude.ai/new');return false">📱</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
+          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
         </li>
         <li data-step="4"><b>貼回 AI 產生的詳解 CSV</b>確認 AI 回傳的考試名稱、題號未被改動後，送入題庫詳解匯入。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -246,6 +246,16 @@
     function editCropQuestion(i){const item=cropCandidates[i];const result=prompt('輸入正確題號；留空代表題號未知。',item.qno??'');if(result===null)return;const n=Number(result);item.qno=Number.isInteger(n)&&n>0?n:null;const base=item.qno===null?'Q未知':`Q${item.qno}`;item.filename=`${base}_${safeCropLabel(item.label)}${item.qno===null?'_請人工確認':''}.png`;item.verdict=item.qno===null?'review':item.verdict;renderCropCandidates()}
     // ── 預覽 / 修正 / 提高解析度：點縮圖開燈箱 ──
     function openCropPreview(i){cropPreviewIndex=i;renderCropPreviewModal();document.getElementById('cropModalOverlay').classList.add('show')}
+    // 先試著用 App 自訂 URL scheme 直接開 App；1.2 秒內畫面被切走（跳去 App 了）就取消退回網頁的動作，
+    // 沒裝該 App 或 scheme 猜錯，1.2 秒後才會退回原本的網頁連結（等於跟現在一樣的行為，不會更糟）。
+    function openAppOrWeb(scheme,httpsUrl,ev){
+      if(ev)ev.preventDefault();
+      const to=setTimeout(()=>{location.href=httpsUrl;},1200);
+      const onHide=()=>{clearTimeout(to);document.removeEventListener('visibilitychange',onHide);};
+      document.addEventListener('visibilitychange',onHide);
+      location.href=scheme;
+      return false;
+    }
     function closeInfoModal(){document.getElementById('cropModalOverlay').classList.remove('show');document.getElementById('cropModalBody').innerHTML=''}
     function closeCropPreview(){cropPreviewIndex=null;closeInfoModal()}
     // iOS 現在不允許網頁直接匯入 .shortcut 檔（會顯示 unsigned shortcut 錯誤），只能手動建立一次；
