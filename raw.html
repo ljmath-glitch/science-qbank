@@ -424,6 +424,7 @@
         const rects=rawRects.filter(r=>{
           if(r.w<40||r.h<30)return false;                 // 太小（多為 icon/裝飾）
           if(r.y<pageH*0.07&&r.w<pageW*0.5)return false;   // 頁首小圖（校名/Logo）
+          if(r.w>pageW*0.85&&r.h>pageH*0.85)return false;  // 整頁大小（多半是清筆跡工具把整頁攤平成一張大圖，不是單一圖表；交給下面的 AI 表格/全頁偵測找真正的裁切範圍）
           const ar=r.w/r.h;return ar<=18&&ar>=0.06;        // 過細線條排除
         }).map(r=>({...r,qno:_qnoForRect(r,textItems)}));
         const clusters=_clusterOptionRects(rects);
