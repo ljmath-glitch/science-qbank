@@ -94,7 +94,7 @@
             <div class="file-state"><span id="cropPdfDot" class="ready-dot"></span><span id="cropPdfState">尚未選擇 PDF</span><br><span id="cropWordDot" class="ready-dot"></span><span id="cropWordState">尚未選擇 Word</span></div><div id="cropPrecisionWarn" class="precision-warn">⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升裁切與題號對應的精準度。</div>
           </div>
         </li>
-        <li data-step="2"><b>AI 二次檢查（選用）</b>需要更嚴格檢查裁切邊界、圖表類型與題號時再啟用；不使用 AI 可直接進入第 3 步。
+        <li data-step="2"><b>AI 二次檢查（僅掃描檔需要）</b>系統會優先用精準方式抽圖（Word 原始圖／PDF 內嵌圖）；只有掃描型 PDF 抽不到內嵌圖時才需要 AI。有 Word 或數位 PDF 可略過，直接進第 3 步。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <button id="openGeminiKeyBtn" class="btn primary" onclick="openGeminiKey()">✨ 啟動 AI 二次檢查</button>
@@ -109,7 +109,7 @@
         </li>
         <li data-step="3"><b>檢查並確認圖表素材</b>系統會先列出自動裁切候選圖表，再由 AI 標示「可保留／需人工確認／略過」。確認後才會建立可批次貼圖的素材包。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help">開始後會逐頁偵測圖、表格、裝置圖、流程圖與座標圖；頁首校名、Logo、題號、題幹與選項都不應列入。AI 無法確認題號時會標示「Q未知＿請人工確認」，絕不任意猜題號。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">開始截圖與 AI 二次檢查</button><input id="candidateZip" type="file" accept=".zip,application/zip" class="hide" onchange="loadCandidateZip(this.files[0]);this.value=''"><button class="btn" onclick="candidateZip.click()">不使用 AI：匯入 Python 初篩 ZIP</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="status" id="cropReviewState">等待選擇檔案；AI 二次檢查為選用。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div></div>
+          <div class="step-detail"><p class="help">系統會<b>優先用精準方式</b>抽圖：有試卷寶 Word 就抽 Word 原始圖片；只有 PDF 就直接抽 PDF 內嵌圖片物件（座標取自檔案本身，不靠 AI 猜）。只有掃描型 PDF（抽不到內嵌圖）才退回 AI 偵測，此時精準度較低、請逐張確認。題號依版面自動對應，抓不到時標「Q未知＿請人工確認」。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">開始抽圖</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="status" id="cropReviewState">等待選擇檔案。有 Word 或數位 PDF 會精準抽圖；掃描檔才需要 AI。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div></div>
         </li>
         <li data-step="4"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -155,14 +155,87 @@
     function cropDataUrl(canvas,box){const pad=10;const x=Math.max(0,Math.round(box.x/1000*canvas.width)-pad),y=Math.max(0,Math.round(box.y/1000*canvas.height)-pad);const right=Math.min(canvas.width,Math.round((box.x+box.w)/1000*canvas.width)+pad),bottom=Math.min(canvas.height,Math.round((box.y+box.h)/1000*canvas.height)+pad);if(right-x<30||bottom-y<30)return null;const out=document.createElement('canvas');out.width=right-x;out.height=bottom-y;out.getContext('2d').drawImage(canvas,x,y,right-x,bottom-y,0,0,right-x,bottom-y);return out.toDataURL('image/png')}
     function safeCropLabel(s){return String(s||'圖表').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'').slice(0,18)||'圖表'}
     async function askGeminiPage(imageData,pageNo){const instruction=`你是臺灣自然科考卷的「圖表裁切與題號對應」檢查員。以下是一整頁掃描考卷。找出所有需要獨立裁切的原始視覺素材：資料表格、折線圖、長條圖、圓餅圖、座標圖、實驗裝置圖、流程圖、結構圖、照片、標籤圖。\n嚴格排除：頁首校名、學校 Logo、出版商 Logo、頁碼、純文字題幹、題號、選項、答案欄、姓名欄、裝飾線。表格必須列入。\n每個素材要依頁內「如圖／如表」引用或相鄰題目，填最早引用的阿拉伯數字題號。無法確定題號時 qno 必須是 null，不可猜。\n座標以頁面左上為原點，範圍 0 到 1000；x,y,w,h 必須完整包含圖／表、圖例、座標軸、單位及圖表標籤，但不要包含題幹、題號或選項。\n只回傳 JSON：{"assets":[{"qno":9或null,"kind":"表格|折線圖|裝置圖|流程圖|結構圖|照片|圖表","label":"簡短繁體中文描述","x":0,"y":0,"w":0,"h":0,"verdict":"pass|review","reason":"簡短原因"}]}。若本頁沒有符合項目，assets 是空陣列。這是第 ${pageNo} 頁。`;
-      const comma=imageData.indexOf(','),mime=(imageData.slice(0,comma).match(/data:([^;]+)/)||[])[1]||'image/jpeg';const payload={contents:[{parts:[{text:instruction},{inline_data:{mime_type:mime,data:imageData.slice(comma+1)}}]}],generationConfig:{temperature:0,responseMimeType:'application/json',maxOutputTokens:1000}};let last='';
+      const comma=imageData.indexOf(','),mime=(imageData.slice(0,comma).match(/data:([^;]+)/)||[])[1]||'image/jpeg';const payload={contents:[{parts:[{text:instruction},{inline_data:{mime_type:mime,data:imageData.slice(comma+1)}}]}],generationConfig:{temperature:0,responseMimeType:'application/json',maxOutputTokens:2048,thinkingConfig:{thinkingBudget:0}}};let last='';
       for(const model of ['gemini-3.5-flash-lite','gemini-3.5-flash']){const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});if(res.ok){const body=await res.json();const raw=body.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'{"assets":[]}';return JSON.parse(raw.replace(/^```json\s*|\s*```$/g,''))}last=await res.text();if(res.status===403)throw new Error('Gemini 金鑰沒有 API 使用權限，或帳戶配額不足。');if(res.status!==429&&res.status!==503&&res.status!==404)throw new Error(`Gemini 無法使用（${res.status}）。請確認金鑰與 API 權限。`)}throw new Error('Gemini 目前繁忙或沒有可用配額；已用省錢模型與備援模型各嘗試一次，請稍後再試。')}
     function renderCropCandidates(){const grid=document.getElementById('cropPreviewGrid');const active=cropCandidates.filter(x=>!x.skip);const unknown=active.filter(x=>x.qno===null).length;const review=active.filter(x=>x.verdict!=='pass').length;const sum=document.getElementById('cropSummary');sum.classList.remove('hide');sum.textContent=`共偵測 ${cropCandidates.length} 張候選素材，保留 ${active.length} 張；其中 ${unknown} 張題號未知、${review} 張需人工確認。表格已包含在候選素材內。`;document.getElementById('clearCropResultsBtn').disabled=!cropCandidates.length;
       grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':` · 第 ${it.qno} 題`}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span><div class="crop-meta">${esc(it.reason||'')}</div><div class="crop-actions"><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button><button class="btn" onclick="editCropQuestion(${i})">改題號</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length}
     function toggleCropSkip(i){cropCandidates[i].skip=!cropCandidates[i].skip;renderCropCandidates()}
     function clearCropResults(){if(!cropCandidates.length)return;if(!confirm('確定清除本次生成的所有縮圖、題號調整與待貼圖結果嗎？已選的 PDF、Word 與考卷名稱會保留。'))return;cropCandidates=[];document.getElementById('cropPreviewGrid').innerHTML='';document.getElementById('cropSummary').classList.add('hide');document.getElementById('downloadCropZipBtn').disabled=true;document.getElementById('toBatchImageBtn').disabled=true;document.getElementById('clearCropResultsBtn').disabled=true;document.getElementById('batchImportState').textContent='';document.getElementById('cropReviewState').textContent='已清除本次結果；可重新開始截圖或匯入新的 Python 初篩 ZIP。'}
     function editCropQuestion(i){const item=cropCandidates[i];const result=prompt('輸入正確題號；留空代表題號未知。',item.qno??'');if(result===null)return;const n=Number(result);item.qno=Number.isInteger(n)&&n>0?n:null;const base=item.qno===null?'Q未知':`Q${item.qno}`;item.filename=`${base}_${safeCropLabel(item.label)}${item.qno===null?'_請人工確認':''}.png`;item.verdict=item.qno===null?'review':item.verdict;renderCropCandidates()}
-    async function startCropReview(){if(!cropFiles.pdf&&!cropFiles.word){alert('請先在第 1 步選擇乾淨 PDF 或試卷寶 Word。');return}if(!cropFiles.pdf){await extractWordCandidates();return}if(!transientGeminiKey){if(cropFiles.word){await extractWordCandidates();return}document.getElementById('cropReviewState').textContent='已略過 AI 二次檢查。只有 PDF 時請使用本機 Python 初篩工具產生候選素材後再帶入；若有 Word，系統可直接抽取 Word 原始圖片。';return}const btn=document.getElementById('startCropReviewBtn'),status=document.getElementById('cropReviewState');btn.disabled=true;cropCandidates=[];document.getElementById('cropPreviewGrid').innerHTML='';try{status.textContent='正在載入 PDF…';const pdfjs=await loadPdfJs();const doc=await pdfjs.getDocument({data:new Uint8Array(await cropFiles.pdf.arrayBuffer())}).promise;for(let pageNo=1;pageNo<=doc.numPages;pageNo++){status.textContent=`正在分析第 ${pageNo}/${doc.numPages} 頁（AI 偵測圖與表格）…`;const page=await doc.getPage(pageNo);const viewport=page.getViewport({scale:1.6});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;const result=await askGeminiPage(canvas.toDataURL('image/jpeg',.86),pageNo);for(const asset of (result.assets||[])){const valid=Number.isFinite(asset.x)&&Number.isFinite(asset.y)&&Number.isFinite(asset.w)&&Number.isFinite(asset.h)&&asset.w>35&&asset.h>28&&asset.y>=70&&asset.x>=0&&asset.x+asset.w<=1010&&asset.y+asset.h<=1010;if(!valid)continue;const src=cropDataUrl(canvas,asset);if(!src)continue;const qno=Number.isInteger(asset.qno)&&asset.qno>0?asset.qno:null;const verdict=asset.verdict==='pass'&&qno!==null?'pass':'review';const label=safeCropLabel(asset.label||asset.kind);cropCandidates.push({src,page:pageNo,qno,kind:asset.kind||'圖表',label,verdict,reason:asset.reason||'',skip:false,filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`})}}if(!cropCandidates.length){status.textContent='沒有偵測到可裁切的圖或表格。請確認 PDF 是否清楚，或改用人工補圖。'}else{status.textContent='分析完成。請檢查縮圖、題號與檔名；題號未知或需確認的素材請手動調整。';renderCropCandidates()}}catch(e){console.error(e);status.textContent='分析失敗：'+(e.message||e)+'。請確認 Gemini 金鑰、網路與 PDF 是否可讀取。'}finally{btn.disabled=false}}
+    async function startCropReview(){
+      if(!cropFiles.pdf&&!cropFiles.word){alert('請先在第 1 步選擇乾淨 PDF 或試卷寶 Word。');return}
+      const btn=document.getElementById('startCropReviewBtn'),status=document.getElementById('cropReviewState');
+      btn.disabled=true;cropCandidates=[];document.getElementById('cropPreviewGrid').innerHTML='';
+      try{
+        // 1) 有試卷寶 Word → 直接抽原始內嵌圖片（最精準，免 AI 猜座標）
+        if(cropFiles.word){status.textContent='正在從 Word 抽取原始圖片（最精準）…';const ok=await extractWordCandidates();if(ok)return;}
+        // 2) 有 PDF → 先試「直接抽 PDF 內嵌圖片物件」（數位 PDF 精準，座標來自 PDF 本身）
+        if(cropFiles.pdf){
+          status.textContent='正在從 PDF 直接抽取內嵌圖片（數位 PDF 最精準）…';
+          let embedded=[];try{embedded=await extractPdfEmbeddedImages(status);}catch(e){console.warn('PDF 內嵌圖抽取失敗',e);}
+          if(embedded.length){cropCandidates=embedded;status.textContent=`已直接從 PDF 抽出 ${embedded.length} 張內嵌圖片（精準裁切，未用 AI 猜座標）。請確認題號後批次貼圖。`;renderCropCandidates();return;}
+          // 3) 抽不到內嵌圖（多半是掃描檔）→ 退回 AI 座標偵測
+          if(!transientGeminiKey){status.textContent='這份 PDF 抽不到內嵌圖（多半是掃描檔）。建議改提供試卷寶 Word（.docx）以精準抽圖；或到第 2 步啟動 AI 二次檢查再試（掃描檔精準度較低）。';return;}
+          status.textContent='這份 PDF 沒有內嵌圖（掃描檔），改用 AI 偵測；精準度較低，請務必逐張人工確認…';
+          await _aiCropReview(status);return;
+        }
+      }catch(e){console.error(e);status.textContent='分析失敗：'+(e.message||e)+'。請確認檔案是否可讀取。';}
+      finally{btn.disabled=false}
+    }
+    // 數位 PDF：用 pdf.js 直接抽內嵌圖片物件，座標精準（不叫 AI 猜）
+    async function extractPdfEmbeddedImages(status){
+      const pdfjs=await loadPdfJs();const OPS=pdfjs.OPS,Util=pdfjs.Util;
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await cropFiles.pdf.arrayBuffer())}).promise;
+      const found=[];
+      for(let pageNo=1;pageNo<=doc.numPages;pageNo++){
+        if(status)status.textContent=`正在從 PDF 抽取內嵌圖片（第 ${pageNo}/${doc.numPages} 頁）…`;
+        const page=await doc.getPage(pageNo);const viewport=page.getViewport({scale:2});
+        const pageW=viewport.width,pageH=viewport.height;
+        const canvas=document.createElement('canvas');canvas.width=Math.ceil(pageW);canvas.height=Math.ceil(pageH);
+        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        let textItems=[];try{const tc=await page.getTextContent();textItems=tc.items.filter(it=>it.str&&it.str.trim()).map(it=>{const m=Util.transform(viewport.transform,it.transform);return{str:it.str,x:m[4],y:m[5]};});}catch(e){}
+        let rects=[];try{const opList=await page.getOperatorList();rects=_pdfImageRects(opList,OPS,Util,viewport);}catch(e){continue;}
+        for(const r of rects){
+          if(r.w<40||r.h<30)continue;                 // 太小（多為 icon/裝飾）
+          if(r.y<pageH*0.07&&r.w<pageW*0.5)continue;   // 頁首小圖（校名/Logo）
+          const ar=r.w/r.h;if(ar>18||ar<0.06)continue; // 過細線條
+          const src=_cropRectPng(canvas,r);if(!src)continue;
+          const qno=_qnoForRect(r,textItems);const label='PDF內嵌圖';
+          found.push({src,page:pageNo,qno,kind:'圖片',label,verdict:qno===null?'review':'pass',reason:qno===null?'附近找不到明確題號，請人工確認':'依版面位置對應題號',skip:false,filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`});
+        }
+      }
+      return found;
+    }
+    // 重播 PDF 繪圖指令，追蹤變換矩陣，抓每個內嵌圖片在頁面上的精確方框（viewport px）
+    function _pdfImageRects(opList,OPS,Util,viewport){
+      let ctm=[1,0,0,1,0,0];const stack=[];const rects=[];
+      const imgOps=new Set([OPS.paintImageXObject,OPS.paintInlineImageXObject,OPS.paintImageXObjectRepeat,OPS.paintJpegXObject].filter(v=>v!==undefined));
+      for(let i=0;i<opList.fnArray.length;i++){
+        const fn=opList.fnArray[i];
+        if(fn===OPS.save)stack.push(ctm.slice());
+        else if(fn===OPS.restore)ctm=stack.pop()||[1,0,0,1,0,0];
+        else if(fn===OPS.transform)ctm=Util.transform(ctm,opList.argsArray[i]);
+        else if(imgOps.has(fn)){const m=Util.transform(viewport.transform,ctm);const cs=[[0,0],[1,0],[1,1],[0,1]].map(p=>Util.applyTransform(p,m));const xs=cs.map(c=>c[0]),ys=cs.map(c=>c[1]);const x=Math.min(...xs),y=Math.min(...ys);rects.push({x,y,w:Math.max(...xs)-x,h:Math.max(...ys)-y});}
+      }
+      return rects;
+    }
+    function _cropRectPng(canvas,r){const pad=6;const x=Math.max(0,Math.round(r.x)-pad),y=Math.max(0,Math.round(r.y)-pad);const right=Math.min(canvas.width,Math.round(r.x+r.w)+pad),bottom=Math.min(canvas.height,Math.round(r.y+r.h)+pad);if(right-x<30||bottom-y<30)return null;const out=document.createElement('canvas');out.width=right-x;out.height=bottom-y;out.getContext('2d').drawImage(canvas,x,y,right-x,bottom-y,0,0,right-x,bottom-y);return out.toDataURL('image/png');}
+    // 依版面位置，找最接近圖片上方/左上的題號（如 "12." "第12題"）
+    function _qnoForRect(r,textItems){let best=null,bestDist=1e9;for(const t of textItems){const m=t.str.match(/(?:第\s*)?(\d{1,3})\s*(?:題|[\.、．)])/);if(!m)continue;const n=Number(m[1]);if(!(n>0&&n<=99))continue;if(t.y>r.y+r.h+10)continue;const above=t.y<=r.y+8;const dy=Math.abs(t.y-r.y),dx=Math.max(0,r.x-t.x);const dist=(above?dy:dy*2)+dx*0.3;if(dist<bestDist){bestDist=dist;best=n;}}return best;}
+    // 掃描 PDF 退回方案：AI 偵測（精準度較低），逐頁容錯不整批作廢
+    async function _aiCropReview(status){
+      const pdfjs=await loadPdfJs();const doc=await pdfjs.getDocument({data:new Uint8Array(await cropFiles.pdf.arrayBuffer())}).promise;const failedPages=[];
+      for(let pageNo=1;pageNo<=doc.numPages;pageNo++){
+        status.textContent=`正在分析第 ${pageNo}/${doc.numPages} 頁（AI 偵測圖與表格）…`;
+        const page=await doc.getPage(pageNo);const viewport=page.getViewport({scale:1.6});const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
+        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        let result;try{result=await askGeminiPage(canvas.toDataURL('image/jpeg',.86),pageNo);}catch(e){console.warn('page',pageNo,e);failedPages.push(pageNo);continue;}
+        for(const asset of (result.assets||[])){const valid=Number.isFinite(asset.x)&&Number.isFinite(asset.y)&&Number.isFinite(asset.w)&&Number.isFinite(asset.h)&&asset.w>35&&asset.h>28&&asset.y>=70&&asset.x>=0&&asset.x+asset.w<=1010&&asset.y+asset.h<=1010;if(!valid)continue;const src=cropDataUrl(canvas,asset);if(!src)continue;const qno=Number.isInteger(asset.qno)&&asset.qno>0?asset.qno:null;const verdict=asset.verdict==='pass'&&qno!==null?'pass':'review';const label=safeCropLabel(asset.label||asset.kind);cropCandidates.push({src,page:pageNo,qno,kind:asset.kind||'圖表',label,verdict,reason:asset.reason||'',skip:false,filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`})}
+      }
+      const failNote=failedPages.length?`（第 ${failedPages.join('、')} 頁 AI 未完成）`:'';
+      if(!cropCandidates.length)status.textContent='沒有偵測到可裁切的圖或表格。建議改用試卷寶 Word 精準抽圖，或人工補圖。'+failNote;
+      else{status.textContent='AI 分析完成（掃描檔精準度較低，請逐張確認題號與裁切範圍）。'+failNote;renderCropCandidates();}
+    }
     async function downloadCropZip(){const keep=cropCandidates.filter(x=>!x.skip);if(!keep.length)return;const JSZip=await loadZipJs();const zip=new JSZip();const manifest=[];for(const item of keep){zip.file(item.filename,item.src.slice(item.src.indexOf(',')+1),{base64:true});manifest.push({file:item.filename,primary_question:item.qno,kind:item.kind,page:item.page,needs_review:item.verdict!=='pass',note:item.reason})}zip.file('manifest.json',JSON.stringify({exam:examName.value||cropFiles.pdf?.name||'',assets:manifest},null,2));const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(examName.value||'圖表素材')+'_圖表素材.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
     async function loadCandidateZip(file){if(!file)return;const status=document.getElementById('cropReviewState');try{status.textContent='正在讀取 Python 初篩素材 ZIP…';const JSZip=await loadZipJs(),zip=await JSZip.loadAsync(file);let manifest={assets:[]};const mf=zip.file(/(^|\/)manifest\.json$/i)[0];if(mf)manifest=JSON.parse(await mf.async('text'));const byName=new Map((manifest.assets||[]).map(x=>[String(x.file).split('/').pop(),x]));const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(png|jpe?g|webp)$/i.test(x.name));cropCandidates=[];for(const entry of entries){const name=entry.name.split('/').pop(),meta=byName.get(name)||{};const blob=await entry.async('blob'),src=await new Promise(ok=>{const r=new FileReader();r.onload=()=>ok(r.result);r.readAsDataURL(blob)});const qno=Number.isInteger(meta.primary_question)?meta.primary_question:null;cropCandidates.push({src,page:meta.page||'?',qno,kind:meta.kind||'圖表',label:safeCropLabel(name.replace(/\.[^.]+$/,'')),verdict:meta.needs_review||qno===null?'review':'pass',reason:meta.note||'',skip:false,filename:name})}status.textContent=`已載入 ${cropCandidates.length} 張 Python 初篩素材；請預覽後直接批次貼入題庫。`;renderCropCandidates()}catch(e){console.error(e);status.textContent='無法讀取素材 ZIP：'+(e.message||e)}}
     async function batchImportToQbank(){const images=cropCandidates.filter(x=>!x.skip);if(!images.length){alert('請先在第 3 步保留至少一張圖表素材。');return}if(!examName.value){alert('找不到前面校正的考卷名稱，請先在第 I 區丟入考卷檔案。');return}const btn=document.getElementById('toBatchImageBtn'),state=document.getElementById('batchImportState');btn.disabled=true;state.textContent='正在批次貼入題庫…';try{const importer=await waitForPromptBuilder('importBatchHandoffImages');const result=await importer({exam:examName.value,images:images.map(x=>({src:x.src,filename:x.filename,qno:x.qno,needs_review:x.verdict!=='pass'}))});const examNote=result.matchedExam&&result.matchedExam!==examName.value?`（已自動對應「${result.matchedExam}」）`:'';state.textContent=`完成：成功貼入 ${result.done} 張${result.unmatched?`，${result.unmatched} 張找不到對應題目`:''}${result.failed?`，${result.failed} 張失敗`:''}。${examNote}`;if(result.done){document.getElementById('finishRawBtn').disabled=false}}catch(e){state.textContent='批次貼圖失敗：'+(e.message||e)}finally{btn.disabled=false}}
