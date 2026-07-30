@@ -4,13 +4,5 @@
   ],
   "rewrites": [
     { "source": "/daily-qcard", "destination": "/daily.html" }
-  ],
-  "headers": [
-    {
-      "source": "/shortcuts/(.*).shortcut",
-      "headers": [
-        { "key": "Content-Type", "value": "application/octet-stream" }
-      ]
-    }
   ]
 }

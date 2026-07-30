@@ -1762,7 +1762,7 @@ async function _bimgConfirm(){
       const uploaded=await uploadImgs(imgs,id);
       const existing=grp.q.imgs||[];
       const merged=[...existing,...uploaded];
-      const{error}=await sb.from('questions').update({imgs:JSON.stringify(merged),updated_at:new Date().toISOString()}).eq('id',id);
+      const{error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',id);
       if(error)throw error;
       // Update local DB
       const local=DB.find(q=>q.id===id)||Object.values(PASSAGES).find(p=>p.id===id);
@@ -1840,7 +1840,7 @@ async function importBatchHandoffImages(payload){
       const imgs=group.items.map(image=>({src:image.src,width:600,align:'center'}));
       const uploaded=await uploadImgs(imgs,group.q.id);
       const merged=[...(group.q.imgs||[]),...uploaded];
-      const {error}=await sb.from('questions').update({imgs:JSON.stringify(merged),updated_at:new Date().toISOString()}).eq('id',group.q.id);
+      const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
       if(error)throw error;
       const local=DB.find(it=>it.id===group.q.id);if(local)local.imgs=merged;
       done+=group.items.length;
