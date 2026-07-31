@@ -56,7 +56,7 @@
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <ol class="steps">
         <li data-step="1"><b>清除筆跡</b>開啟試卷寶，登入帳號密碼請詢問主管；完成清稿後輸出乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" target="_blank" rel="noopener" onclick="return openAppOrWeb('shijuanbao://','https://shijuanbao.aizuoye100.com/home',event)">↗ 試卷寶</a><a class="btn tool-link" href="#" onclick="showAppGuide('試卷寶','https://shijuanbao.aizuoye100.com/home');return false">📱 加到主畫面</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機版可以按「📱 加到主畫面」看怎麼把試卷寶變成一個可以直接點的圖示。</p></div>
+          <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" rel="noopener">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
         </li>
         <li data-step="2"><b>丟入考卷，自動校正名稱</b>拖入或選擇考卷檔案，系統會讀取檔名並整理成題庫命名格式；請人工確認結果一次。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
@@ -71,7 +71,7 @@
           <div class="step-detail">
             <div class="detail-title">題目轉檔指令</div><p class="help">使用與題庫系統相同的完整轉檔指令；複製後開啟一個 AI，先上傳清稿 PDF，再貼上指令。</p>
             <div class="row"><button class="btn primary" onclick="copyQuestionPrompt()">📋 一鍵複製題目轉檔指令</button></div>
-            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div>
+            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div>
             <textarea id="promptPreview" class="hide" readonly></textarea>
           </div>
         </li>
@@ -99,7 +99,7 @@
         </li>
         <li data-step="3"><b>交給 AI 生成詳解</b>開啟其中一個 AI，貼上詳解製作指令，並將第 1 步的乾淨 PDF 同時貼上；AI 會輸出三欄 CSV。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="#" title="加到主畫面說明" onclick="showAppGuide('Gemini','https://gemini.google.com/app');return false">📱</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
+          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
         </li>
         <li data-step="4"><b>貼回 AI 產生的詳解 CSV</b>確認 AI 回傳的考試名稱、題號未被改動後，送入題庫詳解匯入。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -324,26 +324,6 @@
     function _eraserUndo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserHistory.length)return;const ctx=canvas.getContext('2d');try{_eraserRedoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));}catch(e){}const img=_eraserHistory.pop();if(img)ctx.putImageData(img,0,0);}
     function _eraserRedo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserRedoStack.length)return;const ctx=canvas.getContext('2d');try{_eraserHistory.push(ctx.getImageData(0,0,canvas.width,canvas.height));}catch(e){}const img=_eraserRedoStack.pop();if(img)ctx.putImageData(img,0,0);}
     function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas');if(!canvas||!cropCandidates[i])return;cropCandidates[i].src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
-    // iOS 現在不允許網頁直接匯入 .shortcut 檔（會顯示 unsigned shortcut 錯誤），只能手動建立一次；
-    // 建好後可加到主畫面，之後點圖示效果跟真的捷徑一樣。
-    function showAppGuide(name,url){
-      document.getElementById('cropModalBody').innerHTML=`
-        <div class="crop-modal-title">把「${esc(name)}」加到主畫面</div>
-        <div class="crop-modal-meta">
-          蘋果不允許網頁直接安裝捷徑檔案（會顯示「Importing unsigned shortcut files is not supported」），只能照這樣手動建立一次，之後就是主畫面上一個可以直接點的圖示：<br><br>
-          1. 開啟「捷徑」App（Shortcuts），點右上角 <b>＋</b> 新增捷徑<br>
-          2. 點「加入動作」，搜尋「<b>開啟URL</b>」（Open URLs），加進去<br>
-          3. 把網址欄貼上：<br><code style="word-break:break-all">${esc(url)}</code><br>
-          4. 點頂部的名稱把捷徑改名成「${esc(name)}」（方便辨識）<br>
-          5. 點右上角「⋯」設定 → <b>加入主畫面</b>（Add to Home Screen）<br><br>
-          之後點主畫面那個圖示：如果手機有裝「${esc(name)}」的 App 且它支援直接跳轉，會直接開 App；沒裝就開網頁版。
-        </div>
-        <div class="action-row">
-          <button class="btn primary" onclick="navigator.clipboard&&navigator.clipboard.writeText('${jsStr(url)}').then(()=>{this.textContent='已複製 ✓'});">📋 複製網址</button>
-          <button class="btn" onclick="closeInfoModal()">關閉</button>
-        </div>`;
-      document.getElementById('cropModalOverlay').classList.add('show');
-    }
     function renderCropPreviewModal(){
       const i=cropPreviewIndex;const it=cropCandidates[i];if(!it)return;
       const canUpscale=it.rect&&Number.isInteger(it.page)&&cropFiles.pdf&&(it.renderScale||2)<MAX_CROP_RENDER_SCALE;
