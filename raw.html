@@ -57,7 +57,7 @@
             <input id="paperFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.md" class="hide" onchange="readPaperFile(this.files[0])">
             <div class="drop" onclick="paperFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readPaperFile(event.dataTransfer.files[0])">丟入或選擇考卷檔案<br><span class="help">PDF、Word 或掃描圖片皆可；只讀取檔名，不會上傳檔案。</span></div>
             <input id="rawName" class="hide">
-            <div class="field" style="margin-top:12px"><label for="examName">自動校正後的題庫考試名稱（可直接修改）</label><input id="examName" placeholder="請先丟入考卷檔案"></div>
+            <div class="field" style="margin-top:12px"><label for="examName">自動校正後的題庫考試名稱（可直接修改，或從題庫既有名稱挑選）</label><input id="examName" list="examNameOptions" onfocus="loadExamNameOptions()" placeholder="請先丟入考卷檔案，或點此輸入／挑選"><datalist id="examNameOptions"></datalist></div>
             <div class="status" id="nameStatus">命名格式：學校-年級-學年度-上／下學期-第幾次段考-科目（辨識到才加入）。若第 III 部分批次貼圖時顯示找不到考卷，代表這欄跟實際匯入題庫時用的名稱不一致，請直接修改這欄成題庫裡的正確名稱。</div>
           </div>
         </li>
@@ -146,6 +146,19 @@
     document.querySelectorAll('.steps>li').forEach(card=>card.addEventListener('click',event=>{if(event.target.closest('button,a,input,textarea,select,label'))return;const detail=card.querySelector('.step-detail');if(detail&&detail.classList.contains('open')&&event.target.closest('.step-detail'))return;const toggle=card.querySelector('.toggle-detail');if(toggle)toggleDetail(toggle)}));
     function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
     function readPaperFile(f){if(!f)return;rawName.value=f.name;normalizeName()}
+    // 從題庫（隱藏 iframe 的 index.html）讀取既有考卷名稱，做成自動完成清單，避免匯入/貼圖時名稱對不上
+    let _examOptsLoaded=false;
+    async function loadExamNameOptions(){
+      if(_examOptsLoaded)return;
+      try{
+        const w=document.getElementById('promptSource').contentWindow;
+        for(let i=0;i<60&&!(w&&w.__qbankDataReady);i++)await new Promise(r=>setTimeout(r,150));
+        const names=(w&&typeof w.getExamNames==='function')?w.getExamNames():[];
+        if(names.length){document.getElementById('examNameOptions').innerHTML=names.map(n=>`<option value="${String(n).replace(/"/g,'&quot;')}">`).join('');_examOptsLoaded=true;
+          nameStatus.textContent='提示：點考試名稱欄可從題庫既有的 '+names.length+' 個考卷名稱挑選，挑到跟題庫一致的名稱，匯入／貼圖就不會對不上。';}
+      }catch(e){}
+    }
+    window.addEventListener('load',()=>setTimeout(loadExamNameOptions,1200));
     function normalizeName(){const raw=rawName.value.replace(/\.(pdf|doc|docx|jpg|jpeg|png|md)$/i,'');const fullSchool=(raw.match(/[\u4e00-\u9fff]{2,}(?:國中|高中|高職|附中)/)||[])[0]||'';const prefixSchool=(raw.match(/^(.+?)[\s_-]*(?:(?:國|G)?[789]|[七八九])(?:年級|年)?/)||[])[1]||'';const schoolAlias={慈:'慈文國中'};const school=(fullSchool||schoolAlias[prefixSchool]||(prefixSchool.length>=2?prefixSchool:'')).replace(/附中$/,'國中');let g=(raw.match(/(?:國|G)?\s*([789])\s*年?級?/)||[])[1];if(!g){const m=raw.match(/([七八九])\s*年?級?/);g=m&&({七:'7',八:'8',九:'9'}[m[1]])}const grade=g?`${({7:'七',8:'八',9:'九'}[g]||g)}年級`:'';const compact=raw.match(/(1\d{2})\s*[-_/]\s*([12])\s*[-_/]\s*([123])(?:\D|$)/);let ym=raw.match(/(1\d{2})\s*(?:學年度)?\s*([上下])/);if(!ym){const m=raw.match(/(1\d{2})\s*[-_/]\s*([12])/);ym=m&&[null,m[1],m[2]==='1'?'上':'下']}const year=ym?ym[1]:'';const term=ym?`${ym[2]}學期`:'';const r=compact||raw.match(/(?:第?\s*)?([一二三123])\s*(?:次)?\s*(?:段考|段)/);const n=r&&({一:'一',1:'一',二:'二',2:'二',三:'三',3:'三'}[r[compact?3:1]]);const round=n?`第${n}次段考`:'';const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||(/理(?=[_+\-]|$)/.test(raw)?'理化':'');const out=[school,grade,year,term,round,subject].filter(Boolean).join('-');if(out)examName.value=out;nameStatus.textContent=out?'已從「'+rawName.value+'」自動整理：'+out:'檔名的關鍵字不足，請換用包含學校、年級、學年度、上／下學期與段考的檔名。'}
     async function waitForPromptBuilder(name){for(let i=0;i<40;i++){const fn=promptSource.contentWindow&&promptSource.contentWindow[name];if(typeof fn==='function')return fn;await new Promise(ok=>setTimeout(ok,150))}throw new Error('題庫指令尚未載入，請稍後重試。')}
     async function copySolutionPrompt(){try{const builder=await waitForPromptBuilder('buildSolBatchPrompt');const ex=builder([]);let p='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(60)+'\n\n【使用者訊息 user】\n'+ex.msg;if(examName.value)p='【本次指定考試名稱】'+examName.value+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+p;await navigator.clipboard.writeText(p);alert('已複製詳解製作指令。請同時上傳清稿 PDF，再貼上此指令。')}catch(e){solutionPromptPreview.value='請改至題庫首頁按「詳解製作指令」複製。\n'+e.message;solutionPromptPreview.classList.remove('hide')}}

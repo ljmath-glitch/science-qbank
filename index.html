@@ -1477,6 +1477,8 @@ async function applyGroupIdTool(){
 let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
 let QUICK_CHAPTER_RANGE=null, QUICK_CHAPTERS=[];
 window.__qbankDataReady=false;
+// 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
+window.getExamNames=function(){try{return [...new Set(DB.map(function(x){return x&&x.exam}).filter(Boolean))].sort();}catch(e){return [];}};
 function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
