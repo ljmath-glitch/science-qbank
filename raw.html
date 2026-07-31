@@ -33,6 +33,11 @@
     .crop-modal img{max-width:100%;max-height:58vh;object-fit:contain;display:block;margin:0 auto;background:#f5f4f1;border-radius:8px}
     .crop-modal .crop-modal-title{font-size:14px;font-weight:800;margin-bottom:4px;word-break:break-all}
     .crop-modal .crop-modal-meta{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
+    .eraser-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:6px 0 10px}
+    .eraser-tools input[type=range]{width:120px}
+    .eraser-tools label{display:inline-flex;align-items:center;gap:3px}
+    .eraser-stage{max-height:60vh;overflow:auto;text-align:center;background:#f5f4f1;border-radius:8px;padding:8px}
+    .eraser-stage canvas{max-width:100%;height:auto;cursor:crosshair;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);touch-action:none;border-radius:4px}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
 </head>
@@ -258,6 +263,37 @@
     }
     function closeInfoModal(){document.getElementById('cropModalOverlay').classList.remove('show');document.getElementById('cropModalBody').innerHTML=''}
     function closeCropPreview(){cropPreviewIndex=null;closeInfoModal()}
+    // ── 橡皮擦：把已裁切圖片中不要的部分塗掉（塗白＝當白紙背景／透明＝挖空） ──
+    let _eraserBrush=24,_eraserMode='white',_eraserHistory=[],_eraserDrawing=false,_eraserLast=null;
+    function openCropEraser(i){
+      const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserDrawing=false;_eraserLast=null;
+      const body=document.getElementById('cropModalBody');
+      body.innerHTML=`<div class="crop-modal-title">🧽 橡皮擦 — ${esc(it.filename)}</div>
+        <div class="eraser-tools">筆刷 <input type="range" id="eraserSize" min="6" max="90" value="${_eraserBrush}" oninput="_eraserBrush=+this.value;document.getElementById('eraserSizeVal').textContent=this.value"> <span id="eraserSizeVal">${_eraserBrush}</span> px
+        <label style="margin-left:6px"><input type="radio" name="eraserMode" value="white" ${_eraserMode!=='clear'?'checked':''} onchange="_eraserMode='white'"> 塗白</label>
+        <label><input type="radio" name="eraserMode" value="clear" ${_eraserMode==='clear'?'checked':''} onchange="_eraserMode='clear'"> 透明</label>
+        <button class="btn" onclick="_eraserUndo()">↶ 復原</button></div>
+        <div class="eraser-stage" id="eraserStage"><canvas id="eraserCanvas"></canvas></div>
+        <div class="crop-modal-meta">在圖上按住拖曳，把不要的東西塗掉（塗白＝當作白紙背景；透明＝挖空成透明）。可調筆刷大小、按「復原」還原上一筆。</div>
+        <div class="action-row"><button class="btn primary" onclick="saveCropEraser(${i})">儲存</button><button class="btn" onclick="renderCropPreviewModal()">取消</button></div>`;
+      const img=new Image();
+      img.onload=()=>{const canvas=document.getElementById('eraserCanvas');if(!canvas)return;canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);_bindEraser(canvas);};
+      img.onerror=()=>{alert('圖片載入失敗，無法使用橡皮擦。');renderCropPreviewModal();};
+      img.src=it.src;
+    }
+    function _bindEraser(canvas){
+      const ctx=canvas.getContext('2d');
+      const pos=(e)=>{const r=canvas.getBoundingClientRect();const sx=canvas.width/r.width,sy=canvas.height/r.height;const t=(e.touches&&e.touches[0])||e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
+      const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_eraserBrush;if(_eraserMode==='clear'){ctx.globalCompositeOperation='destination-out';ctx.strokeStyle='rgba(0,0,0,1)';}else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';}ctx.beginPath();if(_eraserLast)ctx.moveTo(_eraserLast.x,_eraserLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_eraserLast=p;};
+      const start=(e)=>{e.preventDefault();_eraserDrawing=true;_pushEraserHistory(ctx,canvas);_eraserLast=null;paint(pos(e));};
+      const move=(e)=>{if(!_eraserDrawing)return;e.preventDefault();paint(pos(e));};
+      canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);
+      canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});
+      if(!window._eraserGlobalBound){window._eraserGlobalBound=true;const end=()=>{_eraserDrawing=false;_eraserLast=null;};window.addEventListener('mouseup',end);window.addEventListener('touchend',end);}
+    }
+    function _pushEraserHistory(ctx,canvas){try{_eraserHistory.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(_eraserHistory.length>12)_eraserHistory.shift();}catch(e){}}
+    function _eraserUndo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserHistory.length)return;const img=_eraserHistory.pop();if(img)canvas.getContext('2d').putImageData(img,0,0);}
+    function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas');if(!canvas||!cropCandidates[i])return;cropCandidates[i].src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
     // iOS 現在不允許網頁直接匯入 .shortcut 檔（會顯示 unsigned shortcut 錯誤），只能手動建立一次；
     // 建好後可加到主畫面，之後點圖示效果跟真的捷徑一樣。
     function showAppGuide(name,url){
@@ -289,6 +325,7 @@
         <div class="action-row">
           ${canUpscale?`<button class="btn primary" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
           ${Number.isInteger(it.page)?`<button class="btn" onclick="closeCropPreview();fixCropItem(${i})">✂ 手動修正</button>`:''}
+          <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦</button>
           <button class="btn" onclick="editCropQuestion(${i});renderCropPreviewModal()">改題號</button>
           <button class="btn" onclick="toggleCropSkip(${i});renderCropPreviewModal()">${it.skip?'恢復保留':'略過'}</button>
           <a class="btn" href="${it.src}" download="${esc(it.filename)}">⬇ 下載這張</a>
