@@ -1843,12 +1843,19 @@ async function importBatchHandoffImages(payload){
     throw err;
   }
   const examQs=DB.filter(it=>it.exam===matchedExam&&it.type!=='passage');
-  const groups={};let unmatched=0;let unknownQno=0;const unmatchedQnos=new Set();
+  const groups={};let unmatched=0;let unknownQno=0;const unmatchedQnos=new Set();const noPassageQnos=new Set();
   for(const image of images){
     if(!Number.isInteger(image.qno)){unmatched++;unknownQno++;continue;}
     const q=examQs.find(it=>Number(it.no)===image.qno);
     if(!q){unmatched++;unmatchedQnos.add(image.qno);continue;}
-    (groups[q.id]??={q,items:[]}).items.push(image);
+    let target=q;
+    if(image.scope==='group'){
+      // 題組共用圖：用代表題號找到該小題所屬題組，貼到題組文章那筆（type=passage），讓整組共用
+      const ps=q.groupId&&PASSAGES[q.groupId];
+      if(!ps){unmatched++;noPassageQnos.add(image.qno);continue;}
+      target=ps;
+    }
+    (groups[target.id]??={q:target,items:[]}).items.push(image);
   }
   let done=0,failed=0;
   for(const group of Object.values(groups)){
@@ -1859,12 +1866,12 @@ async function importBatchHandoffImages(payload){
       const merged=[...(group.q.imgs||[]),...uploaded];
       const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
       if(error)throw error;
-      const local=DB.find(it=>it.id===group.q.id);if(local)local.imgs=merged;
+      const local=DB.find(it=>it.id===group.q.id)||Object.values(PASSAGES).find(p=>p.id===group.q.id);if(local)local.imgs=merged;
       done+=group.items.length;
     }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;}
   }
   if(done)render();
-  return {done,failed,unmatched,unknownQno,unmatchedQnos:[...unmatchedQnos].sort((a,b)=>a-b),matchedExam};
+  return {done,failed,unmatched,unknownQno,unmatchedQnos:[...unmatchedQnos].sort((a,b)=>a-b),noPassageQnos:[...noPassageQnos].sort((a,b)=>a-b),matchedExam};
 }
 
 function _bimgCopyNamingPrompt(mode){
