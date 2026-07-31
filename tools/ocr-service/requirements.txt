@@ -1,0 +1,7 @@
+# OCR 服務本身只需要這三個（很輕）：
+fastapi
+uvicorn[standard]
+python-multipart
+
+# 真正的辨識引擎 MinerU 另外安裝（見 README.md），因為它很大、且安裝方式依作業系統不同：
+#   pip install "mineru[core]"
