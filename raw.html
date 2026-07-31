@@ -54,6 +54,28 @@
     <section class="stage">
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
+      <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#f6fbff">
+        <div style="font-weight:700;margin-bottom:4px">🅐 自動 OCR（本機服務・實驗中）</div>
+        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，系統會自動辨識文字＋數學公式，直接產生可匯入的題目 CSV，省去手動貼 AI 的步驟。需先在公司電腦開好 OCR 服務（見 <code>tools/ocr-service/README.md</code>）。連不到服務時，仍可用下方原本的手動流程。</p>
+        <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="help">OCR 服務：</span>
+          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="company">大南路櫃2</option><option value="local">本機(localhost)</option><option value="custom">其他</option></select>
+          <input id="ocrUrl" placeholder="http://localhost:8000" oninput="localStorage.setItem('ocrUrl',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;width:200px;font-family:inherit">
+          <button class="btn" onclick="testOcrService()">測試連線</button>
+          <span class="help" style="margin-left:8px">分類引擎：</span>
+          <select id="ocrClassifier" onchange="localStorage.setItem('ocrClassifier',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="ollama">Ollama（本機）</option><option value="gemini">Gemini（雲端）</option></select>
+        </div>
+        <div class="status" id="ocrHealth" style="margin-top:8px"></div>
+        <input id="ocrPdf" type="file" accept=".pdf" class="hide" onchange="runAutoOcr(this.files[0])">
+        <div class="drop" style="margin-top:10px" onclick="ocrPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runAutoOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → 自動辨識</div>
+        <div class="status" id="ocrStatus" style="margin-top:8px"></div>
+        <div id="ocrResultWrap" class="hide" style="margin-top:10px">
+          <div class="help" id="ocrSummary" style="font-weight:600"></div>
+          <pre id="ocrMarkdown" style="max-height:220px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px;margin:6px 0"></pre>
+          <div id="ocrFigures" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrMakeCsv()">🅐 產生題目 CSV（自動填入下方第 4 步）</button></div>
+        </div>
+      </div>
       <ol class="steps">
         <li data-step="1"><b>清除筆跡</b>開啟試卷寶，登入帳號密碼請詢問主管；完成清稿後輸出乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" target="_blank" rel="noopener" onclick="return openAppOrWeb('shijuanbao://','https://shijuanbao.aizuoye100.com/home',event)">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
@@ -164,7 +186,7 @@
           nameStatus.textContent='提示：點考試名稱欄可從題庫既有的 '+names.length+' 個考卷名稱挑選，挑到跟題庫一致的名稱，匯入／貼圖就不會對不上。';}
       }catch(e){}
     }
-    window.addEventListener('load',()=>setTimeout(loadExamNameOptions,1200));
+    window.addEventListener('load',()=>{initOcrUi();setTimeout(loadExamNameOptions,1200);});
     function normalizeName(){const raw=rawName.value.replace(/\.(pdf|doc|docx|jpg|jpeg|png|md)$/i,'');const fullSchool=(raw.match(/[\u4e00-\u9fff]{2,}(?:國中|高中|高職|附中)/)||[])[0]||'';const prefixSchool=(raw.match(/^(.+?)[\s_-]*(?:(?:國|G)?[789]|[七八九])(?:年級|年)?/)||[])[1]||'';const schoolAlias={慈:'慈文國中'};const school=(fullSchool||schoolAlias[prefixSchool]||(prefixSchool.length>=2?prefixSchool:'')).replace(/附中$/,'國中');let g=(raw.match(/(?:國|G)?\s*([789])\s*年?級?/)||[])[1];if(!g){const m=raw.match(/([七八九])\s*年?級?/);g=m&&({七:'7',八:'8',九:'9'}[m[1]])}const grade=g?`${({7:'七',8:'八',9:'九'}[g]||g)}年級`:'';const compact=raw.match(/(1\d{2})\s*[-_/]\s*([12])\s*[-_/]\s*([123])(?:\D|$)/);let ym=raw.match(/(1\d{2})\s*(?:學年度)?\s*([上下])/);if(!ym){const m=raw.match(/(1\d{2})\s*[-_/]\s*([12])/);ym=m&&[null,m[1],m[2]==='1'?'上':'下']}const year=ym?ym[1]:'';const term=ym?`${ym[2]}學期`:'';const r=compact||raw.match(/(?:第?\s*)?([一二三123])\s*(?:次)?\s*(?:段考|段)/);const n=r&&({一:'一',1:'一',二:'二',2:'二',三:'三',3:'三'}[r[compact?3:1]]);const round=n?`第${n}次段考`:'';const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||(/理(?=[_+\-]|$)/.test(raw)?'理化':'');const out=[school,grade,year,term,round,subject].filter(Boolean).join('-');if(out)examName.value=out;nameStatus.textContent=out?'已從「'+rawName.value+'」自動整理：'+out:'檔名的關鍵字不足，請換用包含學校、年級、學年度、上／下學期與段考的檔名。'}
     async function waitForPromptBuilder(name){for(let i=0;i<40;i++){const fn=promptSource.contentWindow&&promptSource.contentWindow[name];if(typeof fn==='function')return fn;await new Promise(ok=>setTimeout(ok,150))}throw new Error('題庫指令尚未載入，請稍後重試。')}
     async function copySolutionPrompt(){try{const builder=await waitForPromptBuilder('buildSolBatchPrompt');const ex=builder([]);let p='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(60)+'\n\n【使用者訊息 user】\n'+ex.msg;if(examName.value)p='【本次指定考試名稱】'+examName.value+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+p;await navigator.clipboard.writeText(p);alert('已複製詳解製作指令。請同時上傳清稿 PDF，再貼上此指令。')}catch(e){solutionPromptPreview.value='請改至題庫首頁按「詳解製作指令」複製。\n'+e.message;solutionPromptPreview.classList.remove('hide')}}
@@ -576,6 +598,88 @@
     function useSuggestedExamName(name){examName.value=name;document.getElementById('batchImportState').textContent=`已改用「${name}」，請重新按「🖼 批次貼入題庫」。`}
     async function batchImportToQbank(){const images=cropCandidates.filter(x=>!x.skip);if(!images.length){alert('請先在第 3 步保留至少一張圖表素材。');return}if(!examName.value){alert('找不到前面校正的考卷名稱，請先在第 I 區丟入考卷檔案，或直接在上方欄位手動輸入。');return}const btn=document.getElementById('toBatchImageBtn'),state=document.getElementById('batchImportState');btn.disabled=true;state.textContent='正在批次貼入題庫…';try{const importer=await waitForPromptBuilder('importBatchHandoffImages');const result=await importer({exam:examName.value,images:images.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});const examNote=result.matchedExam&&result.matchedExam!==examName.value?`（已自動對應「${result.matchedExam}」）`:'';const bits=[];if(result.unmatchedQnos&&result.unmatchedQnos.length)bits.push(`題庫裡找不到第 ${result.unmatchedQnos.join('、')} 題（請確認這些題號是否已匯入、或素材題號是否打錯）`);if(result.noPassageQnos&&result.noPassageQnos.length)bits.push(`第 ${result.noPassageQnos.join('、')} 題設為題組共用圖，但題庫裡這些題號沒有對應的題組文章（請先確認該題有填題組ID、且已建立題組文章，或改回「單題圖」）`);if(result.unknownQno)bits.push(`${result.unknownQno} 張題號未知（請用「改題號」補上）`);if(result.failed)bits.push(`${result.failed} 張上傳失敗，請重試`);state.textContent=`完成：成功貼入 ${result.done} 張。${bits.join('；')}${examNote}`;if(result.done){document.getElementById('finishRawBtn').disabled=false}}catch(e){const sug=e.suggestions&&e.suggestions.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+e.suggestions.map(n=>`<button class="btn" onclick="useSuggestedExamName('${esc(jsStr(n))}')">用「${esc(n)}」</button>`).join('')+'</div>':'';state.innerHTML=esc('批次貼圖失敗：'+(e.message||e))+sug}finally{btn.disabled=false}}
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
+
+    // ── 自動 OCR（本機服務）——把清稿 PDF 送到公司電腦的 OCR 服務，回來再交給 Ollama/Gemini 分類成 CSV ──
+    const OCR_PRESETS={company:'http://100.72.250.96:8000',local:'http://localhost:8000'};
+    let OCR_RESULT=null;
+    function initOcrUi(){
+      const p=localStorage.getItem('ocrPreset')||'company';
+      const presetEl=document.getElementById('ocrPreset');if(presetEl)presetEl.value=p;
+      const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=localStorage.getItem('ocrUrl')||OCR_PRESETS[p]||OCR_PRESETS.company;
+      const clsEl=document.getElementById('ocrClassifier');if(clsEl)clsEl.value=localStorage.getItem('ocrClassifier')||'ollama';
+    }
+    function onOcrPresetChange(v){localStorage.setItem('ocrPreset',v);const urlEl=document.getElementById('ocrUrl');if(v!=='custom'&&urlEl){urlEl.value=OCR_PRESETS[v]||'';localStorage.setItem('ocrUrl',urlEl.value);}}
+    function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
+    async function testOcrService(){
+      const el=document.getElementById('ocrHealth');const base=ocrBase();
+      if(!base){el.textContent='請先填 OCR 服務網址。';return}
+      el.textContent='測試中…';
+      try{const r=await fetch(base+'/health');const j=await r.json();
+        el.textContent=`✓ 連線成功。引擎：${j.engine}${j.mineru_available?'（MinerU 就緒）':'（目前為 mock 假資料，裝好 MinerU 後改真辨識）'}`;
+      }catch(e){el.textContent='✗ 連不到服務：'+(e.message||e)+'。請確認服務有開、網址正確、且 Chrome 已允許此網站「不安全的內容」。';}
+    }
+    async function runAutoOcr(file){
+      if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
+      if(!base){st.textContent='請先設定並「測試連線」OCR 服務網址。';return}
+      st.textContent='上傳並辨識中…（無 GPU 時每頁約數十秒，請耐心等）';
+      document.getElementById('ocrResultWrap').classList.add('hide');
+      try{
+        const fd=new FormData();fd.append('file',file,file.name);
+        const r=await fetch(base+'/ocr',{method:'POST',body:fd});
+        if(!r.ok)throw new Error('服務回應 '+r.status+'：'+(await r.text()).slice(0,200));
+        const j=await r.json();if(!j.ok)throw new Error(j.detail||'辨識失敗');
+        OCR_RESULT=j;
+        if(j.exam&&!examName.value){examName.value=j.exam;}
+        ocrRenderResult();
+        st.textContent='辨識完成。請按下方「產生題目 CSV」。';
+      }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
+    }
+    function ocrRenderResult(){
+      const j=OCR_RESULT;if(!j)return;
+      document.getElementById('ocrResultWrap').classList.remove('hide');
+      let figs=0;const md=[];const figWrap=document.getElementById('ocrFigures');figWrap.innerHTML='';
+      for(const pg of (j.pages||[])){
+        md.push('── 第 '+pg.page+' 頁 ──');md.push(pg.markdown||'');
+        for(const b of (pg.blocks||[])){
+          if((b.type==='figure'||b.type==='table')&&b.image_b64){figs++;
+            const im=document.createElement('img');im.src=b.image_b64;im.title='第 '+pg.page+' 頁';
+            im.style.cssText='height:64px;border:1px solid var(--line);border-radius:6px';figWrap.appendChild(im);}
+        }
+      }
+      document.getElementById('ocrSummary').textContent=`共 ${j.pages.length} 頁、偵測到 ${figs} 張圖／表（引擎：${j.engine}）。圖表自動送入批次貼圖為下一階段功能，目前先產生題目 CSV。`;
+      document.getElementById('ocrMarkdown').textContent=md.join('\n');
+    }
+    function ocrAllMarkdown(){return (OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');}
+    async function ocrMakeCsv(){
+      if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
+      const st=document.getElementById('ocrStatus');
+      const engine=document.getElementById('ocrClassifier').value;
+      st.textContent='正在用 '+(engine==='gemini'?'Gemini':'Ollama')+' 分類、產生 23 欄 CSV…';
+      try{
+        const w=promptSource.contentWindow;
+        const build=await waitForPromptBuilder('buildPrompt');
+        let instruction=build.call(w);
+        if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;
+        const msg=instruction+'\n\n════════\n以下是 OCR 從清稿考卷自動辨識出的內容（含 LaTeX 公式）。請「完全依照上述規則」輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字：\n\n'+ocrAllMarkdown();
+        let csv;
+        if(engine==='gemini'){
+          const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
+          if(!key){st.textContent='找不到 Gemini API Key，請先到題庫首頁的 AI 設定填入，或改用 Ollama。';return}
+          if(typeof w.callGemini!=='function')throw new Error('題庫 callGemini 尚未載入，請稍後再試。');
+          csv=await w.callGemini('',msg,key);
+        }else{
+          if(typeof w.resolveOllamaBase!=='function'||typeof w.callOllama!=='function')throw new Error('題庫 Ollama 函式尚未載入，請稍後再試。');
+          const baseU=await w.resolveOllamaBase();
+          const model=localStorage.getItem('ollamaModel')||'qwen2.5:latest';
+          csv=await w.callOllama('',msg,baseU,model);
+        }
+        csv=(csv||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+        if(!csv){st.textContent='分類引擎沒有回傳內容，請重試或改用另一個引擎。';return}
+        questionCsv.value=csv;inspectCsv();
+        st.textContent='CSV 已產生並填入第 4 步，請人工核對後再匯入題庫。';
+        questionCsv.scrollIntoView({behavior:'smooth',block:'center'});
+      }catch(e){st.textContent='產生 CSV 失敗：'+(e.message||e);}
+    }
   </script>
 </body>
 </html>
