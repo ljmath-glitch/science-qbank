@@ -1744,6 +1744,19 @@ function _bimgUpdateCount(){
   document.getElementById('bimgCountMsg').textContent=toUpload>0?`將上傳 ${toUpload} 張圖片`:'沒有可貼的圖片';
 }
 
+// 依圖片實際像素寬，算出「如實、最小」的顯示比例（%）。裁切圖多為約 2x 高解析度，題目內容區寬約 700px。
+function _measureImgWidth(src){
+  return new Promise(res=>{
+    try{const im=new Image();im.onload=()=>res(im.naturalWidth||0);im.onerror=()=>res(0);im.src=src;}
+    catch(e){res(0);}
+  });
+}
+async function _faithfulImgPct(src){
+  const nat=await _measureImgWidth(src);
+  if(!nat)return 45;
+  const pct=Math.round(nat/2/700*100);
+  return Math.max(12,Math.min(100,pct));
+}
 async function _bimgConfirm(){
   const toProcess=_bimgFiles.filter(it=>!it.skip&&it.matched&&it.src);
   if(!toProcess.length)return;
@@ -1760,7 +1773,8 @@ async function _bimgConfirm(){
   });
   for(const[id,grp]of Object.entries(byId)){
     try{
-      const imgs=grp.items.map(it=>({src:it.src,width:600,align:'center'}));
+      const imgs=[];
+      for(const it of grp.items)imgs.push({src:it.src,width:await _faithfulImgPct(it.src),align:'center'});
       const uploaded=await uploadImgs(imgs,id);
       const existing=grp.q.imgs||[];
       const merged=[...existing,...uploaded];
@@ -1839,7 +1853,8 @@ async function importBatchHandoffImages(payload){
   let done=0,failed=0;
   for(const group of Object.values(groups)){
     try{
-      const imgs=group.items.map(image=>({src:image.src,width:600,align:'center'}));
+      const imgs=[];
+      for(const image of group.items)imgs.push({src:image.src,width:await _faithfulImgPct(image.src),align:'center'});
       const uploaded=await uploadImgs(imgs,group.q.id);
       const merged=[...(group.q.imgs||[]),...uploaded];
       const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
