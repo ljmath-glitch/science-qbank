@@ -71,7 +71,7 @@
           <div class="step-detail">
             <div class="detail-title">題目轉檔指令</div><p class="help">使用與題庫系統相同的完整轉檔指令；複製後開啟一個 AI，先上傳清稿 PDF，再貼上指令。</p>
             <div class="row"><button class="btn primary" onclick="copyQuestionPrompt()">📋 一鍵複製題目轉檔指令</button></div>
-            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div>
+            <div class="row" style="align-items:center"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div>
             <textarea id="promptPreview" class="hide" readonly></textarea>
           </div>
         </li>
@@ -99,7 +99,7 @@
         </li>
         <li data-step="3"><b>交給 AI 生成詳解</b>開啟其中一個 AI，貼上詳解製作指令，並將第 1 步的乾淨 PDF 同時貼上；AI 會輸出三欄 CSV。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googleapp://robin','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
+          <div class="step-detail"><div class="row" style="align-items:center"><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div><p class="help">AI 最後必須輸出三欄 CSV：考試名稱、題號、詳解。</p></div>
         </li>
         <li data-step="4"><b>貼回 AI 產生的詳解 CSV</b>確認 AI 回傳的考試名稱、題號未被改動後，送入題庫詳解匯入。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
