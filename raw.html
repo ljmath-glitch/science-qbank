@@ -56,7 +56,7 @@
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <ol class="steps">
         <li data-step="1"><b>清除筆跡</b>開啟試卷寶，登入帳號密碼請詢問主管；完成清稿後輸出乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" rel="noopener">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
+          <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" target="_blank" rel="noopener" onclick="return openAppOrWeb('shijuanbao://','https://shijuanbao.aizuoye100.com/home',event)">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
         </li>
         <li data-step="2"><b>丟入考卷，自動校正名稱</b>拖入或選擇考卷檔案，系統會讀取檔名並整理成題庫命名格式；請人工確認結果一次。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
