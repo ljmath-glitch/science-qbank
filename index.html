@@ -621,9 +621,10 @@
     <div class="grid4">
       <div class="field"><label>年度（學期）</label><input type="text" id="eYear" placeholder="114上" onblur="composeExam()"></div>
       <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="士林國中" onblur="composeExam()"></div>
-      <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114-上學期-第一次段考-理化"></div>
+      <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114-上學期-第一次段考-理化" oninput="renderExamPdfBar()"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
+    <div class="field" style="margin-top:-2px"><div id="examPdfBar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:8px 10px;background:#faf8f4;border:1px solid var(--line);border-radius:8px"></div><input type="file" id="examPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="uploadExamPdfFile(this.files[0],(document.getElementById('eExam').value||'').trim());this.value=''"></div>
     <div class="grid2">
       <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
     </div>
@@ -1490,7 +1491,7 @@ async function applyGroupIdTool(){
   render();
 }
 
-let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0};
+let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={};
 let QUICK_CHAPTER_RANGE=null, QUICK_CHAPTERS=[];
 window.__qbankDataReady=false;
 // 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
@@ -1567,6 +1568,8 @@ async function load(){
   if(e2)console.error(e2);
   SYL_RAW=(sylRow&&sylRow.content)?sylRow.content:HANLIN_SYLLABUS;
   SYL=parseSyl(SYL_RAW);
+  // 考卷原稿 PDF 對應表（考試名稱 → 公開URL），存在 syllabus_doc id=4
+  try{const {data:pdfRow}=await sb.from('syllabus_doc').select('content').eq('id',4).maybeSingle();EXAM_PDFS=pdfRow&&pdfRow.content?JSON.parse(pdfRow.content):{};}catch(e){EXAM_PDFS={};}
 }
 async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
 
@@ -1587,6 +1590,53 @@ async function uploadImgs(imgs,qid){const out=[];
     }else out.push(im); // 已是 URL 或舊 base64：原樣保留
   }
   return out;}
+/* ===== 考卷原稿 PDF：一份對應一個考試名稱，存進 Storage，對應表存 syllabus_doc id=4 ===== */
+async function _saveExamPdfsMap(){
+  try{await sb.from('syllabus_doc').upsert({id:4,content:JSON.stringify(EXAM_PDFS)});}
+  catch(e){console.error('儲存原稿對應表失敗',e);alert('原稿對應表儲存失敗：'+(e.message||e));}
+}
+function _examPdfSlug(name){return String(name||'').replace(/[^一-鿿0-9a-zA-Z]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'exam';}
+async function uploadExamPdfFile(file,examName){
+  if(!file)return;
+  if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){alert('請選擇 PDF 檔。');return;}
+  if(!examName){alert('請先填「考試名稱」欄位，原稿會對應到這個考卷名稱。');return;}
+  const bar=document.getElementById('examPdfBar');if(bar)bar.dataset.busy='1';renderExamPdfBar();
+  try{
+    const path=`_exam_pdfs/${_examPdfSlug(examName)}_${Date.now().toString(36)}.pdf`;
+    const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:'application/pdf',upsert:true});
+    if(error)throw error;
+    const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
+    EXAM_PDFS[examName]=data.publicUrl;
+    await _saveExamPdfsMap();
+  }catch(e){console.error(e);alert('原稿上傳失敗：'+(e.message||e));}
+  finally{const b=document.getElementById('examPdfBar');if(b)delete b.dataset.busy;renderExamPdfBar();}
+}
+function openExamPdfForEdit(){
+  const exam=(document.getElementById('eExam').value||'').trim();
+  const url=EXAM_PDFS[exam];
+  if(!url){alert('這個考卷還沒有存原稿 PDF，請先上傳。');return;}
+  window.open(url,'_blank','noopener');
+}
+async function removeExamPdf(){
+  const exam=(document.getElementById('eExam').value||'').trim();
+  if(!EXAM_PDFS[exam])return;
+  if(!confirm(`確定移除「${exam}」的原稿 PDF 對應嗎？（檔案仍留在雲端，只是不再顯示）`))return;
+  delete EXAM_PDFS[exam];await _saveExamPdfsMap();renderExamPdfBar();
+}
+function renderExamPdfBar(){
+  const bar=document.getElementById('examPdfBar');if(!bar)return;
+  const exam=(document.getElementById('eExam').value||'').trim();
+  if(bar.dataset.busy){bar.innerHTML='<span>原稿 PDF 上傳中…</span>';return;}
+  if(!exam){bar.innerHTML='<span>填好考試名稱後，可在這裡存／看該考卷的原稿 PDF。</span>';return;}
+  if(EXAM_PDFS[exam]){
+    bar.innerHTML=`<span style="color:var(--bio,#1f6f5c);font-weight:700">📄 已存原稿</span>
+      <button type="button" class="btn sm" onclick="openExamPdfForEdit()">📄 看原稿</button>
+      <button type="button" class="btn sm" onclick="examPdfIn.click()">換一份</button>
+      <button type="button" class="btn sm" onclick="removeExamPdf()">移除對應</button>`;
+  }else{
+    bar.innerHTML=`<span>此考卷尚未存原稿。</span><button type="button" class="btn sm" onclick="examPdfIn.click()">📄 上傳考卷原稿 PDF</button>`;
+  }
+}
 function normalizeSol(s){
   if(!s)return s;
   s=s.replace(/(\u3010\u89E3\u984C\u95DC\u9375\u3011)/g,'\n$1');
@@ -2177,6 +2227,7 @@ function composeExam(){
     const parts=[normalizeSchool(eSchool.value.trim()),eGrade.value,yearDisplay,round,subject].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
   }
+  if(typeof renderExamPdfBar==='function'&&document.getElementById('examPdfBar'))renderExamPdfBar();
 }
 function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
   eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
@@ -2348,7 +2399,7 @@ function editInsertLatex(kind){
 }
 function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';document.getElementById('imgTargetWrap').style.display='none';document.getElementById('imgTarget').value='q';}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='單題手動新增';curImgs=[];
-  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();loadAIProvider();editDlg.showModal()}
+  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();renderExamPdfBar();loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
   fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
   eYear.value=it.year;eSchool.value=it.school;eExam.value=it.exam||'';eExamRound.value=examRound(it.exam||'');eNo.value=it.no||'';eAns.value=it.ans||'';eGrade.value=gradeFromExam(it.exam,it.book);
@@ -2363,7 +2414,7 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   const wrap=document.getElementById('imgTargetWrap');
   if(gid){sec.style.display='';wrap.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
   else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';document.getElementById('ePassage').value='';curPassageImgs=[];}
-  renderPassageImgPrev();
+  renderPassageImgPrev();renderExamPdfBar();
   loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
   const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
