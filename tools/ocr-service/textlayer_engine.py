@@ -117,7 +117,8 @@ def run_textlayer(pdf_bytes: bytes, dpi: int = 220) -> list[dict]:
                     if raw_group is not None:
                         img = eqa.render_raw_group(raw_group, box, dpi)
                     else:
-                        m = 8
+                        # 表格：精確貼齊表格線框，框外文字/空白不要（只留 1pt 避免切到邊線）
+                        m = 1
                         x0, top = max(0, x0 - m), max(0, top - m)
                         x1, bottom = min(page.width, x1 + m), min(page.height, bottom + m)
                         pim = rendered_page(page_index)
