@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>茲茲文教｜自然題庫系統</title>
-  <script>(()=>{const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
+  <!-- 測試頁 raw.test.html：解鎖以便直接預覽，並讓隱藏的 index.html iframe 能載入(供「產生CSV」分類步驟呼叫 buildPrompt/callGemini/callOllama)。 -->
+  <script>try{sessionStorage.setItem('tzutzu_qbank_unlock_until',String(Date.now()+864e5))}catch(e){}</script>
   <link rel="icon" type="image/png" href="/logo.png">
   <style>
     :root{--ink:#2d3038;--paper:#f6f5f2;--line:#e6e4de;--red:#850103;--orange:#f9a12c;--green:#1f6f5c;--muted:#6e6f74}
@@ -55,10 +56,10 @@
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#f6fbff">
-        <div style="font-weight:700;margin-bottom:4px">🅐 MinerU 自建 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:12px">開發中</span></div>
-        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，MinerU 會辨識文字、數學公式與圖表，再產生可匯入的題目 CSV。此功能目前仍在開發與測試，結果請先人工核對；連不到服務時，仍可使用下方原本的手動流程。</p>
+        <div style="font-weight:700;margin-bottom:4px">🅐 自動 OCR（本機服務・實驗中）</div>
+        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，系統會自動辨識文字＋數學公式，直接產生可匯入的題目 CSV，省去手動貼 AI 的步驟。需先在公司電腦開好 OCR 服務（見 <code>tools/ocr-service/README.md</code>）。連不到服務時，仍可用下方原本的手動流程。</p>
         <div style="background:#fff7e6;border:1px dashed #f0b400;border-radius:8px;padding:10px;margin-bottom:10px">
-          <b>▶ MinerU 新功能開發中</b>　可以先用示範資料預覽完整流程，不用啟動 OCR 服務。
+          <b>▶ 想先看效果？</b> 這是示範頁，按下面按鈕會用「假考卷資料」跑一次完整流程，<b>不用開任何服務</b>，讓你看看辨識結果與產出的 CSV 長怎樣。
           <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrLoadDemo()">▶ 用示範資料試跑（免服務）</button></div>
         </div>
         <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
@@ -117,13 +118,7 @@
       <div class="head"><div class="no">II</div><div><h2>生成詳解</h2><p>題庫勾選題目 → AI 撰寫詳解 → 匯入詳解 CSV</p></div></div>
       <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
       <ol class="steps">
-        <li data-step="1"><b>確認清稿檔案</b>可只提供乾淨 PDF、只提供試卷寶 Word，或兩個都提供；此處與第 III 區的清稿檔案會自動同步。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail">
-            <input id="solutionAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
-            <div class="drop" onclick="document.getElementById('solutionAll').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');dropExamFiles(event.dataTransfer.files)">拖入或選擇清稿檔案<br><span class="help">可一次拖入 PDF、Word，或只拖其中一種；選取後會同步至第 III 區，並依檔名自動校正考卷名稱。</span></div>
-            <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
-          </div>
+        <li data-step="1"><b>確認清稿檔案</b>請準備試卷寶輸出的 Word 檔與乾淨 PDF。第 3 步要將乾淨 PDF 一起附給 AI；若題目沒有預設答案，AI 會自行判斷，可能有錯誤，需人工檢查。
         </li>
         <li data-step="2"><b>複製詳解製作指令</b>複製完整詳解指令，內含格式、LaTeX 規則與三欄 CSV 輸出規則。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -148,7 +143,7 @@
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="cropAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
-            <div class="drop" onclick="document.getElementById('cropAll').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');dropExamFiles(event.dataTransfer.files)">拖入或選擇清稿檔案<br><span class="help">可一次拖入 PDF、Word，或只拖其中一種；選取後會同步至第 II 區，並依檔名自動校正考卷名稱。</span></div>
+            <div class="drop" onclick="cropAll.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');dropExamFiles(event.dataTransfer.files)">拖入或選擇清稿檔案<br><span class="help">可一次拖入 PDF、Word，或只拖其中一種；檔案僅在本次瀏覽器流程中處理。</span></div>
             <div class="file-state"><span id="cropPdfDot" class="ready-dot"></span><span id="cropPdfState">尚未選擇 PDF</span><br><span id="cropWordDot" class="ready-dot"></span><span id="cropWordState">尚未選擇 Word</span></div><div id="cropPrecisionWarn" class="precision-warn">⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升裁切與題號對應的精準度。</div>
           </div>
         </li>
@@ -183,8 +178,7 @@
     function toggleDetail(btn){const detail=btn.parentElement.querySelector('.step-detail');const open=detail.classList.toggle('open');btn.textContent=open?'⌃':'⌄';btn.title=open?'收合本步工具':'展開本步工具';btn.setAttribute('aria-label',btn.title)}
     document.querySelectorAll('.steps>li').forEach(card=>card.addEventListener('click',event=>{if(event.target.closest('button,a,input,textarea,select,label'))return;const detail=card.querySelector('.step-detail');if(detail&&detail.classList.contains('open')&&event.target.closest('.step-detail'))return;const toggle=card.querySelector('.toggle-detail');if(toggle)toggleDetail(toggle)}));
     function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
-    function readPaperFile(f){if(!f)return;syncExamNameFromFile(f);const lower=f.name.toLowerCase();if(lower.endsWith('.pdf'))setCropFile('pdf',f);else if(/\.(docx?|odt)$/i.test(f.name))setCropFile('word',f)}
-    function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name;normalizeName()}
+    function readPaperFile(f){if(!f)return;rawName.value=f.name;normalizeName()}
     // 從題庫（隱藏 iframe 的 index.html）讀取既有考卷名稱，做成自動完成清單，避免匯入/貼圖時名稱對不上
     let _examOptsLoaded=false;
     async function loadExamNameOptions(){
@@ -198,7 +192,7 @@
       }catch(e){}
     }
     window.addEventListener('load',()=>{initOcrUi();setTimeout(loadExamNameOptions,1200);});
-    function normalizeName(){const raw=rawName.value.replace(/\.(pdf|doc|docx|jpg|jpeg|png|md)$/i,'');const _yr=(raw.match(/1\d{2}/)||[])[0]||'';const _big=/會考/.test(raw)?'會考':/學測/.test(raw)?'學測':/分科|指考/.test(raw)?'分科測驗':'';if(_big){const out=_yr?_yr+_big:'';if(out)examName.value=out;nameStatus.textContent=out?'已辨識為「'+out+'」（大考類名稱只需年度＋類型，題庫若用別名可直接改）':'請確認檔名含年度（例如 114）。';return;}const fullSchool=(raw.match(/[\u4e00-\u9fff]{2,}(?:國中|高中|高職|附中)/)||[])[0]||'';const prefixSchool=(raw.match(/^(.+?)[\s_-]*(?:(?:國|G)?[789]|[七八九])(?:年級|年)?/)||[])[1]||'';const schoolAlias={慈:'慈文國中'};const school=(fullSchool||schoolAlias[prefixSchool]||(prefixSchool.length>=2?prefixSchool:'')).replace(/附中$/,'國中');let g=(raw.match(/(?:國|G)?\s*([789])\s*年?級?/)||[])[1];if(!g){const m=raw.match(/([七八九])\s*年?級?/);g=m&&({七:'7',八:'8',九:'9'}[m[1]])}const grade=g?`${({7:'七',8:'八',9:'九'}[g]||g)}年級`:'';const compact=raw.match(/(1\d{2})\s*[-_/]\s*([12])\s*[-_/]\s*([123])(?:\D|$)/);let ym=raw.match(/(1\d{2})\s*(?:學年度)?[\s_-]*([上下])/);if(!ym){const m=raw.match(/(1\d{2})\s*[-_/]\s*([12])/);ym=m&&[null,m[1],m[2]==='1'?'上':'下']}const year=ym?ym[1]:'';const term=ym?`${ym[2]}學期`:'';const r=compact||raw.match(/(?:第?\s*)?([一二三123])\s*(?:次)?\s*(?:段考|段|模擬考?|模考)/);const _mock=/模擬|模考/.test(raw);const n=r&&({一:'一',1:'一',二:'二',2:'二',三:'三',3:'三'}[r[compact?3:1]]);const round=n?(_mock?`第${n}次模擬考`:`第${n}次段考`):'';const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||(/理(?=[_+\-]|$)/.test(raw)?'理化':'');const out=[school,grade,year,term,round,subject].filter(Boolean).join('-');if(out)examName.value=out;nameStatus.textContent=out?'已從「'+rawName.value+'」自動整理：'+out:'檔名的關鍵字不足，請換用包含學校、年級、學年度、上／下學期與段考的檔名。'}
+    function normalizeName(){const raw=rawName.value.replace(/\.(pdf|doc|docx|jpg|jpeg|png|md)$/i,'');const fullSchool=(raw.match(/[\u4e00-\u9fff]{2,}(?:國中|高中|高職|附中)/)||[])[0]||'';const prefixSchool=(raw.match(/^(.+?)[\s_-]*(?:(?:國|G)?[789]|[七八九])(?:年級|年)?/)||[])[1]||'';const schoolAlias={慈:'慈文國中'};const school=(fullSchool||schoolAlias[prefixSchool]||(prefixSchool.length>=2?prefixSchool:'')).replace(/附中$/,'國中');let g=(raw.match(/(?:國|G)?\s*([789])\s*年?級?/)||[])[1];if(!g){const m=raw.match(/([七八九])\s*年?級?/);g=m&&({七:'7',八:'8',九:'9'}[m[1]])}const grade=g?`${({7:'七',8:'八',9:'九'}[g]||g)}年級`:'';const compact=raw.match(/(1\d{2})\s*[-_/]\s*([12])\s*[-_/]\s*([123])(?:\D|$)/);let ym=raw.match(/(1\d{2})\s*(?:學年度)?\s*([上下])/);if(!ym){const m=raw.match(/(1\d{2})\s*[-_/]\s*([12])/);ym=m&&[null,m[1],m[2]==='1'?'上':'下']}const year=ym?ym[1]:'';const term=ym?`${ym[2]}學期`:'';const r=compact||raw.match(/(?:第?\s*)?([一二三123])\s*(?:次)?\s*(?:段考|段)/);const n=r&&({一:'一',1:'一',二:'二',2:'二',三:'三',3:'三'}[r[compact?3:1]]);const round=n?`第${n}次段考`:'';const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||(/理(?=[_+\-]|$)/.test(raw)?'理化':'');const out=[school,grade,year,term,round,subject].filter(Boolean).join('-');if(out)examName.value=out;nameStatus.textContent=out?'已從「'+rawName.value+'」自動整理：'+out:'檔名的關鍵字不足，請換用包含學校、年級、學年度、上／下學期與段考的檔名。'}
     async function waitForPromptBuilder(name){for(let i=0;i<40;i++){const fn=promptSource.contentWindow&&promptSource.contentWindow[name];if(typeof fn==='function')return fn;await new Promise(ok=>setTimeout(ok,150))}throw new Error('題庫指令尚未載入，請稍後重試。')}
     async function copySolutionPrompt(){try{const builder=await waitForPromptBuilder('buildSolBatchPrompt');const ex=builder([]);let p='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(60)+'\n\n【使用者訊息 user】\n'+ex.msg;if(examName.value)p='【本次指定考試名稱】'+examName.value+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+p;await navigator.clipboard.writeText(p);alert('已複製詳解製作指令。請同時上傳清稿 PDF，再貼上此指令。')}catch(e){solutionPromptPreview.value='請改至題庫首頁按「詳解製作指令」複製。\n'+e.message;solutionPromptPreview.classList.remove('hide')}}
     async function copyQuestionPrompt(){const frame=promptSource;try{const builder=await waitForPromptBuilder('buildPrompt');let p=builder.call(frame.contentWindow);if(examName.value)p=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+p;await navigator.clipboard.writeText(p);alert('已複製題目轉檔指令。請上傳清稿 PDF 後貼上此指令。')}catch(e){promptPreview.value='請改至題庫首頁按「轉檔指令」複製。\n'+e.message;promptPreview.classList.remove('hide')}}
@@ -214,9 +208,9 @@
     function downloadCsv(){const c=questionCsv.value.trim();if(!c)return alert('請先貼上 CSV');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}));a.download=(examName.value||'題目')+'.csv';a.click()}
     const cropFiles={pdf:null,word:null};const GEMINI_SESSION_KEY='qbank_gemini_api_key';let transientGeminiKey=sessionStorage.getItem(GEMINI_SESSION_KEY)||'';let cropCandidates=[];
     let manualPagesFile=null;const manualPageWraps=new Map();let pendingFixIndex=null;let cropPreviewIndex=null;const MAX_CROP_RENDER_SCALE=6;
-    function setCropFile(kind,file){if(!file)return;if(kind==='pdf'&&file!==cropFiles.pdf){manualPagesFile=null;manualPageWraps.clear();pendingFixIndex=null;const area=document.getElementById('cropPageArea');if(area)area.innerHTML='';}cropFiles[kind]=file;const isPdf=kind==='pdf';for(const prefix of ['solution','crop']){const state=document.getElementById(prefix+(isPdf?'PdfState':'WordState'));const dot=document.getElementById(prefix+(isPdf?'PdfDot':'WordDot'));if(state)state.textContent=file.name;if(dot)dot.classList.add('ok')}updateCropPrecisionWarning()}
-    function updateCropPrecisionWarning(){let message='';if(cropFiles.pdf&&!cropFiles.word)message='⚠ 尚未選擇 Word。仍可繼續處理，但題號與圖表引用關係的比對精準度可能下降。';else if(cropFiles.word&&!cropFiles.pdf)message='⚠ 尚未選擇 PDF。仍可使用 Word，但生成詳解與精準裁切時建議補上乾淨 PDF。';else if(!cropFiles.pdf&&!cropFiles.word)message='⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。';for(const id of ['solutionPrecisionWarn','cropPrecisionWarn']){const warn=document.getElementById(id);if(!warn)continue;if(!message){warn.classList.add('hide')}else{warn.textContent=message;warn.classList.remove('hide')}}}
-    function dropExamFiles(files){let accepted=0,nameSource=null;for(const file of [...files]){const lower=file.name.toLowerCase();if(lower.endsWith('.pdf')){setCropFile('pdf',file);nameSource=nameSource||file;accepted++}else if(/\.(docx?|odt)$/i.test(file.name)){setCropFile('word',file);nameSource=nameSource||file;accepted++}}if(!accepted){alert('請選擇 PDF、DOC 或 DOCX 檔案。');return}syncExamNameFromFile(nameSource)}
+    function setCropFile(kind,file){if(!file)return;if(kind==='pdf'&&file!==cropFiles.pdf){manualPagesFile=null;manualPageWraps.clear();pendingFixIndex=null;const area=document.getElementById('cropPageArea');if(area)area.innerHTML='';}cropFiles[kind]=file;const isPdf=kind==='pdf';document.getElementById(isPdf?'cropPdfState':'cropWordState').textContent=file.name;document.getElementById(isPdf?'cropPdfDot':'cropWordDot').classList.add('ok');updateCropPrecisionWarning()}
+    function updateCropPrecisionWarning(){const warn=document.getElementById('cropPrecisionWarn');if(cropFiles.pdf&&cropFiles.word){warn.classList.add('hide');return}if(cropFiles.pdf){warn.textContent='⚠ 尚未選擇 Word。仍可裁切圖表，但題號與圖表引用關係的比對精準度可能下降。'}else if(cropFiles.word){warn.textContent='⚠ 尚未選擇 PDF。仍可保留 Word 資料，但無法直接從清稿頁面進行精準裁切；建議補上乾淨 PDF。'}else warn.textContent='⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升裁切與題號對應的精準度。';warn.classList.remove('hide')}
+    function dropExamFiles(files){let accepted=0;for(const file of [...files]){const lower=file.name.toLowerCase();if(lower.endsWith('.pdf')){setCropFile('pdf',file);accepted++}else if(/\.(docx?|odt)$/i.test(file.name)){setCropFile('word',file);accepted++}}if(!accepted)alert('請選擇 PDF、DOC 或 DOCX 檔案。')}
     function openGeminiKey(){document.getElementById('geminiKeyPanel').classList.remove('hide');document.getElementById('geminiApiKey').focus()}
     function showGeminiReady(){document.getElementById('geminiKeyPanel').classList.add('hide');document.getElementById('openGeminiKeyBtn').textContent='✓ AI 二次檢查已啟動';document.getElementById('geminiState').textContent='已啟動；重新整理本頁不必重輸入，關閉此分頁後會清除。'}
     function unlockGeminiCheck(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){alert('請輸入 Gemini API 金鑰。');return}transientGeminiKey=key;sessionStorage.setItem(GEMINI_SESSION_KEY,key);document.getElementById('geminiApiKey').value='';showGeminiReady()}
@@ -633,10 +627,11 @@
     async function runAutoOcr(file){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='請先設定並「測試連線」OCR 服務網址。';return}
-      OCR_DEMO=false;
+      OCR_DEMO=false;   // 真辨識：關掉示範模式，避免「產生 CSV」誤用示範假資料
+      OCR_PDF_FILE=file;   // 記住 PDF，之後手動框選修正要用
+      try{cropFiles.pdf=file;}catch(e){}   // 讓第 III 區能對這份 PDF 做手動修正
       st.textContent='上傳並辨識中…（無 GPU 時每頁約數十秒，請耐心等）';
       document.getElementById('ocrResultWrap').classList.add('hide');
-      OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供第 III 區手動框選修正
       try{
         const fd=new FormData();fd.append('file',file,file.name);
         const r=await fetch(base+'/ocr',{method:'POST',body:fd});
@@ -686,13 +681,14 @@
         }
       }
       renderCropCandidates();
+      // 展開第 III 區抽圖步驟並捲過去
       const grid=document.getElementById('cropPreviewGrid');
       const detail=grid&&grid.closest('.step-detail');
       if(detail&&!detail.classList.contains('open')){const tb=detail.parentElement.querySelector('.toggle-detail');if(tb)tb.click();}
       if(grid)grid.scrollIntoView({behavior:'smooth',block:'start'});
       document.getElementById('ocrStatus').textContent='已送 '+added+' 張圖到第 III 區批次貼圖。可在下面改題號、手動框選、略過，再按「批次貼入題庫」。';
     }
-    // ── 示範模式：合併自 raw.test，免開服務即可預覽 MinerU 流程 ──
+    // ── 示範模式：用假資料跑完整流程，免開任何服務 ──
     let OCR_DEMO=false;
     const DEMO_FIG='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160"><rect width="220" height="160" fill="#fff"/><line x1="30" y1="130" x2="200" y2="130" stroke="#333"/><line x1="30" y1="130" x2="30" y2="20" stroke="#333"/><polyline points="30,130 90,80 150,80 200,40" fill="none" stroke="#1666d6" stroke-width="3"/><text x="150" y="150" font-size="12">t</text><text x="10" y="30" font-size="12">v</text></svg>');
     const DEMO_CSV=[
@@ -703,7 +699,7 @@
     function ocrLoadDemo(){
       OCR_DEMO=true;
       if(!examName.value)examName.value='114-八年級-第一次段考';
-      OCR_RESULT={ok:true,engine:'MinerU demo（示範資料）',exam:'114-八年級-第一次段考',pages:[{page:1,width:1000,height:1000,
+      OCR_RESULT={ok:true,engine:'demo（示範假資料）',exam:'114-八年級-第一次段考',pages:[{page:1,width:1000,height:1000,
         markdown:'1. 下列何者為純物質？\n(A) 空氣 (B) 海水 (C) 蒸餾水 (D) 糖水\n\n2. 承上圖為某物體的 $v$-$t$ 圖，其等速階段合力 $F = ma = 0$，下列敘述何者正確？',
         blocks:[
           {type:'text',bbox:[80,60,920,110],text:'1. 下列何者為純物質？'},
@@ -711,12 +707,12 @@
           {type:'formula',bbox:[80,300,600,360],latex:'F = ma = 0'},
           {type:'figure',bbox:[120,380,520,700],image_b64:DEMO_FIG}
         ]}]};
-      document.getElementById('ocrStatus').textContent='已載入 MinerU 示範資料。往下查看辨識結果，再按「產生題目 CSV」預覽產出。';
+      document.getElementById('ocrStatus').textContent='已載入示範資料（假考卷）。往下捲動看辨識結果，再按「產生題目 CSV」看產出。';
       ocrRenderResult();
     }
     async function ocrMakeCsv(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
-      if(OCR_DEMO){questionCsv.value=DEMO_CSV;inspectCsv();document.getElementById('ocrStatus').textContent='（示範）已將樣本 CSV 填入第 4 步；正式使用時會由 Ollama 或 Gemini 依 MinerU 辨識內容產生。';questionCsv.scrollIntoView({behavior:'smooth',block:'center'});return}
+      if(OCR_DEMO){questionCsv.value=DEMO_CSV;inspectCsv();document.getElementById('ocrStatus').textContent='（示範）已直接填入樣本 CSV 到第 4 步——實際使用時這步會由 Ollama/Gemini 依 OCR 內容自動分類產生。';questionCsv.scrollIntoView({behavior:'smooth',block:'center'});return}
       const st=document.getElementById('ocrStatus');
       const engine=document.getElementById('ocrClassifier').value;
       st.textContent='正在用 '+(engine==='gemini'?'Gemini':'Ollama')+' 分類、產生 23 欄 CSV…';
