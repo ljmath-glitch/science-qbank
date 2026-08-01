@@ -43,6 +43,14 @@ app.add_middleware(
 )
 
 
+# 讓別台電腦從 https 網站連本服務時，不被 Chrome「私有網路存取(PNA)」擋掉。
+@app.middleware("http")
+async def allow_private_network(request, call_next):
+    resp = await call_next(request)
+    resp.headers["Access-Control-Allow-Private-Network"] = "true"
+    return resp
+
+
 # ── 內建測試頁：直接開 http://localhost:8000/ 就能上傳 PDF 看辨識結果 ──
 #    因為頁面與 API 同源(都是 http://localhost)，沒有混合內容/私有網路存取限制。
 _TEST_PAGE = """<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
