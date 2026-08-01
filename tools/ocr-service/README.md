@@ -71,6 +71,7 @@
 | 症狀 | 解法 |
 |---|---|
 | `'python' 不是內部或外部命令` | 沒勾 Add Python to PATH；重裝或用完整路徑 |
+| **`fast_langdetect ... lid.176.ftz cannot be opened for loading`**（辨識到最後一步才失敗） | **Windows 使用者名稱含中文/非英文**（如 `C:\Users\劉靜數學\...`）會讓這個舊元件打不開檔案。解法：把 MinerU 裝在**純英文路徑的 venv**再從那裡跑：`python -m venv C:\mineru-env` → `C:\mineru-env\Scripts\Activate.ps1` → `pip install "mineru[core]"`。模型已下載會沿用。 |
 | `health` 顯示 `mineru_available: false` | MinerU 沒裝好，或 `mineru` 不在 PATH；重跑 B-1 |
 | 別台電腦連不到 | 檢查防火牆埠、Tailscale 是否連線、用 IP 不是 localhost |
 | 辨識很慢 | 無 GPU 正常；量大請考慮加顯卡或改雲端引擎 |
@@ -80,5 +81,7 @@
 
 ## E. 這個服務回傳什麼（給工程參考）
 
-`POST /ocr`（上傳 PDF）→ 回一包 JSON：每頁含 `markdown` 與 `blocks`（每塊有 type=text/formula/figure/table、bbox、文字或 LaTeX 或圖）。
-完整契約見同資料夾 `DESIGN.md` 第 5 節。前端（raw.html）拿到後，再交給 Ollama/Gemini 做「分類填 23 欄」。
+`POST /ocr`（上傳 PDF）→ 回一包 JSON：`pages[0].markdown` 是整份 markdown（含文字、表格 HTML、`$...$` LaTeX、`<img>` 圖片引用），`pages[0].blocks` 是「markdown 內真的引用到」的圖（每張含 `name` 與 `image_b64`）。
+前端（raw.html）拿到後，把 markdown 交給 Ollama/Gemini 做「分類填 23 欄」，圖依 markdown 位置對應到題號。
+
+> MinerU 3.4.x 以 markdown 為主要輸出（跨版本穩定）；本服務刻意不解析各版本格式不一的 `content_list*.json`。

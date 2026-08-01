@@ -13,8 +13,8 @@
 from __future__ import annotations
 
 import base64
-import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -113,17 +113,14 @@ _TINY_PNG = (
 
 # ── 引擎 B：mineru（真的）──────────────────────────────────────
 def run_mineru(pdf_bytes: bytes) -> list[dict]:
-    """呼叫 mineru 命令列，解析它的 content_list.json 成本服務的契約格式。
+    """呼叫 mineru 命令列，回傳「整份 markdown + 抽出的圖」。
 
-    mineru 輸出（-b pipeline）大致為：
-        <out>/<stem>/auto/<stem>.md
-        <out>/<stem>/auto/<stem>_content_list.json
-        <out>/<stem>/auto/images/*.jpg
-    content_list.json 是「依閱讀順序的區塊清單」，每塊有：
-        type: text | equation | image | table | list
-        text / text_level / img_path / table_body
-        bbox: [x0,y0,x1,y1]（0~1000 正規化）
-        page_idx: 0 起算
+    MinerU 3.4.x（-b pipeline）輸出：
+        <out>/<stem>/auto/<stem>.md          ← 完整 markdown（文字/表格HTML/LaTeX/<img>）
+        <out>/<stem>/auto/images/*.jpg       ← 抽出的圖、表
+
+    我們以 markdown 為主（跨版本穩定），不去硬解各版本格式不一的 content_list*.json。
+    圖只回傳「markdown 內真的有 <img> 引用到」的，避免夾帶一堆表格碎圖。
     """
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
@@ -138,77 +135,41 @@ def run_mineru(pdf_bytes: bytes) -> list[dict]:
             check=True, capture_output=True, text=True,
         )
 
-        cl_files = list(out_dir.rglob("*content_list.json"))
-        if not cl_files:
-            raise RuntimeError("MinerU 沒有產出 content_list.json")
-        content_list = json.loads(cl_files[0].read_text(encoding="utf-8"))
-        base = cl_files[0].parent  # img_path 相對於這裡
+        md_files = list(out_dir.rglob("*.md"))
+        if not md_files:
+            raise RuntimeError("MinerU 沒有產出 markdown")
+        md_path = max(md_files, key=lambda p: p.stat().st_size)
+        base = md_path.parent
+        markdown = md_path.read_text(encoding="utf-8")
 
-        return _content_list_to_pages(content_list, base)
-
-
-def _content_list_to_pages(content_list: list[dict], base: Path) -> list[dict]:
-    """把 MinerU 的 flat 區塊清單，依 page_idx 收攏成本服務的 pages 格式。"""
-    by_page: dict[int, list[dict]] = {}
-    for item in content_list:
-        pidx = int(item.get("page_idx", 0))
-        by_page.setdefault(pidx, []).append(item)
-
-    pages: list[dict] = []
-    for pidx in sorted(by_page):
+        # 依 markdown 內出現順序，挑出真的被引用到的圖檔名（去重）
         blocks: list[dict] = []
-        md_parts: list[str] = []
-        for item in by_page[pidx]:
-            t = item.get("type")
-            bbox = item.get("bbox", [0, 0, 1000, 1000])
-            if t == "text":
-                txt = item.get("text", "")
-                blocks.append({"type": "text", "bbox": bbox, "text": txt})
-                md_parts.append(txt)
-            elif t == "list":
-                txt = item.get("text", "")
-                blocks.append({"type": "text", "bbox": bbox, "text": txt})
-                md_parts.append(txt)
-            elif t == "equation":
-                latex = item.get("text", "").strip()
-                blocks.append({"type": "formula", "bbox": bbox, "latex": latex})
-                md_parts.append(f"$${latex}$$")
-            elif t == "image":
-                b64 = _img_to_b64(base, item.get("img_path"))
-                blk = {"type": "figure", "bbox": bbox}
-                if b64:
-                    blk["image_b64"] = b64
-                blocks.append(blk)
-                md_parts.append("[圖]")
-            elif t == "table":
-                html = item.get("table_body", "")
-                blk = {"type": "table", "bbox": bbox, "latex": html}
-                b64 = _img_to_b64(base, item.get("img_path"))
-                if b64:
-                    blk["image_b64"] = b64
-                blocks.append(blk)
-                md_parts.append("[表]")
-        pages.append({
-            "page": pidx + 1,
+        seen: set[str] = set()
+        for m in re.finditer(r'images/([^\s"\')<>]+)', markdown):
+            name = m.group(1)
+            if name in seen:
+                continue
+            seen.add(name)
+            p = base / "images" / name
+            if not p.exists():
+                cand = list(base.rglob(name))
+                if not cand:
+                    continue
+                p = cand[0]
+            blocks.append({"type": "figure", "name": name,
+                           "image_b64": _img_to_b64(p)})
+
+        return [{
+            "page": 1,
             "width": 1000,
             "height": 1000,
-            "markdown": "\n".join(md_parts),
+            "markdown": markdown,
             "blocks": blocks,
-        })
-    return pages
+        }]
 
 
-def _img_to_b64(base: Path, rel: str | None) -> str | None:
-    """把 MinerU 抽出的圖檔讀成 data URI。"""
-    if not rel:
-        return None
-    p = (base / rel)
-    if not p.exists():
-        # 有些版本 img_path 已含 images/ 前綴或絕對路徑，容錯找一下
-        cand = list(base.rglob(Path(rel).name))
-        if not cand:
-            return None
-        p = cand[0]
+def _img_to_b64(p: Path) -> str:
+    """把圖檔讀成 data URI。"""
     mime = "image/jpeg" if p.suffix.lower() in (".jpg", ".jpeg") else "image/png"
     return f"data:{mime};base64," + base64.b64encode(p.read_bytes()).decode()
 
