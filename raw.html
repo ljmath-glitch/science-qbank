@@ -59,7 +59,7 @@
         <p class="help" style="margin:0 0 10px">丟入清稿 PDF，系統會自動辨識文字＋數學公式，直接產生可匯入的題目 CSV，省去手動貼 AI 的步驟。需先在公司電腦開好 OCR 服務（見 <code>tools/ocr-service/README.md</code>）。連不到服務時，仍可用下方原本的手動流程。</p>
         <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
           <span class="help">OCR 服務：</span>
-          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="company">大南路櫃2</option><option value="desk3">大南路櫃3</option><option value="local">本機(localhost)</option><option value="custom">其他</option></select>
+          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="company">大南路櫃2</option><option value="desk3">玉承87</option><option value="local">本機(localhost)</option><option value="custom">其他</option></select>
           <input id="ocrUrl" placeholder="http://localhost:8000" oninput="localStorage.setItem('ocrUrl',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;width:200px;font-family:inherit">
           <button class="btn" onclick="testOcrService()">測試連線</button>
           <span class="help" style="margin-left:8px">分類引擎：</span>
