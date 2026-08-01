@@ -22,7 +22,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
 
 # ── 設定（用環境變數覆蓋，不用改程式）────────────────────────────
 OCR_ENGINE = os.environ.get("OCR_ENGINE", "mock").lower()       # mock | mineru
@@ -41,6 +41,61 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── 內建測試頁：直接開 http://localhost:8000/ 就能上傳 PDF 看辨識結果 ──
+#    因為頁面與 API 同源(都是 http://localhost)，沒有混合內容/私有網路存取限制。
+_TEST_PAGE = """<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OCR 服務測試頁</title>
+<style>
+body{font-family:system-ui,"Microsoft JhengHei",sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222}
+h1{font-size:20px}.muted{color:#666;font-size:14px}
+.drop{border:2px dashed #8bb;border-radius:12px;padding:28px;text-align:center;background:#f6fbff;cursor:pointer;margin:14px 0}
+.drop.drag{background:#e6f3ff}
+#status{margin:10px 0;font-weight:600}
+pre{white-space:pre-wrap;background:#fff;border:1px solid #ddd;border-radius:8px;padding:10px;max-height:420px;overflow:auto;font-size:12px}
+#figs{display:flex;gap:8px;flex-wrap:wrap}#figs img{height:90px;border:1px solid #ccc;border-radius:6px}
+</style></head><body>
+<h1>🅐 OCR 服務測試頁</h1>
+<p class="muted">丟一份清稿 PDF 進來，看 MinerU 辨識出的文字、公式與圖。這頁由服務本機提供，沒有瀏覽器安全限制。</p>
+<div class="muted" id="eng">引擎狀態載入中…</div>
+<input id="f" type="file" accept=".pdf" style="display:none" onchange="go(this.files[0])">
+<div class="drop" id="d" onclick="f.click()">丟入或點此選擇清稿 PDF → 自動辨識</div>
+<div id="status"></div>
+<div class="muted" id="summary"></div>
+<div id="figs"></div>
+<pre id="md"></pre>
+<script>
+const d=document.getElementById('d');
+d.ondragover=e=>{e.preventDefault();d.classList.add('drag')};
+d.ondragleave=()=>d.classList.remove('drag');
+d.ondrop=e=>{e.preventDefault();d.classList.remove('drag');go(e.dataTransfer.files[0])};
+fetch('/health').then(r=>r.json()).then(j=>{document.getElementById('eng').textContent='引擎：'+j.engine+(j.mineru_available?'（MinerU 就緒）':'（mock 假資料）')}).catch(()=>{});
+async function go(file){
+  if(!file)return;
+  const st=document.getElementById('status');
+  st.textContent='辨識中…（無 GPU 每頁數十秒，請耐心等）';
+  document.getElementById('md').textContent='';document.getElementById('figs').innerHTML='';document.getElementById('summary').textContent='';
+  try{
+    const fd=new FormData();fd.append('file',file,file.name);
+    const r=await fetch('/ocr',{method:'POST',body:fd});
+    if(!r.ok)throw new Error('服務回應 '+r.status+'：'+(await r.text()).slice(0,300));
+    const j=await r.json();if(!j.ok)throw new Error(j.detail||'辨識失敗');
+    const p=j.pages[0];let figs=(p.blocks||[]).filter(b=>b.image_b64);
+    document.getElementById('summary').textContent='考試名稱：'+(j.exam||'')+'　偵測到 '+figs.length+' 張圖／表　引擎：'+j.engine;
+    const fw=document.getElementById('figs');
+    figs.forEach(b=>{const im=document.createElement('img');im.src=b.image_b64;im.title=b.name||'';fw.appendChild(im)});
+    document.getElementById('md').textContent=p.markdown||'';
+    st.textContent='辨識完成 ✓';
+  }catch(e){st.textContent='辨識失敗：'+(e.message||e)}
+}
+</script></body></html>"""
+
+
+@app.get("/", response_class=HTMLResponse)
+def test_page():
+    return _TEST_PAGE
 
 
 # ── 健康檢查：前端用來測「這個網址通不通」（比照 Ollama 的 /api/tags）──
