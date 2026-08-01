@@ -626,7 +626,7 @@
     </div>
     <div class="field" style="margin-top:-2px"><div id="examPdfBar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:8px 10px;background:#faf8f4;border:1px solid var(--line);border-radius:8px"></div><input type="file" id="examPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="uploadExamPdfFile(this.files[0],(document.getElementById('eExam').value||'').trim());this.value=''"></div>
     <div class="grid2">
-      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
+      <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>第一次模擬考</option><option>第二次模擬考</option><option>第三次模擬考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
     </div>
     <div class="grid2">
       <div class="field"><label>答案</label><input type="text" id="eAns" placeholder="A" onfocus="editRichSetTarget(this)"></div>
@@ -1860,18 +1860,28 @@ async function _bimgConfirm(){
   if(done>0){render();if(failed===0)setTimeout(()=>batchImgDlg.close(),1800);}
 }
 
+// 考卷類型：段考 / 會考 / 學測 / 分科 / 模擬考；避免不同類型的考卷被誤判成同一份
+function _examType(raw){
+  const s=String(raw||'');
+  if(/會考/.test(s))return '會考';
+  if(/學測/.test(s))return '學測';
+  if(/分科|指考/.test(s))return '分科';
+  if(/模擬|模考/.test(s))return '模擬';
+  if(/段/.test(s))return '段考';
+  return '';
+}
 function _batchExamCanonical(value){
-  return String(value||'').replace(/附中/g,'國中').replace(/(1\d{2})\s*([上下])(?!學期)/g,'$1-$2學期').replace(/第\s*([123一二三])\s*次?\s*段/g,'第$1次段考').replace(/[\s_－—–]+/g,'-').replace(/-+/g,'-').replace(/[^\u4e00-\u9fff0-9-]/g,'').replace(/-$/,'');
+  return String(value||'').replace(/附中/g,'國中').replace(/國中教育會考|教育會考/g,'會考').replace(/模考/g,'模擬考').replace(/(1\d{2})\s*([上下])(?!學期)/g,'$1-$2學期').replace(/第\s*([123一二三])\s*次?\s*段/g,'第$1次段考').replace(/第\s*([123一二三])\s*次?\s*模擬考?/g,'第$1次模擬考').replace(/[\s_－—–]+/g,'-').replace(/-+/g,'-').replace(/[^\u4e00-\u9fff0-9-]/g,'').replace(/-$/,'');
 }
 function _batchExamTerms(value){
   const raw=String(value||'').replace(/附中/g,'國中');
   const grade=(raw.match(/[七八九]年級|高[一二三]/)||[])[0]||'';
   const year=(raw.match(/1\d{2}/)||[])[0]||'';
   const term=(raw.match(/[上下](?:學期)?/)||[])[0]?.[0]||'';
-  const round=(raw.match(/第?[一二三123]次?段考|[一二三123]段/)||[])[0]||'';
+  const round=(raw.match(/第?[一二三123]次?(?:段考|模擬考?)|[一二三123]段/)||[])[0]||'';
   const subject=(raw.match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
   const school=(raw.match(/^(.+?)(?=[-_\s]*(?:[七八九]年級|高[一二三]|1\d{2}))/)||[])[1]||'';
-  return {school:school.replace(/[-_\s]/g,''),grade,year,term,round,subject};
+  return {school:school.replace(/[-_\s]/g,''),grade,year,term,round,subject,type:_examType(raw)};
 }
 function _findBatchExam(exam){
   const names=[...new Set(DB.map(it=>it.exam).filter(Boolean))];
@@ -1880,14 +1890,16 @@ function _findBatchExam(exam){
   const canonicalMatches=names.filter(name=>_batchExamCanonical(name)===canonical);
   if(canonicalMatches.length===1)return canonicalMatches[0];
   const target=_batchExamTerms(exam);
-  const softMatches=names.filter(name=>{const t=_batchExamTerms(name);return ['school','grade','year','term','round','subject'].every(key=>!target[key]||target[key]===t[key])});
+  // 大考（會考／學測／分科）是單一整卷，年度＋類型即唯一識別，科目等細項不該擋比對；段考／模擬考才需全部細項一致
+  const keys=(target.type==='會考'||target.type==='學測'||target.type==='分科')?['year','type']:['school','grade','year','term','round','subject','type'];
+  const softMatches=names.filter(name=>{const t=_batchExamTerms(name);return keys.every(key=>!target[key]||target[key]===t[key])});
   return softMatches.length===1?softMatches[0]:'';
 }
 // 供 raw.html 的「考卷前處理」直接交接已確認的圖表素材；不開啟批次貼圖視窗。
 function _batchExamSuggestions(exam){
   const names=[...new Set(DB.map(it=>it.exam).filter(Boolean))];
   const target=_batchExamTerms(exam);
-  return names.map(name=>({name,score:['school','grade','year','term','round','subject'].filter(k=>target[k]&&target[k]===_batchExamTerms(name)[k]).length}))
+  return names.map(name=>({name,score:['school','grade','year','term','round','subject','type'].filter(k=>target[k]&&target[k]===_batchExamTerms(name)[k]).length}))
     .filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.name);
 }
 function listBatchExamStatus(examGuess){
