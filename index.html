@@ -198,6 +198,17 @@
   .diffbox .seg button.on{background:var(--phy);color:#fff;font-weight:700}
   .diffresult{margin-top:6px;padding:7px 10px;border-radius:6px;font-weight:700;text-align:center;font-size:14px}
   .imgprev img{max-width:100%;border:1px solid var(--line);border-radius:6px;display:block;margin-bottom:6px}
+  /* 圖片橡皮擦（與 raw 批次貼圖工具一致） */
+  .ie-tools{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:0 0 12px;padding:9px 12px;background:#faf8f4;border:1px solid var(--line);border-radius:10px}
+  .ie-tools .ie-left{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;min-width:0}
+  .ie-tools input[type=range]{width:110px;vertical-align:middle;accent-color:var(--red)}
+  .ie-tools label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer}
+  .ie-tools .ur{display:inline-flex;gap:6px;flex:0 0 auto}
+  .ie-tools .btn svg{display:block}
+  .ie-stage{position:relative;max-height:56vh;overflow:auto;text-align:center;background:#f5f4f1;border-radius:8px;padding:8px}
+  .ie-stage canvas{max-width:100%;height:auto;cursor:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);touch-action:none;border-radius:4px}
+  .ie-cursor{position:absolute;left:0;top:0;border:1.5px solid var(--red);background:rgba(133,1,3,.08);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:5;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
+  .ie-cursor.clear{border-style:dashed;background:rgba(0,0,0,.04)}
   .float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);padding:8px 22px;display:flex;align-items:center;gap:13px;z-index:600;border-top:1px solid var(--line);box-shadow:0 -6px 24px -14px rgba(45,48,56,.3);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   /* 往下捲動時自動隱藏底部匯出列，往上捲動才露出 */
@@ -734,6 +745,11 @@
     <button class="btn" onclick="batchImgDlg.close()">取消</button>
     <button class="btn primary" id="bimgConfirmBtn" style="display:none" onclick="_bimgConfirm()">🖼 貼圖到題庫</button>
   </div>
+</dialog>
+
+<dialog id="imgEraserDlg">
+  <div class="dlg-head">🧽 圖片橡皮擦<button class="x" onclick="imgEraserDlg.close()">×</button></div>
+  <div class="dlg-body" id="imgEraserBody"></div>
 </dialog>
 
 <!-- 考卷設定 -->
@@ -2237,9 +2253,50 @@ function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="bor
     <input type="range" min="20" max="100" value="${im.width}" oninput="setImg(${i},'width',this.value)" style="width:90px"><span>${im.width}%</span>
     <select onchange="setImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
     ${curImgs.length>1?`<button class="btn sm" title="把此圖的寬度與對齊套用到本題所有圖" onclick="applyImgStyleAll(${i})">套用到全部</button>`:''}
+    <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('q',${i})">🧽 橡皮擦</button>
     <button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">移除</button></div></div>`).join('')}
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 function applyImgStyleAll(i){var w=curImgs[i].width,a=curImgs[i].align;curImgs.forEach(im=>{im.width=w;im.align=a});renderImgPrev()}
+// ── 圖片橡皮擦：把單題／題組圖裡不要的部分塗白或挖空，與 raw 批次貼圖工具同款（游標顯示筆刷大小） ──
+let _ieBrush=24,_ieMode='white',_ieHist=[],_ieRedo=[],_ieDraw=false,_ieLast=null,_ieTarget=null;
+const _IE_ARROWS={undo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>',redo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>'};
+function openImgEraser(scope,i){
+  const arr=scope==='p'?curPassageImgs:curImgs;const it=arr[i];if(!it)return;
+  _ieTarget={scope,i};_ieHist=[];_ieRedo=[];_ieDraw=false;_ieLast=null;
+  const dlg=document.getElementById('imgEraserDlg');
+  document.getElementById('imgEraserBody').innerHTML=`
+    <div class="ie-tools"><div class="ie-left">筆刷 <input type="range" id="ieSize" min="6" max="90" value="${_ieBrush}" oninput="_ieBrush=+this.value;document.getElementById('ieSizeVal').textContent=this.value"> <span id="ieSizeVal">${_ieBrush}</span> px
+      <label><input type="radio" name="ieMode" ${_ieMode!=='clear'?'checked':''} onchange="_ieMode='white'"> 塗白</label>
+      <label><input type="radio" name="ieMode" ${_ieMode==='clear'?'checked':''} onchange="_ieMode='clear'"> 透明</label></div>
+      <span class="ur"><button class="btn sm" onclick="_ieUndo()" title="復原（上一步）">${_IE_ARROWS.undo}復原</button><button class="btn sm" onclick="_ieRedoFn()" title="重做（下一步）">${_IE_ARROWS.redo}重做</button></span></div>
+    <div class="ie-stage" id="ieStage"><canvas id="ieCanvas"></canvas><div class="ie-cursor" id="ieCursor"></div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px">在圖上按住拖曳，把不要的東西塗掉（塗白＝當作白紙背景；透明＝挖空成透明）。游標圓圈就是筆刷實際大小。</div>
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:12px"><button class="btn primary" onclick="_ieSave()">儲存</button><button class="btn" onclick="imgEraserDlg.close()">取消</button></div>`;
+  if(!dlg.open)dlg.showModal();
+  const img=new Image();if(/^https?:/i.test(it.src))img.crossOrigin='anonymous';
+  img.onload=()=>{const c=document.getElementById('ieCanvas');if(!c)return;c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);_bindImgEraser(c);};
+  img.onerror=()=>{alert('圖片載入失敗，無法使用橡皮擦。');dlg.close();};
+  img.src=it.src;
+}
+function _bindImgEraser(canvas){
+  const ctx=canvas.getContext('2d');
+  const pos=(e)=>{const r=canvas.getBoundingClientRect();const sx=canvas.width/r.width,sy=canvas.height/r.height;const t=(e.touches&&e.touches[0])||e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
+  const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_ieBrush;if(_ieMode==='clear'){ctx.globalCompositeOperation='destination-out';ctx.strokeStyle='rgba(0,0,0,1)';}else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';}ctx.beginPath();if(_ieLast)ctx.moveTo(_ieLast.x,_ieLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_ieLast=p;};
+  const stage=canvas.parentElement,ring=document.getElementById('ieCursor');
+  const showRing=(e)=>{if(!ring)return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_ieBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.classList.toggle('clear',_ieMode==='clear');ring.style.display='block';};
+  const hideRing=()=>{if(ring)ring.style.display='none';};
+  const start=(e)=>{e.preventDefault();_ieDraw=true;_iePush(ctx,canvas);_ieLast=null;paint(pos(e));showRing(e);};
+  const move=(e)=>{showRing(e);if(!_ieDraw)return;e.preventDefault();paint(pos(e));};
+  canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);
+  canvas.addEventListener('mouseenter',showRing);canvas.addEventListener('mouseleave',hideRing);
+  canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});
+  canvas.addEventListener('touchend',hideRing);canvas.addEventListener('touchcancel',hideRing);
+  if(!window._ieGlobalBound){window._ieGlobalBound=true;const end=()=>{_ieDraw=false;_ieLast=null;};window.addEventListener('mouseup',end);window.addEventListener('touchend',end);}
+}
+function _iePush(ctx,canvas){try{_ieHist.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(_ieHist.length>20)_ieHist.shift();_ieRedo=[];}catch(e){}}
+function _ieUndo(){const c=document.getElementById('ieCanvas');if(!c||!_ieHist.length)return;const ctx=c.getContext('2d');try{_ieRedo.push(ctx.getImageData(0,0,c.width,c.height));}catch(e){}const img=_ieHist.pop();if(img)ctx.putImageData(img,0,0);}
+function _ieRedoFn(){const c=document.getElementById('ieCanvas');if(!c||!_ieRedo.length)return;const ctx=c.getContext('2d');try{_ieHist.push(ctx.getImageData(0,0,c.width,c.height));}catch(e){}const img=_ieRedo.pop();if(img)ctx.putImageData(img,0,0);}
+function _ieSave(){const c=document.getElementById('ieCanvas');if(!c||!_ieTarget)return;let url;try{url=c.toDataURL('image/png');}catch(e){alert('這張圖來自雲端，瀏覽器基於安全限制無法直接存回。請改用「移除」後重新上傳原圖再編輯。');return;}const arr=_ieTarget.scope==='p'?curPassageImgs:curImgs;const it=arr[_ieTarget.i];if(it)it.src=url;document.getElementById('imgEraserDlg').close();if(_ieTarget.scope==='p')renderPassageImgPrev();else renderImgPrev();}
 
 function renderPassageImgPrev(){
   const el=document.getElementById('ePassageImgPrev');if(!el)return;
@@ -2251,6 +2308,7 @@ function renderPassageImgPrev(){
     <button class="btn sm" onclick="setPassageImg(${i},'width',85)">大</button>
     <button class="btn sm" onclick="setPassageImg(${i},'width',100)">滿版</button>
     <select onchange="setPassageImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
+    <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('p',${i})">🧽 橡皮擦</button>
     <button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">移除</button></div></div>`).join('')}
 
 function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPassageImgPrev()}
