@@ -73,7 +73,7 @@
           <div class="help" id="ocrSummary" style="font-weight:600"></div>
           <pre id="ocrMarkdown" style="max-height:220px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px;margin:6px 0"></pre>
           <div id="ocrFigures" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrMakeCsv()">🅐 產生題目 CSV（自動填入下方第 4 步）</button></div>
+          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrMakeCsv()">🅐 產生題目 CSV（自動填入下方第 4 步）</button><button class="btn green" onclick="ocrToBatch()">🖼 送圖到第 III 區批次貼圖（可修改）</button></div>
         </div>
       </div>
       <ol class="steps">
@@ -609,6 +609,7 @@
     // ── 自動 OCR（本機服務）——把清稿 PDF 送到公司電腦的 OCR 服務，回來再交給 Ollama/Gemini 分類成 CSV ──
     const OCR_PRESETS={company:'http://100.72.250.96:8000',desk3:'https://ljmath160.tail3d3c18.ts.net',local:'http://localhost:8000'};
     let OCR_RESULT=null;
+    let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供第 III 區「手動框選修正」用
     function initOcrUi(){
       const p=localStorage.getItem('ocrPreset')||'company';
       const presetEl=document.getElementById('ocrPreset');if(presetEl)presetEl.value=p;
@@ -630,6 +631,7 @@
       if(!base){st.textContent='請先設定並「測試連線」OCR 服務網址。';return}
       st.textContent='上傳並辨識中…（無 GPU 時每頁約數十秒，請耐心等）';
       document.getElementById('ocrResultWrap').classList.add('hide');
+      OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供第 III 區手動框選修正
       try{
         const fd=new FormData();fd.append('file',file,file.name);
         const r=await fetch(base+'/ocr',{method:'POST',body:fd});
@@ -653,10 +655,38 @@
             im.style.cssText='height:64px;border:1px solid var(--line);border-radius:6px';figWrap.appendChild(im);}
         }
       }
-      document.getElementById('ocrSummary').textContent=`共 ${j.pages.length} 頁、偵測到 ${figs} 張圖／表（引擎：${j.engine}）。圖表自動送入批次貼圖為下一階段功能，目前先產生題目 CSV。`;
+      document.getElementById('ocrSummary').textContent=`共 ${j.pages.length} 頁、偵測到 ${figs} 張圖／表（引擎：${j.engine}）。可按「產生題目 CSV」出題目，或「送圖到第 III 區」把這些圖交給批次貼圖去改題號/手動框選/略過。`;
       document.getElementById('ocrMarkdown').textContent=md.join('\n');
     }
     function ocrAllMarkdown(){return (OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');}
+    // 把 OCR 出來的圖／表，送進第 III 區「批次貼圖」的可編輯清單（改題號/手動框選/略過）
+    function ocrToBatch(){
+      if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
+      if(OCR_PDF_FILE){try{cropFiles.pdf=OCR_PDF_FILE;}catch(e){}}
+      let added=0;
+      for(const pg of (OCR_RESULT.pages||[])){
+        for(const b of (pg.blocks||[])){
+          if(!b.image_b64)continue;
+          const qno=Number.isInteger(b.qno)?b.qno:null;
+          const kind=b.kind||(b.type==='table'?'表格':'圖表');
+          cropCandidates.push({
+            src:b.image_b64, page:(Number.isInteger(b.page)?b.page:1), qno,
+            scope:'single', kind, label:kind,
+            verdict:qno?'pass':'review',
+            reason:'自動 OCR 裁切，請確認題號與範圍',
+            skip:false,
+            filename:(qno?('Q'+qno):'Q未知')+'_'+kind+(qno?'':'_請人工確認')+'.png'
+          });
+          added++;
+        }
+      }
+      renderCropCandidates();
+      const grid=document.getElementById('cropPreviewGrid');
+      const detail=grid&&grid.closest('.step-detail');
+      if(detail&&!detail.classList.contains('open')){const tb=detail.parentElement.querySelector('.toggle-detail');if(tb)tb.click();}
+      if(grid)grid.scrollIntoView({behavior:'smooth',block:'start'});
+      document.getElementById('ocrStatus').textContent='已送 '+added+' 張圖到第 III 區批次貼圖。可在下面改題號、手動框選、略過，再按「批次貼入題庫」。';
+    }
     async function ocrMakeCsv(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
       const st=document.getElementById('ocrStatus');
