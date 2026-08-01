@@ -55,8 +55,12 @@
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:14px;margin:12px 0;background:#f6fbff">
-        <div style="font-weight:700;margin-bottom:4px">🅐 自動 OCR（本機服務・實驗中）</div>
-        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，系統會自動辨識文字＋數學公式，直接產生可匯入的題目 CSV，省去手動貼 AI 的步驟。需先在公司電腦開好 OCR 服務（見 <code>tools/ocr-service/README.md</code>）。連不到服務時，仍可用下方原本的手動流程。</p>
+        <div style="font-weight:700;margin-bottom:4px">🅐 MinerU 自建 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:12px">開發中</span></div>
+        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，MinerU 會辨識文字、數學公式與圖表，再產生可匯入的題目 CSV。此功能目前仍在開發與測試，結果請先人工核對；連不到服務時，仍可使用下方原本的手動流程。</p>
+        <div style="background:#fff7e6;border:1px dashed #f0b400;border-radius:8px;padding:10px;margin-bottom:10px">
+          <b>▶ MinerU 新功能開發中</b>　可以先用示範資料預覽完整流程，不用啟動 OCR 服務。
+          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrLoadDemo()">▶ 用示範資料試跑（免服務）</button></div>
+        </div>
         <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
           <span class="help">OCR 服務：</span>
           <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="company">大南路櫃2</option><option value="desk3">玉承87</option><option value="local">本機(localhost)</option><option value="custom">其他</option></select>
@@ -629,6 +633,7 @@
     async function runAutoOcr(file){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='請先設定並「測試連線」OCR 服務網址。';return}
+      OCR_DEMO=false;
       st.textContent='上傳並辨識中…（無 GPU 時每頁約數十秒，請耐心等）';
       document.getElementById('ocrResultWrap').classList.add('hide');
       OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供第 III 區手動框選修正
@@ -687,8 +692,31 @@
       if(grid)grid.scrollIntoView({behavior:'smooth',block:'start'});
       document.getElementById('ocrStatus').textContent='已送 '+added+' 張圖到第 III 區批次貼圖。可在下面改題號、手動框選、略過，再按「批次貼入題庫」。';
     }
+    // ── 示範模式：合併自 raw.test，免開服務即可預覽 MinerU 流程 ──
+    let OCR_DEMO=false;
+    const DEMO_FIG='data:image/svg+xml;base64,'+btoa('<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160"><rect width="220" height="160" fill="#fff"/><line x1="30" y1="130" x2="200" y2="130" stroke="#333"/><line x1="30" y1="130" x2="30" y2="20" stroke="#333"/><polyline points="30,130 90,80 150,80 200,40" fill="none" stroke="#1666d6" stroke-width="3"/><text x="150" y="150" font-size="12">t</text><text x="10" y="30" font-size="12">v</text></svg>');
+    const DEMO_CSV=[
+      '年度,來源學校,考試名稱,題號,答案,冊數,冊名,領域,大單元,子單元,知識點,題目摘要,題型,步驟分,記憶分,概念分,圖表類型,判斷依據,待確認,題目,詳解,題組文章,題組ID',
+      '114,慈文國中,114-八年級-第一次段考,1,C,B3,南一/理化,理化,物質的組成,純物質與混合物,純物質判別,判斷何者為純物質,A1,1,2,1,,,,"下列何者為純物質？(A) 空氣 (B) 海水 (C) 蒸餾水 (D) 糖水",,,',
+      '114,慈文國中,114-八年級-第一次段考,2,B,B3,南一/理化,理化,運動與力,牛頓第一運動定律,等速度與合力,由 v-t 圖判斷合力,B2,2,1,2,折線圖,,,"承上圖為某物體的 $v$-$t$ 圖，其等速階段合力 $F=ma=0$，下列敘述何者正確？",,,'
+    ].join('\n');
+    function ocrLoadDemo(){
+      OCR_DEMO=true;
+      if(!examName.value)examName.value='114-八年級-第一次段考';
+      OCR_RESULT={ok:true,engine:'MinerU demo（示範資料）',exam:'114-八年級-第一次段考',pages:[{page:1,width:1000,height:1000,
+        markdown:'1. 下列何者為純物質？\n(A) 空氣 (B) 海水 (C) 蒸餾水 (D) 糖水\n\n2. 承上圖為某物體的 $v$-$t$ 圖，其等速階段合力 $F = ma = 0$，下列敘述何者正確？',
+        blocks:[
+          {type:'text',bbox:[80,60,920,110],text:'1. 下列何者為純物質？'},
+          {type:'text',bbox:[80,120,920,170],text:'(A) 空氣 (B) 海水 (C) 蒸餾水 (D) 糖水'},
+          {type:'formula',bbox:[80,300,600,360],latex:'F = ma = 0'},
+          {type:'figure',bbox:[120,380,520,700],image_b64:DEMO_FIG}
+        ]}]};
+      document.getElementById('ocrStatus').textContent='已載入 MinerU 示範資料。往下查看辨識結果，再按「產生題目 CSV」預覽產出。';
+      ocrRenderResult();
+    }
     async function ocrMakeCsv(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
+      if(OCR_DEMO){questionCsv.value=DEMO_CSV;inspectCsv();document.getElementById('ocrStatus').textContent='（示範）已將樣本 CSV 填入第 4 步；正式使用時會由 Ollama 或 Gemini 依 MinerU 辨識內容產生。';questionCsv.scrollIntoView({behavior:'smooth',block:'center'});return}
       const st=document.getElementById('ocrStatus');
       const engine=document.getElementById('ocrClassifier').value;
       st.textContent='正在用 '+(engine==='gemini'?'Gemini':'Ollama')+' 分類、產生 23 欄 CSV…';
