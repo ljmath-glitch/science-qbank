@@ -626,6 +626,7 @@
     async function runAutoOcr(file){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='請先設定並「測試連線」OCR 服務網址。';return}
+      OCR_DEMO=false;   // 真辨識：關掉示範模式，避免「產生 CSV」誤用示範假資料
       st.textContent='上傳並辨識中…（無 GPU 時每頁約數十秒，請耐心等）';
       document.getElementById('ocrResultWrap').classList.add('hide');
       try{
