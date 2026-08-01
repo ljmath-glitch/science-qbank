@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>茲茲文教｜自然題庫系統</title>
-  <!-- 示範/測試頁 raw.test.html：已移除登入導向，可直接開啟預覽。資料為假、不影響題庫。 -->
+  <!-- 測試頁 raw.test.html：解鎖以便直接預覽，並讓隱藏的 index.html iframe 能載入(供「產生CSV」分類步驟呼叫 buildPrompt/callGemini/callOllama)。 -->
+  <script>try{sessionStorage.setItem('tzutzu_qbank_unlock_until',String(Date.now()+864e5))}catch(e){}</script>
   <link rel="icon" type="image/png" href="/logo.png">
   <style>
     :root{--ink:#2d3038;--paper:#f6f5f2;--line:#e6e4de;--red:#850103;--orange:#f9a12c;--green:#1f6f5c;--muted:#6e6f74}
