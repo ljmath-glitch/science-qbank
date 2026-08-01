@@ -3,5 +3,10 @@ fastapi
 uvicorn[standard]
 python-multipart
 
+# 文字層引擎（給有文字層的乾淨 PDF：乾淨文字 + 表格/圖當圖）：
+pdfplumber
+pypdfium2
+Pillow
+
 # 真正的辨識引擎 MinerU 另外安裝（見 README.md），因為它很大、且安裝方式依作業系統不同：
 #   pip install "mineru[core]"

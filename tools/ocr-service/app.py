@@ -24,6 +24,13 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 
+# 文字層引擎（需 pdfplumber/pypdfium2）；沒裝也不影響服務啟動，只是不能用 textlayer。
+try:
+    import textlayer_engine
+    _TEXTLAYER_OK = True
+except Exception:
+    _TEXTLAYER_OK = False
+
 # ── 設定（用環境變數覆蓋，不用改程式）────────────────────────────
 OCR_ENGINE = os.environ.get("OCR_ENGINE", "mock").lower()       # mock | mineru
 MINERU_BACKEND = os.environ.get("MINERU_BACKEND", "pipeline")     # 無 GPU 用 pipeline
@@ -116,6 +123,7 @@ def health():
         "ok": True,
         "engine": OCR_ENGINE,
         "mineru_available": shutil.which(MINERU_CMD) is not None,
+        "textlayer_available": _TEXTLAYER_OK,
     }
 
 
@@ -126,8 +134,16 @@ async def ocr(file: UploadFile = File(...)):
     if not data:
         raise HTTPException(status_code=400, detail="沒有收到檔案內容")
     exam = Path(file.filename or "考卷").stem
+    # auto：有文字層走 textlayer（乾淨文字+表格當圖），否則走 mineru（掃描檔）
+    eng = OCR_ENGINE
+    if eng == "auto":
+        eng = "textlayer" if (_TEXTLAYER_OK and textlayer_engine.has_text_layer(data)) else "mineru"
     try:
-        if OCR_ENGINE == "mineru":
+        if eng == "textlayer":
+            if not _TEXTLAYER_OK:
+                raise HTTPException(status_code=500, detail="文字層引擎未就緒，請在服務環境 pip install pdfplumber pypdfium2")
+            pages = textlayer_engine.run_textlayer(data)
+        elif eng == "mineru":
             pages = run_mineru(data)
         else:
             pages = run_mock(data)
@@ -136,7 +152,7 @@ async def ocr(file: UploadFile = File(...)):
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"MinerU 執行失敗：{e}")
     return JSONResponse(
-        {"ok": True, "engine": OCR_ENGINE, "exam": exam, "pages": pages}
+        {"ok": True, "engine": eng, "exam": exam, "pages": pages}
     )
 
 
