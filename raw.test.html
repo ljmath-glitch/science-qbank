@@ -604,7 +604,7 @@
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
 
     // ── 自動 OCR（本機服務）——把清稿 PDF 送到公司電腦的 OCR 服務，回來再交給 Ollama/Gemini 分類成 CSV ──
-    const OCR_PRESETS={company:'http://100.72.250.96:8000',desk3:'http://100.64.19.15:8000',local:'http://localhost:8000'};
+    const OCR_PRESETS={company:'http://100.72.250.96:8000',desk3:'https://ljmath160.tail3d3c18.ts.net',local:'http://localhost:8000'};
     let OCR_RESULT=null;
     function initOcrUi(){
       const p=localStorage.getItem('ocrPreset')||'company';
