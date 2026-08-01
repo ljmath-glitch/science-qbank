@@ -28,6 +28,9 @@ from fastapi.responses import JSONResponse, HTMLResponse
 OCR_ENGINE = os.environ.get("OCR_ENGINE", "mock").lower()       # mock | mineru
 MINERU_BACKEND = os.environ.get("MINERU_BACKEND", "pipeline")     # 無 GPU 用 pipeline
 MINERU_LANG = os.environ.get("MINERU_LANG", "ch")                # 中文
+# 表格：預設 "false" = 不把表格轉成 HTML 文字，改當「圖」裁出來（考卷排版較乾淨）。
+# 設 "true" 才會把表格解析成 HTML（適合真的資料表格很重要時）。
+MINERU_TABLE = os.environ.get("MINERU_TABLE", "false")
 MINERU_CMD = os.environ.get("MINERU_CMD", "mineru")             # mineru 執行檔路徑
 # CORS：預設放行正式站；設成 * 可全放行（開發用）
 ALLOW_ORIGIN = os.environ.get(
@@ -194,7 +197,7 @@ def run_mineru(pdf_bytes: bytes) -> list[dict]:
 
         subprocess.run(
             [MINERU_CMD, "-p", str(pdf_path), "-o", str(out_dir),
-             "-b", MINERU_BACKEND, "-l", MINERU_LANG],
+             "-b", MINERU_BACKEND, "-l", MINERU_LANG, "-t", MINERU_TABLE],
             check=True, capture_output=True, text=True,
         )
 
