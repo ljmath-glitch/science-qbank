@@ -53,10 +53,11 @@ th.sort-header:hover{background:#e5ddd0}
 .add-btn:hover{border-color:var(--primary);color:var(--primary);background:#faf0ee}
 .del-btn{padding:2px 6px;border:none;border-radius:4px;background:transparent;color:#ccc;cursor:pointer;font-size:14px;line-height:1}
 .del-btn:hover{background:#fee;color:var(--red)}
-.link-btn{display:inline-flex;align-items:center;justify-content:center;padding:3px;border:none;border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0;text-decoration:none}
+.link-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;padding:3px;border:none;border-radius:4px;background:transparent;color:var(--muted);cursor:pointer;flex-shrink:0;text-decoration:none}
 .link-btn:hover{background:#f6eceb;color:var(--primary)}
 .link-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;display:block}
 .link-btn-ph{display:inline-block;width:21px;flex-shrink:0}
+.multi-badge{position:absolute;top:-5px;right:-5px;min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:var(--primary,#850103);color:#fff;font-size:9px;font-weight:700;line-height:14px;text-align:center}
 /* ── 手機版：表格轉卡片，避免橫向捲動 ── */
 @media(max-width:600px){
   .wrap{padding:0 14px}
@@ -255,10 +256,15 @@ async function loadAll(){
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
     const key    = makeId(school, grade, year, round);
-    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0, examRaw: (q.exam||'').trim()};
+    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0, examRawSet: new Set()};
     grouped[key].count++;
+    if(q.exam) grouped[key].examRawSet.add(q.exam.trim());
   });
-  exams = Object.values(grouped);
+  exams = Object.values(grouped).map(ex => {
+    ex.examRaws = [...ex.examRawSet].sort();
+    delete ex.examRawSet;
+    return ex;
+  });
 
   progressMap = await loadProgress();
   // 合併手動新增的考卷
@@ -334,8 +340,16 @@ function render(){
     const delBtn = ex.isManual
       ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
       : `<button class="del-btn" title="隱藏此列（題目不會被刪）" onclick="hideEntry('${esc(id)}','${esc(shownName)}')">✕</button>`;
-    const linkBtn = ex.examRaw
-      ? `<a class="link-btn" href="index.html?exam=${encodeURIComponent(ex.examRaw)}" target="_blank" title="在題庫系統中開啟這份考卷的所有題目"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>`
+    const examRaws = ex.examRaws || [];
+    // 同一次段考在題庫裡如果被拆成多個不同的「考試名稱」字串存（例如地科、理化各自建檔），
+    // 這裡會列出全部實際名稱、並用 exams= 帶多個名稱，開啟連結才會看到跟進度表一致的完整題數，
+    // 不會只篩到其中一個名稱對應的那幾題。
+    const multiNote = examRaws.length>1 ? `title="這一列合併了 ${examRaws.length} 個不同的題庫考試名稱：\n${esc(examRaws.join('\n'))}"` : `title="在題庫系統中開啟這份考卷的所有題目"`;
+    const linkHref = examRaws.length>1
+      ? `index.html?exams=${encodeURIComponent(JSON.stringify(examRaws))}`
+      : (examRaws.length===1 ? `index.html?exam=${encodeURIComponent(examRaws[0])}` : '');
+    const linkBtn = linkHref
+      ? `<a class="link-btn" href="${linkHref}" target="_blank" ${multiNote}>${examRaws.length>1?`<span class="multi-badge">${examRaws.length}</span>`:''}<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>`
       : `<span class="link-btn-ph"></span>`;
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
     return `<tr style="${rowStyle}">

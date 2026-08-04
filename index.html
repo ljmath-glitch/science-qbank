@@ -3228,7 +3228,7 @@ function normType(t){
 function typeName(code){const t=QTYPES.find(x=>x.code===normType(code));return t?t.code+' '+t.name:code}
 function matches(it){
   if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
-  if(_pinExam!==null&&it.exam!==_pinExam)return false;
+  if(_pinExam&&!_pinExam.includes(it.exam))return false;
   if(QUICK_CHAPTER_RANGE&&!QUICK_CHAPTER_RANGE.keys.has(quickChapterKey(it)))return false;
   const s=fSearch.value.trim();
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')+(it.sol||'')).includes(s))return false;
@@ -3283,7 +3283,7 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   if(pinBanner){
     pinBanner.style.display=(_pinId||_pinExam)?'flex':'none';
     const pbt=document.getElementById('pinBannerText');
-    if(pbt)pbt.textContent=_pinExam?`📌 目前篩選考卷「${esc(_pinExam)}」（共 ${shown.length} 題）`:(_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）');
+    if(pbt)pbt.textContent=_pinExam?`📌 目前篩選考卷「${esc(_pinExam.join('」、「'))}」（共 ${shown.length} 題）`:(_pinGroupId?`📌 目前篩選鈴噹題組（共 ${shown.length} 題）`:'📌 目前篩選鈴噹題目（單題檢視）');
   }
   if(!DB.length){list.innerHTML=`<div class="empty"><div class="big">🧪</div>題庫還是空的<br>點「轉檔指令」開始把段考卷轉成題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
@@ -5576,9 +5576,11 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
   try{
     const qp=new URLSearchParams(location.search);
     const examParam=qp.get('exam');
+    const examsParam=qp.get('exams'); // 同一次段考跨科目（如地科＋理化）用這個帶多個考試名稱，見 progress.html
     rawHandoff=qp.get('handoff')||'';
     entryMode=qp.get('mode')||'';
-    if(examParam){_pinExam=examParam;history.replaceState(null,'',location.pathname);}
+    if(examsParam){try{const arr=JSON.parse(examsParam);if(Array.isArray(arr)&&arr.length)_pinExam=arr;}catch(e){}history.replaceState(null,'',location.pathname);}
+    else if(examParam){_pinExam=[examParam];history.replaceState(null,'',location.pathname);}
   }catch(e){}
   render();
   updateBell();
