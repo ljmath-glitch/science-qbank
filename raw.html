@@ -94,8 +94,9 @@
             <input id="paperFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.md" class="hide" onchange="readPaperFile(this.files[0])">
             <div class="drop" onclick="paperFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readPaperFile(event.dataTransfer.files[0])">丟入或選擇考卷檔案<br><span class="help">PDF、Word 或掃描圖片皆可；只讀取檔名，不會上傳檔案。</span></div>
             <input id="rawName" class="hide">
-            <div class="field" style="margin-top:12px"><label for="examName">自動校正後的題庫考試名稱（可直接修改，或從題庫既有名稱挑選）</label><input id="examName" list="examNameOptions" onfocus="loadExamNameOptions()" placeholder="請先丟入考卷檔案，或點此輸入／挑選"><datalist id="examNameOptions"></datalist></div>
+            <div class="field" style="margin-top:12px"><label for="examName">自動校正後的題庫考試名稱（可直接修改，或從題庫既有名稱挑選）</label><input id="examName" list="examNameOptions" onfocus="loadExamNameOptions()" onblur="autoMatchExamName()" placeholder="請先丟入考卷檔案，或點此輸入／挑選"><datalist id="examNameOptions"></datalist></div>
             <div class="status" id="nameStatus">命名格式：學校-年級-學年度-上／下學期-第幾次段考-科目（辨識到才加入）。若第 III 部分批次貼圖時顯示找不到考卷，代表這欄跟實際匯入題庫時用的名稱不一致，請直接修改這欄成題庫裡的正確名稱。</div>
+            <div class="status" id="nameMatchHint" style="margin-top:4px"></div>
           </div>
         </li>
         <li data-step="3"><b>複製題目轉檔指令</b>把清稿 PDF 與指令一起交給 Claude、Gemini 或 ChatGPT。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -189,7 +190,28 @@
     document.querySelectorAll('.steps>li').forEach(card=>card.addEventListener('click',event=>{if(event.target.closest('button,a,input,textarea,select,label'))return;const detail=card.querySelector('.step-detail');if(detail&&detail.classList.contains('open')&&event.target.closest('.step-detail'))return;const toggle=card.querySelector('.toggle-detail');if(toggle)toggleDetail(toggle)}));
     function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
     function readPaperFile(f){if(!f)return;syncExamNameFromFile(f);const lower=f.name.toLowerCase();if(lower.endsWith('.pdf'))setCropFile('pdf',f);else if(/\.(docx?|odt)$/i.test(f.name))setCropFile('word',f)}
-    function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name;normalizeName()}
+    function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name;normalizeName();autoMatchExamName()}
+    // 拿目前 examName 猜測值去題庫做模糊比對；能唯一對應就自動改成題庫裡完全一致的名稱，
+    // 有多個候選（例如同一次段考分理化/生物/地科分別建檔）就列出按鈕讓人一鍵挑選，避免要等第 III 區批次貼圖失敗才發現名稱對不上。
+    async function autoMatchExamName(){
+      const hint=document.getElementById('nameMatchHint');const val=(examName.value||'').trim();
+      if(!hint)return;if(!val){hint.innerHTML='';return}
+      try{
+        const w=document.getElementById('promptSource').contentWindow;
+        for(let i=0;i<40&&!(w&&w.__qbankDataReady);i++)await new Promise(r=>setTimeout(r,150));
+        if(!w||typeof w.listBatchExamStatus!=='function')return;
+        const status=w.listBatchExamStatus(val);
+        if(status.ok){
+          if(status.matchedExam!==val){examName.value=status.matchedExam;hint.innerHTML=`<span style="color:var(--green)">✓ 已自動對應題庫既有考卷「${esc(status.matchedExam)}」</span>`}
+          else hint.innerHTML='<span style="color:var(--green)">✓ 與題庫既有考卷名稱一致</span>';
+        }else if(status.suggestions&&status.suggestions.length){
+          hint.innerHTML=`<span style="color:#a14736">⚠ 題庫裡找不到完全一致的考卷，最接近的候選：</span><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">`+status.suggestions.map(n=>`<button type="button" class="btn" style="font-size:11px;padding:3px 8px" onclick="pickExamNameSuggestion('${esc(jsStr(n))}')">${esc(n)}</button>`).join('')+'</div>';
+        }else{
+          hint.innerHTML='<span style="color:#a14736">⚠ 題庫裡目前沒有任何接近的考卷名稱；若這份考卷的題目還沒匯入題庫，批次貼圖本來就會找不到對應題目，屬正常。</span>';
+        }
+      }catch(e){}
+    }
+    function pickExamNameSuggestion(name){examName.value=name;autoMatchExamName()}
     // 從題庫（隱藏 iframe 的 index.html）讀取既有考卷名稱，做成自動完成清單，避免匯入/貼圖時名稱對不上
     let _examOptsLoaded=false;
     async function loadExamNameOptions(){
