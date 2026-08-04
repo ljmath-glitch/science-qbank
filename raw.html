@@ -43,6 +43,7 @@
     .eraser-stage{position:relative;max-height:60vh;overflow:auto;text-align:center;background:#f5f4f1;border-radius:8px;padding:8px}
     .eraser-stage canvas{max-width:100%;height:auto;cursor:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);touch-action:none;border-radius:4px}
     .eraser-cursor{position:absolute;left:0;top:0;border:1.5px solid var(--red);background:rgba(133,1,3,.08);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:5;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
+    .eraser-sel{position:absolute;left:0;top:0;border:2px dashed var(--red);background:rgba(133,1,3,.12);pointer-events:none;display:none;z-index:6}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
 </head>
@@ -322,7 +323,7 @@
       const comma=imageData.indexOf(','),mime=(imageData.slice(0,comma).match(/data:([^;]+)/)||[])[1]||'image/jpeg';const payload={contents:[{parts:[{text:instruction},{inline_data:{mime_type:mime,data:imageData.slice(comma+1)}}]}],generationConfig:{temperature:0,responseMimeType:'application/json',maxOutputTokens:2048,thinkingConfig:{thinkingBudget:0}}};let last='';
       for(const model of ['gemini-3.5-flash-lite','gemini-3.5-flash']){const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});if(res.ok){const body=await res.json();const raw=body.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'{"assets":[]}';return JSON.parse(raw.replace(/^```json\s*|\s*```$/g,''))}last=await res.text();if(res.status===403)throw new Error('Gemini 金鑰沒有 API 使用權限，或帳戶配額不足。');if(res.status!==429&&res.status!==503&&res.status!==404)throw new Error(`Gemini 無法使用（${res.status}）。請確認金鑰與 API 權限。`)}throw new Error('Gemini 目前繁忙或沒有可用配額；已用省錢模型與備援模型各嘗試一次，請稍後再試。')}
     function renderCropCandidates(){const grid=document.getElementById('cropPreviewGrid');const active=cropCandidates.filter(x=>!x.skip);const unknown=active.filter(x=>x.qno===null).length;const review=active.filter(x=>x.verdict!=='pass').length;const sum=document.getElementById('cropSummary');sum.classList.remove('hide');sum.textContent=`共偵測 ${cropCandidates.length} 張候選素材，保留 ${active.length} 張；其中 ${unknown} 張題號未知、${review} 張需人工確認。表格已包含在候選素材內。`;document.getElementById('clearCropResultsBtn').disabled=!cropCandidates.length;
-      grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}" onclick="openCropPreview(${i})"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span><div class="crop-meta">${esc(it.reason||'')}</div><div class="crop-actions">${Number.isInteger(it.page)?`<button class="btn" onclick="fixCropItem(${i})">✂ 手動修正</button>`:''}<button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦</button><button class="btn" onclick="toggleCropScope(${i})" title="${it.scope==='group'?'改回只貼到單一題':'改成整個題組共用（貼到題組文章）'}">${it.scope==='group'?'改回單題':'🔗題組圖'}</button><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button><button class="btn" onclick="editCropQuestion(${i})">改題號</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length;
+      grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}" onclick="openCropPreview(${i})"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span>${it.reason?`<div class="crop-meta">${esc(it.reason)}</div>`:''}<div class="crop-actions"><button class="btn" onclick="openCropPreview(${i})">✏️ 編輯</button><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length;
       if(cropPreviewIndex!==null&&cropCandidates[cropPreviewIndex])renderCropPreviewModal();}
     function toggleCropSkip(i){cropCandidates[i].skip=!cropCandidates[i].skip;renderCropCandidates()}
     function clearCropResults(){if(!cropCandidates.length)return;if(!confirm('確定清除本次生成的所有縮圖、題號調整與待貼圖結果嗎？已選的 PDF、Word 與考卷名稱會保留。'))return;cropCandidates=[];pendingFixIndex=null;closeCropPreview();document.getElementById('cropPreviewGrid').innerHTML='';document.getElementById('cropSummary').classList.add('hide');document.getElementById('downloadCropZipBtn').disabled=true;document.getElementById('toBatchImageBtn').disabled=true;document.getElementById('clearCropResultsBtn').disabled=true;document.getElementById('batchImportState').textContent='';document.getElementById('cropReviewState').textContent='已清除本次結果；可重新開始截圖或匯入新的 Python 初篩 ZIP。'}
@@ -375,41 +376,98 @@
     }
     function closeInfoModal(){document.getElementById('cropModalOverlay').classList.remove('show');document.getElementById('cropModalBody').innerHTML=''}
     function closeCropPreview(){cropPreviewIndex=null;closeInfoModal()}
-    // ── 橡皮擦：把已裁切圖片中不要的部分塗成白色（當白紙背景） ──
+    // ── 橡皮擦／裁切：把已裁切圖片中不要的部分塗成白色，或直接框選裁掉（當白紙背景） ──
     let _eraserBrush=24,_eraserHistory=[],_eraserRedoStack=[],_eraserDrawing=false,_eraserLast=null;
+    let _eraserToolMode='brush',_eraserSelRect=null;
     function openCropEraser(i){
-      const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserRedoStack=[];_eraserDrawing=false;_eraserLast=null;
+      const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserRedoStack=[];_eraserDrawing=false;_eraserLast=null;_eraserToolMode='brush';_eraserSelRect=null;
       cropPreviewIndex=i;document.getElementById('cropModalOverlay').classList.add('show');
       const body=document.getElementById('cropModalBody');
-      body.innerHTML=`<div class="crop-modal-title">🧽 橡皮擦 — ${esc(it.filename)}</div>
-        <div class="eraser-tools"><div class="et-left">筆刷 <input type="range" id="eraserSize" min="6" max="90" value="${_eraserBrush}" oninput="_eraserBrush=+this.value;document.getElementById('eraserSizeVal').textContent=this.value"> <span id="eraserSizeVal">${_eraserBrush}</span> px</div>
+      body.innerHTML=`<div class="crop-modal-title">🧽 橡皮擦／裁切 — ${esc(it.filename)}</div>
+        <div class="eraser-tools"><div class="et-left">
+          <label><input type="radio" name="eraserTool" value="brush" checked onchange="setEraserTool('brush')">🖌 手繪塗白</label>
+          <label><input type="radio" name="eraserTool" value="rect" onchange="setEraserTool('rect')">▭ 框選（更精準）</label>
+          <span id="eraserBrushWrap">筆刷 <input type="range" id="eraserSize" min="6" max="90" value="${_eraserBrush}" oninput="_eraserBrush=+this.value;document.getElementById('eraserSizeVal').textContent=this.value"> <span id="eraserSizeVal">${_eraserBrush}</span> px</span>
+        </div>
         <span class="ur"><button class="btn" onclick="_eraserUndo()" title="復原（上一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>復原</button><button class="btn" onclick="_eraserRedo()" title="重做（下一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>重做</button></span></div>
-        <div class="eraser-stage" id="eraserStage"><canvas id="eraserCanvas"></canvas><div class="eraser-cursor" id="eraserCursor"></div></div>
-        <div class="crop-modal-meta">在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。</div>
+        <div class="eraser-stage" id="eraserStage"><canvas id="eraserCanvas"></canvas><div class="eraser-cursor" id="eraserCursor"></div><div class="eraser-sel" id="eraserSel"></div></div>
+        <div class="crop-modal-meta" id="eraserModeHint">在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。</div>
+        <div class="action-row" id="eraserSelActions" style="display:none"><button class="btn" onclick="_eraserFillSelection()">⬜ 把框內塗白</button><button class="btn" onclick="_eraserCropToSelection()">✂ 只保留框內（其餘裁掉）</button><button class="btn" onclick="_eraserClearSelection()">✕ 取消框選</button></div>
         <div class="action-row"><button class="btn primary" onclick="saveCropEraser(${i})">儲存</button><button class="btn" onclick="renderCropPreviewModal()">取消</button></div>`;
       const img=new Image();
       img.onload=()=>{const canvas=document.getElementById('eraserCanvas');if(!canvas)return;canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;canvas.getContext('2d').drawImage(img,0,0);_bindEraser(canvas);};
       img.onerror=()=>{alert('圖片載入失敗，無法使用橡皮擦。');renderCropPreviewModal();};
       img.src=it.src;
     }
+    function setEraserTool(mode){
+      _eraserToolMode=mode;_eraserClearSelection();
+      const brushWrap=document.getElementById('eraserBrushWrap');if(brushWrap)brushWrap.style.display=mode==='rect'?'none':'';
+      const canvas=document.getElementById('eraserCanvas');if(canvas)canvas.style.cursor=mode==='rect'?'crosshair':'none';
+      const ring=document.getElementById('eraserCursor');if(ring)ring.style.display='none';
+      const hint=document.getElementById('eraserModeHint');if(hint)hint.textContent=mode==='rect'?'在圖上拖曳框出要處理的範圍，放開後選擇「塗白」或「只保留框內」（裁掉範圍外的部分）。':'在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。';
+    }
     function _bindEraser(canvas){
       const ctx=canvas.getContext('2d');
       const pos=(e)=>{const r=canvas.getBoundingClientRect();const sx=canvas.width/r.width,sy=canvas.height/r.height;const t=(e.touches&&e.touches[0])||e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
       const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_eraserBrush;ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';ctx.beginPath();if(_eraserLast)ctx.moveTo(_eraserLast.x,_eraserLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_eraserLast=p;};
-      const stage=canvas.parentElement,ring=document.getElementById('eraserCursor');
-      const showRing=(e)=>{if(!ring)return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_eraserBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.style.display='block';};
+      const stage=canvas.parentElement,ring=document.getElementById('eraserCursor'),selEl=document.getElementById('eraserSel');
+      const showRing=(e)=>{if(!ring||_eraserToolMode==='rect')return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_eraserBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.style.display='block';};
       const hideRing=()=>{if(ring)ring.style.display='none';};
-      const start=(e)=>{e.preventDefault();_eraserDrawing=true;_pushEraserHistory(ctx,canvas);_eraserLast=null;paint(pos(e));showRing(e);};
-      const move=(e)=>{showRing(e);if(!_eraserDrawing)return;e.preventDefault();paint(pos(e));};
+      const stageRel=(e)=>{const sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;return{x:t.clientX-sr.left+stage.scrollLeft,y:t.clientY-sr.top+stage.scrollTop};};
+      let selStartScreen=null,selStartCanvas=null;
+      const start=(e)=>{
+        e.preventDefault();
+        if(_eraserToolMode==='rect'){selStartScreen=stageRel(e);selStartCanvas=pos(e);if(selEl){selEl.style.display='block';selEl.style.left=selStartScreen.x+'px';selEl.style.top=selStartScreen.y+'px';selEl.style.width='0';selEl.style.height='0';}document.getElementById('eraserSelActions').style.display='none';return;}
+        _eraserDrawing=true;_pushEraserHistory(ctx,canvas);_eraserLast=null;paint(pos(e));showRing(e);
+      };
+      const move=(e)=>{
+        if(_eraserToolMode==='rect'){
+          if(!selStartScreen)return;e.preventDefault();
+          const sp=stageRel(e);const x=Math.min(selStartScreen.x,sp.x),y=Math.min(selStartScreen.y,sp.y),w=Math.abs(sp.x-selStartScreen.x),h=Math.abs(sp.y-selStartScreen.y);
+          if(selEl){selEl.style.left=x+'px';selEl.style.top=y+'px';selEl.style.width=w+'px';selEl.style.height=h+'px';}
+          return;
+        }
+        showRing(e);if(!_eraserDrawing)return;e.preventDefault();paint(pos(e));
+      };
+      const finishRect=(e)=>{
+        if(_eraserToolMode!=='rect'||!selStartScreen)return;
+        const endCanvas=pos(e);const s=selStartCanvas;selStartScreen=null;selStartCanvas=null;
+        if(selEl)selEl.style.display='none';
+        let x=Math.min(s.x,endCanvas.x),y=Math.min(s.y,endCanvas.y),w=Math.abs(endCanvas.x-s.x),h=Math.abs(endCanvas.y-s.y);
+        x=Math.max(0,x);y=Math.max(0,y);w=Math.min(canvas.width-x,w);h=Math.min(canvas.height-y,h);
+        if(w<8||h<8)return;
+        _eraserSelRect={x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h)};
+        document.getElementById('eraserSelActions').style.display='flex';
+      };
       canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);
       canvas.addEventListener('mouseenter',showRing);canvas.addEventListener('mouseleave',hideRing);
       canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',(e)=>{move(e);},{passive:false});
-      canvas.addEventListener('touchend',hideRing);canvas.addEventListener('touchcancel',hideRing);
+      canvas.addEventListener('touchend',(e)=>{finishRect(e);hideRing();});canvas.addEventListener('touchcancel',hideRing);
+      window.addEventListener('mousemove',move);window.addEventListener('mouseup',finishRect);
       if(!window._eraserGlobalBound){window._eraserGlobalBound=true;const end=()=>{_eraserDrawing=false;_eraserLast=null;};window.addEventListener('mouseup',end);window.addEventListener('touchend',end);}
     }
-    function _pushEraserHistory(ctx,canvas){try{_eraserHistory.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(_eraserHistory.length>20)_eraserHistory.shift();_eraserRedoStack=[];}catch(e){}}
-    function _eraserUndo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserHistory.length)return;const ctx=canvas.getContext('2d');try{_eraserRedoStack.push(ctx.getImageData(0,0,canvas.width,canvas.height));}catch(e){}const img=_eraserHistory.pop();if(img)ctx.putImageData(img,0,0);}
-    function _eraserRedo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserRedoStack.length)return;const ctx=canvas.getContext('2d');try{_eraserHistory.push(ctx.getImageData(0,0,canvas.width,canvas.height));}catch(e){}const img=_eraserRedoStack.pop();if(img)ctx.putImageData(img,0,0);}
+    function _eraserFillSelection(){
+      const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserSelRect)return;
+      const ctx=canvas.getContext('2d');_pushEraserHistory(ctx,canvas);
+      ctx.save();ctx.globalCompositeOperation='source-over';ctx.fillStyle='#ffffff';ctx.fillRect(_eraserSelRect.x,_eraserSelRect.y,_eraserSelRect.w,_eraserSelRect.h);ctx.restore();
+      _eraserClearSelection();
+    }
+    function _eraserCropToSelection(){
+      const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserSelRect)return;
+      const ctx=canvas.getContext('2d');_pushEraserHistory(ctx,canvas);
+      const r=_eraserSelRect;const cropped=ctx.getImageData(r.x,r.y,r.w,r.h);
+      canvas.width=r.w;canvas.height=r.h;ctx.putImageData(cropped,0,0);
+      _eraserClearSelection();
+    }
+    function _eraserClearSelection(){
+      _eraserSelRect=null;
+      const selEl=document.getElementById('eraserSel');if(selEl)selEl.style.display='none';
+      const actions=document.getElementById('eraserSelActions');if(actions)actions.style.display='none';
+    }
+    // 歷史記錄要連canvas尺寸一起存，裁切會改變畫布大小，復原/重做時才能把尺寸也還原，不然畫面會被裁切後的小尺寸卡住
+    function _pushEraserHistory(ctx,canvas){try{_eraserHistory.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});if(_eraserHistory.length>20)_eraserHistory.shift();_eraserRedoStack=[];}catch(e){}}
+    function _eraserUndo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserHistory.length)return;const ctx=canvas.getContext('2d');try{_eraserRedoStack.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});}catch(e){}const entry=_eraserHistory.pop();if(entry){canvas.width=entry.w;canvas.height=entry.h;ctx.putImageData(entry.img,0,0);}}
+    function _eraserRedo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserRedoStack.length)return;const ctx=canvas.getContext('2d');try{_eraserHistory.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});}catch(e){}const entry=_eraserRedoStack.pop();if(entry){canvas.width=entry.w;canvas.height=entry.h;ctx.putImageData(entry.img,0,0);}}
     function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas');if(!canvas||!cropCandidates[i])return;cropCandidates[i].src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
     function renderCropPreviewModal(){
       const i=cropPreviewIndex;const it=cropCandidates[i];if(!it)return;
@@ -418,12 +476,13 @@
       document.getElementById('cropModalBody').innerHTML=`
         <div class="crop-modal-title">${esc(it.filename)}</div>
         <img src="${it.src}" alt="${esc(it.filename)}">
-        <div class="crop-modal-meta">第 ${esc(it.page)} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':` · 第 ${it.qno} 題`}${it.renderScale?` · 目前解析度倍率 ${it.renderScale}x`:''}<br>${esc(it.reason||'')}${upNote?'<br>'+upNote:''}</div>
+        <div class="crop-modal-meta">第 ${esc(it.page)} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}${it.renderScale?` · 目前解析度倍率 ${it.renderScale}x`:''}<br>${esc(it.reason||'')}${upNote?'<br>'+upNote:''}</div>
         <div class="action-row">
           ${canUpscale?`<button class="btn primary" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
           ${Number.isInteger(it.page)?`<button class="btn" onclick="closeCropPreview();fixCropItem(${i})">✂ 手動修正</button>`:''}
-          <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦</button>
+          <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦／裁切</button>
           <button class="btn" onclick="editCropQuestion(${i});renderCropPreviewModal()">改題號</button>
+          <button class="btn" onclick="toggleCropScope(${i});renderCropPreviewModal()" title="${it.scope==='group'?'改回只貼到單一題':'改成整個題組共用（貼到題組文章）'}">${it.scope==='group'?'改回單題':'🔗設為題組圖'}</button>
           <button class="btn" onclick="toggleCropSkip(${i});renderCropPreviewModal()">${it.skip?'恢復保留':'略過'}</button>
           <a class="btn" href="${it.src}" download="${esc(it.filename)}">⬇ 下載這張</a>
           <button class="btn" onclick="closeCropPreview()">關閉</button>

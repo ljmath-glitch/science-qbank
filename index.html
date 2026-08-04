@@ -208,7 +208,7 @@
   .ie-stage{position:relative;max-height:56vh;overflow:auto;text-align:center;background:#f5f4f1;border-radius:8px;padding:8px}
   .ie-stage canvas{max-width:100%;height:auto;cursor:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);touch-action:none;border-radius:4px}
   .ie-cursor{position:absolute;left:0;top:0;border:1.5px solid var(--red);background:rgba(133,1,3,.08);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:5;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
-  .ie-cursor.clear{border-style:dashed;background:rgba(0,0,0,.04)}
+  .ie-sel{position:absolute;left:0;top:0;border:2px dashed var(--red);background:rgba(133,1,3,.12);pointer-events:none;display:none;z-index:6}
   .float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);padding:8px 22px;display:flex;align-items:center;gap:13px;z-index:600;border-top:1px solid var(--line);box-shadow:0 -6px 24px -14px rgba(45,48,56,.3);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   /* 往下捲動時自動隱藏底部匯出列，往上捲動才露出 */
@@ -751,6 +751,11 @@
 <dialog id="imgEraserDlg">
   <div class="dlg-head">🧽 圖片橡皮擦<button class="x" onclick="imgEraserDlg.close()">×</button></div>
   <div class="dlg-body" id="imgEraserBody"></div>
+</dialog>
+
+<dialog id="imgAttrDlg">
+  <div class="dlg-head">🖼 編輯圖片<button class="x" onclick="imgAttrDlg.close()">×</button></div>
+  <div class="dlg-body" id="imgAttrBody"></div>
 </dialog>
 
 <!-- 考卷設定 -->
@@ -2306,19 +2311,12 @@ function onEditImgDrop(e){
   addImageFiles(e.dataTransfer.files);
 }
 async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
-function renderImgPrev(){const hasPassage=document.getElementById('imgTargetWrap')?.style.display!=='none';eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
-  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
-  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:inherit;font-size:12px;flex-wrap:wrap">
-    <button class="btn sm" onclick="setImg(${i},'width',45)">小</button>
-    <button class="btn sm" onclick="setImg(${i},'width',65)">中</button>
-    <button class="btn sm" onclick="setImg(${i},'width',85)">大</button>
-    <button class="btn sm" onclick="setImg(${i},'width',100)">滿版</button>
-    <input type="range" min="20" max="100" value="${im.width}" oninput="setImg(${i},'width',this.value)" style="width:90px"><span>${im.width}%</span>
-    <select onchange="setImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
-    ${curImgs.length>1?`<button class="btn sm" title="把此圖的寬度與對齊套用到本題所有圖" onclick="applyImgStyleAll(${i})">套用到全部</button>`:''}
-    <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('q',${i})">🧽 橡皮擦</button>
-    ${hasPassage?`<select onchange="moveImgScope('q',${i},this.value)" style="width:auto" title="搬到題目或題組文章共用，不用刪除重傳"><option value="q" selected>屬於：題目</option><option value="p">屬於：題組文章</option></select>`:''}
-    <button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">移除</button></div></div>`).join('')}
+function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
+  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('q',${i})">
+  <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
+    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
+    <button class="btn sm" onclick="openImgAttrDlg('q',${i})">✏️ 編輯</button>
+  </div></div>`).join('')}
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 // 把已上傳的圖在「題目」與「題組文章」之間搬移，不用刪除重傳；只在有題組文章（groupId 已設定）時才顯示選單。
 function moveImgScope(fromScope,i,target){
@@ -2331,20 +2329,22 @@ function moveImgScope(fromScope,i,target){
   renderImgPrev();renderPassageImgPrev();
 }
 function applyImgStyleAll(i){var w=curImgs[i].width,a=curImgs[i].align;curImgs.forEach(im=>{im.width=w;im.align=a});renderImgPrev()}
-// ── 圖片橡皮擦：把單題／題組圖裡不要的部分塗白或挖空，與 raw 批次貼圖工具同款（游標顯示筆刷大小） ──
-let _ieBrush=24,_ieMode='white',_ieHist=[],_ieRedo=[],_ieDraw=false,_ieLast=null,_ieTarget=null;
+// ── 圖片橡皮擦／裁切：把單題／題組圖裡不要的部分塗白，或直接框選裁掉，與 raw 批次貼圖工具同款 ──
+let _ieBrush=24,_ieHist=[],_ieRedo=[],_ieDraw=false,_ieLast=null,_ieTarget=null,_ieToolMode='brush',_ieSelRect=null;
 const _IE_ARROWS={undo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>',redo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>'};
 function openImgEraser(scope,i){
   const arr=scope==='p'?curPassageImgs:curImgs;const it=arr[i];if(!it)return;
-  _ieTarget={scope,i};_ieHist=[];_ieRedo=[];_ieDraw=false;_ieLast=null;
+  _ieTarget={scope,i};_ieHist=[];_ieRedo=[];_ieDraw=false;_ieLast=null;_ieToolMode='brush';_ieSelRect=null;
   const dlg=document.getElementById('imgEraserDlg');
   document.getElementById('imgEraserBody').innerHTML=`
-    <div class="ie-tools"><div class="ie-left">筆刷 <input type="range" id="ieSize" min="6" max="90" value="${_ieBrush}" oninput="_ieBrush=+this.value;document.getElementById('ieSizeVal').textContent=this.value"> <span id="ieSizeVal">${_ieBrush}</span> px
-      <label><input type="radio" name="ieMode" ${_ieMode!=='clear'?'checked':''} onchange="_ieMode='white'"> 塗白</label>
-      <label><input type="radio" name="ieMode" ${_ieMode==='clear'?'checked':''} onchange="_ieMode='clear'"> 透明</label></div>
+    <div class="ie-tools"><div class="ie-left">
+      <label><input type="radio" name="ieTool" checked onchange="setIeTool('brush')">🖌 手繪塗白</label>
+      <label><input type="radio" name="ieTool" onchange="setIeTool('rect')">▭ 框選（更精準）</label>
+      <span id="ieBrushWrap">筆刷 <input type="range" id="ieSize" min="6" max="90" value="${_ieBrush}" oninput="_ieBrush=+this.value;document.getElementById('ieSizeVal').textContent=this.value"> <span id="ieSizeVal">${_ieBrush}</span> px</span></div>
       <span class="ur"><button class="btn sm" onclick="_ieUndo()" title="復原（上一步）">${_IE_ARROWS.undo}復原</button><button class="btn sm" onclick="_ieRedoFn()" title="重做（下一步）">${_IE_ARROWS.redo}重做</button></span></div>
-    <div class="ie-stage" id="ieStage"><canvas id="ieCanvas"></canvas><div class="ie-cursor" id="ieCursor"></div></div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px">在圖上按住拖曳，把不要的東西塗掉（塗白＝當作白紙背景；透明＝挖空成透明）。游標圓圈就是筆刷實際大小。</div>
+    <div class="ie-stage" id="ieStage"><canvas id="ieCanvas"></canvas><div class="ie-cursor" id="ieCursor"></div><div class="ie-sel" id="ieSel"></div></div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px" id="ieModeHint">在圖上按住拖曳，把不要的東西塗成白色。游標圓圈就是筆刷實際大小。</div>
+    <div style="display:none;gap:8px;margin-top:8px" id="ieSelActions"><button class="btn sm" onclick="_ieFillSelection()">⬜ 把框內塗白</button><button class="btn sm" onclick="_ieCropToSelection()">✂ 只保留框內（其餘裁掉）</button><button class="btn sm" onclick="_ieClearSelection()">✕ 取消框選</button></div>
     <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:12px"><button class="btn primary" onclick="_ieSave()">儲存</button><button class="btn" onclick="imgEraserDlg.close()">取消</button></div>`;
   if(!dlg.open)dlg.showModal();
   const img=new Image();if(/^https?:/i.test(it.src))img.crossOrigin='anonymous';
@@ -2352,39 +2352,125 @@ function openImgEraser(scope,i){
   img.onerror=()=>{alert('圖片載入失敗，無法使用橡皮擦。');dlg.close();};
   img.src=it.src;
 }
+function setIeTool(mode){
+  _ieToolMode=mode;_ieClearSelection();
+  const brushWrap=document.getElementById('ieBrushWrap');if(brushWrap)brushWrap.style.display=mode==='rect'?'none':'';
+  const canvas=document.getElementById('ieCanvas');if(canvas)canvas.style.cursor=mode==='rect'?'crosshair':'none';
+  const ring=document.getElementById('ieCursor');if(ring)ring.style.display='none';
+  const hint=document.getElementById('ieModeHint');if(hint)hint.textContent=mode==='rect'?'在圖上拖曳框出要處理的範圍，放開後選擇「塗白」或「只保留框內」（裁掉範圍外的部分）。':'在圖上按住拖曳，把不要的東西塗成白色。游標圓圈就是筆刷實際大小。';
+}
 function _bindImgEraser(canvas){
   const ctx=canvas.getContext('2d');
   const pos=(e)=>{const r=canvas.getBoundingClientRect();const sx=canvas.width/r.width,sy=canvas.height/r.height;const t=(e.touches&&e.touches[0])||e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
-  const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_ieBrush;if(_ieMode==='clear'){ctx.globalCompositeOperation='destination-out';ctx.strokeStyle='rgba(0,0,0,1)';}else{ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';}ctx.beginPath();if(_ieLast)ctx.moveTo(_ieLast.x,_ieLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_ieLast=p;};
-  const stage=canvas.parentElement,ring=document.getElementById('ieCursor');
-  const showRing=(e)=>{if(!ring)return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_ieBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.classList.toggle('clear',_ieMode==='clear');ring.style.display='block';};
+  const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_ieBrush;ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';ctx.beginPath();if(_ieLast)ctx.moveTo(_ieLast.x,_ieLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_ieLast=p;};
+  const stage=canvas.parentElement,ring=document.getElementById('ieCursor'),selEl=document.getElementById('ieSel');
+  const showRing=(e)=>{if(!ring||_ieToolMode==='rect')return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_ieBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.style.display='block';};
   const hideRing=()=>{if(ring)ring.style.display='none';};
-  const start=(e)=>{e.preventDefault();_ieDraw=true;_iePush(ctx,canvas);_ieLast=null;paint(pos(e));showRing(e);};
-  const move=(e)=>{showRing(e);if(!_ieDraw)return;e.preventDefault();paint(pos(e));};
+  const stageRel=(e)=>{const sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;return{x:t.clientX-sr.left+stage.scrollLeft,y:t.clientY-sr.top+stage.scrollTop};};
+  let selStartScreen=null,selStartCanvas=null;
+  const start=(e)=>{
+    e.preventDefault();
+    if(_ieToolMode==='rect'){selStartScreen=stageRel(e);selStartCanvas=pos(e);if(selEl){selEl.style.display='block';selEl.style.left=selStartScreen.x+'px';selEl.style.top=selStartScreen.y+'px';selEl.style.width='0';selEl.style.height='0';}document.getElementById('ieSelActions').style.display='none';return;}
+    _ieDraw=true;_iePush(ctx,canvas);_ieLast=null;paint(pos(e));showRing(e);
+  };
+  const move=(e)=>{
+    if(_ieToolMode==='rect'){
+      if(!selStartScreen)return;e.preventDefault();
+      const sp=stageRel(e);const x=Math.min(selStartScreen.x,sp.x),y=Math.min(selStartScreen.y,sp.y),w=Math.abs(sp.x-selStartScreen.x),h=Math.abs(sp.y-selStartScreen.y);
+      if(selEl){selEl.style.left=x+'px';selEl.style.top=y+'px';selEl.style.width=w+'px';selEl.style.height=h+'px';}
+      return;
+    }
+    showRing(e);if(!_ieDraw)return;e.preventDefault();paint(pos(e));
+  };
+  const finishRect=(e)=>{
+    if(_ieToolMode!=='rect'||!selStartScreen)return;
+    const endCanvas=pos(e);const s=selStartCanvas;selStartScreen=null;selStartCanvas=null;
+    if(selEl)selEl.style.display='none';
+    let x=Math.min(s.x,endCanvas.x),y=Math.min(s.y,endCanvas.y),w=Math.abs(endCanvas.x-s.x),h=Math.abs(endCanvas.y-s.y);
+    x=Math.max(0,x);y=Math.max(0,y);w=Math.min(canvas.width-x,w);h=Math.min(canvas.height-y,h);
+    if(w<8||h<8)return;
+    _ieSelRect={x:Math.round(x),y:Math.round(y),w:Math.round(w),h:Math.round(h)};
+    document.getElementById('ieSelActions').style.display='flex';
+  };
   canvas.addEventListener('mousedown',start);canvas.addEventListener('mousemove',move);
   canvas.addEventListener('mouseenter',showRing);canvas.addEventListener('mouseleave',hideRing);
   canvas.addEventListener('touchstart',start,{passive:false});canvas.addEventListener('touchmove',move,{passive:false});
-  canvas.addEventListener('touchend',hideRing);canvas.addEventListener('touchcancel',hideRing);
+  canvas.addEventListener('touchend',(e)=>{finishRect(e);hideRing();});canvas.addEventListener('touchcancel',hideRing);
+  window.addEventListener('mousemove',move);window.addEventListener('mouseup',finishRect);
   if(!window._ieGlobalBound){window._ieGlobalBound=true;const end=()=>{_ieDraw=false;_ieLast=null;};window.addEventListener('mouseup',end);window.addEventListener('touchend',end);}
 }
-function _iePush(ctx,canvas){try{_ieHist.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(_ieHist.length>20)_ieHist.shift();_ieRedo=[];}catch(e){}}
-function _ieUndo(){const c=document.getElementById('ieCanvas');if(!c||!_ieHist.length)return;const ctx=c.getContext('2d');try{_ieRedo.push(ctx.getImageData(0,0,c.width,c.height));}catch(e){}const img=_ieHist.pop();if(img)ctx.putImageData(img,0,0);}
-function _ieRedoFn(){const c=document.getElementById('ieCanvas');if(!c||!_ieRedo.length)return;const ctx=c.getContext('2d');try{_ieHist.push(ctx.getImageData(0,0,c.width,c.height));}catch(e){}const img=_ieRedo.pop();if(img)ctx.putImageData(img,0,0);}
-function _ieSave(){const c=document.getElementById('ieCanvas');if(!c||!_ieTarget)return;let url;try{url=c.toDataURL('image/png');}catch(e){alert('這張圖來自雲端，瀏覽器基於安全限制無法直接存回。請改用「移除」後重新上傳原圖再編輯。');return;}const arr=_ieTarget.scope==='p'?curPassageImgs:curImgs;const it=arr[_ieTarget.i];if(it)it.src=url;document.getElementById('imgEraserDlg').close();if(_ieTarget.scope==='p')renderPassageImgPrev();else renderImgPrev();}
+function _ieFillSelection(){
+  const c=document.getElementById('ieCanvas');if(!c||!_ieSelRect)return;
+  const ctx=c.getContext('2d');_iePush(ctx,c);
+  ctx.save();ctx.globalCompositeOperation='source-over';ctx.fillStyle='#ffffff';ctx.fillRect(_ieSelRect.x,_ieSelRect.y,_ieSelRect.w,_ieSelRect.h);ctx.restore();
+  _ieClearSelection();
+}
+function _ieCropToSelection(){
+  const c=document.getElementById('ieCanvas');if(!c||!_ieSelRect)return;
+  const ctx=c.getContext('2d');_iePush(ctx,c);
+  const r=_ieSelRect;const cropped=ctx.getImageData(r.x,r.y,r.w,r.h);
+  c.width=r.w;c.height=r.h;ctx.putImageData(cropped,0,0);
+  _ieClearSelection();
+}
+function _ieClearSelection(){
+  _ieSelRect=null;
+  const selEl=document.getElementById('ieSel');if(selEl)selEl.style.display='none';
+  const actions=document.getElementById('ieSelActions');if(actions)actions.style.display='none';
+}
+// 歷史記錄連canvas尺寸一起存，裁切會改變畫布大小，復原/重做時才能把尺寸也還原
+function _iePush(ctx,canvas){try{_ieHist.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});if(_ieHist.length>20)_ieHist.shift();_ieRedo=[];}catch(e){}}
+function _ieUndo(){const c=document.getElementById('ieCanvas');if(!c||!_ieHist.length)return;const ctx=c.getContext('2d');try{_ieRedo.push({img:ctx.getImageData(0,0,c.width,c.height),w:c.width,h:c.height});}catch(e){}const entry=_ieHist.pop();if(entry){c.width=entry.w;c.height=entry.h;ctx.putImageData(entry.img,0,0);}}
+function _ieRedoFn(){const c=document.getElementById('ieCanvas');if(!c||!_ieRedo.length)return;const ctx=c.getContext('2d');try{_ieHist.push({img:ctx.getImageData(0,0,c.width,c.height),w:c.width,h:c.height});}catch(e){}const entry=_ieRedo.pop();if(entry){c.width=entry.w;c.height=entry.h;ctx.putImageData(entry.img,0,0);}}
+function _ieSave(){const c=document.getElementById('ieCanvas');if(!c||!_ieTarget)return;let url;try{url=c.toDataURL('image/png');}catch(e){alert('這張圖來自雲端，瀏覽器基於安全限制無法直接存回。請改用「移除」後重新上傳原圖再編輯。');return;}const arr=_ieTarget.scope==='p'?curPassageImgs:curImgs;const it=arr[_ieTarget.i];if(it)it.src=url;document.getElementById('imgEraserDlg').close();if(_ieTarget.scope==='p')renderPassageImgPrev();else renderImgPrev();if(_iaTarget)renderImgAttrDlg();}
 
 function renderPassageImgPrev(){
   const el=document.getElementById('ePassageImgPrev');if(!el)return;
   el.innerHTML=curPassageImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
-  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
-  <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:inherit;font-size:12px;flex-wrap:wrap">
-    <button class="btn sm" onclick="setPassageImg(${i},'width',45)">小</button>
-    <button class="btn sm" onclick="setPassageImg(${i},'width',65)">中</button>
-    <button class="btn sm" onclick="setPassageImg(${i},'width',85)">大</button>
-    <button class="btn sm" onclick="setPassageImg(${i},'width',100)">滿版</button>
-    <select onchange="setPassageImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
-    <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('p',${i})">🧽 橡皮擦</button>
-    <select onchange="moveImgScope('p',${i},this.value)" style="width:auto" title="搬到題目或題組文章共用，不用刪除重傳"><option value="q">屬於：題目</option><option value="p" selected>屬於：題組文章</option></select>
-    <button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">移除</button></div></div>`).join('')}
+  <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('p',${i})">
+  <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
+    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
+    <button class="btn sm" onclick="openImgAttrDlg('p',${i})">✏️ 編輯</button>
+  </div></div>`).join('')}
+// ── 圖片編輯子視窗：統一入口，把寬度／對齊／歸屬／橡皮擦裁切／移除都收進同一個彈窗，避免每張圖底下按鈕一長排 ──
+let _iaTarget=null;
+function openImgAttrDlg(scope,i){
+  const arr=scope==='p'?curPassageImgs:curImgs;if(!arr[i])return;
+  _iaTarget={scope,i};renderImgAttrDlg();
+  const dlg=document.getElementById('imgAttrDlg');if(!dlg.open)dlg.showModal();
+}
+function renderImgAttrDlg(){
+  if(!_iaTarget)return;
+  const {scope,i}=_iaTarget;
+  const arr=scope==='p'?curPassageImgs:curImgs;const im=arr[i];
+  const body=document.getElementById('imgAttrBody');
+  if(!im){_iaTarget=null;const dlg=document.getElementById('imgAttrDlg');if(dlg&&dlg.open)dlg.close();return;}
+  const hasPassage=document.getElementById('imgTargetWrap')?.style.display!=='none';
+  const setFn=scope==='p'?'setPassageImg':'setImg';
+  body.innerHTML=`
+    <img src="${im.src}" style="max-width:100%;max-height:38vh;display:block;margin:0 auto 12px;border-radius:8px;background:#f5f4f1">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn sm" onclick="${setFn}(${i},'width',45);renderImgAttrDlg()">小</button>
+      <button class="btn sm" onclick="${setFn}(${i},'width',65);renderImgAttrDlg()">中</button>
+      <button class="btn sm" onclick="${setFn}(${i},'width',85);renderImgAttrDlg()">大</button>
+      <button class="btn sm" onclick="${setFn}(${i},'width',100);renderImgAttrDlg()">滿版</button>
+      <input type="range" min="20" max="100" value="${im.width}" oninput="${setFn}(${i},'width',this.value);renderImgAttrDlg()" style="width:110px"><span>${im.width}%</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      對齊：<select onchange="${setFn}(${i},'align',this.value);renderImgAttrDlg()"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
+      ${scope==='q'&&curImgs.length>1?`<button class="btn sm" title="把此圖的寬度與對齊套用到本題所有圖" onclick="applyImgStyleAll(${i})">套用到全部</button>`:''}
+    </div>
+    ${hasPassage?`<div style="margin-bottom:10px">歸屬：<select onchange="moveImgScope('${scope}',${i},this.value);_iaTarget=null;document.getElementById('imgAttrDlg').close()"><option value="q" ${scope!=='p'?'selected':''}>題目</option><option value="p" ${scope==='p'?'selected':''}>題組文章</option></select></div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn" onclick="openImgEraser('${scope}',${i})">🧽 橡皮擦／裁切</button>
+      <button class="btn" onclick="removeImgFromAttrDlg('${scope}',${i})">🗑 移除這張圖</button>
+      <button class="btn" onclick="imgAttrDlg.close()">關閉</button>
+    </div>`;
+}
+function removeImgFromAttrDlg(scope,i){
+  if(!confirm('確定移除這張圖？'))return;
+  if(scope==='p'){curPassageImgs.splice(i,1);renderPassageImgPrev();}else{curImgs.splice(i,1);renderImgPrev();}
+  _iaTarget=null;document.getElementById('imgAttrDlg').close();
+}
 
 function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPassageImgPrev()}
 function onGroupIdChange(){
