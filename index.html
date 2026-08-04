@@ -1506,7 +1506,7 @@ function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).sli
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
 function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
   r.group_id=it.groupId||'';delete r.groupId;
-  ['_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ'].forEach(k=>delete r[k]);
+  ['_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ','_hadImgMarker'].forEach(k=>delete r[k]);
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;
@@ -2151,8 +2151,12 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     if(it.summary&&it.q){const _s=it.summary.trim(),_q=it.q.trim(),_sh=Math.min(_s.length,_q.length,60);let _m=0;for(let _i=0;_i<_sh;_i++)if(_s[_i]===_q[_i])_m++;if(_q.slice(0,_s.length+5).includes(_s)||(_sh>0&&_m/_sh>0.75))it.summary='';}
     // 承上題 必須有 groupId
     if(/承上題/.test(it.q)&&!it.groupId){it.flag=true;if(!it.basis)it.basis='[回報] 承上題但缺少題組ID，請補填';}
-    // 〔含圖〕需手動上傳圖片
-    if(/〔含圖〕|【含圖】/.test(it.q||'')){it.flag=true;if(!it.basis)it.basis='[回報] 題目含圖，請編輯此題並上傳圖片';}
+    // 〔含圖〕需手動上傳圖片：先用來標記待確認，再把標記文字從題目中拿掉，不留在畫面上
+    if(/〔含圖〕|【含圖】/.test(it.q||'')){
+      it.flag=true;if(!it.basis)it.basis='[回報] 題目含圖，請編輯此題並上傳圖片';
+      it._hadImgMarker=true;
+      it.q=it.q.replace(/〔含圖〕|【含圖】/g,'').replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+    }
     adds.push(it)}
   // 題組ID只有1題 → 可能其他題漏填
   const _gidCnt={};adds.forEach(it=>{if(it.groupId)_gidCnt[it.groupId]=(_gidCnt[it.groupId]||0)+1;});
@@ -2173,6 +2177,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       if(withSep){const si=withSep.q.indexOf(SEP);pText=withSep.q.slice(0,si).trim();withSep.q=withSep.q.slice(si+SEP.length).trim();}
     }
     if(!pText)return;
+    pText=pText.replace(/〔含圖〕|【含圖】/g,'').replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
     const dupPassage=(PASSAGES[it.groupId]&&PASSAGES[it.groupId].exam===it.exam)?PASSAGES[it.groupId]:null;
     // 同樣要保留既有題組文章已上傳的圖片，避免重複匯入時被清空
     passageAdds.push({id:dupPassage?dupPassage.id:uid(),groupId:it.groupId,type:'passage',q:pText,sol:'',ans:'',imgs:dupPassage?dupPassage.imgs:[],
@@ -2217,7 +2222,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     if(changed)await sb.from('syllabus_doc').upsert({id:2,content:JSON.stringify(pgMap)});
   }catch(e){}
   importDlg.close();await load();buildFilters();render();
-  const _imgN=adds.filter(it=>/〔含圖〕|【含圖】/.test(it.q||'')).length;
+  const _imgN=adds.filter(it=>it._hadImgMarker).length;
   const _flagN=adds.filter(it=>it.flag).length;
   let _sumMsg=`✅ 成功匯入 ${adds.length} 題`+(passageAdds.length?`（含 ${passageAdds.length} 組題組文章）`:'')+'。';
   const _issues=[];
