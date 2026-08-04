@@ -173,7 +173,7 @@
         </li>
         <li data-step="3"><b>檢查並確認圖表素材</b>系統會先列出自動裁切候選圖表，再由 AI 標示「可保留／需人工確認／略過」。確認後才會建立可批次貼圖的素材包。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help"><b>建議流程：</b>先按「① 開始抽圖（自動）」——有 Word 抽 Word 原圖、數位 PDF 抽內嵌圖，都是精準座標；只有掃描檔才會退回 AI 偵測（精準度較低）。抽完逐張檢查下方卡片，凡是標「需人工確認」或你覺得裁切範圍不對、抓錯題號的，直接點該張卡片上的「✂ 手動修正」，在下方頁面重新框選一次就會精準取代那一張，<b>不會影響其他已確認的卡片</b>。<br>如果整份都是掃描檔、想整份手動處理，也可以直接按「手動框選裁切（從頭開始）」略過自動掃描。<br>掃描 PDF 也可以改用本機 Python 工具先篩一輪：`tools/extract_question_assets.py`（PDF有文字層）或 `tools/crop_scanned_exam_visuals.py`（整頁掃描圖、無文字層，用 Tesseract OCR 定位圖表，不會亂猜），跑完會產生一個 ZIP，用下面「📦 上傳 Python 初篩 ZIP」載入即可。<br>如果你已經自己裁好圖了，可以直接用「🖼 上傳已裁切圖片」加入單張或多張，或「📂 上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">① 開始抽圖（自動）</button><button class="btn" id="manualCropBtn" onclick="startManualCrop()">✂ 手動框選裁切（從頭開始）</button><input type="file" id="candidateZipInput" accept=".zip" style="display:none" onchange="loadCandidateZip(this.files[0])"><button class="btn" onclick="document.getElementById('candidateZipInput').click()">📦 上傳 Python 初篩 ZIP</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">🖼 上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">📂 上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="status" id="cropReviewState">等待選擇檔案。建議先「開始抽圖（自動）」，檢查後對有問題的素材逐張「手動修正」。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
+          <div class="step-detail"><p class="help"><b>建議流程：</b>先按「① 開始抽圖（自動）」——有 Word 抽 Word 原圖、數位 PDF 抽內嵌圖，都是精準座標；只有掃描檔才會退回 AI 偵測（精準度較低）。抽完逐張檢查下方卡片，凡是標「需人工確認」或你覺得裁切範圍不對、抓錯題號的，直接點該張卡片上的「✂ 手動修正」，在下方頁面重新框選一次就會精準取代那一張，<b>不會影響其他已確認的卡片</b>。<br>如果整份都是掃描檔、想整份手動處理，也可以直接按「手動框選裁切（從頭開始）」略過自動掃描。<br>掃描 PDF 也可以改用本機 Python 工具先篩一輪：`tools/extract_question_assets.py`（PDF有文字層）或 `tools/crop_scanned_exam_visuals.py`（整頁掃描圖、無文字層，用 Tesseract OCR 定位圖表，不會亂猜），跑完會產生一個 ZIP，用下面「📦 上傳 Python 初篩 ZIP」載入即可。<br>如果你已經自己裁好圖了，可以直接用「🖼 上傳已裁切圖片」加入單張或多張，或「📂 上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">① 開始抽圖（自動）</button><button class="btn" id="manualCropBtn" onclick="startManualCrop()">✂ 手動框選裁切（從頭開始）</button><input type="file" id="candidateZipInput" accept=".zip" style="display:none" onchange="loadCandidateZip(this.files[0])"><button class="btn" onclick="document.getElementById('candidateZipInput').click()">📦 上傳 Python 初篩 ZIP</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">🖼 上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">📂 上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button></div><div class="drop" style="margin-top:10px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片、Python 初篩 ZIP，或已裁切圖片打包的 ZIP</span></div><div class="status" id="cropReviewState">等待選擇檔案。建議先「開始抽圖（自動）」，檢查後對有問題的素材逐張「手動修正」。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
         </li>
         <li data-step="4"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -358,6 +358,54 @@
       }
       renderCropCandidates();
       status.textContent=`已上傳 ${added} 張已裁切圖片（疊加進現有清單，共 ${cropCandidates.length} 張）；請確認每張的題號是否正確，再按「批次貼入題庫」。`;
+    }
+    // 拖曳圖片檔案／ZIP／整個資料夾到這裡：ZIP 含 manifest.json 走「Python 初篩」邏輯，
+    // 沒有 manifest 的 ZIP 或圖片檔案都走「已裁切圖片」的檔名辨識邏輯。
+    async function handleCropDrop(e,el){
+      e.preventDefault();if(el)el.classList.remove('drag');
+      const dt=e.dataTransfer;
+      const files=await _collectDroppedFiles(dt);
+      if(!files.length){alert('沒有偵測到可用的檔案。');return;}
+      const zipFiles=files.filter(f=>/\.zip$/i.test(f.name));
+      const imgFiles=files.filter(f=>/\.(png|jpe?g|webp|gif|bmp)$/i.test(f.name));
+      if(!zipFiles.length&&!imgFiles.length){alert('拖進來的檔案裡沒有找到圖片或 ZIP。');return;}
+      for(const zf of zipFiles){
+        if(await _zipHasManifest(zf))await loadCandidateZip(zf);
+        else await loadImagesFromZip(zf);
+      }
+      if(imgFiles.length)await loadCroppedImages(imgFiles);
+    }
+    // 遞迴列出拖曳項目裡的所有檔案；瀏覽器支援時（webkitGetAsEntry）連整個資料夾也能展開，不支援時退回單純的檔案清單。
+    async function _collectDroppedFiles(dt){
+      const items=dt&&dt.items;
+      if(!items||!items.length||!items[0].webkitGetAsEntry)return[...(dt&&dt.files||[])];
+      const entries=[...items].map(it=>it.webkitGetAsEntry()).filter(Boolean);
+      const out=[];
+      async function walk(entry){
+        if(!entry)return;
+        if(entry.isFile){out.push(await new Promise((ok,bad)=>entry.file(ok,bad)));}
+        else if(entry.isDirectory){
+          const reader=entry.createReader();let batch;
+          do{batch=await new Promise((ok,bad)=>reader.readEntries(ok,bad));for(const child of batch)await walk(child);}while(batch.length);
+        }
+      }
+      for(const entry of entries)await walk(entry);
+      return out.length?out:[...(dt.files||[])];
+    }
+    async function _zipHasManifest(zipFile){
+      try{const JSZip=await loadZipJs();const zip=await JSZip.loadAsync(zipFile);return!!zip.file(/(^|\/)manifest\.json$/i)[0];}catch(e){return false;}
+    }
+    async function loadImagesFromZip(zipFile){
+      const status=document.getElementById('cropReviewState');
+      try{
+        status.textContent='正在讀取 ZIP 內的圖片…';
+        const JSZip=await loadZipJs();const zip=await JSZip.loadAsync(zipFile);
+        const entries=Object.values(zip.files).filter(x=>!x.dir&&/\.(png|jpe?g|webp|gif|bmp)$/i.test(x.name));
+        const files=[];
+        for(const entry of entries){const blob=await entry.async('blob');files.push(new File([blob],entry.name.split('/').pop(),{type:blob.type||'image/png'}));}
+        if(!files.length){status.textContent='這個 ZIP 裡沒有找到圖片檔案。';return;}
+        await loadCroppedImages(files);
+      }catch(e){console.error(e);status.textContent='無法讀取 ZIP：'+(e.message||e);}
     }
     function editCropQuestion(i){const item=cropCandidates[i];const result=prompt(item.scope==='group'?'輸入題組的「代表題號」（填該題組任一小題的題號即可，例：25）；留空代表未知。':'輸入正確題號；留空代表題號未知。',item.qno??'');if(result===null)return;const n=Number(result);item.qno=Number.isInteger(n)&&n>0?n:null;item.filename=cropFileName(item);item.verdict=item.qno===null?'review':item.verdict;renderCropCandidates()}
     // 切換「單題圖 ↔ 題組共用圖」。題組共用圖會貼到題組文章那筆，讓同題組所有小題共用同一張圖。
