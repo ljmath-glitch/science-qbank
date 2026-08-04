@@ -2306,7 +2306,7 @@ function onEditImgDrop(e){
   addImageFiles(e.dataTransfer.files);
 }
 async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
-function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
+function renderImgPrev(){const hasPassage=document.getElementById('imgTargetWrap')?.style.display!=='none';eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'}">
   <div style="display:flex;gap:6px;align-items:center;margin-top:6px;font-family:inherit;font-size:12px;flex-wrap:wrap">
     <button class="btn sm" onclick="setImg(${i},'width',45)">小</button>
@@ -2317,8 +2317,19 @@ function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="bor
     <select onchange="setImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
     ${curImgs.length>1?`<button class="btn sm" title="把此圖的寬度與對齊套用到本題所有圖" onclick="applyImgStyleAll(${i})">套用到全部</button>`:''}
     <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('q',${i})">🧽 橡皮擦</button>
+    ${hasPassage?`<select onchange="moveImgScope('q',${i},this.value)" style="width:auto" title="搬到題目或題組文章共用，不用刪除重傳"><option value="q" selected>屬於：題目</option><option value="p">屬於：題組文章</option></select>`:''}
     <button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">移除</button></div></div>`).join('')}
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
+// 把已上傳的圖在「題目」與「題組文章」之間搬移，不用刪除重傳；只在有題組文章（groupId 已設定）時才顯示選單。
+function moveImgScope(fromScope,i,target){
+  const wantPassage=target==='p';
+  if((fromScope==='p')===wantPassage)return;
+  const fromArr=fromScope==='p'?curPassageImgs:curImgs;
+  const toArr=fromScope==='p'?curImgs:curPassageImgs;
+  const [it]=fromArr.splice(i,1);
+  if(it)toArr.push(it);
+  renderImgPrev();renderPassageImgPrev();
+}
 function applyImgStyleAll(i){var w=curImgs[i].width,a=curImgs[i].align;curImgs.forEach(im=>{im.width=w;im.align=a});renderImgPrev()}
 // ── 圖片橡皮擦：把單題／題組圖裡不要的部分塗白或挖空，與 raw 批次貼圖工具同款（游標顯示筆刷大小） ──
 let _ieBrush=24,_ieMode='white',_ieHist=[],_ieRedo=[],_ieDraw=false,_ieLast=null,_ieTarget=null;
@@ -2372,6 +2383,7 @@ function renderPassageImgPrev(){
     <button class="btn sm" onclick="setPassageImg(${i},'width',100)">滿版</button>
     <select onchange="setPassageImg(${i},'align',this.value)" style="width:auto"><option value="left" ${im.align==='left'?'selected':''}>靠左</option><option value="center" ${im.align==='center'?'selected':''}>置中</option><option value="right" ${im.align==='right'?'selected':''}>靠右</option></select>
     <button class="btn sm" title="塗白或挖掉圖裡不要的部分" onclick="openImgEraser('p',${i})">🧽 橡皮擦</button>
+    <select onchange="moveImgScope('p',${i},this.value)" style="width:auto" title="搬到題目或題組文章共用，不用刪除重傳"><option value="q">屬於：題目</option><option value="p" selected>屬於：題組文章</option></select>
     <button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">移除</button></div></div>`).join('')}
 
 function setPassageImg(i,k,v){curPassageImgs[i][k]=(k==='width'?+v:v);renderPassageImgPrev()}
