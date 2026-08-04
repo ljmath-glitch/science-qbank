@@ -2487,7 +2487,8 @@ async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!re
 /* deletePickedItems & selectFiltered moved to separate script */
 async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
   it.flag=!it.flag;render();
-  const {error}=await sb.from('questions').upsert(toRow(it));
+  // 只送 flag 本身，不要整列 upsert（整列會把圖片等大欄位一起送一次，圖多時很容易逾時同步失敗）
+  const {error}=await sb.from('questions').update({flag:it.flag,updated_at:new Date().toISOString()}).eq('id',id);
   if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render()}}
 
 /* ===== 鈴噹通知 ===== */
