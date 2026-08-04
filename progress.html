@@ -120,6 +120,7 @@ th.sort-header:hover{background:#e5ddd0}
             <th>題數</th>
             <th>確認公式</th>
             <th>上傳圖片</th>
+            <th>考卷圖片高清化</th>
             <th>製作詳解</th>
             <th>題幹敘述確認</th>
             <th>題組/承上題確認</th>
@@ -357,6 +358,7 @@ function render(){
       <td class="center" data-label="題數">${countCell}</td>
       <td class="chk-cell" data-label="確認公式"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
       <td class="chk-cell" data-label="上傳圖片"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell" data-label="考卷圖片高清化"><input type="checkbox" title="考卷圖片高清化" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
       <td class="chk-cell" data-label="製作詳解"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
       <td class="chk-cell" data-label="題幹敘述確認"><input type="checkbox" title="題幹敘述確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
       <td class="chk-cell" data-label="題組/承上題確認"><input type="checkbox" title="題組/承上題確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
