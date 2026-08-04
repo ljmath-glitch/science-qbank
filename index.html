@@ -2052,17 +2052,23 @@ async function doImportSol(){
     alert('找不到必要欄位：檔案第一列（標題列）必須包含「考試名稱」「題號」「詳解」這三個欄位名稱');
     return;
   }
-  // 正規化學期的舊／新寫法；科目保留在比對鍵中，避免同校同次的理化、地科同題號互相覆蓋。
-  function _normExam(e){return e.replace(/-?(上學期|下學期)/g,'').replace(/(\d+)[上下](?=[-\s]|$)/g,'$1').trim();}
-  const _dbExamNormMap=new Map();DB.forEach(x=>{if(x.exam)_dbExamNormMap.set(_normExam(x.exam)+'|||'+String(x.no),x);});
+  // 考試名稱比對跟批次貼圖用同一套模糊比對（_findBatchExam），能處理上/下學期寫法差異、
+  // 同一次段考分科目建檔等情況，比單純去掉「上/下學期」文字的舊寫法更準；同一個名稱只需算一次，快取起來。
+  const _examMatchCache=new Map();
+  function _resolveSolExam(exam){
+    if(_examMatchCache.has(exam))return _examMatchCache.get(exam);
+    const m=_findBatchExam(exam)||exam;
+    _examMatchCache.set(exam,m);
+    return m;
+  }
   const toAdd=[],toReplace=[],notFound=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
     const exam=(r[idxExam]||'').trim(),no=(r[idxNo]||'').trim(),sol=(r[idxSol]||'').trim();
     if(!exam&&!no)continue;
     if(!sol)continue;
-    const it=DB.find(x=>x.exam===exam&&String(x.no)===String(no))
-            ||_dbExamNormMap.get(_normExam(exam)+'|||'+String(no));
+    const matchedExam=_resolveSolExam(exam);
+    const it=DB.find(x=>x.exam===matchedExam&&String(x.no)===String(no));
     if(!it){notFound.push(exam+' 第'+no+'題');continue}
     if(it.sol&&it.sol.trim()) toReplace.push({...it,sol:normalizeSol(sol)});
     else toAdd.push({...it,sol:normalizeSol(sol)});
