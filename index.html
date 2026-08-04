@@ -2396,8 +2396,8 @@ function onGroupIdChange(){
     const ps=PASSAGES[gid];
     document.getElementById('ePassage').value=ps?ps.q||'':'';
     curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];
-    renderPassageImgPrev();
   }else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';}
+  renderImgPrev();renderPassageImgPrev();
 }
 
 /* ===== 新增/編輯 ===== */
@@ -2431,14 +2431,14 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   eGroupId.value=it.groupId||'';
   eFlag.checked=!!it.flag;eQ.value=it.q||'';eSol.value=it.sol||'';
   diff={step:it.step||0,mem:it.mem||0,con:it.con||0};paintSeg();showDiffResult();
-  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));renderImgPrev();
-  // passage
+  curImgs=JSON.parse(JSON.stringify(it.imgs||[]));
+  // passage（要先決定 imgTargetWrap 顯示與否，renderImgPrev() 才能正確判斷要不要顯示搬移選單）
   const gid=it.groupId||'';
   const sec=document.getElementById('passageSection');
   const wrap=document.getElementById('imgTargetWrap');
   if(gid){sec.style.display='';wrap.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
   else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';document.getElementById('ePassage').value='';curPassageImgs=[];}
-  renderPassageImgPrev();renderExamPdfBar();
+  renderImgPrev();renderPassageImgPrev();renderExamPdfBar();
   loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
   const data={year:eYear.value.trim(),school:eSchool.value.trim(),exam:eExam.value.trim(),no:eNo.value.trim(),ans:eAns.value.trim(),
