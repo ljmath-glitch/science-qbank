@@ -2321,7 +2321,7 @@ function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="bor
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('q',${i})">
   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
     <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
-    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('q',${i})">✏️ 編輯</button><button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">刪除</button></span>
+    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('q',${i})">編輯</button><button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">刪除</button></span>
   </div></div>`).join('')}
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 // 把已上傳的圖在「題目」與「題組文章」之間搬移，不用刪除重傳；只在有題組文章（groupId 已設定）時才顯示選單。
@@ -2435,7 +2435,7 @@ function renderPassageImgPrev(){
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('p',${i})">
   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
     <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
-    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('p',${i})">✏️ 編輯</button><button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">刪除</button></span>
+    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('p',${i})">編輯</button><button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">刪除</button></span>
   </div></div>`).join('')}
 // ── 圖片編輯子視窗：統一入口，把寬度／對齊／歸屬／橡皮擦裁切／移除都收進同一個彈窗，避免每張圖底下按鈕一長排 ──
 let _iaTarget=null;
