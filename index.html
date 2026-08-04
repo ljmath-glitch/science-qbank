@@ -2070,8 +2070,9 @@ async function doImportSol(){
     const matchedExam=_resolveSolExam(exam);
     const it=DB.find(x=>x.exam===matchedExam&&String(x.no)===String(no));
     if(!it){notFound.push(exam+' 第'+no+'題');continue}
-    if(it.sol&&it.sol.trim()) toReplace.push({...it,sol:normalizeSol(sol)});
-    else toAdd.push({...it,sol:normalizeSol(sol)});
+    const fixedSol=normalizeSol(fixControlCharEatenLatex(sol));
+    if(it.sol&&it.sol.trim()) toReplace.push({...it,sol:fixedSol});
+    else toAdd.push({...it,sol:fixedSol});
   }
   const total=toAdd.length+toReplace.length;
   if(!total){
@@ -2138,10 +2139,10 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const it={id:dup?dup.id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
-      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:g(19).replace(/承第\s*\d+\s*題/g,'承上題'),
+      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:fixControlCharEatenLatex(g(19)).replace(/承第\s*\d+\s*題/g,'承上題'),
       // 覆蓋既有題目時，若這次 CSV 的詳解欄是空的，保留原本已寫好的詳解，不要清空（常見情境：先匯入原始考卷、詳解另外用 AI 產生後才補上，之後如果重新匯入原始 CSV 不該把詳解洗掉）
-      sol:(r.length>=22?normalizeSol(g(20)):'')||(dup?dup.sol:''),
-      _passage:is23?g(21).replace(/承第\s*\d+\s*題/g,'承上題'):'',
+      sol:(r.length>=22?normalizeSol(fixControlCharEatenLatex(g(20))):'')||(dup?dup.sol:''),
+      _passage:is23?fixControlCharEatenLatex(g(21)).replace(/承第\s*\d+\s*題/g,'承上題'):'',
       groupId:is23?(g(22)||''):r.length>=22?(g(21)||''):(g(20)||''),
       // CSV 無法承載圖片資料，覆蓋既有題目時要保留原本已上傳的圖片，避免被清空
       imgs:dup?dup.imgs:[]};
@@ -2539,7 +2540,7 @@ async function saveEdit(){
     basis:(()=>{let b=eBasis.value.trim();if(eFlag.checked&&b&&!b.startsWith('[回報]'))b='[回報] '+b;return b;})(),
     flag:eFlag.checked,
     groupId:eGroupId.value.trim(),
-    q:eQ.value.trim(),sol:eSol.value.trim(),imgs:curImgs};
+    q:fixControlCharEatenLatex(eQ.value.trim()),sol:fixControlCharEatenLatex(eSol.value.trim()),imgs:curImgs};
   if(!data.q&&!data.summary){alert('題目或摘要至少填一個');return}
   if(!requireCloud())return;
   const id=editingId||uid();data.id=id;
@@ -2549,7 +2550,7 @@ async function saveEdit(){
   // 儲存題組文章
   const gid=eGroupId.value.trim();
   if(gid){
-    const passageText=document.getElementById('ePassage').value.trim();
+    const passageText=fixControlCharEatenLatex(document.getElementById('ePassage').value.trim());
     const existingPs=PASSAGES[gid];
     const pid=existingPs?existingPs.id:uid();
     const uploadedPImgs=await uploadImgs(curPassageImgs,pid);
@@ -3339,7 +3340,26 @@ function renderPage(list,shown,page){
   }
   (window.requestIdleCallback||setTimeout)(()=>renderMath(list));
   updateFloat();}
+// 貼上 AI 回傳內容時，若中間經過 JSON 之類的轉換，"\t"/"\f" 常被誤當跳脫字元吃掉：
+// \text{...} 的反斜線+t 被吃成一個實際 TAB 字元（\times 同理變成「⟨TAB⟩imes」）；
+// \frac{...} 的反斜線+f 被整個吃掉、不留痕跡，變成「rac{...}」。這裡在跑常見指令修正之前，
+// 先把這兩種情形復原，讓下面的規則能正確接手。
+function fixControlCharEatenLatex(text){
+  if(!text)return text;
+  var out='';
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(ch==='\t'){
+      if(text[i+1]==='\\')continue; // 多餘的 TAB 剛好接在完整的反斜線指令前，直接丟掉
+      out+='\\t';
+    }else out+=ch;
+  }
+  // \f 被整個吃掉沒有留下任何痕跡，只能靠「rac{」前面沒有 f 或 \f 來判斷
+  out=out.replace(/([^f\\])rac\{/g,function(m,pre){return pre+'\\frac{'}).replace(/^rac\{/,'\\frac{');
+  return out;
+}
 function fixLatex(text){
+  text=fixControlCharEatenLatex(text);
   return text.replace(/\$([^$]+)\$/g,function(match,inner){
     var fixed=inner;
     // 移除 $...$ 內的換行
@@ -3354,8 +3374,9 @@ function fixLatex(text){
     fixed=fixed.replace(/(?<!\\)beta/g,'\\beta');
     fixed=fixed.replace(/(?<!\\)Delta/g,'\\Delta');
     fixed=fixed.replace(/(?<!\\)degree/g,'\\degree');
-    // 修正 \ext{} → \text{}
+    // 修正 \ext{} → \text{}、\rac{} → \frac{}（AI 有時只漏打一個字母）
     fixed=fixed.replace(/\\ext\{/g,'\\text{');
+    fixed=fixed.replace(/\\rac\{/g,'\\frac{');
     return '$'+fixed+'$';
   });
 }
