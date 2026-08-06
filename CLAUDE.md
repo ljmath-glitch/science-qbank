@@ -16,7 +16,18 @@
 
 **正式網址**：https://science-qbank.vercel.app
 **GitHub repo**：https://github.com/ljmath-glitch/science-qbank （只有一個 `main` branch）
-**唯一原始碼**：整個系統是**單一一支 HTML 檔案** `index.html`（~3700 行，含 HTML/CSS/JS 全部寫在同一檔案裡，沒有建置流程，沒有 npm/webpack）
+**原始碼形式**：每一支頁面各是**一支獨立 HTML 檔案**（HTML/CSS/JS 全寫在同檔，無建置、無 npm/webpack）。主檔是 `index.html`（最大的那支）。系統目前有這幾個分頁：
+
+| 檔案 | 分頁 | 一句話 |
+|---|---|---|
+| `index.html` | 題庫主系統 | 篩選/編輯/匯入/AI詳解/組卷匯出的主戰場 |
+| `raw.html` | 考卷前處理 | 新考卷從 PDF/Word 洗成可匯入的題目＋圖（命名/轉檔/裁圖/批次貼圖） |
+| `analytics.html` | 題庫健檢儀表板 | 題型/難度/圖表/題源分布、章節缺口、資料品質診斷、年度總覽 |
+| `progress.html` | 共編進度表 | 每份考卷處理進度看板，跟主系統進度卡片雙向同步 |
+| `daily.html` | 每日一題 | 練習挑戰，等級/角色養成，答錯回報連動待確認 |
+| `guide.html` | 使用說明書 | 給人看的互動版操作手冊（改功能時記得一起更新！） |
+
+> 面向使用者的完整功能與使用方法：見 `guide.html`。改任何功能都要順手更新 `guide.html`（它長期落後過，V7.0 才補齊）。
 
 ---
 
@@ -97,6 +108,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 | `1` | 課綱大綱原始文字（`SYL_RAW`），沒有就 fallback 用內建的 `HANLIN_SYLLABUS` |
 | `2` | 已存在的「考試名稱」清單（`examKeys`，匯入 CSV 時用來記錄自訂命名，避免重複） |
 | `3` | `AI_CFG`，JSON 字串，存 Claude/Gemini/OpenAI 的 API Key、選用的模型、AI 供應商偏好。**這個是雲端共用的**，所以同事之間用同一顆 API Key 不用每個人各自輸入一次 |
+| `4` | `EXAM_PDFS`，JSON 字串，**考卷原稿 PDF 對應表**（`{考試名稱: 公開URL}`）。一份 PDF 對應一個考試名稱，該考卷所有題目共用。PDF 檔本身存 Storage bucket `question-images` 的 `_exam_pdfs/` 路徑。見 §6.9 |
 
 ### 4.3 Storage bucket
 
@@ -181,6 +193,38 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 ### 6.8 備份/還原（`exportJSON()`/`restoreJSON()`，`index.html:1875`）
 
 匯出整個 `DB` 成 JSON 檔本機備份；還原時逐筆 upsert 回雲端（不會刪除雲端既有資料，只會新增/覆蓋同 id 的資料）。
+
+### 6.9 考卷原稿 PDF 對照（新）
+
+一份原稿 PDF 對應一個**考試名稱**，該考卷所有題目共用；用途是編輯題目時開出原卷「一題一題對照檢查」。
+
+- 全域 `EXAM_PDFS`（`{考試名稱: 公開URL}`），開頁時從 `syllabus_doc` id=4 載入。
+- 編輯視窗「考試名稱」欄下方有原稿列（`renderExamPdfBar()`）：未存→上傳；已存→看原稿/換一份/移除對應。
+- `uploadExamPdfFile()` 上傳到 `question-images` bucket 的 `_exam_pdfs/{slug}_{ts}.pdf`，寫回 `_saveExamPdfsMap()`（upsert id=4）。
+- 考試名稱是 `composeExam()` 自動組合或手動改，改動時 `renderExamPdfBar()` 會即時刷新對應狀態。
+
+### 6.10 圖片橡皮擦（新）
+
+把圖裡不要的部分**塗白**（`source-over` 白線）或**挖空成透明**（`destination-out`）。兩處實作、同款體驗（游標圓圈顯示筆刷實際大小、復原/重做）：
+
+- 主系統：`openImgEraser(scope,i)`（scope `'q'`/`'p'` = 題目圖/題組圖），存回 `curImgs`/`curPassageImgs` 的 `src`（canvas `toDataURL`）。雲端 URL 圖以 `crossOrigin='anonymous'` 載入，taint 時給提示。dialog id `imgEraserDlg`。
+- raw 前處理：`openCropEraser(i)`，存回 `cropCandidates[i].src`。
+
+### 6.11 題組共用圖（新，raw.html + index.html）
+
+裁切卡片可切「單題圖 ↔ 題組共用圖」（`toggleCropScope()`，`scope='single'|'group'`）。批次貼圖交接 `importBatchHandoffImages(payload)` 收到 `scope:'group'` 時，用代表題號找到該小題 `groupId` → 貼到 `PASSAGES[groupId]`（題組文章那筆），讓整組共用；找不到題組文章回報 `noPassageQnos`。
+
+### 6.12 考卷名稱比對（會考/學測/分科/模擬考）（新）
+
+`_examType()`／`_batchExamCanonical()`／`_batchExamTerms()`／`_findBatchExam()`（index.html）＋ raw.html 的 `normalizeName()` 都認得五種類型（段考/會考/學測/分科/模擬）。重點：
+
+- 比對把「類型」納入 key，避免同年度會考與段考誤判。
+- **大考（會考/學測/分科）以「年度＋類型」為唯一識別**，科目等細項不擋比對（`114會考自然` 也對得上 `114會考`）。
+- `composeExam()` 的「段考次」下拉含第一~三次模擬考、會考、學測、分科測驗。
+
+### 6.13 批次貼圖（`batchImgDlg` + raw 交接）
+
+依檔名/題號把一批圖貼回對應題目。支援拖曳上傳（圖片檔/ZIP/整個資料夾）與 `manifest.json`。圖片 `width` 是**百分比**（`imgHtml` 用 `width:${im.width}%`）；批次貼圖用 `_faithfulImgPct(src)` 依實際像素算最小合適比例（別再寫死大數字，曾有 `width:600`=600% 的 bug）。
 
 ---
 
@@ -347,3 +391,4 @@ result=await callOllama(sys,msg,olUrl,olMdl,imgs);
 - Ollama 的容錯（多網址 fallback）目前只能透過下拉選單的「其他」手動填逗號分隔網址，沒有 UI 讓使用者勾選「公司優先、Mac 備援」——如果很多人需要這個，可以再加一個第四選項自動組合兩個 preset
 - `OLLAMA_PRESETS` 裡的 IP 是寫死的，換電腦或重新配 Tailscale 網段要記得回來改
 - 目前只有一個 Supabase 專案，沒有 dev/staging 環境區隔，改資料庫欄位要直接在正式環境上小心操作
+- **raw 第 III 區自動裁圖對「圖片型 PDF」抓不全**：試卷寶清稿／掃描的 PDF 是整頁一張圖（文字選不起來、圖表多為向量或掃描像素），`extractPdfEmbeddedImages()` 只抓得到少數內嵌 raster 圖，向量圖表與掃描頁無法可靠自動偵測，AI 猜座標也不準。這是本質限制——這種檔請走「手動框選裁切」，或用外部工具（如 MinerU：`pip install "mineru[core]"` → `mineru -p in.pdf -o out`）先抽圖，再回系統批次貼。若要接 MinerU，方向是讀它的 `content_list.json`（含每張圖在第幾頁、周圍文字）自動對題號。
