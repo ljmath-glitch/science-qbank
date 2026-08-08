@@ -164,9 +164,15 @@ function gradeFromExam(exam,book){
   return bookToGrade(book);
 }
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
-function composeDisplayName(school,grade,year,round){
+function composeDisplayName(school,grade,year,round,subject){
   if(round==='會考') return (year||'')+'會考';
-  return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';
+  return [school,grade,year,round,subject].filter(Boolean).join('-')||'（未命名）';
+}
+// 考卷名稱本身如果有寫科目（例如同校同次段考但地科、理化其實是兩張分開的考卷，各自命名時
+// 才會加科目後綴），才把科目算進分組依據；沒寫科目的維持原本行為（同一次段考不分科目合併一列，
+// 內部用「領域」欄位分科目即可）。這樣新增這個判斷不會影響原本就沒有科目後綴的考卷分組。
+function parseSubject(exam){
+  return (String(exam||'').match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
 }
 
 // ── 姓名 ──────────────────────────────────────────
@@ -249,15 +255,16 @@ async function loadAll(){
     from += 1000;
   }
 
-  // 依語意 key 分組：school + grade + year + examRound
+  // 依語意 key 分組：school + grade + year + examRound（＋考卷名稱本身有寫科目才加科目，見 parseSubject）
   const grouped = {};
   allQs.forEach(q => {
     const school = (q.school||'').trim();
     const grade  = gradeFromExam(q.exam||'', q.book||'');
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
-    const key    = makeId(school, grade, year, round);
-    if(!grouped[key]) grouped[key] = {school, grade, year, round, displayName: composeDisplayName(school,grade,year,round), count: 0, examRawSet: new Set()};
+    const subject = parseSubject(q.exam||'');
+    const key    = makeId(school, grade, year, round, subject);
+    if(!grouped[key]) grouped[key] = {school, grade, year, round, subject, displayName: composeDisplayName(school,grade,year,round,subject), count: 0, examRawSet: new Set()};
     grouped[key].count++;
     if(q.exam) grouped[key].examRawSet.add(q.exam.trim());
   });
@@ -276,7 +283,7 @@ async function loadAll(){
       exams.push({school:'',grade:'',year:'',round:'',displayName:name,count:null,isManual:true});
   });
   const hidden = new Set(progressMap['__hidden__'] || []);
-  exams = exams.filter(ex => ex.isManual || !hidden.has(makeId(ex.school, ex.grade, ex.year, ex.round)));
+  exams = exams.filter(ex => ex.isManual || !hidden.has(makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject)));
   sortAndRender();
 }
 
@@ -297,10 +304,10 @@ function sortAndRender(){
 }
 
 // ── 渲染 ────────────────────────────────────────────
-function makeId(school, grade, year, round){
+function makeId(school, grade, year, round, subject){
   if(round==='會考') return '會考|||'+(year||'');
   if(school==='__manual__') return 'manual|||'+(grade||'');
-  return [school||'', grade||'', year||'', round||''].join('|||');
+  return [school||'', grade||'', year||'', round||''].join('|||')+(subject?'|||'+subject:'');
 }
 function manualKey(name){ return makeId('__manual__', name, '', ''); }
 
@@ -324,7 +331,7 @@ function render(){
   }
 
   const doneCount = exams.filter(ex => {
-    const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round)] || {};
+    const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject)] || {};
     return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
   }).length;
   const rate = exams.length ? Math.round(doneCount / exams.length * 100) : 0;
@@ -333,7 +340,7 @@ function render(){
   if(_cheerPending){ showCheer(rate); _cheerPending=false; }
 
   tbody.innerHTML = exams.map(ex => {
-    const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round);
+    const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject);
     const p   = progressMap[id] || {};
     const shownName = p.customName !== undefined ? p.customName : ex.displayName;
     const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
