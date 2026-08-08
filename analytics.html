@@ -619,10 +619,11 @@ function precompute(r){
     missingImgRef:(!r.imgs||!r.imgs.length)&&/如圖|如下圖|附圖|見圖|上圖/.test(r.q||''),
     aiAnswer:/【AI\s*判斷答案】/.test(r.sol||''),
     flag:!!r.flag,
+    badTemp:/℃|℉|°C|°F|度C|度F/.test((r.q||'')+(r.sol||'')),
   };
   // 章節分類待正規化（任一項）
   dq.chapterNonStd=!!(r.level&&!r.stdChapter&&(r.unit||r.sub||bk));
-  dq.any=dq.noLevel||dq.noField||dq.noBook||dq.noUnit||dq.noSub||dq.chartInvalid||dq.yearInvalid||dq.diffInvalid||dq.diffMissing||dq.fieldBookMismatch||dq.missingImgRef||dq.aiAnswer||dq.flag||dq.chapterNonStd;
+  dq.any=dq.noLevel||dq.noField||dq.noBook||dq.noUnit||dq.noSub||dq.chartInvalid||dq.yearInvalid||dq.diffInvalid||dq.diffMissing||dq.fieldBookMismatch||dq.missingImgRef||dq.aiAnswer||dq.flag||dq.chapterNonStd||dq.badTemp;
   r.dq=dq;
   return r;
 }
@@ -1693,6 +1694,7 @@ const DQ_DEFS=[
   {key:'diffInvalid',lbl:'難度分數超出範圍',filter:{}},
   {key:'orphanGroup',lbl:'題組 ID 僅出現一題',filter:{}},
   {key:'aiAnswer',lbl:'答案由 AI 推論',filter:{}},
+  {key:'badTemp',lbl:'溫度符號未用 KaTeX 格式',filter:{}},
 ];
 function buildDataQuality(rows){
   const total=rows.length;
@@ -1749,6 +1751,7 @@ function dqDetail(r,key){
     case 'missingImgRef':return '題目提及圖但未上傳';
     case 'orphanGroup':return '題組ID：'+(r.group_id||'');
     case 'aiAnswer':return 'AI 判斷答案';
+    case 'badTemp':return '應改為 $^\\circ\\mathrm{C}$／$^\\circ\\mathrm{F}$';
     default:return '';
   }
 }
