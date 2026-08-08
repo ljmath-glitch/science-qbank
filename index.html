@@ -1331,20 +1331,26 @@ function _pgGradeFromExam(exam,book){
   return _pgBookToGrade(book);
 }
 function _pgExamRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
-function _pgMakeId(school,grade,year,round){
-  if(round==='會考') return '會考|||'+(year||'');
-  return [school||'',grade||'',year||'',round||''].join('|||');
+// 考卷名稱本身有寫科目（例如同校同次段考被拆成「...-地科」「...-理化」兩張獨立考卷）才把科目算進 key，
+// 跟 progress.html 的 parseSubject()/makeId() 用同一套規則，兩邊算出來的 key 才會一致、進度才能同步。
+function _pgParseSubject(exam){
+  return (String(exam||'').match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
 }
-function _pgDisplayName(school,grade,year,round){
+function _pgMakeId(school,grade,year,round,subject){
+  if(round==='會考') return '會考|||'+(year||'');
+  return [school||'',grade||'',year||'',round||''].join('|||')+(subject?'|||'+subject:'');
+}
+function _pgDisplayName(school,grade,year,round,subject){
   if(round==='會考') return (year||'')+'會考';
-  return [school,grade,year,round].filter(Boolean).join('-')||'（未命名）';
+  return [school,grade,year,round,subject].filter(Boolean).join('-')||'（未命名）';
 }
 function _pgKeyOf(it){
   const school=(it.school||'').trim();
   const grade=_pgGradeFromExam(it.exam||'',it.book||'');
   const year=(it.year||'').trim();
   const round=_pgExamRound(it.exam||'');
-  return {id:_pgMakeId(school,grade,year,round),school,grade,year,round};
+  const subject=_pgParseSubject(it.exam||'');
+  return {id:_pgMakeId(school,grade,year,round,subject),school,grade,year,round,subject};
 }
 let _examProgressInfo=null;
 async function _pgLoad(){
@@ -1369,7 +1375,7 @@ async function updateExamProgressCard(shown){
 function _renderExamProgressCard(info,p){
   const card=document.getElementById('examProgressCard');
   if(!card||!_examProgressInfo||_examProgressInfo.id!==info.id)return;
-  const name=_pgDisplayName(info.school,info.grade,info.year,info.round);
+  const name=_pgDisplayName(info.school,info.grade,info.year,info.round,info.subject);
   const savedName=localStorage.getItem('pgUserName')||'';
   card.innerHTML=`<div style="margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:#fbf9f3">
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
