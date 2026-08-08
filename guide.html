@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>茲茲文教題庫系統 · 使用說明書</title>
-<script>(()=>{const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
 <style>
-  :root{--ink:#2d3038;--paper:#f6f5f2;--card:#fff;--line:#e6e4de;--accent:#850103;--bio:#1f6f5c;--phy:#b8860b;--blue:#2e75b6;--muted:#6e6f74;--green:#1f6f5c;--orange:#f9a12c;--red:#850103;--ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
+  :root{--ink:#1a2238;--paper:#f4f1ea;--card:#fffefb;--line:#d8d2c4;--accent:#c0392b;--bio:#1f6f5c;--phy:#b8860b;--blue:#2e75b6;--muted:#6b6557;--green:#1f6f5c;--orange:#c85a00}
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:var(--ui-font);font-weight:500;background:var(--paper);color:var(--ink);line-height:1.85;padding-bottom:80px}
-  header{background:#fffefb;color:var(--ink);padding:26px 40px;border-bottom:1px solid var(--line);box-shadow:0 1px 2px rgba(45,48,56,.04)}
+  body{font-family:"Noto Sans TC","PingFang TC",system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.85;padding-bottom:80px}
+  header{background:linear-gradient(135deg,#13241f,#1a2238);color:#f4f1ea;padding:36px 40px;border-bottom:4px solid var(--phy)}
   header h1{font-size:26px;letter-spacing:3px;font-weight:700}
   header .sub{font-size:13px;color:#b9c2d6;margin-top:6px}
   .wrap{max-width:920px;margin:0 auto;padding:0 28px}
@@ -18,12 +17,11 @@
   nav .back-btn:hover{opacity:.85}
   nav .divider{width:1px;height:20px;background:var(--line);flex-shrink:0}
   nav .nav-links{display:flex;flex-wrap:wrap;gap:0}
-  nav .nav-links a{font-size:12px;color:var(--muted);text-decoration:none;margin-right:14px;line-height:2;font-weight:600}
-  nav .nav-links a:hover{color:var(--red)}
+  nav .nav-links a{font-size:12px;color:var(--blue);text-decoration:none;margin-right:14px;line-height:2}
   nav .nav-links a:hover{text-decoration:underline}
 
   h2{font-size:20px;letter-spacing:2px;color:var(--ink);margin:44px 0 16px;padding:10px 16px;background:linear-gradient(90deg,rgba(184,134,11,.13),transparent);border-left:4px solid var(--phy);font-weight:700}
-  h3{font-size:15px;letter-spacing:1px;color:var(--ink);margin:28px 0 10px;font-weight:700}
+  h3{font-size:15px;letter-spacing:1px;color:var(--blue);margin:28px 0 10px;font-weight:700}
   h4{font-size:13px;color:var(--muted);margin:18px 0 8px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
   p{margin-bottom:10px;font-size:15px}
   ul,ol{margin:8px 0 14px 22px;font-size:15px}
@@ -69,7 +67,7 @@
   .toc h3{margin:0 0 12px;color:var(--ink);font-size:15px;letter-spacing:1px}
   .toc ol{margin:0 0 0 18px}
   .toc li{margin-bottom:4px;font-size:13px}
-  .toc a{color:var(--red);text-decoration:none;font-weight:600}
+  .toc a{color:var(--blue);text-decoration:none}
   .toc a:hover{text-decoration:underline}
 
   .highlight-box{background:#fff3cd;border:1px solid #f0c040;border-radius:8px;padding:12px 16px;margin:12px 0;font-size:14px}
@@ -92,7 +90,7 @@
 <header>
   <div class="wrap">
     <h1>茲茲文教自然科題庫系統</h1>
-    <div class="sub">使用說明書 · 2026年7月版 · 適用對象：新進工讀生、老師、主管</div>
+    <div class="sub">使用說明書 · 2026年8月版 · 適用對象：新進工讀生、老師、主管</div>
   </div>
 </header>
 
@@ -102,12 +100,16 @@
   <div class="nav-links">
     <a href="#start">快速開始</a>
     <a href="#login">登入</a>
+    <a href="#interface">介面</a>
     <a href="#import">匯入考卷</a>
+    <a href="#raw">考卷前處理</a>
     <a href="#ai">AI 選擇</a>
     <a href="#sol">生成詳解</a>
     <a href="#edit">編輯題目</a>
     <a href="#filter">篩選</a>
     <a href="#pick">選題出卷</a>
+    <a href="#analytics">健檢儀表板</a>
+    <a href="#progress">共編進度</a>
     <a href="#daily">每日一題</a>
     <a href="#backup">備份</a>
     <a href="#faq">FAQ</a>
@@ -122,13 +124,16 @@
   <ol>
     <li><a href="#start">快速開始（5分鐘概覽）</a></li>
     <li><a href="#login">登入系統</a></li>
-    <li><a href="#interface">介面總覽</a></li>
-    <li><a href="#import">核心任務：把考卷匯入題庫</a></li>
+    <li><a href="#interface">介面總覽・分頁地圖</a></li>
+    <li><a href="#import">把考卷匯入題庫（貼 CSV）</a></li>
+    <li><a href="#raw">考卷前處理：自動清稿、裁圖、批次貼圖</a></li>
     <li><a href="#ai">AI 工具選擇說明</a></li>
     <li><a href="#sol">AI 生成詳解</a></li>
-    <li><a href="#edit">手動新增與編輯題目</a></li>
+    <li><a href="#edit">手動新增與編輯題目（含圖片橡皮擦、原稿對照）</a></li>
     <li><a href="#filter">篩選與搜尋題目</a></li>
     <li><a href="#pick">選題與匯出考卷</a></li>
+    <li><a href="#analytics">題庫健檢儀表板</a></li>
+    <li><a href="#progress">共編進度表</a></li>
     <li><a href="#daily">每日一題系統</a></li>
     <li><a href="#backup">備份與還原</a></li>
     <li><a href="#faq">常見問題 FAQ</a></li>
@@ -177,7 +182,7 @@
 </table>
 
 <h3>密碼</h3>
-<p>開啟題庫系統後，會出現密碼輸入畫面。提示：<b>LJ0970……</b>；如需完整密碼請向主管確認。</p>
+<p>開啟題庫系統後，會出現密碼輸入畫面。密碼是<b>士林茲茲 Gmail 的密碼</b>，請向主管確認。</p>
 
 <div class="card warn">
   <b>注意</b>：密碼只在你的瀏覽器裡記憶，換裝置或清除瀏覽器資料後需重新輸入。密碼請勿與他人分享。
@@ -186,6 +191,18 @@
 
 <!-- ===== 介面總覽 ===== -->
 <h2 id="interface">三、介面總覽</h2>
+
+<h3>分頁地圖（系統有這幾個頁面）</h3>
+<table>
+  <tr><th>分頁</th><th>網址</th><th>一句話</th></tr>
+  <tr><td><b>題庫主系統</b></td><td><code>/index.html</code></td><td>篩選、編輯、匯入、AI 詳解、組卷匯出的主戰場</td></tr>
+  <tr><td><b>考卷前處理</b></td><td><code>/raw.html</code></td><td>把新考卷從 PDF/Word 洗成可匯入的題目＋圖</td></tr>
+  <tr><td><b>題庫健檢儀表板</b></td><td><code>/analytics.html</code></td><td>一眼看題庫全貌與缺口</td></tr>
+  <tr><td><b>共編進度表</b></td><td><code>/progress.html</code></td><td>每份考卷處理到哪一步的協作看板</td></tr>
+  <tr><td><b>每日一題</b></td><td><code>/daily.html</code></td><td>每日練習，有等級與角色養成</td></tr>
+  <tr><td><b>使用說明</b>（本頁）</td><td><code>/guide.html</code></td><td>操作手冊</td></tr>
+</table>
+<p>主系統<b>右上角有分頁切換連結</b>，可直接跳到其他頁。從進度表點考卷超連結進主系統會自動免密碼、直接篩出該考卷。</p>
 
 <h3>頁面結構</h3>
 <table>
@@ -206,6 +223,8 @@
   <tr><td><span class="badge green">⬇ 備份</span></td><td>下載完整題庫 JSON 備份</td></tr>
   <tr><td><span class="badge gray">📊 知識點分析</span></td><td>查看難度分布、題型分布、缺口子單元</td></tr>
   <tr><td><span class="badge blue">✨ 批次生成詳解</span></td><td>讓 AI 自動幫選取的題目寫詳解</td></tr>
+  <tr><td><span class="badge orange">🖼 批次貼圖</span></td><td>把一批裁好的圖依檔名／題號一次貼回對應題目（可拖曳圖片檔、ZIP、整個資料夾）</td></tr>
+  <tr><td><span class="badge gray">📄 考卷前處理</span></td><td>開啟 raw 前處理頁，處理新考卷的清稿、裁圖</td></tr>
 </table>
 
 
@@ -216,25 +235,8 @@
 
 <div class="card gold">
   <b>需要準備的東西</b><br>
-  · 段考卷原始掃描檔（PDF 或照片皆可）<br>
-  · 試卷寶帳號（清除學生筆跡用）<br>
+  · 段考卷（PDF 或照片皆可）<br>
   · Claude.ai 帳號（推薦）或 ChatGPT 帳號
-</div>
-
-<h3>Step 0：掃描與清除筆跡（匯入前準備）</h3>
-
-<div class="step"><div class="step-num">A</div><div class="step-body">
-  <b>掃描原始考卷</b><br>
-  把紙本段考卷（含學生作答筆跡的那份）掃描成 PDF 或照片。這份是「原始檔」，整個流程都要留著、不要刪除。
-</div></div>
-
-<div class="step"><div class="step-num">B</div><div class="step-body">
-  <b>用「試卷寶」清除筆跡</b><br>
-  把原始檔上傳到「試卷寶」（工具連結請洽主管取得），去除學生手寫作答痕跡，只保留印刷題目與版面。完成後會拿到兩個新檔案：<b>乾淨 PDF</b> 與 <b>乾淨 Word</b>。
-</div></div>
-
-<div class="card tip">
-  <b>三個檔案都要留著、下一步要一起餵給 AI</b>：原始掃描檔＋乾淨 PDF＋乾淨 Word。原因：如果乾淨版某處文字辨識有疑慮（例如符號、圖表被洗掉或看不清楚），AI 可以對照原始檔確認，減少辨識錯誤。
 </div>
 
 <h3>Step 1：在題庫系統選好篩選條件（可省略）</h3>
@@ -263,8 +265,8 @@
 </div></div>
 
 <div class="step"><div class="step-num">3</div><div class="step-body">
-  <b>上傳三個檔案</b><br>
-  在 AI 對話框找「附加檔案」或「圖片」按鈕，把 Step 0 準備好的三個檔案<b>全部一起上傳</b>：原始掃描檔、乾淨 PDF、乾淨 Word。
+  <b>上傳考卷</b><br>
+  在 AI 對話框找「附加檔案」或「圖片」按鈕，上傳段考卷（PDF 或照片）。
 </div></div>
 
 <div class="step"><div class="step-num">4</div><div class="step-body">
@@ -396,7 +398,7 @@
   <tr><td>14</td><td>步驟分</td><td>1（1步）/ 2（2步）/ 3（3步以上）</td></tr>
   <tr><td>15</td><td>記憶分</td><td>1（背就會）/ 2（需理解）/ 3（陌生情境活用）</td></tr>
   <tr><td>16</td><td>概念分</td><td>1（1概念）/ 2（2概念）/ 3（3個以上或跨章）</td></tr>
-  <tr><td>17</td><td>圖表類型</td><td>只能從 12 個固定值擇一：無／表格／函數關係圖／運動圖／統計圖／電路圖／光學圖／波動圖／場線／等值線圖／微觀模型圖／實驗裝置圖／力學示意圖；沒有圖填「無」，禁止自創或填「其他」</td></tr>
+  <tr><td>17</td><td>圖表類型</td><td>無 / 折線圖 / 長條圖 / 表格 / 電路圖 等；沒有圖填「無」</td></tr>
   <tr><td>18</td><td>判斷依據</td><td>分類有疑問時 AI 會填，否則留空</td></tr>
   <tr><td>19</td><td>待確認</td><td>AI 沒把握時填 Y，否則留空</td></tr>
   <tr><td>20</td><td>題目</td><td>完整題幹＋選項，選項各自換行</td></tr>
@@ -415,29 +417,72 @@
 <h3>也可以匯入 Excel 檔</h3>
 <p>若 AI 輸出的是 Excel 格式（.xlsx），也可以在匯入視窗直接選擇檔案上傳，不需要貼 CSV 文字。</p>
 
-<h3>Step 5：全部確認無誤後，回報進度</h3>
 
-<div class="step"><div class="step-num">9</div><div class="step-body">
-  <b>勾選進度</b><br>
-  上面「四個容易跑掉的欄位」都檢查、修正完畢後，回報這份考卷已處理完成，有兩種等價的方式，擇一即可：
+<!-- ===== 考卷前處理 raw ===== -->
+<h2 id="raw">五、考卷前處理（raw.html）</h2>
+
+<p>把一份<b>新考卷</b>從原始檔（PDF/Word）洗成「可匯入的題目＋圖」的加工線。入口：主系統工具列「📄 考卷前處理」，或直接開 <code>/raw.html</code>。整頁分三區。</p>
+
+<div class="card gold">
+  <b>什麼時候用這頁？</b>當你手上是一份<b>還沒進題庫的新考卷</b>，要把它變成題庫資料時。若只是修改既有題目，用主系統就好。
+</div>
+
+<h3>第 I 區：命名與轉檔指令</h3>
+<div class="step"><div class="step-num">1</div><div class="step-body">
+  <b>丟入考卷檔</b>（PDF / DOC / DOCX），系統會自動整理出<b>考試名稱</b>。
   <ul style="margin-top:6px">
-    <li><b>直接在題庫頁面打勾（較快）</b>：在左側篩選面板篩到「只顯示這份考卷」的題目時，題目列表下方會自動出現「📋 考卷整理進度」卡片，跟共編進度表是同一份資料、即時雙向同步</li>
-    <li><b>到共編進度表打勾</b>：點工具列的 <span class="badge blue">📋 共編進度表</span>，找到這份考卷那一列</li>
-  </ul>
-  不管用哪一種，都要：
-  <ul style="margin-top:6px">
-    <li>「更新者姓名」欄位填上自己的名字</li>
-    <li>把已完成確認的項目打勾（確認公式／上傳圖片／製作詳解／題幹敘述確認／題組承上題確認／其他確認），<b>只勾真的做完的項目，沒做完不要先打勾</b></li>
+    <li>段考：<code>學校-年級-學年度-上/下學期-第N次段考-科目</code></li>
+    <li><b>會考／學測／分科測驗</b>：只給「年度＋類型」，如 <code>114會考</code>、<code>114學測</code>（跟題庫命名一致）</li>
+    <li><b>模擬考</b>：認得「第幾次模擬考」</li>
   </ul>
 </div></div>
-
-<div class="card tip">
-  <b>打勾後記得告知主管</b>這份考卷已經全部處理完成，主管才知道可以進下一步使用。
+<div class="card warn">
+  <b>自動整理出的名稱可以手動修改</b>。若之後第 III 區批次貼圖顯示「找不到考卷」，多半是這欄跟題庫實際名稱不一致——直接改成題庫裡的正確名稱即可（欄位有題庫既有名稱的自動完成，點一下就能挑）。
 </div>
+<div class="step"><div class="step-num" style="background:var(--blue)">2</div><div class="step-body">
+  <b>「轉檔指令」「詳解製作指令」</b>：複製一段預寫好的 prompt，貼到任何 AI 對話、附上考卷，AI 回傳 CSV 後可直接送進題庫。
+</div></div>
+
+<h3>第 II 區：題目 / 詳解 CSV 交接</h3>
+<p>把 AI 產出的題目或詳解 CSV 貼上（或選 Excel 檔），檢查欄位無誤後按「匯入題目 / 匯入詳解」直接送進題庫。</p>
+
+<h3>第 III 區：批次貼圖（把考卷裡的圖表裁出來）</h3>
+<p>把考卷裡的圖表／表格裁成一張張、對好題號，最後批次貼回題庫對應題目。</p>
+
+<div class="card warn">
+  <b>先看這個限制</b>：對「試卷寶清稿」這種<b>圖片型 PDF</b>（整頁被壓成一張圖、用滑鼠選不起來文字），<b>自動抽圖天生抓不全</b>——向量畫的圖表、掃描頁沒辦法可靠分辨哪塊是圖、哪塊是題幹。這種情況請直接用下面的「手動框選裁切」，或用外部工具（如 MinerU）先把圖抽出來再回來批次貼。
+</div>
+
+<h4>兩種裁切方式</h4>
+<table>
+  <tr><th>方式</th><th>說明</th></tr>
+  <tr><td><b>自動掃描</b></td><td>Word 內嵌圖 → 數位 PDF 內嵌圖 → AI 二次檢查。對數位 PDF 有效，對圖片型 PDF 抓不全。</td></tr>
+  <tr><td><b>手動框選裁切</b>（最可靠）</td><td>在每頁上拖曳框出要的內容：整張圖／整張表（含 ABCD）／整組選項圖 (A)(B)(C)(D)（連標籤一起框、但不要框到題幹）。放開後輸入題號即加入清單。</td></tr>
+</table>
+
+<h4>每張裁切卡片可做的事</h4>
+<table>
+  <tr><th>按鈕</th><th>作用</th></tr>
+  <tr><td><span class="badge gray">✂ 手動修正</span></td><td>重新框這一張的範圍</td></tr>
+  <tr><td><span class="badge blue">🧽 橡皮擦</span></td><td>把圖裡不要的東西塗白或挖空（游標圓圈就是筆刷實際大小，不會誤塗到旁邊）</td></tr>
+  <tr><td><span class="badge gold">🔗題組圖</span></td><td>把這張標記為<b>題組共用圖</b>（見下），填任一小題代表題號即可，貼圖時整組共用</td></tr>
+  <tr><td><span class="badge gray">略過 / 改題號</span></td><td>不要這張／修改對應題號</td></tr>
+</table>
+
+<div class="card info">
+  <b>單題圖 vs 題組共用圖</b><br>
+  ・<b>單題圖</b>（預設）：只有一題在用的圖 → 貼到那一題。<br>
+  ・<b>題組共用圖</b>：整組小題「一起看」的那張圖（例如「閱讀下文回答 25～27 題」上面的圖）→ 按「🔗題組圖」，填 25～27 任一題號，系統會貼到<b>題組文章</b>那筆，讓整組小題共用同一張圖。
+</div>
+
+<div class="step"><div class="step-num green">✓</div><div class="step-body">
+  <b>全部確認後按「🖼 批次貼入題庫」</b><br>
+  系統會回報成功幾張、哪些題號在題庫找不到、哪些題組圖沒有對應的題組文章等，照提示補正即可。
+</div></div>
 
 
 <!-- ===== AI 工具選擇 ===== -->
-<h2 id="ai">五、AI 工具選擇說明</h2>
+<h2 id="ai">六、AI 工具選擇說明</h2>
 
 <p>在整個流程中，「AI」有兩種使用方式：</p>
 
@@ -481,7 +526,7 @@
 
 
 <!-- ===== AI 生成詳解 ===== -->
-<h2 id="sol">六、AI 生成詳解</h2>
+<h2 id="sol">七、AI 生成詳解</h2>
 
 <p>編輯任何題目時，在「詳解」欄位旁邊有「✨ AI 生成詳解」按鈕，可以讓 AI 自動幫這題寫詳解。使用前需要先在系統裡設定 AI 連線。</p>
 
@@ -542,7 +587,7 @@
 
 
 <!-- ===== 手動新增與編輯 ===== -->
-<h2 id="edit">七、手動新增與編輯題目</h2>
+<h2 id="edit">八、手動新增與編輯題目</h2>
 
 <h3>新增題目</h3>
 <p>點工具列的「手動新增」，填寫表單後點「儲存」。適合少量補充，或 AI 匯入後個別修正。</p>
@@ -561,6 +606,11 @@
   <tr><td>題號</td><td>原卷題號，數字</td></tr>
   <tr><td>答案</td><td>A～D 或留空（非選擇題）</td></tr>
 </table>
+
+<div class="card info">
+  <b>考試名稱會自動組合</b>：填年度、學校、選「段考次」下拉（含第一～三次段考、<b>第一～三次模擬考、會考、學測、分科測驗</b>），系統自動拼出考試名稱；也可手動修改。<br><br>
+  <b>📄 考卷原稿對照</b>：考試名稱欄下方有一條原稿列，可上傳該考卷的原稿 PDF（<b>一份對應一個考卷名稱、整份題目共用</b>，上傳一次不用再重找）。之後編輯任一題點「📄 看原稿」就會開出原卷，方便一題一題對照檢查有沒有打錯。
+</div>
 
 <h4>課程對應</h4>
 <p>先選「冊數」→系統自動填入冊名與領域 → 選大單元 → 選子單元 → 知識點建議會自動出現。</p>
@@ -598,6 +648,13 @@
   <tr><td>E3</td><td>長文閱讀</td><td></td><td></td></tr>
 </table>
 
+<h4>圖片工具（含橡皮擦）</h4>
+<div class="card info">
+  題目圖與題組圖都可以：貼上（Ctrl+V）或上傳、拖曳調整寬度與對齊、小／中／大／滿版快捷、套用到全部。每張圖下方還有：<br>
+  ・<b>🧽 橡皮擦</b>：把圖裡不要的東西<b>塗白</b>（當白紙背景）或<b>挖空成透明</b>，可調筆刷、復原／重做，<b>游標圓圈就是筆刷實際大小</b>，不會誤塗到旁邊。<br>
+  ・從 raw 前處理頁批次貼過來的圖，會依實際像素<b>用最小合適比例</b>顯示，不會被放到超大。
+</div>
+
 <h4>公式輸入格式（LaTeX）</h4>
 <div class="card info">
   數學和化學公式用 <code>$...$</code> 包住：<br><br>
@@ -625,7 +682,7 @@
 
 
 <!-- ===== 篩選與搜尋 ===== -->
-<h2 id="filter">八、篩選與搜尋題目</h2>
+<h2 id="filter">九、篩選與搜尋題目</h2>
 
 <h3>四層聯動篩選</h3>
 <div class="flow">
@@ -655,7 +712,7 @@
 
 
 <!-- ===== 選題與出卷 ===== -->
-<h2 id="pick">九、選題與匯出考卷</h2>
+<h2 id="pick">十、選題與匯出考卷</h2>
 
 <h3>手動勾選題目</h3>
 <p>在題目卡片右上角打勾即可選取（邊框變紅色代表已選）。題組題只要勾一題，系統會自動把同題組的小題全部勾選。</p>
@@ -694,8 +751,44 @@
 </div>
 
 
+<!-- ===== 題庫健檢儀表板 ===== -->
+<h2 id="analytics">十一、題庫健檢儀表板（analytics.html）</h2>
+
+<p>一眼看題庫全貌與缺口，找出「該補哪裡」。入口：主系統工具列的分析按鈕，或直接開 <code>/analytics.html</code>。</p>
+
+<table>
+  <tr><th>區塊</th><th>看什麼</th></tr>
+  <tr><td>🧩 題型與能力 / 🖼 圖表類型 / 🎚 難度結構</td><td>各分類的題數分布，檢查是否失衡</td></tr>
+  <tr><td>科別／領域分布、🏫 題源偏差</td><td>生物／理化／地科比例；哪些學校的題偏多或偏少</td></tr>
+  <tr><td><b>章節樹</b>（折疊式）</td><td>依課綱單元順序排列，一眼看出<b>哪些子單元完全沒有題目</b>（找缺口最實用）</td></tr>
+  <tr><td><b>資料品質診斷</b></td><td>可點開有問題的題目清單（重複、缺欄位、章節對不上等）直接去修</td></tr>
+  <tr><td>📅 年度總覽</td><td>逐年的章節編排、科目冊次、題型／圖表／難度結構變化</td></tr>
+</table>
+
+<div class="card tip">
+  <b>只分析你挑的那批題</b>：在主系統勾選題目後，這頁也能只針對「目前挑選的題」做分析，組卷時檢查比例很好用。
+</div>
+
+
+<!-- ===== 共編進度表 ===== -->
+<h2 id="progress">十二、共編進度表（progress.html）</h2>
+
+<p>多人協作的考卷處理看板：每份考卷處理到哪一步、誰卡住，一目了然。入口：<code>/progress.html</code>。</p>
+
+<ul>
+  <li>每一份考卷一列，顯示各處理步驟的打勾狀態與<b>完成率</b>。</li>
+  <li>各步驟（確認公式／上傳圖片／製作詳解／題幹敘述確認／題組承上題確認／其他確認）可打勾回報，跟主系統題目列表下方的進度卡片<b>雙向即時同步</b>（同一份雲端資料）。</li>
+  <li>有「<b>考卷圖片高清化</b>」欄位，追蹤補高清圖的進度，<b>不計入完成率</b>。</li>
+  <li>每份考卷有<b>超連結</b>：點了會直接跳到主系統並自動篩出該考卷（<b>免再輸入密碼</b>）。</li>
+</ul>
+
+<div class="card info">
+  <b>跟每日一題連動</b>：學生在每日一題回報某題有問題時，系統會自動找出該題所屬考卷、把對應的進度欄位取消打勾，提示老師重新確認。
+</div>
+
+
 <!-- ===== 每日一題 ===== -->
-<h2 id="daily">十、每日一題系統</h2>
+<h2 id="daily">十三、每日一題系統</h2>
 
 <p>每日一題（<code>daily.html</code>）是給學生每天練習的介面，與題庫系統（index.html）獨立。</p>
 
@@ -753,7 +846,7 @@
 
 
 <!-- ===== 備份與還原 ===== -->
-<h2 id="backup">十一、備份與還原</h2>
+<h2 id="backup">十四、備份與還原</h2>
 
 <h3>備份</h3>
 <p>點工具列「⬇ 備份」，下載一個 JSON 檔。建議每次大量匯入後備份一次。</p>
@@ -767,10 +860,10 @@
 
 
 <!-- ===== FAQ ===== -->
-<h2 id="faq">十二、常見問題 FAQ</h2>
+<h2 id="faq">十五、常見問題 FAQ</h2>
 
 <h3>Q：第一次打開網站，什麼都看不到？</h3>
-<p>確認密碼輸入正確（提示：LJ0970……）。若畫面還是空白，請重新開啟頁面，或等幾秒讓雲端資料載入。</p>
+<p>確認密碼輸入正確（士林茲茲 Gmail 密碼）。若密碼正確但畫面還是空白，點工具列的「🔄 重新整理」，或等幾秒讓雲端資料載入。</p>
 
 <h3>Q：AI 輸出的 CSV 匯入後，有些欄位顯示空白？</h3>
 <p>冊數必須是 B1～B6，領域必須是「生物」「理化」或「地科」，大小寫要完全一致。可以點進題目「編輯」手動修正。</p>
@@ -806,248 +899,41 @@
 <h3>Q：每日一題的答題記錄可以清掉嗎？</h3>
 <p>在每日一題頁面點右上角「？計分規則」，裡面有「🗑 清除所有答題記錄（重新開始）」按鈕。</p>
 
+<h3>Q：批次貼圖時說「找不到考卷」？</h3>
+<p>代表 raw 頁那欄「考試名稱」跟題庫裡實際的名稱對不上。<b>直接把那欄改成題庫裡的正確名稱</b>（欄位有既有名稱的自動完成，點一下就能挑到正確的）再貼一次即可。系統已支援段考／會考／學測／分科／模擬考的名稱比對，通常改成一致就會對上。</p>
+
+<h3>Q：會考／學測／模擬考的考卷名稱要怎麼填？</h3>
+<p>會考／學測／分科測驗只用「<b>年度＋類型</b>」，例如 <code>114會考</code>、<code>114學測</code>；模擬考則像段考一樣有「第幾次模擬考」。編輯題目時選「段考次」下拉就會自動幫你組好名稱。</p>
+
+<h3>Q：想一邊改題目、一邊對照原卷檢查？</h3>
+<p>先在該考卷任一題的編輯視窗，用「考試名稱」欄下方的原稿列<b>上傳一次原稿 PDF</b>（整份考卷共用）。之後編輯任何一題點「📄 看原稿」就會開出原卷，改完這題點下一題再看一次，一題一題核對。</p>
+
+<h3>Q：自動裁切（抽圖）抓到的圖很少或很爛？</h3>
+<p>如果考卷是「試卷寶清稿」這種<b>圖片型 PDF</b>（整頁一張圖、文字選不起來），自動抽圖先天抓不全。請改用 raw 第 III 區的<b>手動框選裁切</b>，或用外部工具（如 MinerU）先把圖抽出來，再回系統批次貼。</p>
+
 <div class="section-divider"></div>
 
 <!-- ===== 版本記錄 ===== -->
-<h2 id="changelog">十三、版本記錄</h2>
+<h2 id="changelog">十六、版本記錄</h2>
 
 <p>每次系統或使用說明有重要更新，都會在這裡記錄。<b>大版本（X）</b>代表新增主要功能或大幅改寫；<b>小版本（Y）</b>代表局部修正或補充說明。</p>
 
 <table>
   <tr><th style="width:80px">版本</th><th style="width:100px">日期</th><th>更新內容</th></tr>
   <tr>
-    <td><b>V6.27</b></td>
-    <td>2026-07-14</td>
+    <td><b>V7.0</b></td>
+    <td>2026-08-06</td>
     <td>
-      <b>調整：</b>每日一題只從共編進度表「六項全部打勾確認完成」的考卷出題——
-      每日一題頁面載入時會先讀共編進度表，算出哪些考卷已全部確認（確認公式／上傳圖片／製作詳解／
-      題幹敘述確認／題組確認／其他確認皆打勾），只有這些考卷的題目才會進入每日一題與練習模式的抽題池，
-      尚未全部確認的考卷不會出現，避免學生看到還在校對中的題目
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.26</b></td>
-    <td>2026-07-14</td>
-    <td>
-      <b>修正：</b>匯入CSV偵測到「相同考卷＋題號」重複時，即使確認繼續匯入也不會真的覆蓋——
-      新匯入的每一列都會產生全新的隨機 id，upsert 因此只認得是「新題目」而不是「更新舊題目」，
-      結果變成雲端同時存在新舊兩筆重複資料；改為重複匯入時沿用既有題目原本的 id，upsert 才會正確覆蓋原題；
-      同時因為 CSV 完全無法夾帶圖片，覆蓋時會保留原題已上傳的圖片，若這次 CSV 詳解欄是空的也會保留原本已寫好的詳解，
-      避免覆蓋把先前工讀生辛苦補的圖片／詳解洗掉。另清除資料庫中因此 bug 已產生的 40 筆北安國中重複題目殘留
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.25</b></td>
-    <td>2026-07-12</td>
-    <td>
-      <b>修正：</b>每日一題「填／計」非選擇題型誤判為選擇題——題幹中若含 (a)(b) 子題標號（常見於學測混合題，
-      如「(a) 請列式計算…（b）列式計算…」），選項解析器會把子題標號誤認成選擇題選項 A/B，
-      並從標準答案文字中誤抓出一堆 A~F 字母當成「應選 N 項」，變成要求學生選一堆不存在的選項；
-      改為優先判斷題型欄位，只要題型是「填」或「計」（非選擇題）就一律強制走問答／計算文字框作答流程，
-      不再嘗試解析選項
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.24</b></td>
-    <td>2026-07-12</td>
-    <td>
-      <b>修正：</b>每日一題支援 E 選項——選項解析、答案代號解析（含多選）原本都只認 A~D，
-      導致有 E 選項的題目（常見於學測/分科測驗五選項或多選題）E 選項內容會被吞進 D 選項文字裡、完全不會顯示；
-      擴充規則支援到 A~F
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.23</b></td>
-    <td>2026-07-12</td>
-    <td>
-      <b>修正：</b>華康中圓體字型終於正確顯示——上個版本改字型後發現實際渲染不是華康中圓體，
-      深入排查找到根本原因是字型檔案本身的 cmap 字元對應表結構損壞（並非程式碼設定問題）；
-      精準定位損壞只影響「￥」全形日圓符號這一個完全用不到的字元，手動修補後其餘 14391 個字元
-      （含本系統會用到的所有常見字）完全正常，重新驗證上線
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.22</b></td>
-    <td>2026-07-11</td>
-    <td>
-      <b>修正：</b>暫時移除損壞的 HuaKang.ttc 字型檔案，改用源泉圓體頂著，避免視覺上顯示成不相關的系統字型
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.21</b></td>
-    <td>2026-07-11</td>
-    <td>
-      <b>改善：</b>每日一題回報錯誤——不管勾選哪一個問題分類，都會顯示文字框讓學生輸入需要修改的部分
-      （原本只有勾選「其他」才會出現文字框，其餘 5 類勾選後沒辦法補充說明細節）
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.20</b></td>
-    <td>2026-07-09</td>
-    <td>
-      <b>修正：</b>「📤 詳解匯出Excel」文字不換行的問題——原本用的免費版 xlsx.js 函式庫寫入 .xlsx 時
-      會靜默忽略所有儲存格樣式設定（含自動換行），導致題目欄位裡的換行全部擠成一行；
-      改為手動組裝標準 OOXML 格式的 .xlsx（沿用既有的 JSZip，不需額外函式庫），
-      正確嵌入自動換行樣式，並依內容行數自動調整列高
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.19</b></td>
-    <td>2026-07-09</td>
-    <td>
-      <b>改善：</b>匯出考卷列印/存PDF時，題目、手寫答題框、題組文章不再被分頁切斷——
-      寧可該頁多留一些空白，也不把同一題（含答案/詳解/非選題手寫空白框）或同一段題組閱讀材料拆到兩頁，避免閱讀困難
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.18</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>每日一題跳過待確認題目——篩選查詢排除掉「待確認」（flag）的題目，
-      避免學生練習到還沒被工讀生/老師確認正確性的題目
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.17</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>每日一題年級篩選新增「會考」「學測」獨立選項——
-      這兩者不對應單一冊數/課程，選中時改用考試名稱關鍵字比對，不用原本的冊數精準比對
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.16</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>調整：</b>每次顯示題數上限從 200 調整為 60，超過時「顯示更多」也改成每次多載入 60 題
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.15</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>修正：</b>移除分頁後（V6.13）造成的當機/卡頓問題——題庫目前有 1891 題，
-      沒篩選（或篩選範圍很大）時瀏覽器要一次渲染全部題目卡片（含數學公式），導致凍結；
-      改為篩選出的題目在 200 題以內維持一次全部顯示（涵蓋絕大多數單一考卷情境），
-      超過 200 題才會先顯示前 200 題，並提供「顯示更多」按鈕手動載入下一批
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.14</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>「分科測驗」正式列為考試種類（比照學測格式：年度+分科測驗、不填學校、不分年級）；<br>
-      每日一題（daily.html）篩選器新增高中支援——年級選單補上全部 18 個高中課程（必修/選修物理、化學、生物、必修地科），
-      考試種類新增學測、分科測驗；<br>
-      同步修正共編進度表、題庫系統內部重複的年級/考試種類判斷邏輯，讓題組進度追蹤功能也能正確辨識高中考卷
-      （原本只認得國中年級關鍵字，高中考卷會被誤判成空年級）
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.13</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>改善：</b>移除主畫面題目列表分頁——篩選出的題目（例如整份考卷）一次全部顯示，
-      不再切成每頁 50 題、不再有上一頁/下一頁按鈕；
-      「🔧 題組編號人工校對」卡片移到題目列表最上方（原本在最下面，要滑到底才看得到）
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.12</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>改善：</b>「📤 詳解匯出Excel」含圖題目的處理——原本只在 Excel 裡註明「請對照紙本考卷」，
-      現在改成把圖片實際打包進同一個 ZIP 的 images 資料夾（base64 圖片與已上傳 Supabase Storage 的圖片都支援），
-      Excel 裡註明對應檔名，主管不用再另外找紙本考卷；打包失敗的圖片會統計數量提醒改對照紙本
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.11</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>「📤 詳解匯出Excel」——把勾選的題目（或目前篩選出的整份考卷）匯出成 Excel，
-      欄位（考試名稱/題號/題目/答案/詳解空白欄）跟既有「詳解匯入」的比對鍵完全對齊，
-      可以交給主管對照紙本考卷手動填寫詳解，填完後直接用「詳解匯入」讀回即可，
-      不需要額外調整格式；比對用「考試名稱＋題號」精準配對，對不到會明確列出來，不會誤植到錯的題目
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.10</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>改善：</b>「📋 詳解製作指令」按鈕——沒有勾選任何題目時，不再直接擋下並跳警示視窗，
-      改為顯示一份空白範本（保留完整撰寫規則/格式/輸出要求，題目資料處留手動填寫的佔位符），
-      方便手動貼上題目內容後複製使用，不用先勾選題目才能用這個功能
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.9</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>匯出考卷時，非選題（填充/計算）在「題目卷」模式下自動留手寫作答空白——
-      計算題留較大空間（方便列演算過程）、填充題留一行；已顯示答案/詳解的「答案卷」模式則不留空白
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.8</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>高中非選題（問答/計算/填充）支援——
-      AI轉檔指令高中版「欄5答案」規則新增非選題分支，題型為「填」或「計」時要求填完整標準答案文字而非 A/B/C/D；
-      每日一題（daily.html）練習介面新增手寫作答欄位，學生可以在揭曉答案前先寫下自己的答案；
-      同時修正非選題揭曉時的顯示邏輯——原本會誤顯示成不存在的選項字母（如「正確答案：(A)」但完全沒有內容），
-      改成正確顯示標準答案文字
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.7</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>改善：</b>AI 轉檔／生成詳解指令強化 LaTeX 規則——明確要求題幹敘述裡任何測量值、數量、數據，
-      即使只是單一個裸數字（沒有搭配運算符號）也一律要包 $...$（例如「共有 $12$ 顆分子」而不是「共有12顆分子」）；
-      題號、年度／學年學期、選項代號(A)(B)(C)(D)不受影響；國中版、高中版 AI轉檔指令、raw.html OCR 規則、
-      AI 生成詳解 system prompt 都同步更新
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.6</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>題組編號人工校對工具——篩選結果全部屬於同一份考卷時，題目列表下方（考卷整理進度卡片下面）
-      新增「🔧 題組編號人工校對」小工具，可輸入多組題號範圍（如「8-9」「15-19」），
-      按「套用」後範圍內的題目自動標上同一個題組ID（格式跟 AI 產生的一致），範圍外的題目組編號自動清空，
-      方便工讀生快速修正 AI 判斷錯誤的題組，不用逐題手動編輯
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.5</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>修正：</b>匯入 CSV 時題組文章可能遺失的 bug——
-      原本用「該題組ID在 CSV 陣列裡第一個出現的列」來取題組文章內容，
-      但 AI 輸出的列順序不一定跟題號遞增順序一致，一旦順序不同，
-      正確填了文章的那一列可能不是陣列第一個，導致文章被誤判成空字串而整組遺失；
-      改為掃整個題組所有列，找出真正有填內容的那一列（不分是哪個 AI 轉檔都適用）
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.4</b></td>
-    <td>2026-07-08</td>
-    <td>
-      <b>新增：</b>raw.html（考卷前處理）步驟二新增「🤖 用本機 Ollama 自動處理」——
-      直接呼叫本機視覺模型（福大 Mac 可選 qwen3-vl / granite3.2-vision / llama3.2-vision，大南路櫃2 為 qwen2.5）
-      辨識考卷文字＋圖片＋表格截圖，自動產生 CSV 填入步驟四，不用再手動複製 Prompt 貼到外部 AI 網頁；
-      原本的「複製 Prompt」手動路徑保留作為備援
-    </td>
-  </tr>
-  <tr>
-    <td><b>V6.3</b></td>
-    <td>2026-07-07</td>
-    <td>
-      <b>使用說明：</b>「核心任務：把考卷匯入題庫」補上完整前後段——
-      新增 <b>Step 0：掃描與清除筆跡</b>（工讀生掃描原始考卷→用「試卷寶」清除筆跡輸出乾淨PDF/Word→
-      原始檔＋乾淨PDF＋乾淨Word 三個檔案一起餵給 AI，避免辨識疑慮無從對照）；
-      新增 <b>Step 5：全部確認無誤後，回報進度</b>（可直接在題庫頁面的考卷整理進度卡片打勾，或到共編進度表打勾，告知主管）
+      <b>使用說明書大更新（補齊長期漏掉的功能）：</b>新增三個分頁的完整說明——
+      「考卷前處理（raw）」自動清稿／裁圖／批次貼圖、
+      「題庫健檢儀表板（analytics）」、
+      「共編進度表（progress）」；介面總覽新增分頁地圖。<br>
+      <b>編輯題目：</b>補上「📄 考卷原稿 PDF 對照」（一份對應一個考卷、編輯時可點『看原稿』一題一題比對）、
+      「🧽 圖片橡皮擦」（塗白／挖空、游標顯示筆刷大小）、
+      考試名稱自動組合新增模擬考／會考／學測／分科。<br>
+      <b>裁切工具：</b>新增「🔗題組共用圖」（整組小題共用同一張圖）、橡皮擦；
+      批次貼圖新增拖曳上傳、圖片依實際像素最小比例顯示。<br>
+      <b>名稱比對：</b>支援會考／學測／分科／模擬考的考卷名稱辨識與比對，減少批次貼圖「找不到考卷」。
     </td>
   </tr>
   <tr>
@@ -1198,7 +1084,7 @@
 
 <div class="card gray" style="text-align:center;font-size:13px;color:var(--muted)">
   茲茲文教自然科題庫系統 · 使用說明書<br>
-  V6.27 · 2026年7月 · 僅供內部使用
+  V7.0 · 2026年8月 · 僅供內部使用
 </div>
 
 </div><!-- /wrap -->
