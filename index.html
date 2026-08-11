@@ -620,7 +620,7 @@
     <div class="sectionhead">A 基本識別</div>
     <div class="grid4">
       <div class="field"><label>年度（學期）</label><input type="text" id="eYear" placeholder="114上" onblur="composeExam()"></div>
-      <div class="field"><label>來源學校</label><input type="text" id="eSchool" placeholder="士林國中" onblur="composeExam()"></div>
+      <div class="field"><label>來源學校／出版社／考區</label><input type="text" id="eSchool" placeholder="段考填學校；模擬考填出版社或考區（如 康軒／北北基）" title="段考=學校名；模擬考=出版社（康軒/翰林…）或考區（北北基/桃連區…）" onblur="composeExam()"></div>
       <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114-上學期-第一次段考-理化" oninput="renderExamPdfBar()"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
@@ -2266,6 +2266,13 @@ function composeExam(){
     eExam.value=(eYear.value.trim()||'')+'學測';
   } else if(round==='分科測驗'){
     eExam.value=(eYear.value.trim()||'')+'分科測驗';
+  } else if(/模擬考$/.test(round)){
+    // 國中模擬考：來源（出版社或考區，填在「來源學校」欄）-年級-年度-第N次模擬考-科目；不含上/下學期
+    const yearNum=(eYear.value.trim().match(/\d+/)||[''])[0];
+    const rec=SYL.find(k=>k.book===eBook.value);
+    const subject=rec?rec.field:'';
+    const parts=[normalizeSchool(eSchool.value.trim()),eGrade.value,yearNum,round,subject].filter(Boolean);
+    if(parts.length) eExam.value=parts.join('-');
   } else {
     const rawYear=eYear.value.trim();
     const examYear=(rawYear.match(/^(\d+)([上下])$/)||[]);
