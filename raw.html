@@ -96,6 +96,12 @@
             <input id="rawName" class="hide">
             <div class="field" style="margin-top:12px"><label for="examName">自動校正後的題庫考試名稱（可直接修改，或從題庫既有名稱挑選）</label><input id="examName" list="examNameOptions" onfocus="loadExamNameOptions()" onblur="autoMatchExamName()" placeholder="請先丟入考卷檔案，或點此輸入／挑選"><datalist id="examNameOptions"></datalist></div>
             <div class="status" id="nameStatus">命名格式：學校-年級-學年度-上／下學期-第幾次段考-科目（辨識到才加入）。若第 III 部分批次貼圖時顯示找不到考卷，代表這欄跟實際匯入題庫時用的名稱不一致，請直接修改這欄成題庫裡的正確名稱。</div>
+            <div class="status" style="margin-top:6px;line-height:2">
+              <b>命名範例：</b><br>
+              ・段考：<code style="background:#f0ece2;padding:1px 5px;border-radius:3px">士林國中-八年級-114-上學期-第二次段考-理化</code><br>
+              ・模擬考：<code style="background:#f0ece2;padding:1px 5px;border-radius:3px">康軒-九年級-114-第一次模擬考-自然</code>（來源填出版社或考區，<b>不含上／下學期</b>）<br>
+              ・學測：<code style="background:#f0ece2;padding:1px 5px;border-radius:3px">114學測</code>（會考 <code style="background:#f0ece2;padding:1px 5px;border-radius:3px">114會考</code>、分科 <code style="background:#f0ece2;padding:1px 5px;border-radius:3px">114分科測驗</code>）
+            </div>
             <div class="status" id="nameMatchHint" style="margin-top:4px"></div>
           </div>
         </li>
