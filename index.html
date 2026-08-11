@@ -495,7 +495,7 @@
         <div id="fRoundWrap" class="filt" style="display:none"><label>第幾次</label><select id="fRound" onchange="render()"><option value="">全部</option><option>第一次</option><option>第二次</option><option>第三次</option></select></div>
         <div class="grid2">
           <div class="filt"><label>學年</label><select id="fYear" onchange="render()"><option value="">全部</option></select></div>
-          <div class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
+          <div id="fSemWrap" class="filt"><label>學期</label><select id="fSem" onchange="render()"><option value="">全部</option><option>上</option><option>下</option></select></div>
         </div>
         <div class="filt"><label>年級</label><select id="fGrade" onchange="onFilterGrade()"><option value="">全部</option><option>七年級</option><option>八年級</option><option>九年級</option><option>高一</option><option>高二</option><option>高三</option></select></div>
         <div class="filt"><label>學校／考試主辦</label><select id="fSchool" onchange="render()"><option value="">全部</option></select></div>
@@ -2829,6 +2829,7 @@ function resetFilters(){
   ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   onFilterSchoolLevel();
   document.getElementById('fRoundWrap').style.display='none';
+  document.getElementById('fSemWrap').style.display='';
   fFlag.checked=false;buildFilters();render();}
 
 function parseSylYear(y){return y?(y.match(/\d+/)||[''])[0]:'';}
@@ -2898,6 +2899,10 @@ function onFilterExamType(){
   const v=fExamType.value;
   document.getElementById('fRoundWrap').style.display=(v==='段考'||v==='模擬考')?'':'none';
   if(v==='會考'||v===''){fRound.value='';}
+  // 模擬考／會考／學測／分科都沒有上/下學期：把「學期」篩選藏起來並清空（避免殘留的學期條件把這些卷全篩掉）
+  const noSem=(v==='模擬考'||v==='會考'||v==='學測'||v==='分科測驗');
+  document.getElementById('fSemWrap').style.display=noSem?'none':'';
+  if(noSem)fSem.value='';
   render();}
 /* ===== 學制 → 連動考試種類／年級 ===== */
 const EXAM_TYPES_BY_LEVEL={'':['段考','模擬考','會考','學測','分科測驗'],'國中':['段考','模擬考','會考'],'高中':['段考','模擬考','學測','分科測驗']};
