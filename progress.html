@@ -163,7 +163,7 @@ function gradeFromExam(exam,book){
   }
   return bookToGrade(book);
 }
-function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';if(exam.includes('第一次'))return '第一次段考';if(exam.includes('第二次'))return '第二次段考';if(exam.includes('第三次'))return '第三次段考';return exam;}
+function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';const mk=exam.includes('模擬')||exam.includes('模考');if(exam.includes('第一次'))return mk?'第一次模擬考':'第一次段考';if(exam.includes('第二次'))return mk?'第二次模擬考':'第二次段考';if(exam.includes('第三次'))return mk?'第三次模擬考':'第三次段考';return exam;}
 function composeDisplayName(school,grade,year,round,subject){
   if(round==='會考') return (year||'')+'會考';
   return [school,grade,year,round,subject].filter(Boolean).join('-')||'（未命名）';
