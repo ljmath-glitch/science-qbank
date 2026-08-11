@@ -986,8 +986,24 @@ function mathToHtml(text,hlNeg=true){
     catch(e){return esc(s.v);}
   }).join('');
 }
+// 與 index.html 相同：修正被控制字元（TAB/換頁）吃掉反斜線的 LaTeX（\text/\frac）
+function fixControlCharEatenLatex(text){
+  if(!text)return text;
+  var out='';
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(ch==='\t'){
+      if(text[i+1]==='\\')continue; // 多餘的 TAB 剛好接在完整的反斜線指令前，直接丟掉
+      out+='\\t';
+    }else out+=ch;
+  }
+  // \f 被整個吃掉沒有留下任何痕跡，只能靠「rac{」前面沒有 f 或 \f 來判斷
+  out=out.replace(/([^f\\])rac\{/g,function(m,pre){return pre+'\\frac{'}).replace(/^rac\{/,'\\frac{');
+  return out;
+}
 function fixLatex(text){
   if(!text) return '';
+  text=fixControlCharEatenLatex(text);
   return text.replace(/\$([^$]+)\$/g,function(_,inner){
     let f=inner.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim();
     f=f.replace(/(?<!\\)times/g,'\\times').replace(/(?<!\\)cdot/g,'\\cdot')
@@ -995,7 +1011,7 @@ function fixLatex(text){
        .replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons')
        .replace(/(?<!\\)alpha/g,'\\alpha').replace(/(?<!\\)beta/g,'\\beta')
        .replace(/(?<!\\)Delta/g,'\\Delta').replace(/(?<!\\)degree/g,'\\degree')
-       .replace(/\\ext\{/g,'\\text{');
+       .replace(/\\ext\{/g,'\\text{').replace(/\\rac\{/g,'\\frac{');
     return '$'+f+'$';
   });
 }
