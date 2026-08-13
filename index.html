@@ -2267,11 +2267,10 @@ function composeExam(){
   } else if(round==='分科測驗'){
     eExam.value=(eYear.value.trim()||'')+'分科測驗';
   } else if(/模擬考$/.test(round)){
-    // 國中模擬考：來源（出版社或考區，填在「來源學校」欄）-年級-年度-第N次模擬考-科目；不含上/下學期
+    // 國中模擬考：來源（出版社或考區，填在「來源學校」欄）-年級-年度-第N次模擬考-自然；不含上/下學期。
+    // 模擬考是自然科綜合卷，科目一律「自然」，不依冊別拆成生物/理化/地科。
     const yearNum=(eYear.value.trim().match(/\d+/)||[''])[0];
-    const rec=SYL.find(k=>k.book===eBook.value);
-    const subject=rec?rec.field:'';
-    const parts=[normalizeSchool(eSchool.value.trim()),eGrade.value,yearNum,round,subject].filter(Boolean);
+    const parts=[normalizeSchool(eSchool.value.trim()),eGrade.value,yearNum,round,'自然'].filter(Boolean);
     if(parts.length) eExam.value=parts.join('-');
   } else {
     const rawYear=eYear.value.trim();
@@ -3730,7 +3729,9 @@ function buildPrompt(){const syl=SYL_RAW;
 ▷ 欄3 考試名稱：
   - 國中／高中段考格式：學校-年級-學年度-上／下學期-考試次-科目，如 百齡國中-九年級-112-上學期-第一次段考-理化、建中-高一-114-上學期-第一次段考-物理
   - 科目（理化／生物／地科／物理／化學）僅在同校同次段考分科出卷時加在最後；未分科時不加。
-  - 國中模擬考格式：來源-年級-年度-第N次模擬考-科目（不含上／下學期），「來源」填出版社（如 康軒／翰林）或考區（如 北北基／桃連區），如 康軒-九年級-114-第一次模擬考-自然
+  - 國中模擬考格式：來源-年級-年度-第N次模擬考-自然（不含上／下學期）。「來源」填出版社（康軒／翰林／南一…）或考區（北北基／桃連區…）。
+    ⚠️ 模擬考是自然科綜合卷：科目一律寫「自然」，**絕對不可**依生物／理化／地科拆成多個不同的考試名稱（整份卷的所有題目共用同一個「…第N次模擬考-自然」名稱，各題的領域寫在欄8即可）。
+    ⚠️ 只要來源是出版社或考區（非單一學校），一律是「模擬考」，**不可**命名為「段考」。如 康軒-九年級-114-第一次模擬考-自然
   - 會考格式：114會考；學測格式：114學測；分科測驗格式：114分科測驗
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
 ▷ 欄5 答案：
