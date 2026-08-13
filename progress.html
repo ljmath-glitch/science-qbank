@@ -19,6 +19,11 @@ header .wrap{display:flex;align-items:center;gap:10px}.brand-head{display:flex;a
 .toolbar{background:#fff;border-bottom:1px solid var(--line);padding:10px 0;position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .toolbar .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .toolbar label{font-size:13px;font-weight:600;white-space:nowrap}
+.exam-tabs{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%;padding-top:2px}
+.exam-tab{padding:6px 13px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font:600 12px var(--ui-font);cursor:pointer;transition:.15s}
+.exam-tab:hover{border-color:var(--primary);color:var(--primary)}
+.exam-tab.active{border-color:var(--primary);background:var(--primary);color:#fff}
+.exam-tab .tab-count{margin-left:4px;opacity:.8}
 .name-inp{padding:5px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:inherit;width:140px}
 .stat{font-size:12px;color:var(--muted);margin-left:auto}
 .main{padding:24px 0 60px}
@@ -105,6 +110,7 @@ th.sort-header:hover{background:#e5ddd0}
     <input class="name-inp" id="userName" placeholder="請填您的姓名" oninput="saveName()">
     <span class="saving-indicator" id="savingInd">儲存中…</span>
     <div class="stat" id="statLine"></div>
+    <div class="exam-tabs" id="examTabs" aria-label="考卷種類篩選"></div>
   </div>
 </div>
 
@@ -149,6 +155,7 @@ let exams = [];       // [{school, grade, year, round, displayName, count}]
 let progressMap = {}; // { id: {...} }
 let sortKey = 'year';
 let sortAsc = false;
+let activeExamKind = '全部';
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function gradeFromExam(exam,book){
@@ -164,6 +171,21 @@ function gradeFromExam(exam,book){
   return bookToGrade(book);
 }
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';const mk=exam.includes('模擬')||exam.includes('模考');if(exam.includes('第一次'))return mk?'第一次模擬考':'第一次段考';if(exam.includes('第二次'))return mk?'第二次模擬考':'第二次段考';if(exam.includes('第三次'))return mk?'第三次模擬考':'第三次段考';return exam;}
+function examKind(ex){
+  const text=[ex&&ex.round,ex&&ex.displayName,...((ex&&ex.examRaws)||[])].filter(Boolean).join(' ');
+  if(/分科測驗|指考/.test(text))return '分科／其他';
+  if(/學測/.test(text))return '學測';
+  if(/會考/.test(text))return '會考';
+  if(/模擬考|模考|模擬/.test(text))return '模擬考';
+  if(/段考|第一次|第二次|第三次/.test(text))return '段考';
+  return '分科／其他';
+}
+function setExamKind(kind){activeExamKind=kind;render();}
+function renderExamTabs(){
+  const kinds=['全部','段考','模擬考','會考','學測','分科／其他'];
+  const counts=Object.fromEntries(kinds.map(k=>[k,k==='全部'?exams.length:exams.filter(ex=>examKind(ex)===k).length]));
+  document.getElementById('examTabs').innerHTML=kinds.map(k=>`<button type="button" class="exam-tab ${activeExamKind===k?'active':''}" aria-pressed="${activeExamKind===k}" onclick="setExamKind('${k}')">${k}<span class="tab-count">${counts[k]}</span></button>`).join('');
+}
 function composeDisplayName(school,grade,year,round,subject){
   if(round==='會考') return (year||'')+'會考';
   return [school,grade,year,round,subject].filter(Boolean).join('-')||'（未命名）';
@@ -322,24 +344,28 @@ function fmtTime(iso){
 
 function render(){
   const tbody = document.getElementById('tbody');
-  document.getElementById('statLine').textContent = '共 ' + exams.length + ' 份考卷';
+  renderExamTabs();
+  const visibleExams=activeExamKind==='全部'?exams:exams.filter(ex=>examKind(ex)===activeExamKind);
+  document.getElementById('statLine').textContent = activeExamKind+'：共 '+visibleExams.length+' 份考卷';
 
-  if(!exams.length){
+  if(!visibleExams.length){
     tbody.innerHTML = '';
+    document.getElementById('emptyMsg').textContent=activeExamKind==='全部'?'題庫中尚無題目，請先到題庫匯入資料。':'目前沒有「'+activeExamKind+'」考卷。';
     document.getElementById('emptyMsg').style.display = 'block';
     return;
   }
+  document.getElementById('emptyMsg').style.display = 'none';
 
-  const doneCount = exams.filter(ex => {
+  const doneCount = visibleExams.filter(ex => {
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject)] || {};
     return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
   }).length;
-  const rate = exams.length ? Math.round(doneCount / exams.length * 100) : 0;
+  const rate = visibleExams.length ? Math.round(doneCount / visibleExams.length * 100) : 0;
   document.getElementById('statLine').textContent =
-    '共 ' + exams.length + ' 份考卷　·　全部完成 ' + doneCount + ' 份　·　完成率 ' + rate + '%';
+    activeExamKind+'：共 '+visibleExams.length+' 份考卷　·　全部完成 '+doneCount+' 份　·　完成率 '+rate+'%';
   if(_cheerPending){ showCheer(rate); _cheerPending=false; }
 
-  tbody.innerHTML = exams.map(ex => {
+  tbody.innerHTML = visibleExams.map(ex => {
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject);
     const p   = progressMap[id] || {};
     const shownName = p.customName !== undefined ? p.customName : ex.displayName;
