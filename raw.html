@@ -208,7 +208,7 @@
         if(!w||typeof w.listBatchExamStatus!=='function')return;
         const status=w.listBatchExamStatus(val);
         if(status.ok){
-          if(status.matchedExam!==val){examName.value=status.matchedExam;hint.innerHTML=`<span style="color:var(--green)">✓ 已自動對應題庫既有考卷「${esc(status.matchedExam)}」</span>`}
+          if(status.matchedExam!==val){hint.innerHTML=`<span style="color:#7a6e60">題庫有相近的既有考卷「${esc(status.matchedExam)}」，要用它嗎？</span> <button type="button" class="btn" style="font-size:11px;padding:3px 8px;margin-left:4px" onclick="pickExamNameSuggestion('${esc(jsStr(status.matchedExam))}')">用這個名稱</button>`}
           else hint.innerHTML='<span style="color:var(--green)">✓ 與題庫既有考卷名稱一致</span>';
         }else if(status.suggestions&&status.suggestions.length){
           hint.innerHTML=`<span style="color:#a14736">⚠ 題庫裡找不到完全一致的考卷，最接近的候選：</span><div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">`+status.suggestions.map(n=>`<button type="button" class="btn" style="font-size:11px;padding:3px 8px" onclick="pickExamNameSuggestion('${esc(jsStr(n))}')">${esc(n)}</button>`).join('')+'</div>';
