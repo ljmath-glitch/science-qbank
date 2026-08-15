@@ -3085,7 +3085,7 @@ const HL_NAME={'FFFF00':'yellow','00FF00':'green','00FFFF':'cyan','FF00FF':'mage
 function buildRichRuns(rawText,defaultSize,trFn,TextRunClass,UnderlineTypeClass){
   const runs=[];
   richTextSegs(rawText).forEach(seg=>{
-    const plain=latexToPlain(seg.t);
+    const plain=_faithfulMathText(seg.t);
     const lines=plain.split('\n');
     const hasExplicit=seg.bold||seg.italic||seg.underline||seg.size||seg.color||seg.highlight;
     lines.forEach((line,li)=>{
@@ -5943,6 +5943,11 @@ function copyModalTA(id,btn){
 </script>
 <script>
 /* ===== RTF / Word 匯出（從零實作；放獨立 script 以利 Safari 相容） ===== */
+// Word/RTF 匯出用：保留 $...$ 原始 LaTeX 文字（方便用 MathType／Word 公式轉換），只有非公式部分才轉純文字
+function _faithfulMathText(t){
+  if(!t)return '';
+  return String(t).replace(/(\$[^$]*\$)|([^$]+)/g,function(m,math,txt){return math?math:latexToPlain(txt);});
+}
 function latexToPlain(t){
   if(!t)return '';
   var s=String(t);
@@ -6350,7 +6355,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
       }
       if(ansMode==='full'&&it.sol){
-        latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{
+        _faithfulMathText(it.sol||'').split('\n').forEach((line,li)=>{
           const isH=line.startsWith('【')&&line.includes('】');
           const txt=(li===0?'詳解　':'')+line;
           children.push(new Paragraph({children:[tr({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));
