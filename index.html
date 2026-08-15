@@ -257,6 +257,11 @@
   .pv-hlgroup{display:inline-flex;gap:2px;align-items:center;flex:0 0 auto}
   .pv-fmt-bar button.pv-hl{min-width:0;width:17px;height:22px;padding:0;border:1px solid rgba(0,0,0,.25);border-radius:4px}
   .pv-fmt-bar button.pv-hl:hover{border-color:#333;background:inherit}
+  .pv-char-panel{display:none;flex-wrap:wrap;gap:4px;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 6px 14px -10px rgba(45,48,56,.25)}
+  .pv-char-panel.show{display:flex}
+  .pv-char-panel button{min-width:32px;height:32px;padding:0 6px;border:1px solid var(--line);border-radius:7px;background:#fff;color:var(--ink);font-size:16px;line-height:1;cursor:pointer}
+  .pv-char-panel button:hover{background:#fbece7;border-color:#eccfca;color:var(--red)}
+  @media print{.pv-char-panel{display:none!important}}
   .pv-fmt-bar select{width:auto!important;min-width:58px;height:31px;border:1px solid var(--line);border-radius:8px;font-family:var(--ui-font);font-size:12.5px;padding:0 8px;cursor:pointer;flex:0 0 auto;background:#fff;color:var(--ink)}
   .pv-fmt-bar select:focus{outline:none;border-color:var(--red)}
   .pv-fmt-bar .hint{margin-left:auto;font-size:11.5px;color:var(--muted)}.pv-fmt-bar .sep{width:1px;height:20px;background:var(--line);margin:0 4px}.pv-fmt-bar .pv-break{flex-basis:100%;height:0}.pv-fmt-bar .math-btn{width:auto;padding:0 10px;font-family:var(--ui-font);font-weight:700}.pv-fmt-bar .toggle-on{background:#fbece7!important;color:var(--red)!important;border-color:#eccfca!important}.pv-edit-label{font-size:11px;color:var(--muted);white-space:nowrap}.pv-sol-block,.pv-answer-block{margin:8px 0 0 1.5em;padding:9px 12px;border-left:3px solid #1f6f5c;background:#f1faf6;font-size:13px;line-height:1.75}.pv-answer-block{border-color:#c0392b;background:#fff6f4}.pv-sol-title,.pv-answer-title{font-weight:800;color:#1f6f5c;font-size:12px;margin-bottom:3px}.pv-answer-title{color:#c0392b}.pv-latex-help{display:none;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 6px 14px -10px rgba(45,48,56,.25)}.pv-latex-help.show{display:block}.pv-latex-card{max-width:900px;margin:0 auto;padding:13px 18px 15px}.pv-latex-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}.pv-latex-head b{font-size:13px;font-weight:800;color:var(--ink)}.pv-latex-card p{margin:0 0 10px;color:var(--muted);font-size:12.5px;line-height:1.7}.pv-latex-card code{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 5px;color:var(--red)}.pv-latex-grid{display:grid;grid-template-columns:120px 1fr;gap:6px 12px;font-size:12.5px;align-items:center}.pv-latex-grid b{color:var(--ink);font-weight:700}.pv-latex-grid code{display:block;padding:5px 8px;background:#fff;border:1px solid var(--line);border-radius:6px;color:var(--red);white-space:nowrap;overflow:auto}.pv-latex-close{border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:var(--muted)}.pv-latex-close:hover{color:var(--red)}@media print{.pv-latex-help{display:none!important}}
@@ -824,7 +829,7 @@
     </div>
     <p>會在畫面上開啟預覽（手機可看）：公式渲染成正常數學式、圖片排好，可列印或存 PDF。</p>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">取消</button><button class="btn" onclick="exportPaperCSV();paperDlg.close()">儲存 CSV</button><button class="btn" onclick="downloadWordFromDlg()">儲存 Word</button><button class="btn" onclick="showPaperPreview()">預覽考卷</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">← 返回預覽</button><span class="spacer"></span><button class="btn" onclick="paperDlg.close();setTimeout(function(){window.print()},250)">儲存 PDF</button><button class="btn" onclick="exportPaperCSV();paperDlg.close()">儲存 CSV</button><button class="btn" onclick="downloadPaper();paperDlg.close()">儲存 HTML</button><button class="btn primary" onclick="downloadWordFromDlg()">儲存 Word</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -867,10 +872,8 @@
 <div id="paperView" class="paperview">
   <div class="pv-bar noprint">
     <button class="btn" onclick="closePaper()">返回</button><span class="spacer"></span>
-    <button class="btn" onclick="window.print()">儲存 PDF</button>
-    <button class="btn" onclick="exportPaperCSV()">儲存 CSV</button>
-    <button class="btn" onclick="downloadWordDoc()">儲存 Word</button>
-    <button class="btn" onclick="downloadPaper()">儲存 HTML</button>
+    <span class="pv-edit-label" style="margin-right:10px">確認題目、排序與內容後，按下一步設定並匯出</span>
+    <button class="btn primary" onclick="openPaperSettings()">下一步：匯出設定 →</button>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('undo')" title="復原">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('redo')" title="重做">↷</button><span class="sep"></span>
@@ -889,13 +892,15 @@
     <button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button>
     <button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button>
     <button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button>
+    <button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button>
     <label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#c0392b" onchange="_pvApplyColor(this.value)"></label>
     <span class="pv-hlgroup" title="螢光筆">
       <button type="button" class="pv-hl" style="background:#FFFF00" onmousedown="event.preventDefault()" onclick="_pvApplyHighlight('#FFFF00')" title="黃色螢光"></button><button type="button" class="pv-hl" style="background:#00FF00" onmousedown="event.preventDefault()" onclick="_pvApplyHighlight('#00FF00')" title="綠色螢光"></button><button type="button" class="pv-hl" style="background:#00FFFF" onmousedown="event.preventDefault()" onclick="_pvApplyHighlight('#00FFFF')" title="青色螢光"></button><button type="button" class="pv-hl" style="background:#FF00FF" onmousedown="event.preventDefault()" onclick="_pvApplyHighlight('#FF00FF')" title="粉色螢光"></button></span>
     <button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">⌫格</button><span class="sep"></span>
     <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('^{}')" title="上標">x²</button>
     <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('_{}')" title="下標">x₂</button>
-    <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyLeft')" title="靠左">≡</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyCenter')" title="置中">☰</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyRight')" title="靠右">☲</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyFull')" title="兩端對齊">▤</button><span class="sep"></span>
+    <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyLeft')" title="靠左">≡</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyCenter')" title="置中">☰</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyRight')" title="靠右">☲</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('justifyFull')" title="兩端對齊">▤</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('outdent')" title="減少縮排">⇤</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('indent')" title="增加縮排">⇥</button><span class="sep"></span>
+    <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="插入特殊符號">Ω 符號</button>
     <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\mathrm{}')" title="化學式直立字">H₂O</button>
     <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">▧ 圖片</button>
     <button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvLatexHelp()" title="展開 LaTeX／Word 公式小抄">公式小抄</button>
@@ -904,6 +909,7 @@
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
   <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25^\\circ\\mathrm{C}$、$95^\\circ\\mathrm{F}$</code></div></div></div>
+  <div class="pv-char-panel noprint" id="pvCharPanel"></div>
   <div class="pv-sheet" id="pvSheet"></div>
   <input id="pvInlineImage" type="file" accept="image/*" hidden onchange="pvInlineImageChange(this)">
 </div>
@@ -3047,16 +3053,17 @@ function applyRichMarks(s){
   s=s.replace(/\*\*([\s\S]+?)\*\*/g,'<b>$1</b>');
   s=s.replace(/##([\s\S]+?)##/g,'<i>$1</i>');
   s=s.replace(/__([\s\S]+?)__/g,'<u>$1</u>');
+  s=s.replace(/~~([\s\S]+?)~~/g,'<s>$1</s>');
   return s;
 }
 function stripRichMarks(s){
   if(!s)return s;
-  return s.replace(/\{\{[ch]#[0-9a-fA-F]{3,6}\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\{\{\d+\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/##([\s\S]+?)##/g,'$1').replace(/__([\s\S]+?)__/g,'$1');
+  return s.replace(/\{\{[ch]#[0-9a-fA-F]{3,6}\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\{\{\d+\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/##([\s\S]+?)##/g,'$1').replace(/__([\s\S]+?)__/g,'$1').replace(/~~([\s\S]+?)~~/g,'$1');
 }
 // 解析成 [{t,bold,italic,underline,size}]，供 Word(.docx)/RTF 產生 TextRun 使用；要在 latexToPlain 之前跑，避免 {} 被吃掉
 function richTextSegs(text){
   const tokens=[];
-  const re=/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}|\{\{c#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\{\{h#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\*\*([\s\S]+?)\*\*|##([\s\S]+?)##|__([\s\S]+?)__/g;
+  const re=/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}|\{\{c#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\{\{h#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\*\*([\s\S]+?)\*\*|##([\s\S]+?)##|__([\s\S]+?)__|~~([\s\S]+?)~~/g;
   let last=0,m;
   while((m=re.exec(text))!==null){
     if(m.index>last)tokens.push({t:text.slice(last,m.index)});
@@ -3066,6 +3073,7 @@ function richTextSegs(text){
     else if(m[7]!==undefined)tokens.push({t:m[7],bold:true});
     else if(m[8]!==undefined)tokens.push({t:m[8],italic:true});
     else if(m[9]!==undefined)tokens.push({t:m[9],underline:true});
+    else if(m[10]!==undefined)tokens.push({t:m[10],strike:true});
     last=re.lastIndex;
   }
   if(last<text.length)tokens.push({t:text.slice(last)});
@@ -3088,6 +3096,7 @@ function buildRichRuns(rawText,defaultSize,trFn,TextRunClass,UnderlineTypeClass)
         if(seg.bold)opts.bold=true;
         if(seg.italic)opts.italics=true;
         if(seg.underline)opts.underline={type:UnderlineTypeClass.SINGLE};
+        if(seg.strike)opts.strike=true;
         if(seg.color)opts.color=seg.color.replace('#','');
         if(seg.highlight){const hn=HL_NAME[seg.highlight.replace('#','')];if(hn)opts.highlight=hn;}
         runs.push(trFn(opts));
@@ -3117,6 +3126,7 @@ function serializeRichText(container){
       if(tag==='B'||tag==='STRONG')out+='**'+inner+'**';
       else if(tag==='I'||tag==='EM')out+='##'+inner+'##';
       else if(tag==='U')out+='__'+inner+'__';
+      else if(tag==='S'||tag==='STRIKE'||tag==='DEL')out+='~~'+inner+'~~';
       else if(tag==='SPAN'&&child.style){
         let t=inner;
         if(child.style.fontSize)t='{{'+parseInt(child.style.fontSize)+'}}'+t+'{{/}}';
@@ -3215,6 +3225,31 @@ function _pvInsertLatex(kind){
   const next=document.createRange(),pos=focusAt>=0?focusAt:text.length;next.setStart(node,pos);next.collapse(true);sel.removeAllRanges();sel.addRange(next);el.focus();
 }
 function togglePvLatexHelp(force){const box=document.getElementById('pvLatexHelp');const show=force===undefined?!box.classList.contains('show'):!!force;box.classList.toggle('show',show);}
+// 特殊符號面板：純文字符號直接插入；溫度用 LaTeX（維持全題庫一致）
+const PV_CHARS=['×','÷','±','∓','≈','≠','≤','≥','·','∝','∞','∴','∵','′','″','‰','→','←','↔','⇌','⇒','↑','↓','°','Å','μ','Ω','α','β','γ','δ','Δ','θ','λ','π','ρ','σ','φ','ω','△','□','○','◇','※','∠','⊥','∥'];
+function togglePvCharPanel(force){
+  const box=document.getElementById('pvCharPanel');if(!box)return;
+  const show=force===undefined?!box.classList.contains('show'):!!force;
+  if(show&&!box.dataset.built){
+    box.innerHTML=PV_CHARS.map(c=>`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('${c}')">${c}</button>`).join('')
+      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('$')" title="插入行內公式 $...$">$公式$</button>`
+      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{C}$')" title="攝氏度">℃</button>`
+      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{F}$')" title="華氏度">℉</button>`;
+    box.dataset.built='1';
+  }
+  box.classList.toggle('show',show);
+}
+function _pvInsertText(str){
+  const el=_pvActiveEdit;
+  if(!el){alert('請先點擊要插入符號的題目、答案或詳解文字。');return;}
+  const sel=window.getSelection();let range;
+  if(sel&&sel.rangeCount&&el.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0);
+  else{range=document.createRange();range.selectNodeContents(el);range.collapse(false);}
+  range.deleteContents();
+  const node=document.createTextNode(str);range.insertNode(node);
+  const next=document.createRange();next.setStartAfter(node);next.collapse(true);
+  sel.removeAllRanges();sel.addRange(next);el.focus();
+}
 function pvAddPreviewImage(){
   if(!_pvActiveEdit){alert('請先點擊要加入圖片的題目或題組文章。');return;}
   const input=document.getElementById('pvInlineImage');
@@ -3528,8 +3563,18 @@ function buildAutoTitle(){
   return (grade+field+bookPart)||'自然科測驗卷';
 }
 async function _fetchLogoBytes(){try{const r=await fetch("logo.png");if(!r.ok)return null;const ab=await r.arrayBuffer();return new Uint8Array(ab);}catch(_){return null;}}
+// 匯出流程：按「匯出考卷」→ 先算好表頭預設值 → 直接開預覽編輯頁；
+// 預覽頁按「下一步：匯出設定」才開設定視窗（openPaperSettings），再選輸出檔案格式。
 function openPaperDlg(){
   if(!PICKS.size){alert('尚未選題');return}
+  _computePaperDefaults();
+  showPaperPreview();
+}
+function openPaperSettings(){
+  if(!PICKS.size){alert('尚未選題');return}
+  paperDlg.showModal();
+}
+function _computePaperDefaults(){
   pTitle.value=buildAutoTitle();
   const gr=fGrade.value,fd=fField.value,bk=fBook.value,sc=fSchool.value;
   const yr=fYear.value?(fYear.value+(fSem.value||'')):fSem.value;
@@ -3541,7 +3586,6 @@ function openPaperDlg(){
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
   document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?normalizeSchool(sc):'',shortRnd?'('+shortRnd+')':''].join(''):'';
-  paperDlg.showModal();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
