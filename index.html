@@ -237,6 +237,16 @@
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
+  .pv-sheet .q{position:relative}
+  .pvq-ctrl{position:absolute;left:-34px;top:0;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s}
+  .pv-sheet .q:hover .pvq-ctrl{opacity:1}
+  .pvq-drag{cursor:grab;user-select:none;color:#8a94a6;font-size:15px;line-height:1;padding:2px 3px;border-radius:5px}
+  .pvq-drag:hover{background:#eef1f6;color:#4a5468}
+  .pvq-drag:active{cursor:grabbing}
+  .pvq-del{cursor:pointer;border:none;background:#fff;color:#c0392b;border-radius:5px;font-size:12px;line-height:1;padding:3px 5px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .pvq-del:hover{background:#c0392b;color:#fff}
+  .q.pvq-dragover{box-shadow:0 -2px 0 0 #2e75b6}
+  @media print{.pvq-ctrl{display:none!important}}
   .pv-fmt-bar{position:sticky;top:48px;z-index:15;display:none;align-items:center;gap:3px;padding:7px 14px;background:#fffefb;border-bottom:1px solid var(--line);box-shadow:0 5px 14px -10px rgba(45,48,56,.28);flex-wrap:wrap}
   .pv-fmt-bar button{min-width:31px;height:31px;padding:0 7px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);font-family:var(--ui-font);font-size:14px;font-weight:600;line-height:1;cursor:pointer;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}
   .pv-fmt-bar button:hover{background:#fbece7;color:var(--red);border-color:#eccfca}
@@ -3490,6 +3500,46 @@ function openPaperDlg(){
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
+// 預覽考卷的「手動題序」：PV_ORDER 為題目 id 陣列；為 null 時用預設（考試名稱＋題號）排序。
+// 拖曳調整順序或刪題會寫進 PV_ORDER，題號一律依最終排序後的位置自動重編，預覽與 Word/HTML 匯出共用同一份順序。
+let PV_ORDER=null;
+function orderPaperItems(items){
+  const def=(a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0);
+  if(!PV_ORDER||!PV_ORDER.length)return [...items].sort(def);
+  const pos={};PV_ORDER.forEach((id,i)=>{if(pos[id]===undefined)pos[id]=i;});
+  return [...items].sort((a,b)=>{
+    const pa=pos[a.id],pb=pos[b.id];
+    if(pa!==undefined&&pb!==undefined)return pa-pb;
+    if(pa!==undefined)return -1;
+    if(pb!==undefined)return 1;
+    return def(a,b);
+  });
+}
+// 拖曳題目卡片調整順序（HTML5 DnD，只從左側把手 ⋮⋮ 觸發，避免干擾內文編輯／圖片拖曳）
+let _pvRowDrag=null;
+function pvRowDragStart(e,id){_pvRowDrag=id;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}catch(_){}}
+function pvRowDragOver(e){if(!_pvRowDrag)return;e.preventDefault();const q=e.currentTarget;if(q&&!q.classList.contains('pvq-dragover')){document.querySelectorAll('.q.pvq-dragover').forEach(el=>el.classList.remove('pvq-dragover'));q.classList.add('pvq-dragover');}}
+function pvRowDrop(e,targetId){e.preventDefault();document.querySelectorAll('.q.pvq-dragover').forEach(el=>el.classList.remove('pvq-dragover'));const drag=_pvRowDrag;_pvRowDrag=null;if(!drag||drag===targetId)return;pvReorderQuestion(drag,targetId);}
+function pvReorderQuestion(dragId,targetId){
+  const ids=orderPaperItems(pickedItems()).map(it=>it.id);
+  const from=ids.indexOf(dragId);if(from<0)return;
+  ids.splice(from,1);
+  let to=ids.indexOf(targetId);if(to<0)to=ids.length;
+  ids.splice(to,0,dragId);
+  PV_ORDER=ids;
+  _pvRebuild();_rebuildLastPaperHTML();
+}
+// 從考卷移除此題（僅取消勾選，不刪資料庫）；其餘題號自動重編
+function pvRemoveQuestion(id){
+  if(!confirm('要把這題從考卷移除嗎？（只是取消勾選，不會刪除題庫裡的題目）'))return;
+  const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
+  const ids=gid?DB.filter(x=>x.groupId===gid).map(x=>x.id):[id];
+  ids.forEach(t=>PICKS.delete(t));
+  if(PV_ORDER)PV_ORDER=PV_ORDER.filter(x=>!ids.includes(x));
+  try{render();}catch(_){}
+  if(!PICKS.size){closePaper();alert('已無勾選題目，已關閉預覽。');return;}
+  _pvRebuild();_rebuildLastPaperHTML();
+}
 function _countSubQuestions(text){
   if(!text)return 1;
   // 先移除 LaTeX $...$ 區段，避免 $f(x)$、$f(2)$ 這類函數記號被誤判成子題標記(a)(b)(1)(2)
@@ -3525,7 +3575,7 @@ function buildExamHeader(){
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
 function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
-  const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
+  const sorted=orderPaperItems(items);
   let ansMode=forcedMode||document.querySelector('input[name=pAns]:checked').value;
   // both/both_full 預覽時只顯示題目卷
   const previewMode=(ansMode==='both'||ansMode==='both_full')?'none':ansMode;
@@ -3579,7 +3629,9 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
     const qTextInner=applyRichMarks(hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))));
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
-    return `${passageHtml}<div class="q">${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
+    const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
+    const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
+    return `${passageHtml}<div class="q"${qAttr}>${ctrl}${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
   });
   const body=bodyParts.join('');
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
@@ -6155,8 +6207,8 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     if(showMeta){
       children.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
     }
-    // ── 題目 ──
-    const sorted=[...items].sort((a,b)=>(a.exam||'').localeCompare(b.exam||'')||(parseInt(a.no)||0)-(parseInt(b.no)||0));
+    // ── 題目（與預覽共用同一份手動題序）──
+    const sorted=orderPaperItems(items);
     // ── 預算每題組的題號範圍（Word 自動編號從 1 開始，與 sorted 順序一致）──
     const groupRangesW={};
     {let n=0;sorted.forEach(it=>{n++;const g=it.groupId||'';if(g){if(!groupRangesW[g])groupRangesW[g]={min:n,max:n};else groupRangesW[g].max=n;}});}
@@ -6177,7 +6229,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         if(img.x!==undefined){hPos={relative:HorizontalPositionRelativeFrom.COLUMN,offset:Math.round(img.x/100*CONTENT_EMU)};}
         else{const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;hPos={relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign};}
         const vOffset=Math.round((img.y||0)*PX_TO_EMU);
-        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.SQUARE,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.TIGHT,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
     for(let i=0;i<sorted.length;i++){
