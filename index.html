@@ -876,7 +876,7 @@
     <button class="btn primary" onclick="openPaperSettings()">下一步：匯出設定 →</button>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
-    <button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('undo')" title="復原">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvFmt('redo')" title="重做">↷</button><span class="sep"></span>
+    <button type="button" onmousedown="event.preventDefault()" onclick="_pvHistUndo()" title="上一步（復原排序／刪題）">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvHistRedo()" title="重做">↷</button><span class="sep"></span>
     <select onmousedown="event.preventDefault()" onchange="_pvApplySize(this.value);this.selectedIndex=0">
       <option value="">12</option>
       <option value="12">12px</option>
@@ -3085,7 +3085,7 @@ const HL_NAME={'FFFF00':'yellow','00FF00':'green','00FFFF':'cyan','FF00FF':'mage
 function buildRichRuns(rawText,defaultSize,trFn,TextRunClass,UnderlineTypeClass){
   const runs=[];
   richTextSegs(rawText).forEach(seg=>{
-    const plain=_faithfulMathText(seg.t);
+    const plain=latexToPlain(seg.t);
     const lines=plain.split('\n');
     const hasExplicit=seg.bold||seg.italic||seg.underline||seg.size||seg.color||seg.highlight;
     lines.forEach((line,li)=>{
@@ -3604,6 +3604,20 @@ function orderPaperItems(items){
     return def(a,b);
   });
 }
+// 預覽「上一步／重做」：記錄排序與刪題等結構性動作的快照，供工具列 ↶/↷ 復原（文字編輯本身用瀏覽器原生 Ctrl+Z）
+let _pvUndoStack=[],_pvRedoStack=[];
+function _pvSnapshot(){return {picks:[...PICKS],order:PV_ORDER?[...PV_ORDER]:null};}
+function _pvResetHist(){_pvUndoStack=[];_pvRedoStack=[];}
+function _pvPushHist(){_pvUndoStack.push(_pvSnapshot());if(_pvUndoStack.length>50)_pvUndoStack.shift();_pvRedoStack=[];}
+function _pvRestoreSnap(s){
+  PICKS.clear();s.picks.forEach(id=>PICKS.add(id));
+  PV_ORDER=s.order?[...s.order]:null;
+  try{render();}catch(_){}
+  if(!PICKS.size){closePaper();return;}
+  _pvRebuild();_rebuildLastPaperHTML();
+}
+function _pvHistUndo(){if(!_pvUndoStack.length){return;}_pvRedoStack.push(_pvSnapshot());_pvRestoreSnap(_pvUndoStack.pop());}
+function _pvHistRedo(){if(!_pvRedoStack.length){return;}_pvUndoStack.push(_pvSnapshot());_pvRestoreSnap(_pvRedoStack.pop());}
 // 拖曳題目卡片調整順序（HTML5 DnD，只從左側把手 ⋮⋮ 觸發，避免干擾內文編輯／圖片拖曳）
 let _pvRowDrag=null;
 function pvRowDragStart(e,id){_pvRowDrag=id;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}catch(_){}}
@@ -3612,6 +3626,7 @@ function pvRowDrop(e,targetId){e.preventDefault();document.querySelectorAll('.q.
 function pvReorderQuestion(dragId,targetId){
   const ids=orderPaperItems(pickedItems()).map(it=>it.id);
   const from=ids.indexOf(dragId);if(from<0)return;
+  _pvPushHist();
   ids.splice(from,1);
   let to=ids.indexOf(targetId);if(to<0)to=ids.length;
   ids.splice(to,0,dragId);
@@ -3623,6 +3638,7 @@ function pvRemoveQuestion(id){
   if(!confirm('要把這題從考卷移除嗎？（只是取消勾選，不會刪除題庫裡的題目）'))return;
   const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
   const ids=gid?DB.filter(x=>x.groupId===gid).map(x=>x.id):[id];
+  _pvPushHist();
   ids.forEach(t=>PICKS.delete(t));
   if(PV_ORDER)PV_ORDER=PV_ORDER.filter(x=>!ids.includes(x));
   try{render();}catch(_){}
@@ -3757,6 +3773,7 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function showPaperPreview(){if(!PICKS.size)return;
+  _pvResetHist();
   pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
   document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';renderMath(pvSheet);window.scrollTo(0,0);
   _rebuildLastPaperHTML();}
@@ -5943,11 +5960,6 @@ function copyModalTA(id,btn){
 </script>
 <script>
 /* ===== RTF / Word 匯出（從零實作；放獨立 script 以利 Safari 相容） ===== */
-// Word/RTF 匯出用：保留 $...$ 原始 LaTeX 文字（方便用 MathType／Word 公式轉換），只有非公式部分才轉純文字
-function _faithfulMathText(t){
-  if(!t)return '';
-  return String(t).replace(/(\$[^$]*\$)|([^$]+)/g,function(m,math,txt){return math?math:latexToPlain(txt);});
-}
 function latexToPlain(t){
   if(!t)return '';
   var s=String(t);
@@ -6355,7 +6367,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
       }
       if(ansMode==='full'&&it.sol){
-        _faithfulMathText(it.sol||'').split('\n').forEach((line,li)=>{
+        latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{
           const isH=line.startsWith('【')&&line.includes('】');
           const txt=(li===0?'詳解　':'')+line;
           children.push(new Paragraph({children:[tr({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));
