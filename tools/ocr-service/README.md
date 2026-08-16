@@ -27,12 +27,12 @@
    ```
 3. 啟動服務（假資料模式）：
    ```
-   python app.py
+   python 題庫OCR_server.py
    ```
    看到 `Uvicorn running on http://0.0.0.0:8000` 就成功了。
 4. 測試：瀏覽器開 `http://localhost:8000/health`，看到 `"ok": true` 代表服務活著。
 
-> 想換埠號：先 `set OCR_PORT=11500` 再 `python app.py`。
+> 想換埠號：先 `set OCR_PORT=11500` 再 `python 題庫OCR_server.py`。
 
 ---
 
@@ -46,7 +46,7 @@
 3. 用「真辨識模式」啟動服務：
    ```
    set OCR_ENGINE=mineru
-   python app.py
+   python 題庫OCR_server.py
    ```
    再開 `http://localhost:8000/health`，應看到 `"mineru_available": true`。
 
