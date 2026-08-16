@@ -14,7 +14,7 @@ echo  看到 "Uvicorn running on http://0.0.0.0:8000" 就成功。
 echo  這個視窗請「保持開著」；關掉視窗＝關掉服務。
 echo ============================================================
 
-C:\mineru-env\Scripts\python.exe app.py
+C:\mineru-env\Scripts\python.exe 題庫OCR_server.py
 
 echo.
 echo 服務已結束。若上面有紅字錯誤，請把訊息截圖給 Claude。

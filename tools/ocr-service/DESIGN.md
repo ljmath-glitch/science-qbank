@@ -103,7 +103,7 @@ MinerU / dots.ocr 這類工具做的是「看懂版面」：抽出**乾淨文字
 tools/ocr-service/
   DESIGN.md          # 本文件
   README.md          # 公司電腦安裝/啟動 SOP（Windows 無 GPU）
-  app.py             # FastAPI：POST /ocr，包 MinerU pipeline + 既有裁圖邏輯
+  題庫OCR_server.py             # FastAPI：POST /ocr，包 MinerU pipeline + 既有裁圖邏輯
   requirements.txt
 raw.html             # 新增「自動 OCR」步驟 UI 與串接
 CLAUDE.md / guide.html  # 文件更新（架構、SOP、排錯）
@@ -114,7 +114,7 @@ CLAUDE.md / guide.html  # 文件更新（架構、SOP、排錯）
 ## 8. 分階段實作計畫
 
 - **P0（本文件）** 架構與契約定案 ← 現在
-- **P1** OCR 服務骨架：`app.py` 先實作 `POST /ocr` 契約，MinerU pipeline 接上，含健康檢查 `GET /health`；README 安裝 SOP
+- **P1** OCR 服務骨架：`題庫OCR_server.py` 先實作 `POST /ocr` 契約，MinerU pipeline 接上，含健康檢查 `GET /health`；README 安裝 SOP
 - **P2** raw.html 前端：服務網址設定、上傳、進度、串 stage-2 分類（Ollama/Gemini 可選）、產 CSV、圖進批次貼圖
 - **P3** 文件：CLAUDE.md 第 12 節「OCR 服務」、guide.html SOP、排錯表
 - **P4** 端到端試跑一份真考卷、微調 prompt 與裁圖參數
