@@ -5488,8 +5488,7 @@ const TB_BUTTONS={
   progress:()=>`<a class="btn" href="progress.html" style="text-decoration:none">考卷進度</a>`,
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
   raw:     ()=>`<a class="btn" href="raw.html" title="開啟考卷前處理流程" style="text-decoration:none">考卷處理</a>`,
-  selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選結果</button>`,
-  selAll:  ()=>`<button class="btn" onclick="DB.forEach(function(it){PICKS.add(it.id);});render();">全選全部</button>`,
+  selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選</button>`,
   batchGenBtn:  ()=>`<button class="btn" onclick="openBatchGenDlg()" title="批次生成勾選題目的詳解">批次生成</button>`,
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給 AI 製作詳解">詳解指令</button>`,
   stat:    ()=>`<span class="stat">共 <b id="totalCount">0</b> 題 · 篩選後 <b id="showCount">0</b> 題</span>`,
@@ -5513,7 +5512,7 @@ const TB_DEFAULT=[
   ['raw','claude','import','batchImg'],
   ['batchGenBtn','solPromptBtn','solImport'],
   ['progress','backup','restore','sysDoc','guide'],
-  ['selFilt','selAll','stat'],
+  ['selFilt','stat'],
   [],
 ];
 let tbEditing=false,tbDragEl=null,tbPickedEl=null,tbLongPressTimer=null,tbTouchDrag=null,tbIgnoreClick=false;
