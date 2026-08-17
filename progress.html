@@ -24,6 +24,7 @@ header .wrap{display:flex;align-items:center;gap:10px}.brand-head{display:flex;a
 .exam-tab:hover{border-color:var(--primary);color:var(--primary)}
 .exam-tab.active{border-color:var(--primary);background:var(--primary);color:#fff}
 .exam-tab .tab-count{margin-left:4px;opacity:.8}
+.tab-label{display:inline-flex;align-items:center;font:700 11px var(--ui-font);color:var(--muted);margin-right:2px}
 .name-inp{padding:5px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:inherit;width:140px}
 .stat{font-size:12px;color:var(--muted);margin-left:auto}
 .main{padding:24px 0 60px}
@@ -111,6 +112,7 @@ th.sort-header:hover{background:#e5ddd0}
     <span class="saving-indicator" id="savingInd">儲存中…</span>
     <div class="stat" id="statLine"></div>
     <div class="exam-tabs" id="examTabs" aria-label="考卷種類篩選"></div>
+    <div class="exam-tabs" id="gradeTabs" aria-label="年級篩選"></div>
   </div>
 </div>
 
@@ -156,6 +158,13 @@ let progressMap = {}; // { id: {...} }
 let sortKey = 'year';
 let sortAsc = false;
 let activeExamKind = '全部';
+let activeGrade = '全部';
+function gradeGroup(ex){
+  const g=(ex&&ex.grade)||'';
+  if(g==='七年級'||g==='八年級'||g==='九年級')return g;
+  if(g==='高一'||g==='高二'||g==='高三'||g==='高中')return '高中';
+  return '其他';
+}
 
 function bookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function gradeFromExam(exam,book){
@@ -181,10 +190,22 @@ function examKind(ex){
   return '分科／其他';
 }
 function setExamKind(kind){activeExamKind=kind;render();}
+function setGrade(g){activeGrade=g;render();}
 function renderExamTabs(){
   const kinds=['全部','段考','模擬考','會考','學測','分科／其他'];
-  const counts=Object.fromEntries(kinds.map(k=>[k,k==='全部'?exams.length:exams.filter(ex=>examKind(ex)===k).length]));
-  document.getElementById('examTabs').innerHTML=kinds.map(k=>`<button type="button" class="exam-tab ${activeExamKind===k?'active':''}" aria-pressed="${activeExamKind===k}" onclick="setExamKind('${k}')">${k}<span class="tab-count">${counts[k]}</span></button>`).join('');
+  // 種類分頁的數字反映目前年級篩選下的份數（兩個篩選互相連動）
+  const base=activeGrade==='全部'?exams:exams.filter(ex=>gradeGroup(ex)===activeGrade);
+  const counts=Object.fromEntries(kinds.map(k=>[k,k==='全部'?base.length:base.filter(ex=>examKind(ex)===k).length]));
+  document.getElementById('examTabs').innerHTML='<span class="tab-label">種類</span>'+kinds.map(k=>`<button type="button" class="exam-tab ${activeExamKind===k?'active':''}" aria-pressed="${activeExamKind===k}" onclick="setExamKind('${k}')">${k}<span class="tab-count">${counts[k]}</span></button>`).join('');
+}
+function renderGradeTabs(){
+  const grades=['全部','七年級','八年級','九年級','高中','其他'];
+  // 年級分頁的數字反映目前種類篩選下的份數
+  const base=activeExamKind==='全部'?exams:exams.filter(ex=>examKind(ex)===activeExamKind);
+  const counts=Object.fromEntries(grades.map(g=>[g,g==='全部'?base.length:base.filter(ex=>gradeGroup(ex)===g).length]));
+  // 完全沒有的年級分頁就不顯示（例如題庫全是國中就不會出現「高中」）
+  const shown=grades.filter(g=>g==='全部'||g===activeGrade||counts[g]>0);
+  document.getElementById('gradeTabs').innerHTML='<span class="tab-label">年級</span>'+shown.map(g=>`<button type="button" class="exam-tab ${activeGrade===g?'active':''}" aria-pressed="${activeGrade===g}" onclick="setGrade('${g}')">${g}<span class="tab-count">${counts[g]}</span></button>`).join('');
 }
 function composeDisplayName(school,grade,year,round,subject){
   if(round==='會考') return (year||'')+'會考';
@@ -345,12 +366,14 @@ function fmtTime(iso){
 function render(){
   const tbody = document.getElementById('tbody');
   renderExamTabs();
-  const visibleExams=activeExamKind==='全部'?exams:exams.filter(ex=>examKind(ex)===activeExamKind);
-  document.getElementById('statLine').textContent = activeExamKind+'：共 '+visibleExams.length+' 份考卷';
+  renderGradeTabs();
+  const visibleExams=exams.filter(ex=>(activeExamKind==='全部'||examKind(ex)===activeExamKind)&&(activeGrade==='全部'||gradeGroup(ex)===activeGrade));
+  const filterLabel=[activeExamKind==='全部'?'':activeExamKind,activeGrade==='全部'?'':activeGrade].filter(Boolean).join('・')||'全部';
+  document.getElementById('statLine').textContent = filterLabel+'：共 '+visibleExams.length+' 份考卷';
 
   if(!visibleExams.length){
     tbody.innerHTML = '';
-    document.getElementById('emptyMsg').textContent=activeExamKind==='全部'?'題庫中尚無題目，請先到題庫匯入資料。':'目前沒有「'+activeExamKind+'」考卷。';
+    document.getElementById('emptyMsg').textContent=(activeExamKind==='全部'&&activeGrade==='全部')?'題庫中尚無題目，請先到題庫匯入資料。':'目前沒有「'+filterLabel+'」考卷。';
     document.getElementById('emptyMsg').style.display = 'block';
     return;
   }
@@ -362,7 +385,7 @@ function render(){
   }).length;
   const rate = visibleExams.length ? Math.round(doneCount / visibleExams.length * 100) : 0;
   document.getElementById('statLine').textContent =
-    activeExamKind+'：共 '+visibleExams.length+' 份考卷　·　全部完成 '+doneCount+' 份　·　完成率 '+rate+'%';
+    filterLabel+'：共 '+visibleExams.length+' 份考卷　·　全部完成 '+doneCount+' 份　·　完成率 '+rate+'%';
   if(_cheerPending){ showCheer(rate); _cheerPending=false; }
 
   tbody.innerHTML = visibleExams.map(ex => {
