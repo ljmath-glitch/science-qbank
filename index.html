@@ -796,6 +796,12 @@
 <dialog id="paperDlg">
   <div class="dlg-head">匯出考卷設定<button class="x" onclick="paperDlg.close()">×</button></div>
   <div class="dlg-body">
+    <div class="field"><label>考卷格式</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:inherit;font-size:13px">
+        <label class="chk"><input type="radio" name="pTemplate" value="normal" checked> 一般考卷（茲茲標頭）</label>
+        <label class="chk"><input type="radio" name="pTemplate" value="mock"> 模考考卷（頁首題本樣式＋卷末解析）</label>
+      </div>
+    </div>
     <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
     <div style="background:#f7f4ec;border:1px solid #d8d2c4;border-radius:8px;padding:12px 14px;margin-bottom:10px">
       <div style="font-size:12px;font-weight:700;color:#6b6557;margin-bottom:8px;letter-spacing:1px">茲茲標頭（選填，留空則不顯示）</div>
@@ -6397,6 +6403,115 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
   }catch(e){alert('Word 匯出失敗：'+e.message);}
   finally{prog.remove();}
 }
+// 模考／會考格式：頁首「題本」樣式（標題＋範圍＋茲茲文教）、單欄自動編號題目、題組標題、卷末另起一頁「解析」（答案：(X)／解析：…）
+async function generateMockWord(title,items,ansMode,hdr,showTag,showSource,showSourceFull){
+  const prog=document.createElement('div');
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:inherit;font-size:14px;z-index:9999';
+  prog.textContent='📝 正在產生模考格式 .docx…';document.body.appendChild(prog);
+  try{
+    await _ensureDocxLib();
+    const {Document,Packer,Paragraph,TextRun,ImageRun,AlignmentType,
+           Table,TableRow,TableCell,WidthType,BorderStyle,
+           TextWrappingType,TextWrappingSide,
+           HorizontalPositionRelativeFrom,HorizontalPositionAlign,
+           VerticalPositionRelativeFrom,LevelFormat,UnderlineType,
+           Header,Footer,PageNumber}=window.docx;
+    const FONT='DFPYuanMedium-B5';
+    const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
+    const PAGE_W_PX=600;
+    const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
+    const headTitle=en||title||'自然科題本';
+    const headSub=[[g,s].filter(Boolean).join(''),sc].filter(Boolean).join('　');
+    const PB={style:BorderStyle.SINGLE,size:4,color:'888888'};
+    async function addImgToList(target,img){
+      if(!img.src)return;
+      const parsed=await _imgToBase64(img);if(!parsed)return;
+      try{
+        const {w:nw,h:nh}=await _imgSize(img.src);
+        const pct=(img.width||65)/100;
+        const dw=Math.round(PAGE_W_PX*pct)||100,dh=Math.round(dw*(nh||1)/(nw||1))||80;
+        const mime=parsed.mimeType;const type=mime==='image/png'?'png':mime==='image/gif'?'gif':'jpeg';
+        const CONTENT_EMU=6858000,PX_TO_EMU=9525;
+        let hPos;
+        if(img.x!==undefined){hPos={relative:HorizontalPositionRelativeFrom.COLUMN,offset:Math.round(img.x/100*CONTENT_EMU)};}
+        else{const hAlign=img.align==='left'?HorizontalPositionAlign.LEFT:img.align==='center'?HorizontalPositionAlign.CENTER:HorizontalPositionAlign.RIGHT;hPos={relative:HorizontalPositionRelativeFrom.COLUMN,align:hAlign};}
+        const vOffset=Math.round((img.y||0)*PX_TO_EMU);
+        target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.SQUARE,side:TextWrappingSide.BOTH_SIDES}}})],spacing:{before:80,after:80}}));
+      }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
+    }
+    const sorted=orderPaperItems(items);
+    const groupRangesW={};{let n=0;sorted.forEach(it=>{n++;const gg=it.groupId||'';if(gg){if(!groupRangesW[gg])groupRangesW[gg]={min:n,max:n};else groupRangesW[gg].max=n;}});}
+    const children=[];
+    const shownPassages=new Set();
+    // ── 題本 ──
+    for(let i=0;i<sorted.length;i++){
+      const it=sorted[i];const gid=it.groupId||'';
+      if(gid&&!shownPassages.has(gid)){
+        shownPassages.add(gid);
+        const ps=PASSAGES[gid];
+        if(ps){
+          const rW=groupRangesW[gid];
+          if(rW){const rStr=rW.min===rW.max?`第${rW.min}題`:`${rW.min}～${rW.max}題`;children.push(new Paragraph({children:[tr({text:`閱讀下列敘述後，回答${rStr}`,size:22,bold:true})],spacing:{before:160,after:60}}));}
+          const pCells=[];
+          const pRuns=buildRichRuns(ps.q||'',22,tr,TextRun,UnderlineType);
+          pCells.push(new Paragraph({children:pRuns,spacing:{before:80,after:80}}));
+          for(const img of (ps.imgs||[])){await addImgToList(pCells,img);}
+          children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[new TableCell({borders:{top:PB,bottom:PB,left:PB,right:PB},shading:{fill:'FFFFFF'},children:pCells})]})]}));
+          children.push(new Paragraph({text:'',spacing:{after:120}}));
+        }
+      }
+      if(showTag&&(it.unit||it.sub)){children.push(new Paragraph({children:[tr({text:(it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''),italics:true,color:'888888',size:18})],spacing:{before:140,after:20}}));}
+      {const qRuns=buildRichRuns(it.q||it.summary||'',24,tr,TextRun,UnderlineType);
+       children.push(new Paragraph({numbering:{reference:'mk-q',level:0},children:qRuns,spacing:{before:160,after:0}}));}
+      for(const img of (it.imgs||[])){await addImgToList(children,img);}
+      const wordSrcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
+      if(wordSrcText){children.push(new Paragraph({children:[tr({text:'['+wordSrcText+']',size:18,color:'2E75B6'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:0}}));}
+      children.push(new Paragraph({text:'',spacing:{after:200}}));
+    }
+    // ── 解析（另起一頁）──
+    const includeSection=ansMode!=='none';
+    const includeSol=(ansMode==='full'||ansMode==='both_full');
+    if(includeSection){
+      children.push(new Paragraph({pageBreakBefore:true,alignment:AlignmentType.CENTER,spacing:{after:200},children:[tr({text:'解析',bold:true,size:30})]}));
+      for(let i=0;i<sorted.length;i++){
+        const it=sorted[i];
+        const runs=[tr({text:'答案：',bold:true,size:22}),tr({text:'　'+(it.ans||'（未填）'),size:22,color:'C0392B'})];
+        if(includeSol&&it.sol){
+          const lines=latexToPlain(it.sol||'').split('\n');
+          runs.push(new TextRun({break:1}));
+          runs.push(tr({text:'解析：',bold:true,size:20}));
+          lines.forEach((ln,li)=>{
+            if(li===0)runs.push(tr({text:'　'+ln,size:20}));
+            else{runs.push(new TextRun({break:1}));runs.push(tr({text:'　　'+ln,size:20}));}
+          });
+        }
+        children.push(new Paragraph({numbering:{reference:'mk-sol',level:0},children:runs,spacing:{before:120,after:0}}));
+      }
+    }
+    const header=new Header({children:[
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[tr({text:headTitle,bold:true,size:26})]}),
+      ...(headSub?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[tr({text:headSub,size:18,color:'666666'})]})]:[]),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[tr({text:'茲茲文教',size:14,color:'999999'})]}),
+    ]});
+    const doc=new Document({
+      numbering:{config:[
+        {reference:'mk-q',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]},
+        {reference:'mk-sol',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:520,hanging:520}}}}]},
+      ]},
+      styles:{default:{document:{run:{font:{name:FONT}}}}},
+      sections:[{properties:{page:{margin:{top:960,right:560,bottom:720,left:560}}},
+        headers:{default:header},
+        footers:{default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})},
+        children}]
+    });
+    const blob=await Packer.toBlob(doc);
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=title+'_模考格式_'+stamp()+'.docx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),2000);
+  }catch(e){alert('Word 匯出失敗：'+e.message);}
+  finally{prog.remove();}
+}
 function readHdrFields(){
   return {
     g:  (document.getElementById('pGrade')   ?document.getElementById('pGrade').value.trim()   :''),
@@ -6415,8 +6530,12 @@ async function downloadWordFromDlg(){
   const showSourceFull=document.getElementById('pShowSourceFull').checked;
   const title=document.getElementById('pTitle').value||'自然科測驗卷';
   const hdr=readHdrFields();
+  const tmpl=(document.querySelector('input[name=pTemplate]:checked')||{}).value||'normal';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(ansMode==='both'||ansMode==='both_full'){
+  if(tmpl==='mock'){
+    // 模考格式：題本＋卷末解析同一份檔案（依所選模式決定是否含解析）
+    await generateMockWord(title,items,ansMode,hdr,showTag,showSource,showSourceFull);
+  }else if(ansMode==='both'||ansMode==='both_full'){
     const solMode=ansMode==='both_full'?'full':'inline';
     await generateAndDownloadWord(title+'（題目卷）',items,'none',showMeta,showTag,showSource,hdr,showSourceFull);
     await generateAndDownloadWord(title+'（答案卷）',items,solMode,false,showTag,showSource,hdr,showSourceFull);
