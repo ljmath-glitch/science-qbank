@@ -1230,24 +1230,24 @@ var KP_MAP = {
 /* ====================================================
    篩選聯動：領域 > 冊數 > 大單元 > 子單元
    ==================================================== */
+// 跨節題的大單元/子單元會用「／」串接（例：4-1 ／ 4-5）。篩選與下拉都把它拆成個別單元看待：
+// 下拉只列個別單元、不列合併值；篩「4-1」或「4-5」都能把這題篩出來。
+function _splitTags(v){return String(v||'').split(/\s*[／/]\s*/).map(function(s){return s.trim();}).filter(Boolean);}
+function _tagHas(v,target){return _splitTags(v).indexOf(target)>=0;}
 function getSylVals(field, fi) {
   var fi = fi || {};
   var seen = {};
   var res = [];
-  SYL.forEach(function(s) {
-    if (fi.field && s.field !== fi.field) return;
-    if (fi.book  && s.book  !== fi.book)  return;
-    if (fi.unit  && s.unit  !== fi.unit)  return;
-    var v = s[field];
-    if (v && !seen[v]) { seen[v] = 1; res.push(v); }
-  });
-  DB.forEach(function(it) {
-    if (fi.field && it.field !== fi.field) return;
-    if (fi.book  && it.book  !== fi.book)  return;
-    if (fi.unit  && it.unit  !== fi.unit)  return;
-    var v = it[field];
-    if (v && !seen[v]) { seen[v] = 1; res.push(v); }
-  });
+  function matchFi(o){
+    if (fi.field && o.field !== fi.field) return false;
+    if (fi.book  && o.book  !== fi.book)  return false;
+    if (fi.unit  && !_tagHas(o.unit, fi.unit)) return false;
+    if (fi.sub   && !_tagHas(o.sub,  fi.sub))  return false;
+    return true;
+  }
+  function addParts(v){ _splitTags(v).forEach(function(p){ if(!seen[p]){seen[p]=1;res.push(p);} }); }
+  SYL.forEach(function(s){ if(matchFi(s)) addParts(s[field]); });
+  DB.forEach(function(it){ if(matchFi(it)) addParts(it[field]); });
   return res;
 }
 function setOpts(el, vals) {
@@ -1292,8 +1292,8 @@ function updateKpFilter() {
   DB.forEach(function(it) {
     if(f && it.field!==f) return;
     if(b && it.book !==b) return;
-    if(u && it.unit !==u) return;
-    if(s && it.sub  !==s) return;
+    if(u && !_tagHas(it.unit,u)) return;
+    if(s && !_tagHas(it.sub,s)) return;
     (it.kp||'').split(/[、,，]/).forEach(function(k) {
       k=k.trim(); if(k && !seen[k]){seen[k]=1; kps.push(k);}
     });
@@ -3368,8 +3368,8 @@ function matches(it){
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')+(it.sol||'')).includes(s))return false;
   if(fBook.value&&it.book!==fBook.value)return false;
   if(fField.value&&it.field!==fField.value)return false;
-  if(fUnit.value&&it.unit!==fUnit.value)return false;
-  if(fSub.value&&it.sub!==fSub.value)return false;
+  if(fUnit.value&&!_tagHas(it.unit,fUnit.value))return false;
+  if(fSub.value&&!_tagHas(it.sub,fSub.value))return false;
   if(fKp.value&&!(it.kp||'').includes(fKp.value))return false;
   if(fType.value&&normType(it.type)!==fType.value)return false;
   if(fDiff.value&&(it._diff||calcDiff(it.step,it.mem,it.con)).lvl!==fDiff.value)return false;
