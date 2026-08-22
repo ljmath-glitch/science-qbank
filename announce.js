@@ -26,14 +26,17 @@
       if(document.getElementById('qAnnPop'))return;
       var when=ann.ts?new Date(ann.ts).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
       var body=esc(ann.msg).replace(/\n/g,'<br>');
+      var FONT='"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Noto Sans TC",sans-serif';
       var ov=document.createElement('div');
       ov.id='qAnnPop';
-      ov.setAttribute('style','position:fixed;inset:0;z-index:2147483000;background:rgba(24,20,14,.55);display:flex;align-items:center;justify-content:center;padding:18px;font-family:"Noto Sans TC",system-ui,sans-serif');
-      ov.innerHTML='<div style="background:#fffdf8;color:#2b2b2b;border-radius:16px;max-width:440px;width:100%;box-shadow:0 24px 64px -18px rgba(0,0,0,.55);overflow:hidden">'
-        +'<div style="background:linear-gradient(135deg,#b8860b,#d8a72a);color:#fff;padding:15px 22px;font-size:17px;font-weight:800;letter-spacing:2px">📢 管理員公告</div>'
-        +'<div style="padding:20px 22px 6px;font-size:15px;line-height:1.85;max-height:56vh;overflow:auto">'+body+'</div>'
-        +(when?'<div style="padding:2px 22px 0;color:#a89f8c;font-size:12px">更新時間：'+esc(when)+'</div>':'')
-        +'<div style="padding:16px 22px 20px;text-align:right"><button type="button" id="qAnnOk" style="background:#1f6f5c;color:#fff;border:0;border-radius:9px;padding:10px 24px;font-size:15px;font-weight:700;cursor:pointer">我知道了</button></div>'
+      ov.setAttribute('style','position:fixed;inset:0;z-index:2147483000;background:rgba(43,32,28,.5);display:flex;align-items:center;justify-content:center;padding:18px;font-family:'+FONT);
+      ov.innerHTML='<div style="background:#fffefb;color:#2d3038;border:1px solid #e5dfd5;border-radius:18px;max-width:420px;width:100%;box-shadow:0 26px 64px -20px rgba(43,32,28,.5);overflow:hidden;font-family:'+FONT+'">'
+        +'<div style="display:flex;align-items:center;gap:9px;padding:20px 24px 14px;border-bottom:1px solid #efe9df">'
+          +'<span style="font-size:19px;line-height:1">📢</span>'
+          +'<span style="font-size:17px;font-weight:800;letter-spacing:2px;color:#850103">管理員公告</span></div>'
+        +'<div style="padding:18px 24px 4px;font-size:15px;line-height:1.9;color:#2d3038;max-height:52vh;overflow:auto">'+body+'</div>'
+        +(when?'<div style="padding:2px 24px 0;color:#a49c92;font-size:12px;letter-spacing:.3px">更新時間 '+esc(when)+'</div>':'')
+        +'<div style="padding:18px 24px 22px;text-align:right"><button type="button" id="qAnnOk" style="background:#850103;color:#fff;border:0;border-radius:10px;padding:11px 26px;font-size:15px;font-weight:800;letter-spacing:3px;cursor:pointer;font-family:inherit;box-shadow:0 6px 16px -9px rgba(133,1,3,.55)">我知道了</button></div>'
         +'</div>';
       document.body.appendChild(ov);
       var ok=document.getElementById('qAnnOk');
