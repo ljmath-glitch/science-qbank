@@ -55,8 +55,38 @@
       <a class="ref-chip" href="https://www.ceec.edu.tw/xmfile?xsmsid=0J052424829869345634" target="_blank" rel="noopener" title="ceec.edu.tw 大學入學考試中心">學測歷屆試題<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a>
       <a class="ref-chip" href="https://www.ceec.edu.tw/xmfile?xsmsid=0J052427633128416650" target="_blank" rel="noopener" title="ceec.edu.tw 大學入學考試中心">分科測驗歷屆試題<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4 11 13M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"/></svg></a>
     </div></section>
+    <section class="section section--compact" id="annAdmin"><div class="section-head"><h2>系統公告（管理員）</h2><p>發布後，工讀生每次打開任何分頁一開始都會跳出這則公告</p></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <textarea id="annMsg" rows="3" placeholder="輸入要給工讀生看到的公告訊息…（可多行）" style="width:100%;padding:11px 13px;border:1px solid #e5ded0;border-radius:10px;font:inherit;resize:vertical;background:#fffdf8;color:#2b2b2b"></textarea>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input id="annPw" type="password" placeholder="管理員密碼" autocomplete="off" style="flex:0 0 150px;padding:10px 12px;border:1px solid #e5ded0;border-radius:10px;font:inherit;background:#fffdf8;color:#2b2b2b">
+          <button type="button" onclick="publishAnn(false)" style="background:#1f6f5c;color:#fff;border:0;border-radius:9px;padding:10px 18px;font-weight:700;cursor:pointer">發布公告</button>
+          <button type="button" onclick="publishAnn(true)" style="background:#f1ede4;color:#6a6152;border:1px solid #e0d9c9;border-radius:9px;padding:10px 18px;cursor:pointer">清除公告</button>
+          <span id="annStatus" style="color:#8a7f6d;font-size:13px"></span>
+        </div>
+        <div id="annCur" style="color:#a09a8c;font-size:12.5px">載入公告狀態…</div>
+      </div>
+    </section>
   </main>
   <footer>茲茲文教・自然科題庫系統</footer>
   <script>const QBANK_LOCK_KEY='tzutzu_qbank_unlock_until',QBANK_LOCK_PW='LJ0970683519';function unlockQbank(){const input=document.getElementById('lockInput');if(input.value===QBANK_LOCK_PW){const until=Date.now()+7200000;sessionStorage.setItem(QBANK_LOCK_KEY,String(until));document.getElementById('lockScreen').style.display='none';setTimeout(()=>location.reload(),7200000);return}document.getElementById('lockError').textContent='密碼錯誤，請再試一次。';input.value='';input.focus()}(()=>{const until=+sessionStorage.getItem(QBANK_LOCK_KEY)||0;if(Date.now()<until){document.getElementById('lockScreen').style.display='none';setTimeout(()=>location.reload(),until-Date.now())}else{sessionStorage.removeItem(QBANK_LOCK_KEY);setTimeout(()=>document.getElementById('lockInput').focus(),80)}})();</script>
+  <script src="announce.js"></script>
+  <script>
+    async function loadAnnAdmin(){try{const a=await QAnnounce.get();const cur=document.getElementById('annCur');if(a&&a.msg&&String(a.msg).trim()){document.getElementById('annMsg').value=a.msg;cur.textContent='目前公告：'+(a.msg.length>50?a.msg.slice(0,50)+'…':a.msg)+(a.ts?'（'+new Date(a.ts).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'）':'');}else{cur.textContent='目前沒有公告。';}}catch(e){document.getElementById('annCur').textContent='';}}
+    async function publishAnn(clear){
+      const st=document.getElementById('annStatus'),pw=document.getElementById('annPw').value;
+      const a=await QAnnounce.get();const curPw=(a&&a.pw)||QAnnounce.DEFAULT_PW;
+      if(pw!==curPw){st.style.color='#c0392b';st.textContent='密碼錯誤，無法發布。';return;}
+      const msg=clear?'':document.getElementById('annMsg').value.trim();
+      if(!clear&&!msg){st.style.color='#c0392b';st.textContent='請先輸入公告內容。';return;}
+      st.style.color='#8a7f6d';st.textContent='處理中…';
+      const ok=await QAnnounce.save({msg:msg,ts:Date.now(),pw:curPw});
+      st.style.color=ok?'#1f6f5c':'#c0392b';
+      st.textContent=ok?(clear?'已清除公告。':'公告已發布，工讀生下次開任何分頁都會看到。'):'發布失敗，請重試。';
+      if(clear&&ok)document.getElementById('annMsg').value='';
+      loadAnnAdmin();
+    }
+    loadAnnAdmin();
+  </script>
 </body>
 </html>
