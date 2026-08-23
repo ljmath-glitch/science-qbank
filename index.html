@@ -2631,19 +2631,19 @@ async function saveEdit(){
   const idx=DB.findIndex(x=>x.id===id);
   if(idx>=0)DB[idx]=data; else DB.push(data);
   sortDB();
-  editDlg.close();buildFiltersKeep();render()}
+  editDlg.close();buildFiltersKeep();render({keep:true,anchorId:id})}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
   if(error){alert('刪除失敗：'+error.message);return}
   PICKS.delete(id);
   const idx=DB.findIndex(x=>x.id===id);if(idx>=0)DB.splice(idx,1);
-  buildFiltersKeep();render()}
+  buildFiltersKeep();render({keep:true})}
 /* deletePickedItems & selectFiltered moved to separate script */
 async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
-  it.flag=!it.flag;render();
+  it.flag=!it.flag;render({keep:true,anchorId:id});
   // 只送 flag 本身，不要整列 upsert（整列會把圖片等大欄位一起送一次，圖多時很容易逾時同步失敗）
   const {error}=await sb.from('questions').update({flag:it.flag,updated_at:new Date().toISOString()}).eq('id',id);
-  if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render()}}
+  if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render({keep:true,anchorId:id})}}
 
 /* ===== 鈴噹通知 ===== */
 let _bellOpen=false;
@@ -3405,12 +3405,21 @@ function toggleHideSol(checked){
 function syncPicksToAnalytics(){
   try{localStorage.setItem('analyticsPickedIds',JSON.stringify(Array.from(PICKS)));}catch(e){}
 }
-function render(){const list=document.getElementById('list');let shown=DB.filter(matches);
+function render(opts){opts=opts||{};const list=document.getElementById('list');let shown=DB.filter(matches);
+  // keep:true → 保留目前「顯示更多」展開的題數與捲動位置（用於編輯/勾選/標記後，不要跳回前 60 題）
+  const _keep=opts.keep===true;const _anchorId=opts.anchorId||null;
+  const _prevY=window.scrollY||window.pageYOffset||0;
   syncPicksToAnalytics();
   // 題組自動展開：DB 已預先排序，直接用 Set 補齊同題組小題，避免重複呼叫 matches()
   const _gids=new Set(shown.map(it=>it.groupId).filter(Boolean));
   if(_gids.size){const _sSet=new Set(shown.map(it=>it.id));shown=DB.filter(it=>_sSet.has(it.id)||(it.groupId&&_gids.has(it.groupId)));}
-  _renderLimit=RENDER_CAP;
+  if(!_keep){
+    _renderLimit=RENDER_CAP;
+  }else{
+    if(_renderLimit<RENDER_CAP)_renderLimit=RENDER_CAP;
+    // 若錨定題落在目前展開範圍之外，把展開題數撐大到足以顯示它
+    if(_anchorId){const _ai=shown.findIndex(it=>it.id===_anchorId);if(_ai>=0&&_ai+1>_renderLimit)_renderLimit=Math.ceil((_ai+1)/RENDER_BATCH)*RENDER_BATCH;}
+  }
   _lastShown=shown;_page=0;
   totalCount.textContent=DB.length;showCount.textContent=shown.length;
   const pinBanner=document.getElementById('pinBanner');
@@ -3423,7 +3432,18 @@ function render(){const list=document.getElementById('list');let shown=DB.filter
   if(!shown.length){list.innerHTML=`<div class="empty"><div class="big">🔍</div>沒有符合條件的題目</div>`;updateFloat();updateExamProgressCard([]);updateGroupIdTool([]);return}
   renderPage(list,shown,0);
   updateExamProgressCard(shown);
-  updateGroupIdTool(shown);}
+  updateGroupIdTool(shown);
+  if(_keep){
+    // 復原位置：有錨定題就捲到該題（置中），否則維持原本捲動高度。
+    // 因數學公式是延遲排版會改變版面高度，故立即與延遲各對位一次。
+    const _restore=()=>{
+      if(_anchorId){const _c=list.querySelector('.card[data-id="'+_anchorId+'"]');if(_c){_c.scrollIntoView({block:'center'});return;}}
+      window.scrollTo(0,_prevY);
+    };
+    _restore();
+    setTimeout(_restore,60);
+    setTimeout(_restore,320);
+  }}
 function renderPage(list,shown,page){
   const pageItems=shown.slice(0,_renderLimit);
   const _shownPs=new Set();
@@ -3520,7 +3540,7 @@ function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(e
 function togglePick(id){const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
   const ids=gid?DB.filter(x=>x.groupId===gid).map(x=>x.id):[id];
   const willPick=!PICKS.has(id);
-  ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));render()}
+  ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));render({keep:true})}
 function clearPicks(){PICKS.clear();render()}
 function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0);floatbar.classList.remove('float-autohide')}
 // 底部匯出列：手機往下捲動隱藏、往上捲動露出（app 常見行為）
