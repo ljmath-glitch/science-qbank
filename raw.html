@@ -550,7 +550,8 @@
         <img src="${it.src}" alt="${esc(it.filename)}">
         <div class="crop-modal-meta">第 ${esc(it.page)} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}${it.renderScale?` · 目前解析度倍率 ${it.renderScale}x`:''}<br>${esc(it.reason||'')}${upNote?'<br>'+upNote:''}</div>
         <div class="action-row">
-          ${canUpscale?`<button class="btn primary" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
+          <button class="btn primary" onclick="regenCropImage(${i})" title="用 Gemini 依原圖重新繪製一張乾淨高清版；會並排原圖／新圖讓你核對後再採用">🎨 AI 重製圖</button>
+          ${canUpscale?`<button class="btn" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
           ${Number.isInteger(it.page)?`<button class="btn" onclick="closeCropPreview();fixCropItem(${i})">✂ 手動修正</button>`:''}
           <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦／裁切</button>
           <button class="btn" onclick="rotateCropImage(${i},-1)" title="逆時針旋轉 90°">↺ 左轉90°</button>
@@ -578,6 +579,42 @@
       img.onerror=function(){alert('圖片載入失敗，無法旋轉。');};
       img.src=it.src;
     }
+    // 用 Gemini 影像模型「忠實重繪」該張圖：適合掃描、歪斜、低畫質的圖表。回傳後並排原圖／新圖，人工核對後才採用。
+    async function regenCropImage(i){
+      const it=cropCandidates[i];if(!it||!it.src)return;
+      if(!transientGeminiKey){alert('要用 AI 重製圖，請先在第 2 步「AI 二次檢查」輸入並啟動 Gemini API 金鑰。');try{openGeminiKey();}catch(e){}return;}
+      const bodyEl=document.getElementById('cropModalBody');
+      bodyEl.innerHTML=`<div class="crop-modal-title">🎨 AI 重製圖</div><img src="${it.src}" style="max-width:100%;opacity:.45"><div class="crop-modal-meta">正在用 Gemini 依原圖重新繪製，請稍候…（約數秒）</div>`;
+      try{
+        const mime=(it.src.match(/^data:([^;]+)/)||[])[1]||'image/png';
+        const b64=it.src.split(',')[1];
+        const prompt='這是一張臺灣國高中自然科考卷的圖或表格，可能是掃描、歪斜或低畫質。請「忠實重繪」成乾淨、線條銳利、白底的高解析版本。\n極重要：所有數字、座標軸刻度與數值、資料點與曲線形狀、標籤與文字、化學式、實驗裝置與版面配置，都必須與原圖『完全相同』，不可新增、刪除或更改任何數值或文字，也不要翻譯或美化用語。若原圖是歪的請轉正。只輸出重繪後的圖片，不要輸出文字。';
+        const payload={contents:[{parts:[{inlineData:{mimeType:mime,data:b64}},{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT'],temperature:0}};
+        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});
+        if(!res.ok){const t=await res.text();if(res.status===403)throw new Error('金鑰沒有影像生成權限或配額不足。');throw new Error('HTTP '+res.status+' '+t.slice(0,120));}
+        const j=await res.json();
+        const part=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).find(p=>p.inlineData);
+        if(!part)throw new Error('AI 沒有回傳圖片，請再試一次。');
+        it._regen='data:'+(part.inlineData.mimeType||'image/png')+';base64,'+part.inlineData.data;
+        showRegenCompare(i);
+      }catch(e){alert('AI 重製圖失敗：'+(e.message||e));renderCropPreviewModal();}
+    }
+    function showRegenCompare(i){
+      const it=cropCandidates[i];if(!it||!it._regen){renderCropPreviewModal();return;}
+      document.getElementById('cropModalBody').innerHTML=`
+        <div class="crop-modal-title">AI 重製圖 · 請逐項核對內容是否一致</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:170px;text-align:center"><div class="crop-modal-meta">原圖</div><img src="${it.src}" style="max-width:100%;border:1px solid #e3d9cf;border-radius:8px"></div>
+          <div style="flex:1;min-width:170px;text-align:center"><div class="crop-modal-meta">AI 新圖</div><img src="${it._regen}" style="max-width:100%;border:1px solid #e3d9cf;border-radius:8px"></div>
+        </div>
+        <div class="crop-modal-meta" style="color:#c0392b;margin-top:8px">⚠ AI 重繪可能悄悄改動數值、刻度或標籤，請對照原圖確認完全一致再採用。</div>
+        <div class="action-row">
+          <button class="btn primary" onclick="acceptRegen(${i})">✓ 採用新圖</button>
+          <button class="btn" onclick="regenCropImage(${i})">↻ 再生一次</button>
+          <button class="btn" onclick="delete cropCandidates[${i}]._regen;renderCropPreviewModal()">保留原圖</button>
+        </div>`;
+    }
+    function acceptRegen(i){const it=cropCandidates[i];if(it&&it._regen){it.src=it._regen;it.rect=null;delete it._regen;}renderCropCandidates();renderCropPreviewModal();}
     // 重新用較高的 pdf.js 渲染倍率畫該頁，再用同一個相對範圍重新裁切 → 真正提高解析度，不是單純放大既有圖片
     async function upscaleCropItem(i){
       const it=cropCandidates[i];if(!it||!it.rect||!Number.isInteger(it.page)||!cropFiles.pdf)return;
