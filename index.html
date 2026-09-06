@@ -2112,6 +2112,15 @@ async function doImportSol(){
     _examMatchCache.set(exam,m);
     return m;
   }
+  // 題號比對放寬：AI 產的詳解常寫成「第1題」「０１」「1.」等，題庫存的是純數字「1」。
+  // 統一去掉「第/題/號」、標點空白、全形轉半形、去前導零後再比，避免整批對不上。
+  function _normQno(s){
+    return String(s==null?'':s)
+      .replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0))
+      .replace(/[第題號.．、,，\s]/g,'')
+      .replace(/^0+(?=\d)/,'')
+      .trim();
+  }
   const toAdd=[],toReplace=[],notFound=[];
   for(let i=1;i<rows.length;i++){
     const r=rows[i];
@@ -2119,7 +2128,9 @@ async function doImportSol(){
     if(!exam&&!no)continue;
     if(!sol)continue;
     const matchedExam=_resolveSolExam(exam);
-    const it=DB.find(x=>x.exam===matchedExam&&String(x.no)===String(no));
+    const nno=_normQno(no);
+    let it=DB.find(x=>x.exam===matchedExam&&String(x.no)===String(no));
+    if(!it)it=DB.find(x=>x.exam===matchedExam&&_normQno(x.no)===nno);
     if(!it){notFound.push(exam+' 第'+no+'題');continue}
     const fixedSol=normalizeSol(fixControlCharEatenLatex(sol));
     if(it.sol&&it.sol.trim()) toReplace.push({...it,sol:fixedSol});
