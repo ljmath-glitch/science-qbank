@@ -555,7 +555,7 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
-    <button class="btn" onclick="autoMix()"><span class="l-full">依比例自動選</span><span class="l-short">自動選</span></button>
+    <button class="btn" onclick="autoMix()"><span class="l-full">智慧組卷</span><span class="l-short">組卷</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
     <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
     <button class="btn" onclick="deletePickedItems()"><span class="l-full">刪除已選</span><span class="l-short">刪除</span></button>
@@ -858,19 +858,44 @@
   <div class="dlg-foot"><button class="btn" onclick="quickPaperDlg.close()">取消</button><button class="btn primary" onclick="applyQuickPaperSetup()">下一步：設定題數與難度</button></div>
 </dialog>
 <dialog id="mixDlg">
-  <div class="dlg-head">依難度比例自動選題<button class="x" onclick="mixDlg.close()">×</button></div>
+  <div class="dlg-head">智慧組卷<button class="x" onclick="mixDlg.close()">×</button></div>
   <div class="dlg-body">
-    <p>系統會從<b>目前篩選結果</b>中，依比例隨機抽題（建議：簡單40%、中等50%、困難10%）。</p>
-    <div class="field"><label>總題數</label><input type="number" id="mTotal" value="20" min="1"></div>
-    <div class="grid4">
-      <div class="field"><label>簡單 %</label><input type="number" id="mEasy" value="40"></div>
-      <div class="field"><label>中等 %</label><input type="number" id="mMid" value="50"></div>
-      <div class="field"><label>困難 %</label><input type="number" id="mHard" value="10"></div>
-      <div class="field"><label>極難 %</label><input type="number" id="mExtreme" value="0"></div>
+    <p>題源＝<b>目前篩選結果</b>（共 <b id="mixPoolCount">—</b> 題可用，題組會整組帶入）。設定配題方式後，可一次產生多份互不重複的試卷。</p>
+    <div class="field"><label>配題方式</label>
+      <select id="mixMode" onchange="_mixSyncMode()">
+        <option value="ratio">難度比例（快速）</option>
+        <option value="spec">雙向細目表（大單元 × 難度）</option>
+      </select>
+    </div>
+    <div id="mixRatioWrap">
+      <div class="field"><label>總題數</label><input type="number" id="mTotal" value="20" min="1"></div>
+      <div class="grid4">
+        <div class="field"><label>簡單 %</label><input type="number" id="mEasy" value="40"></div>
+        <div class="field"><label>中等 %</label><input type="number" id="mMid" value="50"></div>
+        <div class="field"><label>困難 %</label><input type="number" id="mHard" value="10"></div>
+        <div class="field"><label>極難 %</label><input type="number" id="mExtreme" value="0"></div>
+      </div>
+    </div>
+    <div id="mixSpecWrap" hidden>
+      <p class="mini" style="color:#8a7f74;font-size:12px;margin:2px 0 6px">於每格填入該<b>大單元 × 難度</b>要抽的題數（空白＝0）；括號內為目前題源實際可用題數。</p>
+      <div style="max-height:46vh;overflow:auto"><table id="mixSpecTable" style="width:100%;border-collapse:collapse;font-size:13px"></table></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label>避免重複出過的題（排除指定考卷的題目）</label>
+      <select id="mixExcludeExam" multiple size="4" style="min-height:92px;width:100%"></select>
+      <div class="mini" style="color:#8a7f74;font-size:12px">按住 Ctrl／⌘ 可複選。被選到的考卷，其題目不會被抽入本次試卷。</div>
+    </div>
+    <div class="field"><label>產生卷數（多卷不重複）</label>
+      <input type="number" id="mixVersions" value="1" min="1" max="10" style="width:90px">
+      <span class="mini" style="color:#8a7f74;font-size:12px">產生 2 份以上時，各卷題目互不重複（需足夠題量，不足會提示）。</span>
     </div>
   </div>
-  <div class="dlg-foot"><button class="btn" onclick="mixDlg.close()">取消</button><button class="btn primary" onclick="doAutoMix()">自動選題</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="mixDlg.close()">取消</button><button class="btn primary" onclick="doAutoMix()">開始組卷</button></div>
 </dialog>
+<!-- 多卷切換列（產生 2 卷以上時出現） -->
+<div id="paperVerBar" class="noprint" hidden style="position:fixed;left:14px;bottom:14px;z-index:900;background:#fffefb;border:1px solid #e2d9cc;border-radius:12px;box-shadow:0 10px 30px -12px rgba(43,32,28,.4);padding:8px 10px;font-size:13px">
+  <div style="font-weight:800;color:#850103;margin-bottom:6px">多卷組卷結果 <button type="button" onclick="clearPaperVersions()" style="float:right;border:0;background:none;color:#a49c92;cursor:pointer;font-size:14px;line-height:1">×</button></div>
+  <div id="paperVerBtns" style="display:flex;flex-wrap:wrap;gap:6px;max-width:280px"></div>
+</div>
 
 <!-- 知識點分析報表 -->
 
@@ -3568,16 +3593,151 @@ function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('s
   },{passive:true});
 })();
 function pickedItems(){const arr=DB.filter(x=>PICKS.has(x.id));return arr}
-function autoMix(){mixDlg.showModal()}
-function doAutoMix(){const pool=DB.filter(matches);const total=+mTotal.value||0;
-  const ratio={'簡單':+mEasy.value||0,'中等':+mMid.value||0,'困難':+mHard.value||0,'極難':+mExtreme.value||0};
-  const byLvl={'簡單':[],'中等':[],'困難':[],'極難':[]};
-  pool.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl;if(byLvl[l])byLvl[l].push(it)});
-  PICKS.clear();
-  Object.keys(ratio).forEach(l=>{let n=Math.round(total*ratio[l]/100);const src=[...byLvl[l]].sort(()=>Math.random()-.5);
-    src.slice(0,n).forEach(it=>PICKS.add(it.id))});
-  mixDlg.close();render();
-  alert('已依比例選出 '+PICKS.size+' 題（受可用題數限制，可能少於目標）')}
+/* ===== 智慧組卷引擎 =====
+   題源＝目前篩選結果(matches)，排除題組文章(passage)本身；被抽中的小題會整組帶入。
+   支援三種需求：難度比例 / 雙向細目表(大單元×難度)、避免重複(排除指定考卷)、多卷不重複。 */
+const MIX_LVLS=['簡單','中等','困難','極難'];
+let _mixUnits=[];               // spec 模式的大單元清單
+let PAPER_VERSIONS=[];          // 多卷結果：每份是題目 id 陣列
+let PAPER_VER_IDX=0;
+function _mixLvl(it){return calcDiff(it.step,it.mem,it.con).lvl}
+// 題源（不含題組文章本身）
+function _mixSelectablePool(){return DB.filter(it=>it&&it.type!=='passage'&&matches(it))}
+function _mixSyncMode(){const m=document.getElementById('mixMode').value;
+  document.getElementById('mixRatioWrap').hidden=(m!=='ratio');
+  document.getElementById('mixSpecWrap').hidden=(m!=='spec');}
+function autoMix(){_mixPrep();mixDlg.showModal();}
+function _mixPrep(){
+  const pool=_mixSelectablePool();
+  document.getElementById('mixPoolCount').textContent=pool.length;
+  // 避免重複：列出題庫中所有考卷名稱（新到舊）
+  const exSel=document.getElementById('mixExcludeExam');
+  const exams=[...new Set(DB.map(x=>x.exam).filter(Boolean))].sort((a,b)=>b.localeCompare(a,'zh-Hant'));
+  exSel.innerHTML=exams.map(e=>'<option value="'+esc(e).replace(/"/g,'&quot;')+'">'+esc(e)+'</option>').join('');
+  // 雙向細目表：依題源的大單元 × 難度統計可用題數
+  _mixUnits=[...new Set(pool.map(x=>x.unit||'（未分類）'))].sort((a,b)=>a.localeCompare(b,'zh-Hant'));
+  const cnt={};pool.forEach(it=>{const u=it.unit||'（未分類）',l=_mixLvl(it);cnt[u]=cnt[u]||{};cnt[u][l]=(cnt[u][l]||0)+1;});
+  let html='<thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:2px solid #e2d9cc">大單元</th>'
+    +MIX_LVLS.map(l=>'<th style="padding:6px 4px;border-bottom:2px solid #e2d9cc;min-width:74px">'+l+'</th>').join('')+'</tr></thead><tbody>';
+  _mixUnits.forEach((u,i)=>{
+    html+='<tr><td style="text-align:left;padding:5px 8px;border-bottom:1px solid #efe9df;max-width:220px">'+esc(u)+'</td>'
+      +MIX_LVLS.map(l=>{const avail=(cnt[u]&&cnt[u][l])||0;
+        return '<td style="padding:4px;border-bottom:1px solid #efe9df;text-align:center">'
+          +'<input type="number" min="0" id="spec_'+i+'_'+l+'" style="width:46px;text-align:center"'+(avail?'':' disabled')+'>'
+          +'<div style="color:#b7ad9f;font-size:11px">('+avail+')</div></td>';}).join('')+'</tr>';
+  });
+  html+='</tbody>';
+  document.getElementById('mixSpecTable').innerHTML=html;
+  _mixSyncMode();
+}
+// Fisher–Yates 洗牌
+function _shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+// 把題源收合成「抽題單位」：題組收合成一個代表（避免同組被拆到不同卷、也保證整組帶入）
+function _mixTokenize(pool){
+  const seen=new Set(),units=[];
+  pool.forEach(it=>{
+    if(it.groupId){
+      if(seen.has('G:'+it.groupId))return;seen.add('G:'+it.groupId);
+      // 整組成員（含題組文章），用第一小題當分類代表
+      const members=DB.filter(x=>x.groupId===it.groupId);
+      const subs=members.filter(x=>x.type!=='passage');
+      const rep=subs.slice().sort((a,b)=>(parseInt(a.no)||0)-(parseInt(b.no)||0))[0]||it;
+      units.push({ids:members.map(x=>x.id),unit:rep.unit||'（未分類）',lvl:_mixLvl(rep),count:subs.length||1});
+    }else{
+      units.push({ids:[it.id],unit:it.unit||'（未分類）',lvl:_mixLvl(it),count:1});
+    }
+  });
+  return units;
+}
+function doAutoMix(){
+  const mode=document.getElementById('mixMode').value;
+  const nVer=Math.max(1,Math.min(10,+document.getElementById('mixVersions').value||1));
+  const exclude=new Set([...document.getElementById('mixExcludeExam').selectedOptions].map(o=>o.value));
+  let pool=_mixSelectablePool().filter(it=>!exclude.has(it.exam));
+  if(!pool.length){alert('題源是空的（可能被篩選條件或「避免重複」排除光了）');return;}
+  const units=_mixTokenize(pool);
+  // 依 unit.lvl（＋spec 時的 unit.unit）分桶
+  // 需求清單：[{label, need, bucket:[units...]}]
+  const reqs=[];
+  if(mode==='ratio'){
+    const total=+mTotal.value||0;
+    if(total<=0){alert('請輸入總題數');return;}
+    const ratio={'簡單':+mEasy.value||0,'中等':+mMid.value||0,'困難':+mHard.value||0,'極難':+mExtreme.value||0};
+    const sum=MIX_LVLS.reduce((s,l)=>s+ratio[l],0);
+    if(sum<=0){alert('請至少設定一個難度比例');return;}
+    // 依比例算各難度題數，餘數補到比例最大者，使總和＝total
+    let need={},acc=0;const order=MIX_LVLS.slice().sort((a,b)=>ratio[b]-ratio[a]);
+    MIX_LVLS.forEach(l=>{need[l]=Math.floor(total*ratio[l]/sum);acc+=need[l];});
+    for(let k=0;acc<total;k++){need[order[k%order.length]]++;acc++;}
+    MIX_LVLS.forEach(l=>{if(need[l]>0)reqs.push({label:l,need:need[l],bucket:units.filter(u=>u.lvl===l)});});
+  }else{
+    _mixUnits.forEach((u,i)=>MIX_LVLS.forEach(l=>{
+      const el=document.getElementById('spec_'+i+'_'+l);const need=el?(+el.value||0):0;
+      if(need>0)reqs.push({label:u+'／'+l,need:need,bucket:units.filter(x=>x.unit===u&&x.lvl===l)});
+    }));
+    if(!reqs.length){alert('雙向細目表尚未填入任何題數');return;}
+  }
+  // 多卷不重複抽題：每個需求桶洗牌後，輪流發到各卷，直到每卷達到 need 或桶用盡
+  const versions=Array.from({length:nVer},()=>[]);   // 每卷：題目 id 陣列
+  const shortfalls=[];
+  reqs.forEach(req=>{
+    const bag=_shuffle(req.bucket);let bi=0;
+    const got=new Array(nVer).fill(0);
+    let progress=true;
+    while(progress){
+      progress=false;
+      for(let v=0;v<nVer;v++){
+        if(got[v]>=req.need)continue;
+        if(bi>=bag.length)break;
+        const unit=bag[bi++];
+        versions[v].push(...unit.ids);
+        got[v]+=unit.count;                 // 題組以小題數計入
+        progress=true;
+      }
+      if(bi>=bag.length)break;
+    }
+    got.forEach((g,v)=>{if(g<req.need)shortfalls.push('卷'+String.fromCharCode(65+v)+'「'+req.label+'」需 '+req.need+' 題，僅 '+g+' 題');});
+  });
+  mixDlg.close();
+  // 套用結果
+  if(nVer===1){
+    PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBar();
+    PICKS.clear();versions[0].forEach(id=>PICKS.add(id));
+    render();
+    let msg='已組出 '+PICKS.size+' 題';
+    if(shortfalls.length)msg+='\n\n⚠️ 題量不足：\n'+shortfalls.join('\n');
+    alert(msg);
+  }else{
+    PAPER_VERSIONS=versions.map(v=>[...new Set(v)]);PAPER_VER_IDX=0;
+    applyPaperVersion(0);renderPaperVerBar();
+    let msg='已產生 '+nVer+' 份互不重複的試卷：\n'+PAPER_VERSIONS.map((v,i)=>'卷'+String.fromCharCode(65+i)+'：'+v.filter(id=>{const it=DB.find(x=>x.id===id);return it&&it.type!=='passage';}).length+' 題').join('\n');
+    if(shortfalls.length)msg+='\n\n⚠️ 題量不足（部分卷別未達目標）：\n'+shortfalls.slice(0,12).join('\n')+(shortfalls.length>12?'\n…':'');
+    msg+='\n\n左下角可切換卷別；切到哪一卷，「匯出考卷」就匯出那一卷。';
+    alert(msg);
+  }
+}
+// 多卷：切換目前作用中的卷別（連動 PICKS 與畫面）
+function applyPaperVersion(i){
+  if(!PAPER_VERSIONS[i])return;
+  PAPER_VER_IDX=i;
+  PICKS.clear();PAPER_VERSIONS[i].forEach(id=>PICKS.add(id));
+  render();
+  // 若考卷預覽正開著，切換卷別後重建預覽（此卷內容取代舊卷）
+  const pv=document.getElementById('paperView');
+  if(pv&&pv.classList.contains('show')&&typeof showPaperPreview==='function'){try{_computePaperDefaults();showPaperPreview();}catch(_){}}
+  renderPaperVerBar();
+}
+function renderPaperVerBar(){
+  const bar=document.getElementById('paperVerBar');if(!bar)return;
+  if(!PAPER_VERSIONS.length){bar.hidden=true;return;}
+  bar.hidden=false;
+  document.getElementById('paperVerBtns').innerHTML=PAPER_VERSIONS.map((v,i)=>{
+    const n=v.filter(id=>{const it=DB.find(x=>x.id===id);return it&&it.type!=='passage';}).length;
+    const on=i===PAPER_VER_IDX;
+    return '<button type="button" onclick="applyPaperVersion('+i+')" style="border:1px solid '+(on?'#850103':'#d9cfc0')+';background:'+(on?'#850103':'#fff')+';color:'+(on?'#fff':'#5a5148')+';border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer">卷'+String.fromCharCode(65+i)+' <span style="opacity:.75;font-weight:400">('+n+')</span></button>';
+  }).join('');
+}
+function clearPaperVersions(){PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBar();}
 
 /* ===== 考卷 ===== */
 function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚未選題');return}
