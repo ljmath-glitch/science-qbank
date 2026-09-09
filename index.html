@@ -820,6 +820,7 @@
         <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:6px">📋 答案卷</div>
         <label class="chk"><input type="radio" name="pAns" value="inline"> 答案卷（每題附答案，無詳解）</label>
         <label class="chk"><input type="radio" name="pAns" value="full"> 答案卷（每題附答案＋詳解）</label>
+        <label class="chk"><input type="radio" name="pAns" value="solbrief"> 解析卷簡（只列答案＋詳解，不印題目）</label>
         <div style="font-size:11px;color:#888;font-weight:600;letter-spacing:1px;margin-top:6px">📄＋📋 同時輸出兩份</div>
         <label class="chk"><input type="radio" name="pAns" value="both"> 題目卷＋答案卷（無詳解）同時下載</label>
         <label class="chk"><input type="radio" name="pAns" value="both_full"> 題目卷＋答案卷（含詳解）同時下載</label>
@@ -828,6 +829,7 @@
     <div class="field"><label>其他</label>
       <div style="display:flex;gap:14px;flex-wrap:wrap;font-family:inherit;font-size:13px">
         <label class="chk"><input type="checkbox" id="pShowMeta" checked> 班級/姓名欄</label>
+        <label class="chk"><input type="checkbox" id="pTwoCol"> 雙欄排版（一頁兩欄，省紙）</label>
         <label class="chk"><input type="checkbox" id="pShowTag"> 每題顯示章節/題型標籤</label>
         <label class="chk"><input type="checkbox" id="pShowSource"> 每題顯示出處（如 113百齡二段）</label>
         <label class="chk"><input type="checkbox" id="pShowSourceFull"> 每題顯示完整考卷名稱與題號</label>
@@ -3891,6 +3893,13 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   let qNum=0;
   const answers=[];
   const bodyParts=sorted.map(it=>{
+    // 解析卷簡：只列「題號＋答案＋詳解」，不印題目/圖/題組/作答空白（僅輸出，不套用於預覽編輯）
+    if(ansMode==='solbrief'&&!forPreview){
+      qNum++;if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
+      const a=`<span style="color:#c0392b">答案：${esc(it.ans||'（未填）')}</span>`;
+      const s=it.sol?`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
+      return `<div class="q"><b>${qNum}.</b> ${a}${s}</div>`;
+    }
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
     const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
@@ -3935,7 +3944,10 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
     return `${passageHtml}<div class="q"${qAttr}>${ctrl}${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
   });
-  const body=bodyParts.join('');
+  let body=bodyParts.join('');
+  // 雙欄排版：把題目區包進兩欄容器（標頭/標題/答案區維持整頁寬）；自帶 style 讓預覽與匯出一致
+  const twoCol=(document.getElementById('pTwoCol')||{}).checked;
+  if(twoCol)body=`<style>.paper-2col{column-count:2;column-gap:26px}.paper-2col .q,.paper-2col .passage-block{break-inside:avoid;-webkit-column-break-inside:avoid}</style><div class="paper-2col">${body}</div>`;
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   const meta=showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`;
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
@@ -6492,10 +6504,12 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
            VerticalPositionRelativeFrom,LevelFormat,UnderlineType,
-           Footer,PageNumber}=window.docx;
+           Footer,PageNumber,SectionType}=window.docx;
     const FONT='DFPYuanMedium-B5';
     const tr=(opts)=>new TextRun({font:{name:FONT},...opts});
     const PAGE_W_PX=570;
+    const twoCol=(document.getElementById('pTwoCol')||{}).checked;
+    const headChildren=[];   // 雙欄時標頭/標題/名條放單欄段落，題目放雙欄段落
     const children=[];
     // ── 標題表格 ──
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
@@ -6522,13 +6536,13 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         cells.push(new TableCell({width:{size:SEP_W,type:WidthType.DXA},shading:{fill:'999999'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(NB,NB,NB,NB),children:[new Paragraph({text:''})]}));
         cells.push(new TableCell({width:{size:TEXT_W,type:WidthType.DXA},shading:{fill:'D4D4D4'},verticalAlign:VerticalAlign.CENTER,borders:mkBorder(SB,SB,SB,SB),children:[new Paragraph({children:[tr({text:en,size:32})],spacing:{before:120,after:120},indent:{left:220}})]}));
       }
-      children.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:cells})]}));
-      children.push(new Paragraph({text:'',spacing:{after:100}}));
+      headChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:cells})]}));
+      headChildren.push(new Paragraph({text:'',spacing:{after:100}}));
     }else{
-      children.push(new Paragraph({children:[tr({text:title,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
+      headChildren.push(new Paragraph({children:[tr({text:title,bold:true,size:40})],alignment:AlignmentType.CENTER,spacing:{after:200}}));
     }
     if(showMeta){
-      children.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
+      headChildren.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
     }
     // ── 題目（與預覽共用同一份手動題序）──
     const sorted=orderPaperItems(items);
@@ -6558,6 +6572,14 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     for(let i=0;i<sorted.length;i++){
       const it=sorted[i];
       const gid=it.groupId||'';
+      // ── 解析卷簡：只輸出「編號＋答案＋詳解」，不印題目/圖/題組 ──
+      if(ansMode==='solbrief'){
+        children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:[tr({text:'答案：'+(it.ans||'（未填）'),color:'C0392B',size:22})],spacing:{before:160,after:0}}));
+        if(it.sol){latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{const isH=line.startsWith('【')&&line.includes('】');children.push(new Paragraph({children:[tr({text:(li===0?'詳解　':'')+line,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));});}
+        children.push(new Paragraph({text:'',spacing:{after:160}}));
+        if(it.ans)answers.push(`${i+1}.${it.ans}`);
+        continue;
+      }
       // ── 題組文章（每組只輸出一次）──
       if(gid&&!shownPassages.has(gid)){
         shownPassages.add(gid);
@@ -6600,12 +6622,23 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     if(ansMode==='end'&&answers.length){
       children.push(new Paragraph({children:[tr({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
     }
+    const _pageProps={margin:{top:720,right:720,bottom:720,left:720}};
+    const _mkFooter=()=>({default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})});
+    const _contType=(SectionType&&SectionType.CONTINUOUS)||'continuous';
+    let _sections;
+    if(twoCol){
+      // 標頭段落維持整頁寬；題目段落用連續分節切成兩欄（同頁承接）
+      _sections=[
+        {properties:{page:_pageProps},footers:_mkFooter(),children:headChildren},
+        {properties:{type:_contType,page:_pageProps,column:{count:2,space:426}},footers:_mkFooter(),children}
+      ];
+    }else{
+      _sections=[{properties:{page:_pageProps},footers:_mkFooter(),children:headChildren.concat(children)}];
+    }
     const doc=new Document({
       numbering:{config:[{reference:'q-list',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]}]},
       styles:{default:{document:{run:{font:{name:FONT}}}}},
-      sections:[{properties:{page:{margin:{top:720,right:720,bottom:720,left:720}}},
-        footers:{default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})},
-        children}]
+      sections:_sections
     });
     const blob=await Packer.toBlob(doc);
     const url=URL.createObjectURL(blob);
