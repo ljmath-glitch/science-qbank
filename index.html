@@ -555,6 +555,7 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
+    <button class="btn primary" onclick="wzOpen()"><span class="l-full">🧩 組卷精靈</span><span class="l-short">精靈</span></button>
     <button class="btn" onclick="autoMix()"><span class="l-full">智慧組卷</span><span class="l-short">組卷</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
     <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
@@ -897,6 +898,118 @@
 <div id="paperVerBar" class="noprint" hidden style="position:fixed;left:14px;bottom:14px;z-index:900;background:#fffefb;border:1px solid #e2d9cc;border-radius:12px;box-shadow:0 10px 30px -12px rgba(43,32,28,.4);padding:8px 10px;font-size:13px">
   <div style="font-weight:800;color:#850103;margin-bottom:6px">多卷組卷結果 <button type="button" onclick="clearPaperVersions()" style="float:right;border:0;background:none;color:#a49c92;cursor:pointer;font-size:14px;line-height:1">×</button></div>
   <div id="paperVerBtns" style="display:flex;flex-wrap:wrap;gap:6px;max-width:280px"></div>
+</div>
+
+<!-- ===== 組卷精靈（全螢幕多步驟流程） ===== -->
+<style>
+#composer{position:fixed;inset:0;z-index:1200;background:var(--paper);display:flex;flex-direction:column;font-family:var(--ui-font)}
+#composer .wz-top{display:flex;align-items:center;gap:16px;padding:10px 18px;background:linear-gradient(180deg,#8d0104,#6d0103);color:#fff;flex-shrink:0}
+#composer .wz-brand{font-size:16px;font-weight:800;letter-spacing:1px;white-space:nowrap}
+#composer .wz-steps{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
+#composer .wz-step{display:flex;align-items:center;gap:7px;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;background:rgba(255,255,255,.14);color:rgba(255,255,255,.75)}
+#composer .wz-step .wz-num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.3);align-items:center;justify-content:center;font-size:12px}
+#composer .wz-step.on{background:var(--orange);color:#3a2100}
+#composer .wz-step.on .wz-num{background:#fff;color:#3a2100}
+#composer .wz-step.done{background:rgba(255,255,255,.28);color:#fff}
+#composer .wz-x{border:0;background:rgba(255,255,255,.16);color:#fff;width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;flex-shrink:0}
+#composer .wz-body{flex:1;overflow:auto;padding:16px 18px 90px;max-width:1180px;width:100%;margin:0 auto;box-sizing:border-box}
+#composer .wz-pane[hidden]{display:none}
+#composer .wz-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
+#composer .wz-card h3{margin:0 0 12px;font-size:15px;color:var(--red);letter-spacing:1px}
+#composer .wz-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+#composer .wz-chip{border:1.5px solid #d9cfc0;background:#fff;color:#5a5148;border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700;cursor:pointer}
+#composer .wz-chip.on{border-color:var(--red);background:var(--red);color:#fff}
+#composer .wz-tree-tools{display:flex;gap:8px;align-items:center;margin:4px 0 10px;flex-wrap:wrap}
+#composer .wz-tree-tools button{border:1px solid #d9cfc0;background:#fff;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;color:#5a5148;cursor:pointer}
+#composer .wz-tree-tools input{flex:1;min-width:140px;max-width:260px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit}
+#composer .wz-tree{border:1px solid var(--line);border-radius:10px;max-height:60vh;overflow:auto;background:#fdfcfa}
+#composer .wz-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #f1ece3;cursor:pointer;user-select:none}
+#composer .wz-row:hover{background:#faf6ef}
+#composer .wz-row.lv0{font-weight:800;background:#f4efe6;color:#4a4139}
+#composer .wz-row.lv1{font-weight:700}
+#composer .wz-row.lv2{color:#6e6f74}
+#composer .wz-row .wz-tw{width:16px;text-align:center;color:#b0a595;flex-shrink:0}
+#composer .wz-row input[type=checkbox]{width:17px;height:17px;flex-shrink:0;accent-color:var(--red)}
+#composer .wz-row .wz-lbl{flex:1;font-size:14px}
+#composer .wz-row .wz-cnt{color:#b0a595;font-size:12px;font-weight:600;flex-shrink:0}
+#composer .wz-row.hiddenrow{display:none}
+#composer .wz-foot{position:fixed;left:0;right:0;bottom:0;z-index:1210;display:flex;align-items:center;gap:14px;padding:12px 20px;background:#fff;border-top:1px solid var(--line);box-shadow:0 -6px 20px -14px rgba(45,48,56,.3)}
+#composer .wz-foot .wz-foot-info{flex:1;text-align:center;font-size:14px;color:var(--ink)}
+#composer .wz-foot .wz-foot-info b{color:var(--red);font-size:17px}
+#composer .wz-foot .btn{min-width:100px}
+#composer .wz-qlist{display:flex;flex-direction:column;gap:8px}
+#composer .wz-q{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer}
+#composer .wz-q.picked{border-color:var(--red);background:#fdf5f4}
+#composer .wz-q input{margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--red)}
+#composer .wz-q .wz-qmeta{font-size:11px;color:#9a8f83;margin-bottom:2px}
+#composer .wz-q .wz-qbadge{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;margin-right:5px;color:#fff}
+#composer .wz-q .wz-qtext{font-size:13.5px;line-height:1.6;color:var(--ink)}
+#composer .wz-filterbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+#composer .wz-filterbar select,#composer .wz-filterbar input{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit;background:#fff}
+#composer .wz-tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--line)}
+#composer .wz-tab{padding:8px 18px;font-size:14px;font-weight:700;color:#8a7f74;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+#composer .wz-tab.on{color:var(--red);border-bottom-color:var(--red)}
+@media(max-width:700px){#composer .wz-brand{font-size:14px}#composer .wz-step{padding:5px 10px;font-size:12px}#composer .wz-body{padding:12px 12px 92px}}
+</style>
+<div id="composer" hidden>
+  <div class="wz-top">
+    <div class="wz-brand">🧩 組卷精靈</div>
+    <div class="wz-steps">
+      <div class="wz-step" data-s="1"><span class="wz-num">1</span>範圍</div>
+      <div class="wz-step" data-s="2"><span class="wz-num">2</span>選題</div>
+      <div class="wz-step" data-s="3"><span class="wz-num">3</span>設定與輸出</div>
+    </div>
+    <button class="wz-x" onclick="wzClose()" title="離開精靈">✕</button>
+  </div>
+  <div class="wz-body">
+    <!-- Step 1：範圍 -->
+    <section class="wz-pane" data-s="1">
+      <div class="wz-card">
+        <h3>① 選擇出題範圍</h3>
+        <div class="wz-chips" style="margin-bottom:6px">
+          <span style="font-weight:700;color:#6e6f74">學制：</span>
+          <button type="button" class="wz-chip on" data-lv="" onclick="wzSetLevel(this,'')">全部</button>
+          <button type="button" class="wz-chip" data-lv="國中" onclick="wzSetLevel(this,'國中')">國中</button>
+          <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
+        </div>
+        <div class="wz-tree-tools">
+          <button type="button" onclick="wzTreeAll(true)">全選</button>
+          <button type="button" onclick="wzTreeAll(false)">全部清除</button>
+          <input type="text" id="wzTreeSearch" placeholder="搜尋章節／單元…" oninput="wzFilterTree(this.value)">
+        </div>
+        <div id="wzTree" class="wz-tree"></div>
+      </div>
+    </section>
+    <!-- Step 2：選題 -->
+    <section class="wz-pane" data-s="2" hidden>
+      <div class="wz-card">
+        <div class="wz-tabs">
+          <div class="wz-tab on" id="wzTabPool" onclick="wzSetTab('pool')">待選題目（<span id="wzPoolN">0</span>）</div>
+          <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
+        </div>
+        <div class="wz-filterbar">
+          <select id="wzfType" onchange="wzRenderList()"><option value="">全部題型</option></select>
+          <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
+          <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
+          <button type="button" class="btn" onclick="wzOpenMix()">⚖ 智慧組卷</button>
+        </div>
+        <div id="wzList" class="wz-qlist"></div>
+      </div>
+    </section>
+    <!-- Step 3：設定 -->
+    <section class="wz-pane" data-s="3" hidden>
+      <div class="wz-card">
+        <h3>③ 設定與輸出</h3>
+        <p style="font-size:13.5px;color:#6e6f74;line-height:1.8">已選 <b id="wzStep3N" style="color:var(--red)">0</b> 題。按下方「開啟預覽與輸出」進入考卷預覽（可線上編輯題目、排序、加卷頭），確認後即可選擇輸出格式（題目卷／答案卷／解析卷簡／雙欄排版，Word／HTML／PDF）。</p>
+        <button type="button" class="btn primary" style="margin-top:6px" onclick="wzToExport()">開啟預覽與輸出 →</button>
+      </div>
+    </section>
+  </div>
+  <div class="wz-foot">
+    <button class="btn" id="wzPrev" onclick="wzGo(-1)">← 上一步</button>
+    <div class="wz-foot-info" id="wzFootInfo"></div>
+    <button class="btn primary" id="wzNext" onclick="wzGo(1)">下一步 →</button>
+  </div>
 </div>
 
 <!-- 知識點分析報表 -->
@@ -3603,8 +3716,12 @@ let _mixUnits=[];               // spec 模式的大單元清單
 let PAPER_VERSIONS=[];          // 多卷結果：每份是題目 id 陣列
 let PAPER_VER_IDX=0;
 function _mixLvl(it){return calcDiff(it.step,it.mem,it.con).lvl}
-// 題源（不含題組文章本身）
-function _mixSelectablePool(){return DB.filter(it=>it&&it.type!=='passage'&&matches(it))}
+// 題源（不含題組文章本身）；組卷精靈開啟時以精靈範圍(WZ_SCOPE)為題源，否則用題庫管理的篩選
+function _mixSelectablePool(){
+  const wzOn=(typeof WZ_SCOPE!=='undefined')&&document.getElementById('composer')&&!document.getElementById('composer').hidden;
+  if(wzOn)return DB.filter(it=>it&&it.type!=='passage'&&wzInScope(it));
+  return DB.filter(it=>it&&it.type!=='passage'&&matches(it));
+}
 function _mixSyncMode(){const m=document.getElementById('mixMode').value;
   document.getElementById('mixRatioWrap').hidden=(m!=='ratio');
   document.getElementById('mixSpecWrap').hidden=(m!=='spec');}
@@ -3717,6 +3834,8 @@ function doAutoMix(){
     msg+='\n\n左下角可切換卷別；切到哪一卷，「匯出考卷」就匯出那一卷。';
     alert(msg);
   }
+  // 若在組卷精靈中觸發，切到「已選」分頁並更新
+  if(document.getElementById('composer')&&!document.getElementById('composer').hidden){try{wzSetTab('pick');wzUpdateFoot();}catch(_){}}
 }
 // 多卷：切換目前作用中的卷別（連動 PICKS 與畫面）
 function applyPaperVersion(i){
@@ -3740,6 +3859,167 @@ function renderPaperVerBar(){
   }).join('');
 }
 function clearPaperVersions(){PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBar();}
+
+/* ===== 組卷精靈（全螢幕多步驟：範圍→選題→設定）=====
+   自成一套範圍(WZ_SCOPE)，不動到題庫管理的下拉篩選。範圍以「冊→大單元→子單元」樹狀複選，
+   選 JB3 只會顯示 JB3 的單元（樹本身就是依冊分組，天然級聯）。 */
+let WZ_STEP=1,WZ_LEVEL='',WZ_TAB='pool';
+let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（book|unit|sub）
+let WZ_TREEDATA=[];              // [{book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
+let WZ_COLLAPSED=new Set();      // 收合的節點 id
+const WZ_SEP='\u0001';
+const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
+function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
+function _wzBookOrder(b){const i=['JB1','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
+function _wzLeafKey(it){return (it.book||'')+WZ_SEP+(it.unit||'（未分類）')+WZ_SEP+(it.sub||'（未分類）');}
+function _wzPool(){return DB.filter(it=>it&&it.type!=='passage');}
+function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
+function wzOpen(){
+  if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
+  WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();
+  document.body.style.overflow='hidden';
+  document.getElementById('composer').hidden=false;
+  wzBuildTree();wzSetStep(1);
+  // 題型下拉
+  const pool=_wzPool();const types=[...new Set(pool.map(x=>x.type).filter(Boolean))];
+  const sel=document.getElementById('wzfType');
+  sel.innerHTML='<option value="">全部題型</option>'+types.map(t=>`<option value="${esc(t)}">${esc(typeof typeName==='function'?typeName(t):t)}</option>`).join('');
+}
+function wzClose(){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
+function wzSetLevel(btn,lv){WZ_LEVEL=lv;document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.toggle('on',b===btn));wzBuildTree();}
+// 依冊→大單元→子單元分組
+function wzBuildTree(){
+  const pool=_wzPool().filter(it=>!WZ_LEVEL||_wzLevelOf(it.book)===WZ_LEVEL);
+  const byBook={};
+  pool.forEach(it=>{
+    const b=it.book||'（未分冊）',u=it.unit||'（未分類）',s=it.sub||'（未分類）';
+    byBook[b]=byBook[b]||{units:{}};
+    byBook[b].units[u]=byBook[b].units[u]||{subs:{}};
+    byBook[b].units[u].subs[s]=(byBook[b].units[u].subs[s]||0)+1;
+  });
+  const fieldOf={};pool.forEach(it=>{const b=it.book||'（未分冊）';if(!fieldOf[b]&&it.field)fieldOf[b]=it.field;});
+  WZ_TREEDATA=Object.keys(byBook).sort((a,b)=>_wzBookOrder(a)-_wzBookOrder(b)).map(b=>{
+    const units=Object.keys(byBook[b].units).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(u=>{
+      const subs=Object.keys(byBook[b].units[u].subs).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(s=>({sub:s,count:byBook[b].units[u].subs[s],key:b+WZ_SEP+u+WZ_SEP+s}));
+      return {unit:u,count:subs.reduce((n,x)=>n+x.count,0),subs};
+    });
+    const lbl=/^JB[1-6]$/.test(b)?((fieldOf[b]?fieldOf[b]+' ':'')+(_WZ_BOOKLABEL[b]||b)):b;
+    return {book:b,label:lbl,count:units.reduce((n,x)=>n+x.count,0),units};
+  });
+  wzRenderTree();
+}
+function _wzNodeKeys(node,type){ // 回傳該節點底下所有葉 key
+  if(type==='sub')return [node.key];
+  if(type==='unit')return node.subs.map(s=>s.key);
+  const ks=[];node.units.forEach(u=>u.subs.forEach(s=>ks.push(s.key)));return ks;
+}
+function _wzState(keys){const inN=keys.filter(k=>WZ_SCOPE.has(k)).length;return inN===0?'none':inN===keys.length?'all':'some';}
+function wzRenderTree(){
+  const q=(document.getElementById('wzTreeSearch').value||'').trim();
+  let html='';
+  WZ_TREEDATA.forEach((bk,bi)=>{
+    const bid='b'+bi,bCol=WZ_COLLAPSED.has(bid);
+    const bState=_wzState(_wzNodeKeys(bk,'book'));
+    html+=`<div class="wz-row lv0" data-nid="${bid}"><span class="wz-tw" onclick="event.stopPropagation();wzToggleCol('${bid}')">${bCol?'▶':'▼'}</span>`
+      +`<input type="checkbox" ${bState==='all'?'checked':''} onclick="event.stopPropagation();wzToggleNode(${bi},-1)" onchange="wzSetIndet(this,'${bState}')">`
+      +`<span class="wz-lbl" onclick="wzToggleCol('${bid}')">${esc(bk.label)}</span><span class="wz-cnt">${bk.count}</span></div>`;
+    if(bCol)return;
+    bk.units.forEach((u,ui)=>{
+      const uid=bid+'u'+ui,uCol=WZ_COLLAPSED.has(uid);
+      const uState=_wzState(_wzNodeKeys(u,'unit'));
+      const uHit=!q||u.unit.includes(q)||u.subs.some(s=>s.sub.includes(q));
+      html+=`<div class="wz-row lv1${uHit?'':' hiddenrow'}" data-nid="${uid}"><span class="wz-tw" onclick="event.stopPropagation();wzToggleCol('${uid}')">${uCol?'▶':'▼'}</span>`
+        +`<input type="checkbox" ${uState==='all'?'checked':''} onclick="event.stopPropagation();wzToggleNode(${bi},${ui})" onchange="wzSetIndet(this,'${uState}')">`
+        +`<span class="wz-lbl" onclick="wzToggleCol('${uid}')">${esc(u.unit)}</span><span class="wz-cnt">${u.count}</span></div>`;
+      if(uCol)return;
+      u.subs.forEach((s,si)=>{
+        const sHit=!q||u.unit.includes(q)||s.sub.includes(q);
+        html+=`<div class="wz-row lv2${sHit?'':' hiddenrow'}" style="padding-left:52px" onclick="wzToggleLeaf('${s.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',this)">`
+          +`<span class="wz-tw"></span><input type="checkbox" ${WZ_SCOPE.has(s.key)?'checked':''} onclick="event.stopPropagation();wzToggleLeaf('${s.key.replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')">`
+          +`<span class="wz-lbl">${esc(s.sub)}</span><span class="wz-cnt">${s.count}</span></div>`;
+      });
+    });
+  });
+  document.getElementById('wzTree').innerHTML=html||'<div style="padding:16px;color:#9a8f83">此學制沒有題目</div>';
+  // 設定 indeterminate
+  document.querySelectorAll('#wzTree .wz-row.lv0,#composer .wz-row.lv1').forEach(()=>{});
+  WZ_TREEDATA.forEach((bk,bi)=>{
+    const st=_wzState(_wzNodeKeys(bk,'book'));const el=document.querySelector(`#wzTree .wz-row[data-nid="b${bi}"] input`);if(el)el.indeterminate=(st==='some');
+    if(!WZ_COLLAPSED.has('b'+bi))bk.units.forEach((u,ui)=>{const us=_wzState(_wzNodeKeys(u,'unit'));const ue=document.querySelector(`#wzTree .wz-row[data-nid="b${bi}u${ui}"] input`);if(ue)ue.indeterminate=(us==='some');});
+  });
+  wzUpdateFoot();
+}
+function wzSetIndet(el,state){/* handled in wzRenderTree */}
+function wzToggleCol(id){if(WZ_COLLAPSED.has(id))WZ_COLLAPSED.delete(id);else WZ_COLLAPSED.add(id);wzRenderTree();}
+function wzToggleNode(bi,ui){
+  const bk=WZ_TREEDATA[bi];const node=ui<0?bk:bk.units[ui];const type=ui<0?'book':'unit';
+  const keys=_wzNodeKeys(node,type);const st=_wzState(keys);
+  if(st==='all')keys.forEach(k=>WZ_SCOPE.delete(k));else keys.forEach(k=>WZ_SCOPE.add(k));
+  wzRenderTree();
+}
+function wzToggleLeaf(key){if(WZ_SCOPE.has(key))WZ_SCOPE.delete(key);else WZ_SCOPE.add(key);wzRenderTree();}
+function wzTreeAll(on){
+  const keys=[];WZ_TREEDATA.forEach(bk=>bk.units.forEach(u=>u.subs.forEach(s=>keys.push(s.key))));
+  if(on)keys.forEach(k=>WZ_SCOPE.add(k));else keys.forEach(k=>WZ_SCOPE.delete(k));
+  wzRenderTree();
+}
+function wzFilterTree(){wzRenderTree();}
+function wzScopeCount(){return _wzPool().filter(wzInScope).length;}
+// 步驟切換
+function wzSetStep(n){
+  WZ_STEP=n;
+  document.querySelectorAll('#composer .wz-pane').forEach(p=>p.hidden=(+p.dataset.s!==n));
+  document.querySelectorAll('#composer .wz-step').forEach(s=>{const si=+s.dataset.s;s.classList.toggle('on',si===n);s.classList.toggle('done',si<n);});
+  document.getElementById('wzPrev').style.visibility=n===1?'hidden':'visible';
+  document.getElementById('wzNext').textContent=n===3?'—':'下一步 →';
+  document.getElementById('wzNext').style.visibility=n===3?'hidden':'visible';
+  if(n===2)wzRenderList();
+  if(n===3)document.getElementById('wzStep3N').textContent=PICKS.size;
+  wzUpdateFoot();
+}
+function wzGo(dir){
+  const n=WZ_STEP+dir;
+  if(n<1||n>3)return;
+  if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+  if(dir>0&&WZ_STEP===2&&PICKS.size===0){alert('請先選擇至少一題');return;}
+  wzSetStep(n);
+}
+function wzUpdateFoot(){
+  const info=document.getElementById('wzFootInfo');
+  if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`;
+  else info.innerHTML=`已選 <b>${PICKS.size}</b> 題`;
+}
+// Step 2 清單
+function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
+function wzRenderList(){
+  const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
+  let items=_wzPool().filter(wzInScope);
+  if(WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
+  if(ft)items=items.filter(it=>it.type===ft);
+  if(fd)items=items.filter(it=>calcDiff(it.step,it.mem,it.con).lvl===fd);
+  if(fs)items=items.filter(it=>((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
+  const poolAll=_wzPool().filter(wzInScope);
+  document.getElementById('wzPoolN').textContent=poolAll.length;
+  document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
+  const DIFFCOLOR={'簡單':'#1f9d55','中等':'#d08700','困難':'#d9480f','極難':'#a4133c'};
+  const html=items.slice(0,400).map(it=>{
+    const d=calcDiff(it.step,it.mem,it.con).lvl;const picked=PICKS.has(it.id);
+    const txt=esc((it.q||it.summary||'').replace(/\$[^$]*\$/g,'▢').slice(0,90));
+    return `<div class="wz-q${picked?' picked':''}" onclick="wzPick('${it.id}')">`
+      +`<input type="checkbox" ${picked?'checked':''} onclick="event.stopPropagation();wzPick('${it.id}')">`
+      +`<div style="flex:1"><div class="wz-qmeta"><span class="wz-qbadge" style="background:${DIFFCOLOR[d]||'#888'}">${d}</span>${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}</div>`
+      +`<div class="wz-qtext">${txt||'（無題幹摘要）'}</div></div></div>`;
+  }).join('');
+  document.getElementById('wzList').innerHTML=html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`;
+  if(items.length>400)document.getElementById('wzList').innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或用篩選）</div>';
+}
+function wzPick(id){togglePick(id);wzRenderList();wzUpdateFoot();}
+function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
+function wzToExport(){
+  if(!PICKS.size){alert('尚未選題');return;}
+  wzClose();
+  if(typeof openPaperDlg==='function')openPaperDlg();
+}
 
 /* ===== 考卷 ===== */
 function exportPaperCSV(){const items=pickedItems();if(!items.length){alert('尚未選題');return}
