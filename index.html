@@ -555,7 +555,7 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
-    <button class="btn primary" onclick="wzOpen()"><span class="l-full">🧩 組卷精靈</span><span class="l-short">精靈</span></button>
+    <button class="btn primary" onclick="wzOpen()"><span class="l-full">組卷精靈</span><span class="l-short">精靈</span></button>
     <button class="btn" onclick="autoMix()"><span class="l-full">智慧組卷</span><span class="l-short">組卷</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
     <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
@@ -904,16 +904,17 @@
 <style>
 #composer{position:fixed;inset:0;z-index:1200;background:var(--paper);display:flex;flex-direction:column;font-family:var(--ui-font)}
 #composer[hidden]{display:none!important}
-#composer .wz-top{display:flex;align-items:center;gap:16px;padding:11px 18px;background:var(--red);color:#fff;flex-shrink:0;border-bottom:3px solid #6d0103}
-#composer .wz-brand{font-size:16px;font-weight:800;letter-spacing:1px;white-space:nowrap}
-#composer .wz-steps{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
-#composer .wz-step{display:flex;align-items:center;gap:7px;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;background:rgba(255,255,255,.14);color:rgba(255,255,255,.75)}
-#composer .wz-step .wz-num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.3);align-items:center;justify-content:center;font-size:12px}
-#composer .wz-step.on{background:#fffefb;color:var(--red)}
-#composer .wz-step.on .wz-num{background:var(--red);color:#fff}
-#composer .wz-step.done{background:rgba(255,255,255,.26);color:#fff}
-#composer .wz-step.done .wz-num{background:rgba(255,255,255,.5);color:var(--red)}
-#composer .wz-x{border:0;background:rgba(255,255,255,.16);color:#fff;width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;flex-shrink:0}
+#composer .wz-top{display:flex;align-items:center;gap:16px;padding:9px 18px;background:#fffefb;color:var(--ink);flex-shrink:0;border-bottom:1px solid var(--line)}
+#composer .wz-brand{font-size:15px;font-weight:800;letter-spacing:1px;white-space:nowrap;color:var(--red)}
+#composer .wz-steps{display:flex;gap:7px;flex:1;justify-content:center;flex-wrap:wrap}
+#composer .wz-step{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;font-size:13.5px;font-weight:700;background:#f2ede4;color:#9a8f83}
+#composer .wz-step .wz-num{display:inline-flex;width:19px;height:19px;border-radius:50%;background:#d9cfc0;color:#fff;align-items:center;justify-content:center;font-size:11.5px}
+#composer .wz-step.on{background:var(--red);color:#fff}
+#composer .wz-step.on .wz-num{background:#fff;color:var(--red)}
+#composer .wz-step.done{background:#f3e5e4;color:var(--red)}
+#composer .wz-step.done .wz-num{background:var(--red);color:#fff}
+#composer .wz-x{border:1px solid var(--line);background:#fff;color:#8a7f74;width:32px;height:32px;border-radius:9px;font-size:17px;cursor:pointer;flex-shrink:0}
+#composer .wz-x:hover{border-color:#bb8a83;color:var(--red)}
 #composer .wz-body{flex:1;overflow:auto;padding:16px 18px 90px;max-width:1180px;width:100%;margin:0 auto;box-sizing:border-box}
 #composer .wz-pane[hidden]{display:none}
 #composer .wz-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px}
@@ -955,7 +956,7 @@
 </style>
 <div id="composer" hidden>
   <div class="wz-top">
-    <div class="wz-brand">🧩 組卷精靈</div>
+    <div class="wz-brand">組卷精靈</div>
     <div class="wz-steps">
       <div class="wz-step" data-s="1"><span class="wz-num">1</span>範圍</div>
       <div class="wz-step" data-s="2"><span class="wz-num">2</span>選題</div>
