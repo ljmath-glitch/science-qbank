@@ -226,6 +226,22 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 
 依檔名/題號把一批圖貼回對應題目。支援拖曳上傳（圖片檔/ZIP/整個資料夾）與 `manifest.json`。圖片 `width` 是**百分比**（`imgHtml` 用 `width:${im.width}%`）；批次貼圖用 `_faithfulImgPct(src)` 依實際像素算最小合適比例（別再寫死大數字，曾有 `width:600`=600% 的 bug）。
 
+### 6.14 組卷精靈（新，index.html 全螢幕多步驟出卷流程）
+
+參考 TESTGO 出卷邏輯，在 `index.html` 內做的**全螢幕多步驟精靈**（範圍 → 選題 → 設定與輸出），跟原本的題庫管理並存、互不干擾。
+
+**入口**：①首頁 `home.html`「題庫出題」的「組卷精靈」卡片 →`index.html?mode=compose`；②題庫管理頁首深紅「組卷精靈」按鈕；③工具列「組卷精靈」按鈕。全部呼叫 `wzOpen()`。從首頁 `mode=compose` 進入時，head 內會先注入一層品牌轉圈 `#wzLoading`（避免閃過題庫管理），`wzOpen()` 時移除。
+
+**全域狀態**：`WZ_STEP`（1~3）、`WZ_LEVEL`（國中/高中，**必選**才顯示樹）、`WZ_SCOPE`（Set，已勾選的葉節點 key＝`book\u0001unit\u0001sub`）、`WZ_TREEDATA`、`WZ_COLLAPSED`（收合節點 id）、`WZ_TAB`（pool/pick）。DOM 是 `#composer`（`position:fixed;inset:0`，**務必有 `#composer[hidden]{display:none!important}`，否則 `display:flex` 會蓋過 hidden 讓它開頁就顯示、蓋住題庫管理**——踩過這個坑）。
+
+**Step 1 範圍**（`wzBuildTree`/`wzRenderTree`）：先選學制（國中/高中），再顯示該學制的「冊 → 大單元(章) → 子單元(節)」樹狀複選，每節顯示題數。樹依冊分組所以**天然級聯**（選 JB3 只出現 JB3 的單元）。所有層級**預設全收合**，逐層展開。父層 checkbox 依子節點狀態顯示勾選/半選（indeterminate）。換學制會清空 `WZ_SCOPE`。`wzInScope(it)` 判斷一題是否在範圍內。
+
+**Step 2 選題**（`wzRenderList`）：左側題目卡片＋右側 `#wzMonitor` **即時監控**（`wzRenderMonitor`：已選題數、難易度分布長條、各單元選取數，隨勾選即時更新）。卡片：checkbox 選題（`wzPick`→`togglePick`，連動題組）、meta 列（難易度徽章＋冊/單元/子單元/題型）、簡化題幹（`_wzSimple` 用 `stripRichMarks` 去掉 `{{...}}` 富文字標記＋把 `$…$` 換 ▢）、`✎ 編輯` 鈕（`wzEdit`→ 直接呼叫題庫管理的 `openEdit(id)`，`saveEdit` 存檔後會刷新精靈清單）。點卡片內文 `wzToggleExpand` 展開/收合**完整題目**（`_wzFullHtml`：題組文章＋題幹＋圖＋答案＋詳解，`renderMath` 渲染 LaTeX）。有題型/難易度下拉與關鍵字篩選、待選/已選分頁。「智慧組卷」鈕在精靈內以 `WZ_SCOPE` 為題源（`_mixSelectablePool` 偵測 `#composer` 未隱藏時改用 `wzInScope`）。
+
+**Step 3 設定與輸出**：目前先交接既有的預覽/匯出流程（`wzToExport`→`openPaperDlg`）。之後要做成 TESTGO 式內建設定頁（題型×難易度規格表、卷頭級距表等）。
+
+> 章節分類健檢結論（`.claude/skills/qbank-data-normalize`）：結構稽核 99.6% 符合課綱、**0 筆跨冊污染**；Gemini 語意抽樣 raw ~6.5% 但過半是 Gemini 自己判錯（如密度本就在 JB3 C1、維管束本就在 C4），真實錯誤率極低。**不要做全量 AI 自動重分類**（會改對為錯），有具體錯例再針對性修。
+
 ---
 
 ## 7. Ollama（本機 AI）功能 —— 最新加的功能，細節最完整

@@ -968,6 +968,27 @@
 #composer .wz-tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid var(--line)}
 #composer .wz-tab{padding:8px 18px;font-size:14px;font-weight:700;color:#8a7f74;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
 #composer .wz-tab.on{color:var(--red);border-bottom-color:var(--red)}
+#composer .wz-step2{display:flex;gap:14px;align-items:flex-start}
+#composer .wz-step2-main{flex:1;min-width:0}
+#composer .wz-monitor{flex:0 0 250px;position:sticky;top:0;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 15px;font-size:13px}
+#composer .wz-monitor h4{margin:0 0 4px;font-size:13px;color:var(--red);letter-spacing:.5px}
+#composer .wz-mon-big{font-size:26px;font-weight:800;color:var(--red);line-height:1.1;margin:2px 0 10px}
+#composer .wz-mon-big small{font-size:13px;color:#8a7f74;font-weight:600}
+#composer .wz-mon-sec{margin-top:10px;padding-top:10px;border-top:1px dashed #e6ded3}
+#composer .wz-mon-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:#5a5148}
+#composer .wz-mon-row b{color:var(--red)}
+#composer .wz-mon-dbar{display:flex;height:8px;border-radius:5px;overflow:hidden;margin:4px 0 8px;background:#f0eae1}
+#composer .wz-q .wz-qhead{display:flex;align-items:flex-start;gap:10px}
+#composer .wz-qbody{flex:1;min-width:0;cursor:pointer}
+#composer .wz-q .wz-editbtn{flex:0 0 auto;border:1px solid #d9cfc0;background:#fff;color:#8a7f74;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+#composer .wz-q .wz-editbtn:hover{border-color:var(--red);color:var(--red)}
+#composer .wz-q .wz-expand-hint{font-size:11px;color:#b7ad9f;margin-left:6px;font-weight:600}
+#composer .wz-qfull{margin-top:8px;padding-top:8px;border-top:1px dashed #e6ded3;font-size:13.5px;line-height:1.85;color:var(--ink)}
+#composer .wz-qfull .qimg{max-width:100%;border:1px solid #eee;border-radius:6px;margin:6px 0}
+#composer .wz-qfull .wz-passage{background:#faf6ef;border:1px solid #ece3d4;border-radius:8px;padding:8px 11px;margin-bottom:8px;font-size:13px}
+#composer .wz-qfull .wz-ans{color:#c0392b;font-weight:700;margin-top:6px}
+#composer .wz-qfull .wz-sol{margin-top:6px;padding:8px 11px;background:#f1faf6;border-left:3px solid #1f6f5c;border-radius:6px;color:#245a4c;white-space:normal}
+@media(max-width:820px){#composer .wz-step2{flex-direction:column}#composer .wz-monitor{position:static;flex-basis:auto;width:100%;order:-1}}
 @media(max-width:700px){#composer .wz-brand{font-size:14px}#composer .wz-step{padding:5px 10px;font-size:12px}#composer .wz-body{padding:12px 12px 92px}}
 </style>
 <div id="composer" hidden>
@@ -1003,18 +1024,23 @@
     </section>
     <!-- Step 2：選題 -->
     <section class="wz-pane" data-s="2" hidden>
-      <div class="wz-card">
-        <div class="wz-tabs">
-          <div class="wz-tab on" id="wzTabPool" onclick="wzSetTab('pool')">待選題目（<span id="wzPoolN">0</span>）</div>
-          <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
+      <div class="wz-step2">
+        <div class="wz-step2-main">
+          <div class="wz-card">
+            <div class="wz-tabs">
+              <div class="wz-tab on" id="wzTabPool" onclick="wzSetTab('pool')">待選題目（<span id="wzPoolN">0</span>）</div>
+              <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
+            </div>
+            <div class="wz-filterbar">
+              <select id="wzfType" onchange="wzRenderList()"><option value="">全部題型</option></select>
+              <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
+              <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
+              <button type="button" class="btn" onclick="wzOpenMix()">⚖ 智慧組卷</button>
+            </div>
+            <div id="wzList" class="wz-qlist"></div>
+          </div>
         </div>
-        <div class="wz-filterbar">
-          <select id="wzfType" onchange="wzRenderList()"><option value="">全部題型</option></select>
-          <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
-          <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
-          <button type="button" class="btn" onclick="wzOpenMix()">⚖ 智慧組卷</button>
-        </div>
-        <div id="wzList" class="wz-qlist"></div>
+        <aside class="wz-monitor" id="wzMonitor"></aside>
       </div>
     </section>
     <!-- Step 3：設定 -->
@@ -2803,7 +2829,9 @@ async function saveEdit(){
   const idx=DB.findIndex(x=>x.id===id);
   if(idx>=0)DB[idx]=data; else DB.push(data);
   sortDB();
-  editDlg.close();buildFiltersKeep();render({keep:true,anchorId:id})}
+  editDlg.close();buildFiltersKeep();render({keep:true,anchorId:id});
+  // 若組卷精靈開著，同步刷新精靈題目清單（編輯後內容更新）
+  try{const cp=document.getElementById('composer');if(cp&&!cp.hidden&&WZ_STEP===2){wzRenderList();}}catch(_){}}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
   if(error){alert('刪除失敗：'+error.message);return}
@@ -4028,29 +4056,78 @@ function wzUpdateFoot(){
 }
 // Step 2 清單
 function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
+const WZ_DIFFCOLOR={'簡單':'#1f9d55','中等':'#d08700','困難':'#d9480f','極難':'#a4133c','未評分':'#b0a595'};
+function _wzSimple(it){return esc(stripRichMarks(it.q||it.summary||'').replace(/\{\{[^}]*\}\}/g,'').replace(/\$[^$]*\$/g,' ▢ ').replace(/\s+/g,' ').trim()).slice(0,110);}
+function _wzFullHtml(it){
+  let ph='';
+  const gid=it.groupId||'';
+  if(gid&&PASSAGES[gid]){const ps=PASSAGES[gid];ph=`<div class="wz-passage"><b>【題組文章】</b><br>${applyRichMarks(esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>'))}${(ps.imgs||[]).map(imgHtml).join('')}</div>`;}
+  const qh=applyRichMarks(hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))));
+  const imgs=(it.imgs||[]).map(imgHtml).join('');
+  const ans=it.ans?`<div class="wz-ans">答案：${esc(it.ans)}</div>`:'';
+  const sol=(it.sol&&it.sol.trim())?`<div class="wz-sol">${applyRichMarks(esc(fixLatex(it.sol)).replace(/\n/g,'<br>'))}</div>`:'';
+  return ph+`<div>${qh}</div>${imgs}${ans}${sol}`;
+}
 function wzRenderList(){
   const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
   let items=_wzPool().filter(wzInScope);
   if(WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
   if(ft)items=items.filter(it=>it.type===ft);
-  if(fd)items=items.filter(it=>calcDiff(it.step,it.mem,it.con).lvl===fd);
-  if(fs)items=items.filter(it=>((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
+  if(fd)items=items.filter(it=>(calcDiff(it.step,it.mem,it.con).lvl||'未評分')===fd);
+  if(fs)items=items.filter(it=>stripRichMarks((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
   const poolAll=_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
   document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
-  const DIFFCOLOR={'簡單':'#1f9d55','中等':'#d08700','困難':'#d9480f','極難':'#a4133c'};
   const html=items.slice(0,400).map(it=>{
-    const d=calcDiff(it.step,it.mem,it.con).lvl;const picked=PICKS.has(it.id);
-    const txt=esc((it.q||it.summary||'').replace(/\$[^$]*\$/g,'▢').slice(0,90));
-    return `<div class="wz-q${picked?' picked':''}" onclick="wzPick('${it.id}')">`
-      +`<input type="checkbox" ${picked?'checked':''} onclick="event.stopPropagation();wzPick('${it.id}')">`
-      +`<div style="flex:1"><div class="wz-qmeta"><span class="wz-qbadge" style="background:${DIFFCOLOR[d]||'#888'}">${d}</span>${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}</div>`
-      +`<div class="wz-qtext">${txt||'（無題幹摘要）'}</div></div></div>`;
+    const d=calcDiff(it.step,it.mem,it.con).lvl||'未評分';const picked=PICKS.has(it.id);
+    const meta=`${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}`;
+    return `<div class="wz-q${picked?' picked':''}" data-id="${it.id}">`
+      +`<div class="wz-qhead">`
+      +`<input type="checkbox" ${picked?'checked':''} title="選入考卷" onclick="event.stopPropagation();wzPick('${it.id}')">`
+      +`<div class="wz-qbody" onclick="wzToggleExpand('${it.id}')">`
+      +`<div class="wz-qmeta"><span class="wz-qbadge" style="background:${WZ_DIFFCOLOR[d]}">${d}</span>${meta}<span class="wz-expand-hint">▸ 點展開完整題目</span></div>`
+      +`<div class="wz-qtext" id="wzq-${it.id}">${_wzSimple(it)||'（無題幹摘要）'}</div>`
+      +`<div class="wz-qfull" id="wzfull-${it.id}" hidden></div>`
+      +`</div>`
+      +`<button type="button" class="wz-editbtn" onclick="event.stopPropagation();wzEdit('${it.id}')">✎ 編輯</button>`
+      +`</div></div>`;
   }).join('');
   document.getElementById('wzList').innerHTML=html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`;
   if(items.length>400)document.getElementById('wzList').innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或用篩選）</div>';
+  wzRenderMonitor();
 }
-function wzPick(id){togglePick(id);wzRenderList();wzUpdateFoot();}
+function wzToggleExpand(id){
+  const full=document.getElementById('wzfull-'+id);if(!full)return;
+  if(full.hidden){
+    if(!full.dataset.built){const it=DB.find(x=>x.id===id);if(it){full.innerHTML=_wzFullHtml(it);full.dataset.built='1';if(typeof renderMath==='function')renderMath(full);}}
+    full.hidden=false;
+  }else full.hidden=true;
+}
+function wzEdit(id){if(typeof openEdit==='function')openEdit(id);else alert('找不到編輯功能');}
+function wzSyncPickStates(){
+  document.querySelectorAll('#wzList .wz-q').forEach(el=>{const id=el.dataset.id;const on=PICKS.has(id);el.classList.toggle('picked',on);const cb=el.querySelector('input[type=checkbox]');if(cb)cb.checked=on;});
+  const poolAll=_wzPool().filter(wzInScope);
+  document.getElementById('wzPoolN').textContent=poolAll.length;
+  document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
+}
+function wzRenderMonitor(){
+  const el=document.getElementById('wzMonitor');if(!el)return;
+  const picked=_wzPool().filter(it=>wzInScope(it)&&PICKS.has(it.id));
+  const total=picked.length;
+  const byLvl={'簡單':0,'中等':0,'困難':0,'極難':0,'未評分':0},byUnit={};
+  picked.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl||'未評分';byLvl[l]++;const u=(it.book||'')+'／'+(it.unit||'（未分類）');byUnit[u]=(byUnit[u]||0)+1;});
+  let bar='';['簡單','中等','困難','極難','未評分'].forEach(l=>{if(byLvl[l]&&total)bar+=`<span style="width:${(byLvl[l]/total*100).toFixed(2)}%;background:${WZ_DIFFCOLOR[l]}"></span>`;});
+  const diffRows=['簡單','中等','困難','極難'].map(l=>`<div class="wz-mon-row"><span><span style="color:${WZ_DIFFCOLOR[l]}">●</span> ${l}</span><b>${byLvl[l]}</b></div>`).join('');
+  const unitRows=Object.entries(byUnit).sort((a,b)=>b[1]-a[1]).map(([u,n])=>`<div class="wz-mon-row" title="${esc(u)}"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(u)}</span><b>${n}</b></div>`).join('')||'<div style="color:#b0a595;padding:4px 0">尚未選題</div>';
+  el.innerHTML=`<h4>即時監控</h4><div class="wz-mon-big">${total}<small> 題已選</small></div>`
+    +`<div class="wz-mon-dbar">${bar}</div>${diffRows}`
+    +`<div class="wz-mon-sec"><h4>各單元選取</h4>${unitRows}</div>`;
+}
+function wzPick(id){
+  togglePick(id);
+  if(WZ_TAB==='pick')wzRenderList();else wzSyncPickStates();
+  wzRenderMonitor();wzUpdateFoot();
+}
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
 function wzToExport(){
   if(!PICKS.size){alert('尚未選題');return;}
