@@ -12,6 +12,22 @@
 <link rel="manifest" href="/manifest-qbank.json">
 <title>茲茲文教｜自然題庫系統</title>
 <script>(()=>{try{const p=new URLSearchParams(location.search);if(p.has('exam')||p.has('exams')||p.has('handoff')||p.has('mode')){sessionStorage.setItem('tzutzu_qbank_unlock_until',String(Date.now()+7200000));return;}}catch(e){}const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
+<script>
+/* 從首頁「組卷精靈」進入時，開頁就先蓋一層載入中轉圈，避免閃過題庫管理頁面 */
+(function(){try{
+  var p=new URLSearchParams(location.search);
+  if(p.get('mode')!=='compose')return;
+  var st=document.createElement('style');
+  st.textContent='@keyframes wzspin{to{transform:rotate(360deg)}}';
+  document.documentElement.appendChild(st);
+  var ov=document.createElement('div');
+  ov.id='wzLoading';
+  ov.setAttribute('style','position:fixed;inset:0;z-index:99999;background:#f8f7f4;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;font-family:"PingFang TC","Microsoft JhengHei",system-ui,sans-serif');
+  ov.innerHTML='<div style="width:44px;height:44px;border:4px solid #e5dfd5;border-top-color:#850103;border-radius:50%;animation:wzspin .8s linear infinite"></div><div style="color:#850103;font-weight:800;letter-spacing:2px;font-size:15px">組卷精靈載入中…</div>';
+  document.documentElement.appendChild(ov);
+  setTimeout(function(){var e=document.getElementById('wzLoading');if(e)e.remove();},15000);
+}catch(e){}})();
+</script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
@@ -969,18 +985,20 @@
     <section class="wz-pane" data-s="1">
       <div class="wz-card">
         <h3>① 選擇出題範圍</h3>
-        <div class="wz-chips" style="margin-bottom:6px">
+        <div class="wz-chips" style="margin-bottom:10px">
           <span style="font-weight:700;color:#6e6f74">學制：</span>
-          <button type="button" class="wz-chip on" data-lv="" onclick="wzSetLevel(this,'')">全部</button>
           <button type="button" class="wz-chip" data-lv="國中" onclick="wzSetLevel(this,'國中')">國中</button>
           <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
         </div>
-        <div class="wz-tree-tools">
-          <button type="button" onclick="wzTreeAll(true)">全選</button>
-          <button type="button" onclick="wzTreeAll(false)">全部清除</button>
-          <input type="text" id="wzTreeSearch" placeholder="搜尋章節／單元…" oninput="wzFilterTree(this.value)">
+        <div id="wzLevelGate" style="padding:34px 16px;text-align:center;color:#9a8f83;font-size:14.5px;line-height:1.9">請先選擇<b style="color:var(--red)">學制</b>（國中／高中），<br>再從課綱樹狀選擇章節範圍</div>
+        <div id="wzScopeArea" hidden>
+          <div class="wz-tree-tools">
+            <button type="button" onclick="wzTreeAll(true)">全選</button>
+            <button type="button" onclick="wzTreeAll(false)">全部清除</button>
+            <input type="text" id="wzTreeSearch" placeholder="搜尋章節／單元…" oninput="wzFilterTree(this.value)">
+          </div>
+          <div id="wzTree" class="wz-tree"></div>
         </div>
-        <div id="wzTree" class="wz-tree"></div>
       </div>
     </section>
     <!-- Step 2：選題 -->
@@ -3878,18 +3896,31 @@ function _wzLeafKey(it){return (it.book||'')+WZ_SEP+(it.unit||'（未分類）')
 function _wzPool(){return DB.filter(it=>it&&it.type!=='passage');}
 function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
 function wzOpen(){
+  var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
-  WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();
+  WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
-  wzBuildTree();wzSetStep(1);
+  // 先要求選學制，選了才顯示章節樹
+  document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.remove('on'));
+  document.getElementById('wzLevelGate').hidden=false;
+  document.getElementById('wzScopeArea').hidden=true;
+  wzSetStep(1);
   // 題型下拉
   const pool=_wzPool();const types=[...new Set(pool.map(x=>x.type).filter(Boolean))];
   const sel=document.getElementById('wzfType');
   sel.innerHTML='<option value="">全部題型</option>'+types.map(t=>`<option value="${esc(t)}">${esc(typeof typeName==='function'?typeName(t):t)}</option>`).join('');
 }
 function wzClose(){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
-function wzSetLevel(btn,lv){WZ_LEVEL=lv;document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.toggle('on',b===btn));wzBuildTree();}
+function wzSetLevel(btn,lv){
+  if(WZ_LEVEL!==lv)WZ_SCOPE=new Set();   // 換學制清空既有勾選，避免夾帶另一學制的隱藏選取
+  WZ_LEVEL=lv;WZ_COLLAPSED=new Set();
+  document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.toggle('on',b===btn));
+  document.getElementById('wzLevelGate').hidden=true;
+  document.getElementById('wzScopeArea').hidden=false;
+  const s=document.getElementById('wzTreeSearch');if(s)s.value='';
+  wzBuildTree();
+}
 // 依冊→大單元→子單元分組
 function wzBuildTree(){
   const pool=_wzPool().filter(it=>!WZ_LEVEL||_wzLevelOf(it.book)===WZ_LEVEL);
@@ -3909,6 +3940,8 @@ function wzBuildTree(){
     const lbl=/^JB[1-6]$/.test(b)?((fieldOf[b]?fieldOf[b]+' ':'')+(_WZ_BOOKLABEL[b]||b)):b;
     return {book:b,label:lbl,count:units.reduce((n,x)=>n+x.count,0),units};
   });
+  // 預設全部冊收合，畫面只先顯示各冊（輕量），要看章節再展開
+  WZ_COLLAPSED=new Set();WZ_TREEDATA.forEach((_,bi)=>WZ_COLLAPSED.add('b'+bi));
   wzRenderTree();
 }
 function _wzNodeKeys(node,type){ // 回傳該節點底下所有葉 key
