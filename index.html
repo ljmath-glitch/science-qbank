@@ -3752,10 +3752,10 @@ function fixLatex(text){
 function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}}
 
 /* ===== 選題/配題 ===== */
-function togglePick(id){const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
+function togglePick(id,silent){const it=DB.find(x=>x.id===id);const gid=it&&it.groupId;
   const ids=gid?DB.filter(x=>x.groupId===gid).map(x=>x.id):[id];
   const willPick=!PICKS.has(id);
-  ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));render({keep:true})}
+  ids.forEach(t=>willPick?PICKS.add(t):PICKS.delete(t));if(!silent)render({keep:true})}
 function clearPicks(){PICKS.clear();render()}
 function updateFloat(){pickN.textContent=PICKS.size;floatbar.classList.toggle('show',PICKS.size>0||DB.length>0);floatbar.classList.remove('float-autohide')}
 // 底部匯出列：手機往下捲動隱藏、往上捲動露出（app 常見行為）
@@ -4195,9 +4195,10 @@ function wzSetUnitFilter(enc){
   wzRenderList();
 }
 function wzPick(id){
-  togglePick(id);
-  if(WZ_TAB==='pick')wzRenderList();else wzSyncPickStates();
-  wzRenderMonitor();wzUpdateFoot();
+  // 精靈內勾選不重畫背景題庫的數千張題目卡片，只更新精靈自己的清單／監控。
+  togglePick(id,true);
+  if(WZ_TAB==='pick')wzRenderList();else{wzSyncPickStates();wzRenderMonitor();}
+  wzUpdateFoot();
 }
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
 function wzToExport(){
