@@ -4057,7 +4057,8 @@ function wzUpdateFoot(){
 // Step 2 清單
 function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
 const WZ_DIFFCOLOR={'簡單':'#1f9d55','中等':'#d08700','困難':'#d9480f','極難':'#a4133c','未評分':'#b0a595'};
-function _wzSimple(it){return esc(stripRichMarks(it.q||it.summary||'').replace(/\{\{[^}]*\}\}/g,'').replace(/\$[^$]*\$/g,' ▢ ').replace(/\s+/g,' ').trim()).slice(0,110);}
+// 簡化預覽：去富文字標記→把 $LaTeX$ 轉成可讀 unicode(latexToPlain)→收斂空白。不要用方框佔位(會跟填空□混淆)
+function _wzSimple(it){return esc(latexToPlain(stripRichMarks(it.q||it.summary||'').replace(/\{\{[^}]*\}\}/g,'')).replace(/\s+/g,' ').trim()).slice(0,110);}
 function _wzFullHtml(it){
   let ph='';
   const gid=it.groupId||'';
