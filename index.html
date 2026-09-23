@@ -230,7 +230,19 @@
   .paper-section-body{padding:20px 22px;background:linear-gradient(180deg,#fff,#fdfbf7)}
   .paper-section-body .field:last-child{margin-bottom:0}
   .paper-output-select{font-weight:700;border-color:#d7bca0!important;background:#fffdf9!important}
-  @media(max-width:800px){#paperDlg .dlg-body{max-height:72vh;overflow:auto}.paper-settings-layout{padding:10px}.paper-settings-preview{min-height:420px}.pdoc-viewport{min-height:450px;padding:16px}.pdoc-paper{min-height:500px;padding:26px 22px;font-size:11px}.paper-options{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
+  .paper-doc-grid{display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:14px}
+  .paper-doc-card{position:relative;min-height:132px;padding:16px;border:2px solid #dfd6c9;border-radius:11px;background:#faf7f1;color:#5b5148;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:7px}
+  .paper-doc-card.on{border-color:var(--red);background:linear-gradient(180deg,#fff9f5,#f9e8e4);box-shadow:0 0 0 3px rgba(133,1,3,.09)}
+  .paper-doc-check{position:absolute;left:11px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:900}
+  .paper-doc-icon{width:40px;height:50px;border:2px solid currentColor;border-radius:3px;position:relative;background:#fff}.paper-doc-icon:before,.paper-doc-icon:after{content:'';position:absolute;left:8px;right:8px;height:2px;background:currentColor;opacity:.55}.paper-doc-icon:before{top:17px;box-shadow:0 8px 0 currentColor,0 16px 0 currentColor}.paper-doc-icon:after{display:none}
+  .paper-doc-card b{font-size:15px;color:var(--ink)}.paper-doc-card small{font-size:12px;color:#746b62;line-height:1.45}
+  .paper-setting-note{margin:10px 0 0;color:#756b61;font-size:13px}
+  .paper-layout-grid{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:14px}
+  .paper-layout-card{position:relative;min-height:145px;border:2px solid #dfd6c9;border-radius:11px;background:#faf7f1;color:#5b5148;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;transition:.15s}
+  .paper-layout-card:hover{border-color:#c69c93;background:#fffaf7}.paper-layout-card.on{border-color:var(--red);background:linear-gradient(180deg,#fff9f5,#f9e8e4);box-shadow:0 0 0 3px rgba(133,1,3,.09);color:var(--red)}
+  .paper-layout-card .paper-layout-check{position:absolute;left:11px;top:10px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;background:var(--red);color:#fff;opacity:0}.paper-layout-card.on .paper-layout-check{opacity:1}
+  .paper-layout-icon{width:62px;height:76px;border:2px solid currentColor;background:#fff;position:relative;border-radius:3px}.paper-layout-icon:before{content:'';position:absolute;left:11px;right:11px;top:14px;height:2px;background:currentColor;box-shadow:0 8px 0 currentColor,0 16px 0 currentColor,0 24px 0 currentColor,0 32px 0 currentColor}.paper-layout-icon.double:after{content:'';position:absolute;top:8px;bottom:8px;left:50%;border-left:1px solid currentColor;opacity:.7}.paper-layout-card b{font-size:14px}
+  @media(max-width:800px){#paperDlg .dlg-body{max-height:72vh;overflow:auto}.paper-settings-layout{padding:10px}.paper-settings-preview{min-height:420px}.pdoc-viewport{min-height:450px;padding:16px}.pdoc-paper{min-height:500px;padding:26px 22px;font-size:11px}.paper-options{grid-template-columns:1fr 1fr}.paper-doc-grid,.paper-layout-grid{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}}
   /* 統一的彈出視窗（與 <dialog> 一致：置中、固定寬、同款標題/內文/底部） */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(45,48,56,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
   .modal-card{background:#fff;border-radius:14px;width:min(95vw,760px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
@@ -845,15 +857,18 @@
   <div class="dlg-head">匯出考卷設定<button class="x" onclick="paperDlg.close()">×</button></div>
   <div class="dlg-body"><div class="paper-settings-layout">
     <div class="paper-settings-controls">
-      <details class="paper-section" open><summary>題目輸出規格 <span class="paper-section-summary">選擇輸出內容</span></summary><div class="paper-section-body">
-        <div class="field"><label>輸出內容</label><select id="pAns" class="paper-output-select">
-          <option value="none">題目卷（不附答案）</option><option value="end">題目卷＋卷末答案</option>
-          <option value="inline">答案卷（每題答案）</option><option value="full">答案卷（答案＋詳解）</option>
-          <option value="solbrief">解析卷簡（不印題目）</option><option value="both">同時輸出題目卷＋答案卷</option><option value="both_full">同時輸出題目卷＋答案詳解卷</option>
-        </select></div>
+      <details class="paper-section" open><summary>題目輸出規格 <span class="paper-section-summary">題目卷＋解析卷</span></summary><div class="paper-section-body">
+        <input type="hidden" id="pAns" value="both_full">
+        <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
+          <div class="paper-doc-card on"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></div>
+          <div class="paper-doc-card on"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>每題答案＋完整詳解</small></div>
+        </div><p class="paper-setting-note">每次會同時輸出題目卷與解析卷。</p></div>
+        <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
+          <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
+          <button type="button" class="paper-layout-card" id="paperLayoutDouble" onclick="paperSetLayout(true)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon double" aria-hidden="true"></span><b>橫書雙欄</b></button>
+        </div></div>
         <div class="field"><label>版面選項</label><div class="paper-options">
           <label class="chk"><input type="checkbox" id="pShowMeta" checked> 班級／姓名欄</label>
-          <label class="chk"><input type="checkbox" id="pTwoCol"> 雙欄省紙</label>
           <label class="chk"><input type="checkbox" id="pShowTag"> 顯示章節／題型</label>
           <label class="chk"><input type="checkbox" id="pShowSource"> 顯示題目出處</label>
           <label class="chk"><input type="checkbox" id="pShowSourceFull"> 顯示完整考卷名稱</label>
@@ -4339,6 +4354,7 @@ function openPaperSettings(){
     paperDlg.addEventListener('input',paperSettingsPreviewLater);
     paperDlg.addEventListener('change',paperSettingsPreviewLater);
   }
+  paperSetLayout(!!(document.getElementById('pTwoCol')||{}).checked);
   paperSettingsPreviewLater();
 }
 function _computePaperDefaults(){
@@ -4357,6 +4373,14 @@ function _computePaperDefaults(){
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperSettingsPreviewTimer=0;
 function paperAnsMode(){return (document.getElementById('pAns')||{}).value||'none';}
+function paperSetLayout(twoCol){
+  const two=!!twoCol,box=document.getElementById('pTwoCol');
+  if(box)box.checked=two;
+  const single=document.getElementById('paperLayoutSingle'),double=document.getElementById('paperLayoutDouble');
+  if(single)single.classList.toggle('on',!two);
+  if(double)double.classList.toggle('on',two);
+  paperSettingsPreviewLater();
+}
 function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_paperSettingsPreviewTimer=setTimeout(refreshPaperSettingsPreview,90);}
 function refreshPaperSettingsPreview(){
   const target=document.getElementById('paperSettingsPreview');if(!target)return;
