@@ -220,6 +220,7 @@
   .pdoc-paper .exam-hdr{transform:scale(.82);transform-origin:top left;width:122%;margin-bottom:2px}
   .pdoc-paper .exam-hdr-logo img{height:35px}.pdoc-paper .exam-hdr-left,.pdoc-paper .exam-hdr-right{padding:8px 11px}.pdoc-paper .exam-hdr-gs{font-size:13pt}.pdoc-paper .exam-hdr-name{font-size:11pt}
   .pdoc-paper .pdoc-meta{text-align:right;color:#888;font-size:10px;margin:3px 0 9px}.pdoc-paper .pdoc-q{margin:0 0 10px}.pdoc-paper .pdoc-more{text-align:center;color:#999;border-top:1px dashed #ccc;padding-top:9px;margin-top:14px}
+  .pdoc-paper .pdoc-question-columns{column-count:2;column-gap:26px}.pdoc-paper .pdoc-question-columns .pdoc-q{break-inside:avoid-column;-webkit-column-break-inside:avoid}
   /* 參考出題系統的設定介面：深藍標題列＋明確段落，細節可收合。 */
   .paper-section{border:1px solid #e2d7c8;border-radius:13px;background:#fff;overflow:hidden;margin:0 0 14px;box-shadow:0 3px 11px rgba(78,48,37,.08)}
   .paper-section>summary{display:flex;align-items:center;gap:10px;min-height:58px;box-sizing:border-box;padding:0 18px;background:linear-gradient(135deg,#920205,#760002);color:#fff;cursor:pointer;list-style:none;font-size:17px;font-weight:800;letter-spacing:.7px}
@@ -4394,7 +4395,8 @@ function refreshPaperSettingsPreview(){
     return `<div class="pdoc-q"><b>${i+1}.</b> ${text}${extra}</div>`;
   }).join('');
   const meta=(document.getElementById('pShowMeta')||{}).checked?'共 '+pickedItems().length+' 題　班級：______　座號：____　姓名：________':'共 '+pickedItems().length+' 題';
-  target.innerHTML=(header||`<h1>${esc(title)}</h1>`)+`<div class="pdoc-meta">${meta}</div>`+(qs||'<div class="pdoc-meta">尚未選題</div>')+(pickedItems().length>3?`<div class="pdoc-more">以下還有 ${pickedItems().length-3} 題…</div>`:'');
+  const previewQuestions=(document.getElementById('pTwoCol')||{}).checked?`<div class="pdoc-question-columns">${qs}</div>`:qs;
+  target.innerHTML=(header||`<h1>${esc(title)}</h1>`)+`<div class="pdoc-meta">${meta}</div>`+(previewQuestions||'<div class="pdoc-meta">尚未選題</div>')+(pickedItems().length>3?`<div class="pdoc-more">以下還有 ${pickedItems().length-3} 題…</div>`:'');
   renderMath(target);
 }
 let _paperBlankH={}; // 手寫作答空白的自訂高度（key: 題目id_子題序號），只在本次瀏覽器session有效，不寫入資料庫
