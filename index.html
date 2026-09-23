@@ -904,14 +904,15 @@
 <style>
 #composer{position:fixed;inset:0;z-index:1200;background:var(--paper);display:flex;flex-direction:column;font-family:var(--ui-font)}
 #composer[hidden]{display:none!important}
-#composer .wz-top{display:flex;align-items:center;gap:16px;padding:10px 18px;background:linear-gradient(180deg,#8d0104,#6d0103);color:#fff;flex-shrink:0}
+#composer .wz-top{display:flex;align-items:center;gap:16px;padding:11px 18px;background:var(--red);color:#fff;flex-shrink:0;border-bottom:3px solid #6d0103}
 #composer .wz-brand{font-size:16px;font-weight:800;letter-spacing:1px;white-space:nowrap}
 #composer .wz-steps{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
 #composer .wz-step{display:flex;align-items:center;gap:7px;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:700;background:rgba(255,255,255,.14);color:rgba(255,255,255,.75)}
 #composer .wz-step .wz-num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.3);align-items:center;justify-content:center;font-size:12px}
-#composer .wz-step.on{background:var(--orange);color:#3a2100}
-#composer .wz-step.on .wz-num{background:#fff;color:#3a2100}
-#composer .wz-step.done{background:rgba(255,255,255,.28);color:#fff}
+#composer .wz-step.on{background:#fffefb;color:var(--red)}
+#composer .wz-step.on .wz-num{background:var(--red);color:#fff}
+#composer .wz-step.done{background:rgba(255,255,255,.26);color:#fff}
+#composer .wz-step.done .wz-num{background:rgba(255,255,255,.5);color:var(--red)}
 #composer .wz-x{border:0;background:rgba(255,255,255,.16);color:#fff;width:34px;height:34px;border-radius:9px;font-size:18px;cursor:pointer;flex-shrink:0}
 #composer .wz-body{flex:1;overflow:auto;padding:16px 18px 90px;max-width:1180px;width:100%;margin:0 auto;box-sizing:border-box}
 #composer .wz-pane[hidden]{display:none}
@@ -6318,6 +6319,10 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
   if(entryMode==='quick-paper'){
     history.replaceState(null,'',location.pathname);
     setTimeout(()=>openQuickPaperSetup(),120);
+  }
+  if(entryMode==='compose'){
+    history.replaceState(null,'',location.pathname);
+    setTimeout(()=>{try{wzOpen();}catch(e){console.warn(e);}},150);
   }
   if(rawHandoff==='questions'){
     try{
