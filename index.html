@@ -956,8 +956,8 @@
 #composer .wz-foot .wz-foot-info{flex:1;text-align:center;font-size:14px;color:var(--ink)}
 #composer .wz-foot .wz-foot-info b{color:var(--red);font-size:17px}
 #composer .wz-foot .btn{min-width:100px}
-#composer .wz-qlist{display:flex;flex-direction:column;gap:8px}
-#composer .wz-q{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer}
+#composer .wz-qlist{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;gap:8px}
+#composer .wz-q{display:block!important;box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer}
 #composer .wz-q.picked{border-color:var(--red);background:#fdf5f4}
 #composer .wz-q input{margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--red)}
 #composer .wz-q .wz-qmeta{font-size:11px;color:#9a8f83;margin-bottom:2px}
@@ -993,8 +993,8 @@
 #composer .wz-unitbanner{display:flex;align-items:center;gap:10px;background:#fbeceb;border:1px solid #e6c3c0;border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#5a5148}
 #composer .wz-unitbanner button{margin-left:auto;border:1px solid #d9b3b0;background:#fff;color:var(--red);border-radius:7px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 #composer .wz-mon-dbar{display:flex;height:8px;border-radius:5px;overflow:hidden;margin:4px 0 8px;background:#f0eae1}
-#composer .wz-q .wz-qhead{display:flex;align-items:flex-start;gap:10px}
-#composer .wz-qbody{flex:1;min-width:0;cursor:pointer}
+#composer .wz-q .wz-qhead{display:flex;width:100%;min-width:0;align-items:flex-start;gap:10px}
+#composer .wz-qbody{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
 #composer .wz-q .wz-editbtn{flex:0 0 auto;border:1px solid #d9cfc0;background:#fff;color:#8a7f74;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 #composer .wz-q .wz-editbtn:hover{border-color:var(--red);color:var(--red)}
 #composer .wz-q .wz-expand-hint{font-size:11px;color:#b7ad9f;margin-left:6px;font-weight:600}
@@ -3886,7 +3886,7 @@ function doAutoMix(){
   if(nVer===1){
     PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBar();
     PICKS.clear();versions[0].forEach(id=>PICKS.add(id));
-    render();
+    if(!WZ_EMBEDDED)render();
     let msg='已組出 '+PICKS.size+' 題';
     if(shortfalls.length)msg+='\n\n⚠️ 題量不足：\n'+shortfalls.join('\n');
     alert(msg);
@@ -3906,7 +3906,8 @@ function applyPaperVersion(i){
   if(!PAPER_VERSIONS[i])return;
   PAPER_VER_IDX=i;
   PICKS.clear();PAPER_VERSIONS[i].forEach(id=>PICKS.add(id));
-  render();
+  // 獨立精靈頁不需要重建藏在背後的題庫清單。
+  if(!WZ_EMBEDDED)render();
   // 若考卷預覽正開著，切換卷別後重建預覽（此卷內容取代舊卷）
   const pv=document.getElementById('paperView');
   if(pv&&pv.classList.contains('show')&&typeof showPaperPreview==='function'){try{_computePaperDefaults();showPaperPreview();}catch(_){}}
@@ -3927,7 +3928,7 @@ function clearPaperVersions(){PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBa
 /* ===== 組卷精靈（全螢幕多步驟：範圍→選題→設定）=====
    自成一套範圍(WZ_SCOPE)，不動到題庫管理的下拉篩選。範圍以「冊→大單元→子單元」樹狀複選，
    選 JB3 只會顯示 JB3 的單元（樹本身就是依冊分組，天然級聯）。 */
-let WZ_STEP=1,WZ_LEVEL='',WZ_TAB='pool';
+let WZ_STEP=1,WZ_LEVEL='',WZ_TAB='pool',WZ_EMBEDDED=false;
 let WZ_UNITFILTER='';   // Step 2 只看某個範圍路徑（book\u0001unit[\u0001sub[\u0001kp]]）
 let WZ_UNITKEYS=[];     // 監控清單各節點 key（供點擊 index 對應）
 let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收合）
@@ -3960,7 +3961,7 @@ function wzOpen(){
 }
 function wzClose(){
   // composer.html 是精靈的獨立入口；在該頁離開時直接回題庫管理，不露出 iframe 內的題庫畫面。
-  if(new URLSearchParams(location.search).has('embed')){top.location.href='index.html';return;}
+  if(WZ_EMBEDDED){top.location.href='index.html';return;}
   document.getElementById('composer').hidden=true;document.body.style.overflow='';
 }
 function wzSetLevel(btn,lv){
@@ -4269,7 +4270,7 @@ function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 W
 function wzToExport(){
   if(!PICKS.size){alert('尚未選題');return;}
   // 獨立精靈頁要在本頁接著開啟考卷預覽；只有點右上角離開才回題庫管理。
-  if(new URLSearchParams(location.search).has('embed')){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
+  if(WZ_EMBEDDED){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
   else wzClose();
   if(typeof openPaperDlg==='function')openPaperDlg();
 }
@@ -4522,7 +4523,7 @@ function showPaperPreview(){if(!PICKS.size)return;
 function closePaper(){
   document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';
   // 從獨立組卷頁完成預覽後，回到題庫管理，而不是露出 iframe 背後的題庫頁。
-  if(new URLSearchParams(location.search).has('embed'))top.location.href='index.html';
+  if(WZ_EMBEDDED)top.location.href='index.html';
 }
 function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
 
@@ -6566,11 +6567,19 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
     const examsParam=qp.get('exams'); // 同一次段考跨科目（如地科＋理化）用這個帶多個考試名稱，見 progress.html
     rawHandoff=qp.get('handoff')||'';
     entryMode=qp.get('mode')||'';
+    WZ_EMBEDDED=entryMode==='compose'&&qp.has('embed');
     if(examsParam){try{const arr=JSON.parse(examsParam);if(Array.isArray(arr)&&arr.length)_pinExam=arr;}catch(e){}history.replaceState(null,'',location.pathname);}
     else if(examParam){_pinExam=[examParam];history.replaceState(null,'',location.pathname);}
   }catch(e){}
-  render();
-  updateBell();
+  // composer.html 的 iframe 只需要資料與篩選選項，不需要把題庫管理的卡片／公式先渲染在背景。
+  // 原本這裡會先建立 60 張題卡並跑 KaTeX，精靈已蓋住畫面仍持續吃 CPU，連其他分頁都會感到卡。
+  if(entryMode==='compose'){
+    const list=document.getElementById('list');if(list)list.innerHTML='';
+    const fb=document.getElementById('floatbar');if(fb)fb.classList.remove('show');
+  }else{
+    render();
+    updateBell();
+  }
   if(entryMode==='quick-paper'){
     history.replaceState(null,'',location.pathname);
     setTimeout(()=>openQuickPaperSetup(),120);
@@ -7355,7 +7364,8 @@ async function downloadWordDoc(){
     const c=document.createElement('button');c.type='button';c.className='hdr-compose-btn';c.title='開啟組卷精靈';
     c.textContent='組卷精靈';
     c.setAttribute('style','margin-right:8px;background:var(--red);color:#fff;border:0;border-radius:9px;padding:7px 15px;font-size:13.5px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;box-shadow:0 6px 15px -9px rgba(133,1,3,.6)');
-    c.onclick=function(){try{wzOpen();}catch(e){console.warn(e);}};
+    // 題庫管理的標頭入口也要導向獨立精靈頁，不能再用覆蓋式視窗。
+    c.onclick=function(){location.href='composer.html';};
     wrap.insertBefore(c,wrap.querySelector('.bell-btn')||wrap.querySelector('.index-home-link')||null);
   }
   if(wrap&&!wrap.querySelector('.index-home-link')){
