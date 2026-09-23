@@ -978,11 +978,17 @@
 #composer .wz-mon-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;color:#5a5148}
 #composer .wz-mon-row b{color:var(--red)}
 #composer .wz-mon-hint{font-size:11px;color:#b0a595;margin:2px 0 6px;line-height:1.5}
-#composer .wz-mon-unit{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;cursor:pointer;font-size:12.5px;color:#5a5148;border:1px solid transparent}
-#composer .wz-mon-unit:hover{background:#faf6ef;border-color:#eaddcf}
-#composer .wz-mon-unit.on{background:#fbeceb;border-color:#e6c3c0}
-#composer .wz-mon-unit .wz-mon-uname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
-#composer .wz-mon-unit b{flex:0 0 auto;font-size:12.5px}
+#composer .wz-mon-node{display:flex;align-items:center;gap:4px;padding:5px 6px;border-radius:8px;font-size:12.5px;color:#5a5148;border:1px solid transparent}
+#composer .wz-mon-node.on{background:#fbeceb;border-color:#e6c3c0}
+#composer .wz-mon-node.lv1{padding-left:16px}
+#composer .wz-mon-node.lv1 .wz-mon-uname{font-weight:500}
+#composer .wz-mon-node.lv2{padding-left:32px}
+#composer .wz-mon-node.lv2 .wz-mon-uname{font-weight:400;color:#7a7168;font-size:12px}
+#composer .wz-mon-tw{flex:0 0 auto;width:15px;text-align:center;color:#b0a595;cursor:pointer;user-select:none}
+#composer .wz-mon-tw:hover{color:var(--red)}
+#composer .wz-mon-node .wz-mon-uname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;cursor:pointer;border-radius:5px}
+#composer .wz-mon-node .wz-mon-uname:hover{color:var(--red)}
+#composer .wz-mon-node b{flex:0 0 auto;font-size:12px;margin-left:4px}
 #composer .wz-mon-sec{max-height:none}
 #composer .wz-unitbanner{display:flex;align-items:center;gap:10px;background:#fbeceb;border:1px solid #e6c3c0;border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:13px;color:#5a5148}
 #composer .wz-unitbanner button{margin-left:auto;border:1px solid #d9b3b0;background:#fff;color:var(--red);border-radius:7px;padding:4px 11px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
@@ -3922,8 +3928,9 @@ function clearPaperVersions(){PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBa
    自成一套範圍(WZ_SCOPE)，不動到題庫管理的下拉篩選。範圍以「冊→大單元→子單元」樹狀複選，
    選 JB3 只會顯示 JB3 的單元（樹本身就是依冊分組，天然級聯）。 */
 let WZ_STEP=1,WZ_LEVEL='',WZ_TAB='pool';
-let WZ_UNITFILTER='';   // Step 2 只看某個 book\u0001unit（從即時監控點擊）
-let WZ_UNITKEYS=[];     // 監控清單各單元 key（供點擊 index 對應）
+let WZ_UNITFILTER='';   // Step 2 只看某個範圍路徑（book\u0001unit[\u0001sub[\u0001kp]]）
+let WZ_UNITKEYS=[];     // 監控清單各節點 key（供點擊 index 對應）
+let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收合）
 let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（book|unit|sub）
 let WZ_TREEDATA=[];              // [{book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
@@ -3932,12 +3939,13 @@ const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
 function _wzBookOrder(b){const i=['JB1','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
 function _wzLeafKey(it){return (it.book||'')+WZ_SEP+(it.unit||'（未分類）')+WZ_SEP+(it.sub||'（未分類）');}
+function _wzPath(it){return _wzLeafKey(it)+WZ_SEP+(it.kp||'（未標知識點）');}
 function _wzPool(){return DB.filter(it=>it&&it.type!=='passage');}
 function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
 function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
-  WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';
+  WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
   // 先要求選學制，選了才顯示章節樹
@@ -4084,7 +4092,7 @@ function wzRenderList(){
   const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
   let items=_wzPool().filter(wzInScope);
   if(WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
-  if(WZ_UNITFILTER)items=items.filter(it=>((it.book||'')+'\u0001'+(it.unit||'（未分類）'))===WZ_UNITFILTER);
+  if(WZ_UNITFILTER)items=items.filter(it=>{const fp=_wzPath(it);return fp===WZ_UNITFILTER||fp.indexOf(WZ_UNITFILTER+'\u0001')===0;});
   if(ft)items=items.filter(it=>it.type===ft);
   if(fd)items=items.filter(it=>(calcDiff(it.step,it.mem,it.con).lvl||'未評分')===fd);
   if(fs)items=items.filter(it=>stripRichMarks((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
@@ -4106,7 +4114,7 @@ function wzRenderList(){
       +`</div></div>`;
   }).join('');
   let banner='';
-  if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${esc(un[0]||'')}／${esc(un[1]||'')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter(-1)">✕ 看全部範圍</button></div>`;}
+  if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter(-1)">✕ 看全部範圍</button></div>`;}
   document.getElementById('wzList').innerHTML=banner+(html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`);
   if(items.length>400)document.getElementById('wzList').innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或點右側單元逐一挑）</div>';
   wzRenderMonitor();
@@ -4135,23 +4143,54 @@ function wzRenderMonitor(){
   picked.forEach(it=>{byLvl[calcDiff(it.step,it.mem,it.con).lvl||'未評分']++;});
   let bar='';['簡單','中等','困難','極難','未評分'].forEach(l=>{if(byLvl[l]&&total)bar+=`<span style="width:${(byLvl[l]/total*100).toFixed(2)}%;background:${WZ_DIFFCOLOR[l]}"></span>`;});
   const diffRows=['簡單','中等','困難','極難'].map(l=>`<div class="wz-mon-row"><span><span style="color:${WZ_DIFFCOLOR[l]}">●</span> ${l}</span><b>${byLvl[l]}</b></div>`).join('');
-  // 各範圍（所選單元）：可用/已選，點擊下鑽
-  const units={};
-  pool.forEach(it=>{const k=(it.book||'')+'\u0001'+(it.unit||'（未分類）');if(!units[k])units[k]={book:it.book||'',unit:it.unit||'（未分類）',avail:0,pick:0};units[k].avail++;if(PICKS.has(it.id))units[k].pick++;});
-  const unitList=Object.entries(units).sort((a,b)=>(_wzBookOrder(a[1].book)-_wzBookOrder(b[1].book))||a[1].unit.localeCompare(b[1].unit,'zh-Hant'));
-  WZ_UNITKEYS=unitList.map(x=>x[0]);
-  const unitRows=unitList.map(([k,u],i)=>{
-    const on=WZ_UNITFILTER===k;const done=u.pick>0;
-    return `<div class="wz-mon-unit${on?' on':''}" title="${esc(u.book+' '+u.unit)}" onclick="wzSetUnitFilter(${i})">`
-      +`<span class="wz-mon-uname">${done?'<span style="color:#1f9d55">✔</span> ':'<span style="color:#d9cfc0">○</span> '}${esc(u.unit)}</span>`
-      +`<b style="color:${done?'var(--red)':'#b0a595'}">${u.pick}/${u.avail}</b></div>`;
-  }).join('');
+  // 各範圍進度：大單元 → 子單元 → 知識點 三層可收合樹，每層顯示 已選/可用、可點擊下鑽
+  const SEP='\u0001';
+  const tree={}; // uKey -> {book,unit,avail,pick,subs:{sKey->{sub,avail,pick,kps:{kKey->{kp,avail,pick}}}}}
+  pool.forEach(it=>{
+    const uKey=(it.book||'')+SEP+(it.unit||'（未分類）');
+    const sName=it.sub||'（未分類）',sKey=uKey+SEP+sName;
+    const kName=it.kp||'（未標知識點）',kKey=sKey+SEP+kName;
+    const on=PICKS.has(it.id);
+    const u=tree[uKey]||(tree[uKey]={book:it.book||'',unit:it.unit||'（未分類）',avail:0,pick:0,subs:{}});
+    u.avail++;if(on)u.pick++;
+    const s=u.subs[sKey]||(u.subs[sKey]={sub:sName,avail:0,pick:0,kps:{}});
+    s.avail++;if(on)s.pick++;
+    const k=s.kps[kKey]||(s.kps[kKey]={kp:kName,avail:0,pick:0});
+    k.avail++;if(on)k.pick++;
+  });
+  WZ_UNITKEYS=[];
+  const dot=done=>done?'<span style="color:#1f9d55">✔</span>':'<span style="color:#d9cfc0">○</span>';
+  const caret=(key,has)=>has?`<span class="wz-mon-tw" onclick="event.stopPropagation();wzMonToggle(${WZ_UNITKEYS.length})">${WZ_MONEXPANDED.has(key)?'▾':'▸'}</span>`:'<span class="wz-mon-tw"></span>';
+  let rows='';
+  Object.entries(tree).sort((a,b)=>(_wzBookOrder(a[1].book)-_wzBookOrder(b[1].book))||a[1].unit.localeCompare(b[1].unit,'zh-Hant')).forEach(([uKey,u])=>{
+    const uIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(uKey);
+    const hasSub=Object.keys(u.subs).length>0;
+    rows+=`<div class="wz-mon-node lv0${WZ_UNITFILTER===uKey?' on':''}">${caret(uKey,hasSub)}`
+      +`<span class="wz-mon-uname" title="${esc(u.book+' '+u.unit)}" onclick="wzSetUnitFilter(${uIdx})">${dot(u.pick>0)} ${esc(u.unit)}</span>`
+      +`<b style="color:${u.pick>0?'var(--red)':'#b0a595'}">${u.pick}/${u.avail}</b></div>`;
+    if(!WZ_MONEXPANDED.has(uKey))return;
+    Object.entries(u.subs).sort((a,b)=>a[1].sub.localeCompare(b[1].sub,'zh-Hant')).forEach(([sKey,s])=>{
+      const sIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(sKey);
+      const hasKp=Object.keys(s.kps).length>0;
+      rows+=`<div class="wz-mon-node lv1${WZ_UNITFILTER===sKey?' on':''}">${caret(sKey,hasKp)}`
+        +`<span class="wz-mon-uname" title="${esc(s.sub)}" onclick="wzSetUnitFilter(${sIdx})">${dot(s.pick>0)} ${esc(s.sub)}</span>`
+        +`<b style="color:${s.pick>0?'var(--red)':'#b0a595'}">${s.pick}/${s.avail}</b></div>`;
+      if(!WZ_MONEXPANDED.has(sKey))return;
+      Object.entries(s.kps).sort((a,b)=>a[1].kp.localeCompare(b[1].kp,'zh-Hant')).forEach(([kKey,k])=>{
+        const kIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(kKey);
+        rows+=`<div class="wz-mon-node lv2${WZ_UNITFILTER===kKey?' on':''}"><span class="wz-mon-tw"></span>`
+          +`<span class="wz-mon-uname" title="${esc(k.kp)}" onclick="wzSetUnitFilter(${kIdx})">${dot(k.pick>0)} ${esc(k.kp)}</span>`
+          +`<b style="color:${k.pick>0?'var(--red)':'#b0a595'}">${k.pick}/${k.avail}</b></div>`;
+      });
+    });
+  });
   el.innerHTML=`<h4>即時監控</h4><div class="wz-mon-big">${total}<small> 題已選 / 範圍共 ${pool.length} 題</small></div>`
     +`<div class="wz-mon-dbar">${bar}</div>${diffRows}`
-    +`<div class="wz-mon-sec"><h4>各範圍進度</h4><div class="wz-mon-hint">點單元只看該單元的題目 · ✔＝已選過</div>`
-    +`<div class="wz-mon-unit${WZ_UNITFILTER===''?' on':''}" onclick="wzSetUnitFilter(-1)"><span class="wz-mon-uname">＊ 全部範圍</span><b>${total}/${pool.length}</b></div>`
-    +(unitRows||'<div style="color:#b0a595;padding:4px 0">範圍是空的</div>')+`</div>`;
+    +`<div class="wz-mon-sec"><h4>各範圍進度</h4><div class="wz-mon-hint">▸ 展開看子單元／知識點 · 點名稱只看該範圍 · ✔＝已選過</div>`
+    +`<div class="wz-mon-node lv0${WZ_UNITFILTER===''?' on':''}"><span class="wz-mon-tw"></span><span class="wz-mon-uname" onclick="wzSetUnitFilter(-1)">＊ 全部範圍</span><b>${total}/${pool.length}</b></div>`
+    +(rows||'<div style="color:#b0a595;padding:4px 0">範圍是空的</div>')+`</div>`;
 }
+function wzMonToggle(i){const k=WZ_UNITKEYS[i];if(!k)return;if(WZ_MONEXPANDED.has(k))WZ_MONEXPANDED.delete(k);else WZ_MONEXPANDED.add(k);wzRenderMonitor();}
 function wzSetUnitFilter(i){
   WZ_UNITFILTER=(i<0)?'':(WZ_UNITKEYS[i]||'');
   // 下鑽時自動切回「待選」分頁，才看得到未選的題
