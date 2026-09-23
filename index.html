@@ -3940,8 +3940,9 @@ function wzBuildTree(){
     const lbl=/^JB[1-6]$/.test(b)?((fieldOf[b]?fieldOf[b]+' ':'')+(_WZ_BOOKLABEL[b]||b)):b;
     return {book:b,label:lbl,count:units.reduce((n,x)=>n+x.count,0),units};
   });
-  // 預設全部冊收合，畫面只先顯示各冊（輕量），要看章節再展開
-  WZ_COLLAPSED=new Set();WZ_TREEDATA.forEach((_,bi)=>WZ_COLLAPSED.add('b'+bi));
+  // 預設所有層級（冊＋章）全部收合，畫面最初只顯示各冊，逐層展開，避免一次渲染過多
+  WZ_COLLAPSED=new Set();
+  WZ_TREEDATA.forEach((bk,bi)=>{WZ_COLLAPSED.add('b'+bi);bk.units.forEach((_,ui)=>WZ_COLLAPSED.add('b'+bi+'u'+ui));});
   wzRenderTree();
 }
 function _wzNodeKeys(node,type){ // 回傳該節點底下所有葉 key
@@ -7130,6 +7131,13 @@ async function downloadWordDoc(){
 /* 題庫管理頁右上角固定提供回首頁入口。 */
 (function(){
   const wrap=document.querySelector('header .wrap');
+  if(wrap&&!wrap.querySelector('.hdr-compose-btn')){
+    const c=document.createElement('button');c.type='button';c.className='hdr-compose-btn';c.title='開啟組卷精靈';
+    c.textContent='組卷精靈';
+    c.setAttribute('style','margin-right:8px;background:var(--red);color:#fff;border:0;border-radius:9px;padding:7px 15px;font-size:13.5px;font-weight:800;letter-spacing:1px;cursor:pointer;white-space:nowrap;box-shadow:0 6px 15px -9px rgba(133,1,3,.6)');
+    c.onclick=function(){try{wzOpen();}catch(e){console.warn(e);}};
+    wrap.insertBefore(c,wrap.querySelector('.bell-btn')||wrap.querySelector('.index-home-link')||null);
+  }
   if(wrap&&!wrap.querySelector('.index-home-link')){
     const a=document.createElement('a');a.className='index-home-link';a.href='home.html';a.setAttribute('aria-label','回到首頁');a.title='回到首頁';a.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>';wrap.insertBefore(a,wrap.querySelector('.bell-btn')||null);
   }
