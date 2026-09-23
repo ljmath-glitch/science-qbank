@@ -3959,17 +3959,24 @@ function clearPaperVersions(){PAPER_VERSIONS=[];PAPER_VER_IDX=0;renderPaperVerBa
    自成一套範圍(WZ_SCOPE)，不動到題庫管理的下拉篩選。範圍以「冊→大單元→子單元」樹狀複選，
    選 JB3 只會顯示 JB3 的單元（樹本身就是依冊分組，天然級聯）。 */
 let WZ_STEP=1,WZ_LEVEL='',WZ_TAB='pool',WZ_EMBEDDED=false;
-let WZ_UNITFILTER='';   // Step 2 只看某個範圍路徑（book\u0001unit[\u0001sub[\u0001kp]]）
+let WZ_UNITFILTER='';   // Step 2 只看某個範圍路徑（field\u0001book\u0001unit[\u0001sub[\u0001kp]]）
 let WZ_UNITKEYS=[];     // 監控清單各節點 key（供點擊 index 對應）
 let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收合）
-let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（book|unit|sub）
-let WZ_TREEDATA=[];              // [{book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
+let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（field|book|unit|sub）
+let WZ_TREEDATA=[];              // [{field,book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
 const WZ_SEP='\u0001';
 const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
 function _wzBookOrder(b){const i=['JB1','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
-function _wzLeafKey(it){return (it.book||'')+WZ_SEP+(it.unit||'（未分類）')+WZ_SEP+(it.sub||'（未分類）');}
+function _wzFieldFor(it){
+  // 第五、六冊同時含理化與地科，不能僅用冊數或題目舊欄位判斷；以課綱的「冊＋單元＋子單元」為準。
+  const rec=SYL.find(k=>k.book===it.book&&k.unit===it.unit&&k.sub===it.sub)
+    ||SYL.find(k=>k.book===it.book&&k.unit===it.unit);
+  return (rec&&rec.field)||it.field||'未分類';
+}
+function _wzFieldOrder(f){const i=['生物','理化','地科','物理','化學'].indexOf(f);return i<0?99:i;}
+function _wzLeafKey(it){return _wzFieldFor(it)+WZ_SEP+(it.book||'')+WZ_SEP+(it.unit||'（未分類）')+WZ_SEP+(it.sub||'（未分類）');}
 function _wzPath(it){return _wzLeafKey(it)+WZ_SEP+(it.kp||'（未標知識點）');}
 function _wzPool(){return DB.filter(it=>it&&it.type!=='passage');}
 function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
@@ -4003,24 +4010,23 @@ function wzSetLevel(btn,lv){
   const s=document.getElementById('wzTreeSearch');if(s)s.value='';
   wzBuildTree();
 }
-// 依冊→大單元→子單元分組
+// 依科目＋冊→大單元→子單元分組。國九第五、六冊同時有理化與地科，絕不可合成同一冊節點。
 function wzBuildTree(){
   const pool=_wzPool().filter(it=>!WZ_LEVEL||_wzLevelOf(it.book)===WZ_LEVEL);
   const byBook={};
   pool.forEach(it=>{
-    const b=it.book||'（未分冊）',u=it.unit||'（未分類）',s=it.sub||'（未分類）';
-    byBook[b]=byBook[b]||{units:{}};
-    byBook[b].units[u]=byBook[b].units[u]||{subs:{}};
-    byBook[b].units[u].subs[s]=(byBook[b].units[u].subs[s]||0)+1;
+    const b=it.book||'（未分冊）',f=_wzFieldFor(it),u=it.unit||'（未分類）',s=it.sub||'（未分類）',key=f+WZ_SEP+b;
+    byBook[key]=byBook[key]||{book:b,field:f,units:{}};
+    byBook[key].units[u]=byBook[key].units[u]||{subs:{}};
+    byBook[key].units[u].subs[s]=(byBook[key].units[u].subs[s]||0)+1;
   });
-  const fieldOf={};pool.forEach(it=>{const b=it.book||'（未分冊）';if(!fieldOf[b]&&it.field)fieldOf[b]=it.field;});
-  WZ_TREEDATA=Object.keys(byBook).sort((a,b)=>_wzBookOrder(a)-_wzBookOrder(b)).map(b=>{
-    const units=Object.keys(byBook[b].units).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(u=>{
-      const subs=Object.keys(byBook[b].units[u].subs).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(s=>({sub:s,count:byBook[b].units[u].subs[s],key:b+WZ_SEP+u+WZ_SEP+s}));
+  WZ_TREEDATA=Object.values(byBook).sort((a,b)=>_wzBookOrder(a.book)-_wzBookOrder(b.book)||_wzFieldOrder(a.field)-_wzFieldOrder(b.field)||a.field.localeCompare(b.field,'zh-Hant')).map(group=>{
+    const units=Object.keys(group.units).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(u=>{
+      const subs=Object.keys(group.units[u].subs).sort((x,y)=>x.localeCompare(y,'zh-Hant')).map(s=>({sub:s,count:group.units[u].subs[s],key:group.field+WZ_SEP+group.book+WZ_SEP+u+WZ_SEP+s}));
       return {unit:u,count:subs.reduce((n,x)=>n+x.count,0),subs};
     });
-    const lbl=/^JB[1-6]$/.test(b)?((fieldOf[b]?fieldOf[b]+' ':'')+(_WZ_BOOKLABEL[b]||b)):b;
-    return {book:b,label:lbl,count:units.reduce((n,x)=>n+x.count,0),units};
+    const bookLabel=/^JB[1-6]$/.test(group.book)?(_WZ_BOOKLABEL[group.book]||group.book):group.book;
+    return {field:group.field,book:group.book,label:group.field+' '+bookLabel,count:units.reduce((n,x)=>n+x.count,0),units};
   });
   // 預設所有層級（冊＋章）全部收合，畫面最初只顯示各冊，逐層展開，避免一次渲染過多
   WZ_COLLAPSED=new Set();
@@ -4241,13 +4247,14 @@ function wzRenderMonitor(){
   const diffRows=['簡單','中等','困難','極難'].map(l=>`<div class="wz-mon-row"><span><span style="color:${WZ_DIFFCOLOR[l]}">●</span> ${l}</span><b>${byLvl[l]}</b></div>`).join('');
   // 各範圍進度：大單元 → 子單元 → 知識點 三層可收合樹，每層顯示 已選/可用、可點擊下鑽
   const SEP='\u0001';
-  const tree={}; // uKey -> {book,unit,avail,pick,subs:{sKey->{sub,avail,pick,kps:{kKey->{kp,avail,pick}}}}}
+  const tree={}; // uKey -> {field,book,unit,avail,pick,subs:{sKey->{sub,avail,pick,kps:{kKey->{kp,avail,pick}}}}}
   pool.forEach(it=>{
-    const uKey=(it.book||'')+SEP+(it.unit||'（未分類）');
+    const field=_wzFieldFor(it);
+    const uKey=field+SEP+(it.book||'')+SEP+(it.unit||'（未分類）');
     const sName=it.sub||'（未分類）',sKey=uKey+SEP+sName;
     const kName=it.kp||'（未標知識點）',kKey=sKey+SEP+kName;
     const on=PICKS.has(it.id);
-    const u=tree[uKey]||(tree[uKey]={book:it.book||'',unit:it.unit||'（未分類）',avail:0,pick:0,subs:{}});
+    const u=tree[uKey]||(tree[uKey]={field,book:it.book||'',unit:it.unit||'（未分類）',avail:0,pick:0,subs:{}});
     u.avail++;if(on)u.pick++;
     const s=u.subs[sKey]||(u.subs[sKey]={sub:sName,avail:0,pick:0,kps:{}});
     s.avail++;if(on)s.pick++;
@@ -4260,9 +4267,9 @@ function wzRenderMonitor(){
   const caret=(key,has)=>has?`<span class="wz-mon-tw" onclick="event.stopPropagation();wzMonToggle('${encodeURIComponent(key)}')">${WZ_MONEXPANDED.has(key)?'▾':'▸'}</span>`:'<span class="wz-mon-tw"></span>';
   const nameCell=(key,label,title,pick)=>`<span class="wz-mon-uname" title="${esc(title)}" onclick="wzSetUnitFilter('${encodeURIComponent(key)}')">${dot(pick>0)} ${esc(label)}</span>`;
   let rows='';
-  Object.entries(tree).sort((a,b)=>(_wzBookOrder(a[1].book)-_wzBookOrder(b[1].book))||a[1].unit.localeCompare(b[1].unit,'zh-Hant')).forEach(([uKey,u])=>{
+  Object.entries(tree).sort((a,b)=>(_wzBookOrder(a[1].book)-_wzBookOrder(b[1].book))||(_wzFieldOrder(a[1].field)-_wzFieldOrder(b[1].field))||a[1].unit.localeCompare(b[1].unit,'zh-Hant')).forEach(([uKey,u])=>{
     rows+=`<div class="wz-mon-node lv0${WZ_UNITFILTER===uKey?' on':''}">${caret(uKey,Object.keys(u.subs).length>0)}`
-      +nameCell(uKey,u.unit,u.book+' '+u.unit,u.pick)
+      +nameCell(uKey,u.unit,u.field+' '+u.book+' '+u.unit,u.pick)
       +`<b style="color:${u.pick>0?'var(--red)':'#b0a595'}">${u.pick}/${u.avail}</b></div>`;
     if(!WZ_MONEXPANDED.has(uKey))return;
     Object.entries(u.subs).sort((a,b)=>a[1].sub.localeCompare(b[1].sub,'zh-Hant')).forEach(([sKey,s])=>{
