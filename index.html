@@ -4114,7 +4114,7 @@ function wzRenderList(){
       +`</div></div>`;
   }).join('');
   let banner='';
-  if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter(-1)">✕ 看全部範圍</button></div>`;}
+  if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter('')">✕ 看全部範圍</button></div>`;}
   document.getElementById('wzList').innerHTML=banner+(html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`);
   if(items.length>400)document.getElementById('wzList').innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或點右側單元逐一挑）</div>';
   wzRenderMonitor();
@@ -4158,28 +4158,25 @@ function wzRenderMonitor(){
     const k=s.kps[kKey]||(s.kps[kKey]={kp:kName,avail:0,pick:0});
     k.avail++;if(on)k.pick++;
   });
-  WZ_UNITKEYS=[];
+  // 節點一律用「key 本身」定位（encodeURIComponent 後放進 onclick，避免 \u0001／中文／引號問題），
+  // 不要用會隨展開收合而位移的陣列 index（曾造成按 C1 卻展開 C2、同鈕連按展開不同層的 bug）。
   const dot=done=>done?'<span style="color:#1f9d55">✔</span>':'<span style="color:#d9cfc0">○</span>';
-  const caret=(key,has)=>has?`<span class="wz-mon-tw" onclick="event.stopPropagation();wzMonToggle(${WZ_UNITKEYS.length})">${WZ_MONEXPANDED.has(key)?'▾':'▸'}</span>`:'<span class="wz-mon-tw"></span>';
+  const caret=(key,has)=>has?`<span class="wz-mon-tw" onclick="event.stopPropagation();wzMonToggle('${encodeURIComponent(key)}')">${WZ_MONEXPANDED.has(key)?'▾':'▸'}</span>`:'<span class="wz-mon-tw"></span>';
+  const nameCell=(key,label,title,pick)=>`<span class="wz-mon-uname" title="${esc(title)}" onclick="wzSetUnitFilter('${encodeURIComponent(key)}')">${dot(pick>0)} ${esc(label)}</span>`;
   let rows='';
   Object.entries(tree).sort((a,b)=>(_wzBookOrder(a[1].book)-_wzBookOrder(b[1].book))||a[1].unit.localeCompare(b[1].unit,'zh-Hant')).forEach(([uKey,u])=>{
-    const uIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(uKey);
-    const hasSub=Object.keys(u.subs).length>0;
-    rows+=`<div class="wz-mon-node lv0${WZ_UNITFILTER===uKey?' on':''}">${caret(uKey,hasSub)}`
-      +`<span class="wz-mon-uname" title="${esc(u.book+' '+u.unit)}" onclick="wzSetUnitFilter(${uIdx})">${dot(u.pick>0)} ${esc(u.unit)}</span>`
+    rows+=`<div class="wz-mon-node lv0${WZ_UNITFILTER===uKey?' on':''}">${caret(uKey,Object.keys(u.subs).length>0)}`
+      +nameCell(uKey,u.unit,u.book+' '+u.unit,u.pick)
       +`<b style="color:${u.pick>0?'var(--red)':'#b0a595'}">${u.pick}/${u.avail}</b></div>`;
     if(!WZ_MONEXPANDED.has(uKey))return;
     Object.entries(u.subs).sort((a,b)=>a[1].sub.localeCompare(b[1].sub,'zh-Hant')).forEach(([sKey,s])=>{
-      const sIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(sKey);
-      const hasKp=Object.keys(s.kps).length>0;
-      rows+=`<div class="wz-mon-node lv1${WZ_UNITFILTER===sKey?' on':''}">${caret(sKey,hasKp)}`
-        +`<span class="wz-mon-uname" title="${esc(s.sub)}" onclick="wzSetUnitFilter(${sIdx})">${dot(s.pick>0)} ${esc(s.sub)}</span>`
+      rows+=`<div class="wz-mon-node lv1${WZ_UNITFILTER===sKey?' on':''}">${caret(sKey,Object.keys(s.kps).length>0)}`
+        +nameCell(sKey,s.sub,s.sub,s.pick)
         +`<b style="color:${s.pick>0?'var(--red)':'#b0a595'}">${s.pick}/${s.avail}</b></div>`;
       if(!WZ_MONEXPANDED.has(sKey))return;
       Object.entries(s.kps).sort((a,b)=>a[1].kp.localeCompare(b[1].kp,'zh-Hant')).forEach(([kKey,k])=>{
-        const kIdx=WZ_UNITKEYS.length;WZ_UNITKEYS.push(kKey);
         rows+=`<div class="wz-mon-node lv2${WZ_UNITFILTER===kKey?' on':''}"><span class="wz-mon-tw"></span>`
-          +`<span class="wz-mon-uname" title="${esc(k.kp)}" onclick="wzSetUnitFilter(${kIdx})">${dot(k.pick>0)} ${esc(k.kp)}</span>`
+          +nameCell(kKey,k.kp,k.kp,k.pick)
           +`<b style="color:${k.pick>0?'var(--red)':'#b0a595'}">${k.pick}/${k.avail}</b></div>`;
       });
     });
@@ -4187,12 +4184,12 @@ function wzRenderMonitor(){
   el.innerHTML=`<h4>即時監控</h4><div class="wz-mon-big">${total}<small> 題已選 / 範圍共 ${pool.length} 題</small></div>`
     +`<div class="wz-mon-dbar">${bar}</div>${diffRows}`
     +`<div class="wz-mon-sec"><h4>各範圍進度</h4><div class="wz-mon-hint">▸ 展開看子單元／知識點 · 點名稱只看該範圍 · ✔＝已選過</div>`
-    +`<div class="wz-mon-node lv0${WZ_UNITFILTER===''?' on':''}"><span class="wz-mon-tw"></span><span class="wz-mon-uname" onclick="wzSetUnitFilter(-1)">＊ 全部範圍</span><b>${total}/${pool.length}</b></div>`
+    +`<div class="wz-mon-node lv0${WZ_UNITFILTER===''?' on':''}"><span class="wz-mon-tw"></span><span class="wz-mon-uname" onclick="wzSetUnitFilter('')">＊ 全部範圍</span><b>${total}/${pool.length}</b></div>`
     +(rows||'<div style="color:#b0a595;padding:4px 0">範圍是空的</div>')+`</div>`;
 }
-function wzMonToggle(i){const k=WZ_UNITKEYS[i];if(!k)return;if(WZ_MONEXPANDED.has(k))WZ_MONEXPANDED.delete(k);else WZ_MONEXPANDED.add(k);wzRenderMonitor();}
-function wzSetUnitFilter(i){
-  WZ_UNITFILTER=(i<0)?'':(WZ_UNITKEYS[i]||'');
+function wzMonToggle(enc){const k=decodeURIComponent(enc);if(!k)return;if(WZ_MONEXPANDED.has(k))WZ_MONEXPANDED.delete(k);else WZ_MONEXPANDED.add(k);wzRenderMonitor();}
+function wzSetUnitFilter(enc){
+  WZ_UNITFILTER=enc?decodeURIComponent(enc):'';
   // 下鑽時自動切回「待選」分頁，才看得到未選的題
   if(WZ_UNITFILTER&&WZ_TAB!=='pool'){WZ_TAB='pool';document.getElementById('wzTabPool').classList.add('on');document.getElementById('wzTabPick').classList.remove('on');}
   wzRenderList();
