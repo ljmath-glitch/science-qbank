@@ -571,7 +571,7 @@
 <div class="float" id="floatbar">
   <div class="n">已選 <b id="pickN">0</b> 題</div><div class="spacer"></div>
   <div class="float-btns">
-    <button class="btn primary" onclick="wzOpen()"><span class="l-full">組卷精靈</span><span class="l-short">精靈</span></button>
+    <button class="btn primary" onclick="location.href='composer.html'"><span class="l-full">組卷精靈</span><span class="l-short">精靈</span></button>
     <button class="btn" onclick="autoMix()"><span class="l-full">智慧組卷</span><span class="l-short">組卷</span></button>
     <button class="btn" onclick="clearPicks()">清空</button>
     <button class="btn" onclick="exportPaperCSV()">選題CSV</button>
@@ -3958,7 +3958,11 @@ function wzOpen(){
   const sel=document.getElementById('wzfType');
   sel.innerHTML='<option value="">全部題型</option>'+types.map(t=>`<option value="${esc(t)}">${esc(typeof typeName==='function'?typeName(t):t)}</option>`).join('');
 }
-function wzClose(){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
+function wzClose(){
+  // composer.html 是精靈的獨立入口；在該頁離開時直接回題庫管理，不露出 iframe 內的題庫畫面。
+  if(new URLSearchParams(location.search).has('embed')){top.location.href='index.html';return;}
+  document.getElementById('composer').hidden=true;document.body.style.overflow='';
+}
 function wzSetLevel(btn,lv){
   if(WZ_LEVEL!==lv)WZ_SCOPE=new Set();   // 換學制清空既有勾選，避免夾帶另一學制的隱藏選取
   WZ_LEVEL=lv;WZ_COLLAPSED=new Set();
@@ -4051,6 +4055,11 @@ function wzFilterTree(){wzRenderTree();}
 function wzScopeCount(){return _wzPool().filter(wzInScope).length;}
 // 步驟切換
 function wzSetStep(n){
+  // 離開選題步驟時，不讓尚未顯示的清單公式繼續佔用主執行緒。
+  if(n!==2){
+    clearTimeout(window._wzMathRenderTimer);
+    if(window._wzMathObserver){window._wzMathObserver.disconnect();window._wzMathObserver=null;}
+  }
   WZ_STEP=n;
   document.querySelectorAll('#composer .wz-pane').forEach(p=>p.hidden=(+p.dataset.s!==n));
   document.querySelectorAll('#composer .wz-step').forEach(s=>{const si=+s.dataset.s;s.classList.toggle('on',si===n);s.classList.toggle('done',si<n);});
@@ -4076,16 +4085,40 @@ function wzUpdateFoot(){
 // Step 2 清單
 function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
 const WZ_DIFFCOLOR={'簡單':'#1f9d55','中等':'#d08700','困難':'#d9480f','極難':'#a4133c','未評分':'#b0a595'};
-// 簡化預覽：去富文字標記→把 $LaTeX$ 轉成可讀 unicode(latexToPlain)→收斂空白。不要用方框佔位(會跟填空□混淆)
-function _wzSimple(it){return esc(latexToPlain(stripRichMarks(it.q||it.summary||'').replace(/\{\{[^}]*\}\}/g,'')).replace(/\s+/g,' ').trim()).slice(0,110);}
+// 精靈題目文字：先把 $LaTex$ 暫存，才做文字標記／關鍵字標示。
+// 否則標示用的 <span> 可能插進公式字串，KaTeX 就會把公式當成一般 code 顯示。
+function _wzMathHtml(raw,highlight){
+  const maths=[];
+  const protectedText=fixLatex(raw||'').replace(/\$([^$]+)\$/g,function(_,formula){
+    const token='@@WZMATH'+maths.length+'@@';
+    maths.push('$'+formula+'$');
+    return token;
+  });
+  let html=applyRichMarks(esc(protectedText).replace(/\n/g,'<br>'));
+  if(highlight)html=hlNames(hlKw(html));
+  return html.replace(/@@WZMATH(\d+)@@/g,function(_,index){return maths[+index]||'';});
+}
+function _wzClipPreview(raw,max){
+  const text=(raw||'').replace(/\s+/g,' ').trim();
+  if(text.length<=max)return text;
+  // 不從半截 LaTeX 公式中間截斷；必要時多保留到右側 $，讓預覽仍可正常算式渲染。
+  const before=text.slice(0,max),dollars=(before.match(/\$/g)||[]).length;
+  if(dollars%2){const close=text.indexOf('$',max);if(close>=0)return text.slice(0,close+1)+'…';}
+  return before+'…';
+}
+// 清單預覽也保留可渲染公式，不再把 \frac、\sqrt 等公式指令直接露給工讀生看。
+function _wzSimple(it){
+  const raw=stripRichMarks(it.q||it.summary||'').replace(/\{\{[^}]*\}\}/g,'');
+  return _wzMathHtml(_wzClipPreview(raw,110),false);
+}
 function _wzFullHtml(it){
   let ph='';
   const gid=it.groupId||'';
-  if(gid&&PASSAGES[gid]){const ps=PASSAGES[gid];ph=`<div class="wz-passage"><b>【題組文章】</b><br>${applyRichMarks(esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>'))}${(ps.imgs||[]).map(imgHtml).join('')}</div>`;}
-  const qh=applyRichMarks(hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))));
+  if(gid&&PASSAGES[gid]){const ps=PASSAGES[gid];ph=`<div class="wz-passage"><b>【題組文章】</b><br>${_wzMathHtml(ps.q||'',false)}${(ps.imgs||[]).map(imgHtml).join('')}</div>`;}
+  const qh=_wzMathHtml(it.q||it.summary||'',true);
   const imgs=(it.imgs||[]).map(imgHtml).join('');
   const ans=it.ans?`<div class="wz-ans">答案：${esc(it.ans)}</div>`:'';
-  const sol=(it.sol&&it.sol.trim())?`<div class="wz-sol">${applyRichMarks(esc(fixLatex(it.sol)).replace(/\n/g,'<br>'))}</div>`:'';
+  const sol=(it.sol&&it.sol.trim())?`<div class="wz-sol">${_wzMathHtml(it.sol,false)}</div>`:'';
   return ph+`<div>${qh}</div>${imgs}${ans}${sol}`;
 }
 function wzRenderList(){
@@ -4115,16 +4148,48 @@ function wzRenderList(){
   }).join('');
   let banner='';
   if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter('')">✕ 看全部範圍</button></div>`;}
-  document.getElementById('wzList').innerHTML=banner+(html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`);
-  if(items.length>400)document.getElementById('wzList').innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或點右側單元逐一挑）</div>';
+  const list=document.getElementById('wzList');
+  if(window._wzMathObserver){window._wzMathObserver.disconnect();window._wzMathObserver=null;}
+  clearTimeout(window._wzMathRenderTimer);
+  list.innerHTML=banner+(html||`<div style="padding:20px;text-align:center;color:#9a8f83">${WZ_TAB==='pick'?'尚未選題':'此條件下沒有題目'}</div>`);
+  if(items.length>400)list.innerHTML+='<div style="padding:10px;text-align:center;color:#9a8f83;font-size:12px">（超過 400 題，僅顯示前 400；請縮小範圍或點右側單元逐一挑）</div>';
+  // 只渲染捲到畫面裡的題目摘要。以前一次跑 400 題 KaTeX，切到設定／輸出時仍會卡住。
+  // 完整題目仍在點開時即時渲染，因此不會犧牲公式正確性。
+  const renderVisible=function(node){
+    if(!node||node.dataset.wzMathDone)return;
+    node.dataset.wzMathDone='1';
+    if(typeof renderMath==='function')renderMath(node);
+  };
+  const previews=[...list.querySelectorAll('.wz-qtext')];
+  if('IntersectionObserver' in window){
+    window._wzMathObserver=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){if(entry.isIntersecting){renderVisible(entry.target);window._wzMathObserver.unobserve(entry.target);}});
+    },{root:null,rootMargin:'180px 0px'});
+    previews.forEach(function(node){window._wzMathObserver.observe(node);});
+  }else{
+    // 舊瀏覽器保底：只做首屏少量摘要，而不是整批阻塞畫面。
+    window._wzMathRenderTimer=setTimeout(function(){previews.slice(0,16).forEach(renderVisible);},60);
+  }
   wzRenderMonitor();
 }
 function wzToggleExpand(id){
   const full=document.getElementById('wzfull-'+id);if(!full)return;
   if(full.hidden){
-    if(!full.dataset.built){const it=DB.find(x=>x.id===id);if(it){full.innerHTML=_wzFullHtml(it);full.dataset.built='1';if(typeof renderMath==='function')renderMath(full);}}
     full.hidden=false;
-  }else full.hidden=true;
+    if(!full.dataset.built){
+      // 點擊當下只開啟容器，下一個畫面幀才插入圖片／公式；大題組不會把點擊事件卡住。
+      full.innerHTML='<div class="wz-full-loading">正在載入完整題目…</div>';
+      const build=function(){
+        if(full.hidden||full.dataset.built)return;
+        const it=DB.find(x=>x.id===id);if(!it)return;
+        // 大圖延後解碼，避免展開一題時同步解碼整張掃描頁面。
+        full.innerHTML=_wzFullHtml(it).replace(/<img /g,'<img loading="lazy" decoding="async" ');
+        full.dataset.built='1';
+        setTimeout(function(){if(!full.hidden&&typeof renderMath==='function')renderMath(full);},0);
+      };
+      full._wzBuildTimer=setTimeout(build,0);
+    }
+  }else{clearTimeout(full._wzBuildTimer);full.hidden=true;}
 }
 function wzEdit(id){if(typeof openEdit==='function')openEdit(id);else alert('找不到編輯功能');}
 function wzSyncPickStates(){
@@ -4203,7 +4268,9 @@ function wzPick(id){
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
 function wzToExport(){
   if(!PICKS.size){alert('尚未選題');return;}
-  wzClose();
+  // 獨立精靈頁要在本頁接著開啟考卷預覽；只有點右上角離開才回題庫管理。
+  if(new URLSearchParams(location.search).has('embed')){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
+  else wzClose();
   if(typeof openPaperDlg==='function')openPaperDlg();
 }
 
@@ -4452,7 +4519,11 @@ function showPaperPreview(){if(!PICKS.size)return;
   pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
   document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';renderMath(pvSheet);window.scrollTo(0,0);
   _rebuildLastPaperHTML();}
-function closePaper(){document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';}
+function closePaper(){
+  document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';
+  // 從獨立組卷頁完成預覽後，回到題庫管理，而不是露出 iframe 背後的題庫頁。
+  if(new URLSearchParams(location.search).has('embed'))top.location.href='index.html';
+}
 function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
 
 /* ===== 備份/還原 ===== */
