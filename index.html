@@ -200,46 +200,37 @@
   .dlg-foot{padding:13px 20px;border-top:1px solid var(--line);display:flex;gap:9px;justify-content:flex-end;background:#f8f8f6;flex-wrap:wrap}
   .x{cursor:pointer;font-size:22px;line-height:1;background:none;border:none;color:var(--muted);padding:0 2px}
   .x:hover{color:var(--red)}
-  /* 匯出設定：左側精簡操作、右側 A4 即時縮圖，避免長長一串選項遮住文件樣貌。 */
-  #paperDlg{width:min(1160px,96vw);max-width:1160px}
-  #paperDlg .dlg-body{max-height:70vh;padding:0;overflow:hidden}
-  .paper-settings-layout{display:grid;grid-template-columns:minmax(330px,.9fr) minmax(330px,1.1fr);min-height:560px}
-  .paper-settings-controls{padding:18px 20px;overflow:auto;border-right:1px solid var(--line)}
-  .paper-settings-controls .field{margin-bottom:14px}
-  .paper-settings-controls .field>label{font-size:12px;letter-spacing:.7px;color:#766d62;margin-bottom:6px}
-  .paper-template-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-  .paper-template-row .chk{padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;font-size:12px}
-  .paper-optional{border:1px solid #e7dfd3;border-radius:9px;background:#fbfaf7;padding:0 11px;margin-bottom:14px}
-  .paper-optional summary{cursor:pointer;padding:10px 0;font-size:12px;font-weight:700;color:#6f655a;list-style:none}
-  .paper-optional summary::-webkit-details-marker{display:none}
-  .paper-optional summary::after{content:'⌄';float:right;color:var(--red);font-size:15px}
-  .paper-optional[open] summary{border-bottom:1px dashed #e3dbcf;margin-bottom:10px}
-  .paper-options{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px}
-  .paper-options .chk{font-size:12px;line-height:1.4}
-  .paper-settings-preview{background:#f2f0ec;padding:15px;display:flex;flex-direction:column;min-height:0}
-  .pdoc-preview-head{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:800;color:var(--ink);margin:0 0 10px 3px}
-  .pdoc-preview-head small{font-size:11px;color:var(--muted);font-weight:600}
-  .pdoc-viewport{flex:1;min-height:0;overflow:auto;background:#e2ded7;border:1px solid #d5d0c7;border-radius:10px;padding:20px;box-sizing:border-box}
-  .pdoc-paper{width:min(100%,430px);min-height:590px;margin:0 auto;background:#fff;box-shadow:0 4px 15px rgba(43,32,28,.2);padding:30px 32px;box-sizing:border-box;color:#252525;font-family:'HuaKangTNR',"Noto Sans TC",sans-serif;font-size:11px;line-height:1.7}
+  /* 匯出設定採用整頁式設定卡：與示意圖相同的全寬區塊，不把設定壓縮在左欄。 */
+  #paperDlg{width:min(1280px,96vw);max-width:1280px}
+  #paperDlg .dlg-body{max-height:72vh;padding:0;overflow:auto}
+  .paper-settings-layout{display:block;min-height:0;background:#f7f5f1;padding:18px}
+  .paper-settings-controls{padding:0;overflow:visible;border-right:0;background:transparent}
+  .paper-settings-controls .field{margin-bottom:15px}
+  .paper-settings-controls .field>label{font-size:12px;letter-spacing:.7px;color:#45515d;margin-bottom:7px;font-weight:800}
+  .paper-template-row{display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:10px}
+  .paper-template-row .chk{min-height:43px;box-sizing:border-box;padding:9px 12px;border:1px solid #e6d4bd;border-radius:8px;background:#fffaf3;color:#5a4036;font-size:13px;font-weight:700}
+  .paper-options{display:grid;grid-template-columns:repeat(3,minmax(170px,1fr));gap:9px 14px;padding:14px;background:#faf6ef;border-radius:9px}
+  .paper-options .chk{font-size:13px;line-height:1.4;color:#5c5046}
+  .paper-settings-preview{margin-top:14px;background:#fff;border:1px solid #e2d7c8;border-radius:13px;overflow:hidden;box-shadow:0 3px 11px rgba(78,48,37,.08);padding:0;display:block;min-height:0}
+  .pdoc-preview-head{display:flex;align-items:center;gap:10px;min-height:54px;margin:0;padding:0 16px;box-sizing:border-box;background:linear-gradient(135deg,#920205,#760002);color:#fff;font-size:15px;font-weight:800;letter-spacing:.5px}
+  .pdoc-preview-head small{font-size:11px;color:#7a1e1c;background:#fffaf2;border:1px solid #ead8bd;border-radius:999px;padding:4px 8px;font-weight:700}
+  .pdoc-viewport{min-height:650px;overflow:auto;background:#e7e2d9;border-top:1px solid #e0d5c6;padding:28px;box-sizing:border-box}
+  .pdoc-paper{width:min(100%,590px);min-height:820px;margin:0 auto;background:#fff;box-shadow:0 5px 18px rgba(43,32,28,.22);padding:42px 48px;box-sizing:border-box;color:#252525;font-family:'HuaKangTNR',"Noto Sans TC",sans-serif;font-size:13px;line-height:1.8}
   .pdoc-paper h1{text-align:center;font-size:19px;letter-spacing:2px;margin:0 0 12px;padding-bottom:7px;border-bottom:2px solid var(--gold)}
   .pdoc-paper .exam-hdr{transform:scale(.82);transform-origin:top left;width:122%;margin-bottom:2px}
   .pdoc-paper .exam-hdr-logo img{height:35px}.pdoc-paper .exam-hdr-left,.pdoc-paper .exam-hdr-right{padding:8px 11px}.pdoc-paper .exam-hdr-gs{font-size:13pt}.pdoc-paper .exam-hdr-name{font-size:11pt}
   .pdoc-paper .pdoc-meta{text-align:right;color:#888;font-size:10px;margin:3px 0 9px}.pdoc-paper .pdoc-q{margin:0 0 10px}.pdoc-paper .pdoc-more{text-align:center;color:#999;border-top:1px dashed #ccc;padding-top:9px;margin-top:14px}
   /* 參考出題系統的設定介面：深藍標題列＋明確段落，細節可收合。 */
-  .paper-settings-controls{background:#f8f6f1;padding:15px}
-  .paper-section{border:1px solid #e2d7c8;border-radius:13px;background:#fff;overflow:hidden;margin:0 0 12px;box-shadow:0 3px 11px rgba(78,48,37,.08)}
-  .paper-section>summary{display:flex;align-items:center;gap:9px;min-height:48px;box-sizing:border-box;padding:0 14px;background:linear-gradient(135deg,#920205,#760002);color:#fff;cursor:pointer;list-style:none;font-size:15px;font-weight:800;letter-spacing:.5px}
+  .paper-section{border:1px solid #e2d7c8;border-radius:13px;background:#fff;overflow:hidden;margin:0 0 14px;box-shadow:0 3px 11px rgba(78,48,37,.08)}
+  .paper-section>summary{display:flex;align-items:center;gap:10px;min-height:58px;box-sizing:border-box;padding:0 18px;background:linear-gradient(135deg,#920205,#760002);color:#fff;cursor:pointer;list-style:none;font-size:17px;font-weight:800;letter-spacing:.7px}
   .paper-section>summary::-webkit-details-marker{display:none}
   .paper-section>summary::after{content:'⌄';margin-left:auto;width:22px;height:22px;border:1.5px solid rgba(255,255,255,.9);border-radius:50%;display:grid;place-items:center;font-size:18px;line-height:15px;transform:rotate(0);transition:.18s}
   .paper-section[open]>summary::after{transform:rotate(180deg)}
   .paper-section-summary{display:inline-flex;gap:5px;align-items:center;min-width:0;font-size:11px;font-weight:700;color:#7a1e1c;background:#fffaf2;border:1px solid #ead8bd;border-radius:999px;padding:4px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .paper-section-body{padding:14px;background:linear-gradient(180deg,#fff,#fdfbf7)}
+  .paper-section-body{padding:20px 22px;background:linear-gradient(180deg,#fff,#fdfbf7)}
   .paper-section-body .field:last-child{margin-bottom:0}
-  .paper-settings-controls .field>label{font-size:12px;color:#45515d;font-weight:800}
-  .paper-template-row{grid-template-columns:1fr 1fr}.paper-template-row .chk{border-color:#e6d4bd;background:#fffaf3;color:#5a4036;font-weight:700}
-  .paper-options{grid-template-columns:1fr 1fr;padding:11px;background:#faf6ef;border-radius:9px}.paper-options .chk{font-size:12px;color:#5c5046}
   .paper-output-select{font-weight:700;border-color:#d7bca0!important;background:#fffdf9!important}
-  @media(max-width:800px){#paperDlg .dlg-body{max-height:72vh;overflow:auto}.paper-settings-layout{grid-template-columns:1fr}.paper-settings-controls{border-right:0}.paper-settings-preview{min-height:420px}.pdoc-paper{min-height:500px}.grid4{grid-template-columns:1fr 1fr}}
+  @media(max-width:800px){#paperDlg .dlg-body{max-height:72vh;overflow:auto}.paper-settings-layout{padding:10px}.paper-settings-preview{min-height:420px}.pdoc-viewport{min-height:450px;padding:16px}.pdoc-paper{min-height:500px;padding:26px 22px;font-size:11px}.paper-options{grid-template-columns:1fr 1fr}.grid4{grid-template-columns:1fr 1fr}}
   /* 統一的彈出視窗（與 <dialog> 一致：置中、固定寬、同款標題/內文/底部） */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(45,48,56,.45);z-index:9999;align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
   .modal-card{background:#fff;border-radius:14px;width:min(95vw,760px);max-height:85vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
