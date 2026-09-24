@@ -345,7 +345,12 @@
   .exam-hdr-vsep{width:2px;background:#999;align-self:stretch;margin:12px 0;flex-shrink:0}
   .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
   .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
-  .abk-preview-head{display:flex;justify-content:space-between;align-items:end;border-bottom:2px double #777;padding:0 3px 8px;margin-bottom:14px;font-family:"Times New Roman",serif}.abk-preview-head span,.abk-preview-head em{font-size:9pt;font-style:normal;letter-spacing:.5px}.abk-preview-head b{font-size:16pt;letter-spacing:1px}
+  /* 輔導課 ABK：依提供的 B4 範本呈現左側淡浮水印、三段式卷頭、雙線與雙欄分隔。 */
+  .pv-sheet.abk-preview{position:relative;overflow:hidden;padding:50px 52px 58px;font-family:'DFPYuanMedium-B5','HuaKangTNR',"Times New Roman",serif;color:#171717;line-height:1.58}
+  .pv-sheet.abk-preview:before{content:'';position:absolute;z-index:0;left:-68px;top:32px;width:300px;height:450px;background:url('logo.png') center top/180px auto no-repeat;opacity:.07;transform:skewX(-20deg)}
+  .pv-sheet.abk-preview>*{position:relative;z-index:1}
+  .abk-preview-head{display:grid;grid-template-columns:1fr 2fr 1fr;align-items:end;border-bottom:3px double #303030;padding:0 2px 8px;margin:0 0 16px;font-family:"Times New Roman",serif}.abk-preview-head span{font-size:9pt;letter-spacing:.8px}.abk-preview-head b{text-align:center;font-size:17pt;letter-spacing:1px}.abk-preview-head em{text-align:right;font-size:9pt;font-style:normal;letter-spacing:.4px;white-space:nowrap}
+  .pv-sheet.abk-preview .paper-2col{column-gap:38px;column-rule:1px solid #777}.pv-sheet.abk-preview .paper-major{color:#171717;border-bottom:1px solid #555;font-size:12pt;margin:14px 0 9px;padding-bottom:3px}.pv-sheet.abk-preview .q{margin-bottom:13px}.pv-sheet.abk-preview .pdoc-meta{color:#444}
   .pv-sheet .q{margin-bottom:18px;font-style:normal;page-break-inside:avoid;break-inside:avoid}
   .pv-sheet .paper-major{font-size:13pt;color:#70562d;letter-spacing:1px;border-bottom:1px solid #b9a480;padding-bottom:4px;margin:20px 0 10px;break-after:avoid}
   .pv-sheet .passage-block{page-break-inside:avoid;break-inside:avoid}
@@ -3557,7 +3562,7 @@ function pvInlineImageChange(input){
     await _pvSave(type,id);
   };reader.readAsDataURL(file);
 }
-function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0;pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';}
+function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0,selectedKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';pvSheet.classList.toggle('abk-preview',selectedKind==='abk');pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;}
 function pvSetColumns(twoCol){_pvPushHist();paperSetLayout(!!twoCol);_pvRebuild();_rebuildLastPaperHTML();}
 async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
@@ -4698,6 +4703,7 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
 function showPaperPreview(){if(!PICKS.size)return;
   _pvResetHist();
+  pvSheet.classList.toggle('abk-preview',((document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre')==='abk');
   pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
   document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';renderMath(pvSheet);window.scrollTo(0,0);
   _rebuildLastPaperHTML();}
