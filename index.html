@@ -4519,7 +4519,7 @@ function refreshPaperSettingsPreview(){
   let previousSection=previousCount?(sections.groupIds.has(sections.ordered[previousCount-1].groupId)?'group':'single'):'';
   const shownPassages=new Set(sections.ordered.slice(0,previousCount).map(it=>it.groupId).filter(Boolean));
   const qs=items.map(function(it,i){
-    const section=sections.groupIds.has(it.groupId)?'group':'single';
+    const section=sections.kindOf(it);
     const sectionHead=section!==previousSection?`<h2 class="pdoc-major">${paperSectionTitle(section,sections)}</h2>`:'';previousSection=section;
     const text=applyRichMarks(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'));
     let extra='';
@@ -4575,9 +4575,10 @@ function orderPaperItems(items){
 }
 // 題組判定規則：只有「題組編號＋實際題組文章／圖」才算題組題。
 // 「承上題」以及沒有文章、沒有題組圖的資料，即使帶有題組編號，也維持單選題。
+function _paperIsMultiAns(it){return String(it.ans||'').replace(/[^A-Ea-e]/g,'').length>=2;}
 function paperQuestionSections(items){
-  const ordered=orderPaperItems(items);
-  const single=[],grouped=[],groupIds=new Set();
+  const ordered0=orderPaperItems(items);
+  const groupIds=new Set();
   const isRealGroup=(it)=>{
     const gid=it.groupId||''; if(!gid)return false;
     const p=PASSAGES[gid]||{};
@@ -4585,19 +4586,29 @@ function paperQuestionSections(items){
     const text=[it.q,it.summary,p.q].filter(Boolean).join(' ');
     return hasPassage&&!/(承上題|承上|續前題|延續前題)/.test(text);
   };
-  ordered.forEach(it=>{
-    if(isRealGroup(it)){grouped.push(it);groupIds.add(it.groupId);}
-    else single.push(it);
-  });
-  return {single,grouped,groupIds,ordered:[...single,...grouped]};
+  ordered0.forEach(it=>{if(isRealGroup(it))groupIds.add(it.groupId);});
+  // 分區：單選 / 多選 / 題組 / 非選擇（填、計）
+  const kindOf=(it)=>{
+    if(groupIds.has(it.groupId))return 'group';
+    const t=String(it.type||'');
+    if(t==='填'||t==='計')return 'nonchoice';
+    return _paperIsMultiAns(it)?'multi':'single';
+  };
+  const rank={single:0,multi:1,group:2,nonchoice:3};
+  // 穩定排序：同一分區內維持 orderPaperItems 原順序（題組因此保持相鄰）
+  const ordered=ordered0.map((it,i)=>[it,i]).sort((a,b)=>{const r=rank[kindOf(a[0])]-rank[kindOf(b[0])];return r!==0?r:a[1]-b[1];}).map(x=>x[0]);
+  const present=new Set(ordered.map(kindOf));
+  return {ordered,groupIds,kindOf,present,single:ordered.filter(it=>kindOf(it)==='single'),grouped:ordered.filter(it=>kindOf(it)==='group')};
 }
+const _PAPER_SECTION_LABEL={single:'單選題',multi:'多選題',group:'題組題',nonchoice:'非選擇題'};
+const _PAPER_SECTION_ORDER=['single','multi','group','nonchoice'];
+const _PAPER_CN=['一','二','三','四','五','六'];
 function paperSectionLabel(kind,sections){
-  const n=kind==='single'||!sections.single.length?'一':'二';
-  return `${n}、${kind==='single'?'單選題':'題組題'}`;
+  const pres=_PAPER_SECTION_ORDER.filter(k=>sections&&sections.present&&sections.present.has(k));
+  const i=pres.indexOf(kind);
+  return `${_PAPER_CN[i]||''}、${_PAPER_SECTION_LABEL[kind]||kind}`;
 }
-function paperSectionTitle(kind,sections){
-  return paperSectionLabel(kind,sections);
-}
+function paperSectionTitle(kind,sections){return paperSectionLabel(kind,sections);}
 // 預覽「上一步／重做」：記錄排序與刪題等結構性動作的快照，供工具列 ↶/↷ 復原（文字編輯本身用瀏覽器原生 Ctrl+Z）
 let _pvUndoStack=[],_pvRedoStack=[];
 function _pvSnapshot(){return {picks:[...PICKS],order:PV_ORDER?[...PV_ORDER]:null};}
@@ -4701,7 +4712,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   let currentSection='';
   const answers=[];
   const bodyParts=sorted.map(it=>{
-    const itemSection=paperSections.groupIds.has(it.groupId)?'group':'single';
+    const itemSection=paperSections.kindOf(it);
     const major=itemSection!==currentSection?`<h2 class="paper-major">${paperSectionTitle(itemSection,paperSections)}</h2>`:'';currentSection=itemSection;
     // 解析卷簡：只列「題號＋答案＋詳解」，不印題目/圖/題組/作答空白（僅輸出，不套用於預覽編輯）
     if(ansMode==='solbrief'&&!forPreview){
@@ -7415,7 +7426,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     for(let i=0;i<sorted.length;i++){
       const it=sorted[i];
       const gid=it.groupId||'';
-      const itemSection=paperSections.groupIds.has(gid)?'group':'single';
+      const itemSection=paperSections.kindOf(it);
       if(itemSection!==currentSectionW){children.push(new Paragraph({children:[tr({text:paperSectionTitle(itemSection,paperSections),bold:true,size:22,color:'70562D'})],spacing:{before:180,after:70},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'B9A480'}}}));currentSectionW=itemSection;}
       // ── 解析卷簡：只輸出「編號＋答案＋詳解」，不印題目/圖/題組 ──
       if(ansMode==='solbrief'){
