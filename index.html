@@ -223,6 +223,10 @@
   .pdoc-paper .pdoc-meta{text-align:right;color:#888;font-size:9px;margin:3px 0 9px}.pdoc-paper .pdoc-q{margin:0 0 9px}.pdoc-paper .pdoc-more{text-align:center;color:#999;border-top:1px dashed #ccc;padding-top:9px;margin-top:14px}
   .pdoc-paper .pdoc-major{font-size:12px;color:#70562d;letter-spacing:1px;border-bottom:1px solid #b9a480;margin:14px 0 8px;padding-bottom:3px}.pdoc-paper .pdoc-abk-head{position:relative;display:flex;justify-content:space-between;align-items:end;border-bottom:2px double #777;padding:0 4px 7px;margin-bottom:9px;font-family:'Times New Roman',serif}.pdoc-paper .pdoc-abk-head span{font-size:8px;letter-spacing:.7px}.pdoc-paper .pdoc-abk-head b{font-size:16px;letter-spacing:1px}.pdoc-paper .pdoc-abk-head em{font-size:8px;font-style:normal}
   .pdoc-paper .pdoc-question-columns{column-count:2;column-gap:26px}.pdoc-paper .pdoc-question-columns .pdoc-q{break-inside:avoid-column;-webkit-column-break-inside:avoid}
+  /* 設定視窗內的 ABK 縮圖：依 B4 實際頁面、0.5 吋邊界與雙欄中線縮放，不沿用課前考的 A4 卡片。 */
+  .pdoc-paper.abk-doc-preview{position:relative;width:min(100%,560px);min-height:792px;padding:27px 30px 34px;font-family:'DFPYuanMedium-B5','HuaKangTNR',"Times New Roman",serif;line-height:1.56;overflow:hidden}
+  .pdoc-paper.abk-doc-preview:before{content:'';position:absolute;left:-46px;top:20px;width:180px;height:270px;background:url('logo.png') center top/108px auto no-repeat;opacity:.07;transform:skewX(-20deg)}
+  .pdoc-paper.abk-doc-preview>*{position:relative;z-index:1}.pdoc-paper.abk-doc-preview .pdoc-abk-head{grid-template-columns:1fr 2fr 1fr;display:grid;margin-bottom:10px}.pdoc-paper.abk-doc-preview .pdoc-abk-head b{text-align:center;font-size:14px}.pdoc-paper.abk-doc-preview .pdoc-abk-head em{text-align:right;white-space:nowrap}.pdoc-paper.abk-doc-preview .pdoc-major{color:#222;border-color:#555;font-size:10px;margin:10px 0 6px}.pdoc-paper.abk-doc-preview .pdoc-question-columns{column-gap:24px;column-rule:1px solid #777}.pdoc-paper.abk-doc-preview .pdoc-q{font-size:9px;line-height:1.56;margin-bottom:7px}.pdoc-paper.abk-doc-preview .pdoc-meta{font-size:8px;margin-bottom:7px}
   /* 茲茲系統設定卡：保留清楚層次，但不用厚重的滿版色帶。 */
   .paper-section{border:1px solid #e2d7c8;border-radius:13px;background:#fff;overflow:hidden;margin:0 0 14px;box-shadow:0 3px 11px rgba(78,48,37,.08)}
   .paper-section>summary{display:flex;align-items:center;gap:10px;min-height:44px;box-sizing:border-box;padding:0 14px;background:#fffaf3;color:var(--red);border-left:4px solid var(--red);cursor:pointer;list-style:none;font-size:14px;font-weight:800;letter-spacing:.5px}
@@ -4445,6 +4449,7 @@ function refreshPaperSettingsPreview(){
   const items=sections.ordered.slice(0,3),title=(pTitle.value||'自然科測驗卷').trim();
   const mode=paperAnsMode(),template=(document.querySelector('input[name=pTemplate]:checked')||{}).value||'normal',header=buildExamHeader();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  target.classList.toggle('abk-doc-preview',paperKind==='abk');
   const showTag=(document.getElementById('pShowTag')||{}).checked,showSource=(document.getElementById('pShowSource')||{}).checked,showSourceFull=(document.getElementById('pShowSourceFull')||{}).checked;
   let previousSection='';
   const qs=items.map(function(it,i){
@@ -4463,7 +4468,7 @@ function refreshPaperSettingsPreview(){
   const abkHead=paperKind==='abk'?`<div class="pdoc-abk-head"><span>TZUTZU</span><b>${esc((document.getElementById('pScope')||{}).value||title)}</b><em>SCI-${esc((document.getElementById('pScope')||{}).value||'QBANK')} A</em></div>`:'';
   const mockHead=paperKind==='abk'?abkHead:(template==='mock'?`<div class="pdoc-mock-head"><b>${esc((document.getElementById('pExamName')||{}).value||title)}</b><span>${esc([(document.getElementById('pGrade')||{}).value,(document.getElementById('pSubject')||{}).value,(document.getElementById('pScope')||{}).value].filter(Boolean).join('　'))}</span><small>茲茲文教</small></div>`:(header||`<h1>${esc(title)}</h1>`));
   const modeLabel=mode==='full'?'解析卷（答案＋詳解）':mode==='both_full'?'題目卷（另輸出解析卷）':'題目卷';
-  const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${modeLabel}・前 3 題</small>`;
+  const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${paperKind==='abk'?'B4 實際比例縮圖':'A4 實際比例縮圖'}・${modeLabel}・前 3 題</small>`;
   target.innerHTML=mockHead+`<div class="pdoc-meta">${meta}</div>`+(previewQuestions||'<div class="pdoc-meta">尚未選題</div>')+(pickedItems().length>3?`<div class="pdoc-more">以下還有 ${pickedItems().length-3} 題…</div>`:'');
   renderMath(target);
 }
