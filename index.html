@@ -3485,11 +3485,14 @@ async function _pvTextBlur(el){
 function _pvFmt(cmd){if(_pvRestoreSelection()){_pvTextSnapshot();document.execCommand(cmd,false,null);_pvSyncActiveMarkup();}}
 function _pvUndo(){
   if(_pvTextUndo.length){const now={el:_pvActiveEdit,html:_pvActiveEdit&&_pvActiveEdit.innerHTML};const prev=_pvTextUndo.pop();if(now.el)_pvTextRedo.push(now);if(prev.el&&document.contains(prev.el)){_pvActiveEdit=prev.el;prev.el.innerHTML=prev.html;prev.el.focus();_pvSyncActiveMarkup();}return;}
-  _pvHistUndo();
+  if(_pvUndoStack.length){_pvHistUndo();return;}
+  // 沒有記錄的排序/格式快照時，退回瀏覽器原生復原（涵蓋純打字編輯）
+  try{if(_pvActiveEdit){_pvActiveEdit.focus();document.execCommand('undo');}}catch(_){}
 }
 function _pvRedo(){
   if(_pvTextRedo.length){const now={el:_pvActiveEdit,html:_pvActiveEdit&&_pvActiveEdit.innerHTML};const next=_pvTextRedo.pop();if(now.el)_pvTextUndo.push(now);if(next.el&&document.contains(next.el)){_pvActiveEdit=next.el;next.el.innerHTML=next.html;next.el.focus();_pvSyncActiveMarkup();}return;}
-  _pvHistRedo();
+  if(_pvRedoStack.length){_pvHistRedo();return;}
+  try{if(_pvActiveEdit){_pvActiveEdit.focus();document.execCommand('redo');}}catch(_){}
 }
 function _rgbToHex(c){
   if(!c)return '';c=String(c).trim();
@@ -4170,17 +4173,21 @@ function wzSetStep(n){
   document.querySelectorAll('#composer .wz-pane').forEach(p=>p.hidden=(+p.dataset.s!==n));
   document.querySelectorAll('#composer .wz-step').forEach(s=>{const si=+s.dataset.s;s.classList.toggle('on',si===n);s.classList.toggle('done',si<n);});
   document.getElementById('wzPrev').style.visibility=n===1?'hidden':'visible';
-  document.getElementById('wzNext').textContent=n===3?'—':'下一步 →';
+  document.getElementById('wzNext').textContent=n===2?'下一步：預覽 →':n===3?'—':'下一步 →';
   document.getElementById('wzNext').style.visibility=n===3?'hidden':'visible';
   if(n===2)wzRenderList();
   if(n===3)document.getElementById('wzStep3N').textContent=PICKS.size;
   wzUpdateFoot();
 }
 function wzGo(dir){
+  if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+  if(dir>0&&WZ_STEP===2){
+    if(PICKS.size===0){alert('請先選擇至少一題');return;}
+    wzToExport();   // 選題→下一步 直接進考卷預覽（跳過中間卡片）
+    return;
+  }
   const n=WZ_STEP+dir;
   if(n<1||n>3)return;
-  if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
-  if(dir>0&&WZ_STEP===2&&PICKS.size===0){alert('請先選擇至少一題');return;}
   wzSetStep(n);
 }
 function wzUpdateFoot(){
