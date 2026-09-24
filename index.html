@@ -1120,7 +1120,7 @@
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做">↷</button></span>
-    <span class="pv-tool-group"><select aria-label="字級" onchange="_pvApplySize(this.value);this.selectedIndex=0"><option value="">10</option><option value="10">10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
+    <span class="pv-tool-group"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value);this.selectedIndex=0"><option value="">10</option><option value="10">10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
@@ -3390,7 +3390,8 @@ async function _pvSave(type,id){
   _rebuildLastPaperHTML();
 }
 // ── 預覽文字：題目、答案、詳解皆可直接編輯；格式以輕量標記存回資料庫──
-let _pvActiveEdit=null,_pvSavedRange=null,PV_SHOW_ANS=false,PV_SHOW_SOL=false;
+let _pvActiveEdit=null,_pvSavedRange=null,_pvToolbarHoldUntil=0,PV_SHOW_ANS=false,PV_SHOW_SOL=false;
+function _pvToolbarHold(){_pvRememberSelection();_pvToolbarHoldUntil=Date.now()+1200;}
 function _pvRememberSelection(){
   const sel=window.getSelection();
   if(!_pvActiveEdit||!sel||!sel.rangeCount)return;
@@ -3421,6 +3422,8 @@ function _pvTextFocus(el){
 }
 async function _pvTextBlur(el){
   if(!el.dataset.editing)return;
+  // Safari 選擇 <select> 時會先讓 contenteditable 失焦；此時不能先重繪，否則會吃掉原本反白的文字。
+  if(Date.now()<_pvToolbarHoldUntil)return;
   delete el.dataset.editing;
   const type=el.dataset.rtype,id=el.dataset.rid;
   const markup=serializeRichText(el);
@@ -3463,6 +3466,12 @@ function _pvApplySize(pt){
   try{range.surroundContents(span);}
   catch(e){span.appendChild(range.extractContents());range.insertNode(span);}
   sel.removeAllRanges();
+}
+function _pvApplySizeAndCommit(pt){
+  _pvApplySize(pt);
+  _pvToolbarHoldUntil=0;
+  const el=_pvActiveEdit;
+  if(el)setTimeout(()=>_pvTextBlur(el),0);
 }
 function _pvInsertLatex(kind){
   const el=_pvActiveEdit;
