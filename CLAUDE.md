@@ -181,6 +181,8 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 - 答案顯示模式：無答案 / 答案卷 / 兩者都要（分開下載）
 - 匯出成 Word（`.docx`，`downloadWordDoc()`）或 HTML
 - 「選題CSV」：把目前勾選的題目匯出成 CSV（跟匯入格式類似，多一個算好的「難度」欄）
+- **解析卷（新）＝不含題目**：勾「解析卷」時（`ansMode` `full` 或 `both_full`）走 `downloadSolutionWord()`／`solutionExportQuestion()`，依 `exam-answer-key-formatter` 交接文件的詳解模板輸出：無框線對齊表格＝題號｜【答案】｜【詳解】共用說明＋逐選項 `(A)~(E) 正確/錯誤：理由`，**不印題目**；開頭一列簡答速查（答案每 5 題以 `/` 分隔）。`solutionExportQuestion` 依區塊解析，略去 stored `sol` 的【解題關鍵】【觀念補充】，只留【詳解】；沒有選項行時退回純文字詳解。公式維持 `$$...$$` 純文字（便於 MathType Toggle TeX）。`both_full`＝題目卷（無答案）＋解析卷兩檔。
+- **ABK 淡灰浮水印（新）**：資產 `watermark.png`（由 `logo.png` 剪影烘焙成 960px 淡灰，印刷夠清晰；`_fetchWatermarkLogoBytes()` 直接取用、保留舊 canvas 後備）。Word 與預覽 CSS（`.pdoc-abk-watermark` / `.pv-sheet.abk-preview:before`）皆為**直立**（不再 skew）、置於頁面**左緣、垂直置中**、放大，貼近實體範本。換 logo 時重跑烘焙即可。
 
 ### 6.6 統計報表（`openReport()`，`index.html:1858`）
 
