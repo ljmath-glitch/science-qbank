@@ -1122,10 +1122,11 @@
     <button class="btn primary" onclick="openPaperSettings()">下一步：匯出設定 →</button>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
-    <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvHistUndo()" title="復原排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvHistRedo()" title="重做">↷</button></span>
-    <span class="pv-tool-group"><select aria-label="字級" onmousedown="event.preventDefault()" onchange="_pvApplySize(this.value);this.selectedIndex=0"><option value="">10</option><option value="10">10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
-    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('$')" title="插入行內公式">公式</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\frac{}{}')" title="插入分數">分數</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('^{}')" title="上標公式">x²</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('_{}')" title="下標公式">x₂</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\mathrm{}')" title="化學式">H₂O</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\rightarrow')" title="反應箭頭">→</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="插入特殊符號">Ω</button></span>
-    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvLatexHelp()" title="展開 LaTeX 與 Word 公式小抄">公式小抄</button><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
+    <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做">↷</button></span>
+    <span class="pv-tool-group"><select aria-label="字級" onchange="_pvApplySize(this.value);this.selectedIndex=0"><option value="">10</option><option value="10">10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
+    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button></span>
+    <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
+    <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
   <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25^\\circ\\mathrm{C}$、$95^\\circ\\mathrm{F}$</code></div></div></div>
@@ -3392,13 +3393,32 @@ async function _pvSave(type,id){
   _rebuildLastPaperHTML();
 }
 // ── 預覽文字：題目、答案、詳解皆可直接編輯；格式以輕量標記存回資料庫──
-let _pvActiveEdit=null,PV_SHOW_ANS=false,PV_SHOW_SOL=false;
+let _pvActiveEdit=null,_pvSavedRange=null,PV_SHOW_ANS=false,PV_SHOW_SOL=false;
+function _pvRememberSelection(){
+  const sel=window.getSelection();
+  if(!_pvActiveEdit||!sel||!sel.rangeCount)return;
+  const range=sel.getRangeAt(0);
+  if(_pvActiveEdit.contains(range.commonAncestorContainer))_pvSavedRange=range.cloneRange();
+}
+document.addEventListener('selectionchange',_pvRememberSelection);
+function _pvActiveRange(collapseAtEnd=false){
+  const el=_pvActiveEdit;if(!el)return null;
+  const sel=window.getSelection();let range=null;
+  if(sel&&sel.rangeCount&&el.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0);
+  else if(_pvSavedRange&&el.contains(_pvSavedRange.commonAncestorContainer))range=_pvSavedRange.cloneRange();
+  else{range=document.createRange();range.selectNodeContents(el);range.collapse(!!collapseAtEnd);}
+  return range;
+}
+function _pvRestoreSelection(){
+  const range=_pvActiveRange();if(!range)return false;
+  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);_pvActiveEdit.focus();return true;
+}
 function _pvRawText(type,id){
   if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(!it)return '';return type==='q'?(it.q||it.summary||''):(it[type]||'');}
   const ps=PASSAGES[id];return ps?(ps.q||''):'';
 }
 function _pvTextFocus(el){
-  _pvActiveEdit=el;el.dataset.editing='1';
+  _pvActiveEdit=el;_pvSavedRange=null;el.dataset.editing='1';
   el.innerHTML=applyRichMarks(esc(_pvRawText(el.dataset.rtype,el.dataset.rid))).replace(/\n/g,'<br>');
   const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='flex';
 }
@@ -3412,7 +3432,9 @@ async function _pvTextBlur(el){
   if(_pvActiveEdit===el)_pvActiveEdit=null;
   await _pvSave(type,id);
 }
-function _pvFmt(cmd){if(_pvActiveEdit)document.execCommand(cmd,false,null);}
+function _pvFmt(cmd){if(_pvRestoreSelection())document.execCommand(cmd,false,null);}
+function _pvUndo(){if(_pvRestoreSelection()&&document.queryCommandEnabled('undo'))document.execCommand('undo',false,null);else _pvHistUndo();}
+function _pvRedo(){if(_pvRestoreSelection()&&document.queryCommandEnabled('redo'))document.execCommand('redo',false,null);else _pvHistRedo();}
 function _rgbToHex(c){
   if(!c)return '';c=String(c).trim();
   if(c[0]==='#')return c.length===4?('#'+[c[1],c[2],c[3]].map(x=>x+x).join('')):c.slice(0,7);
@@ -3422,9 +3444,9 @@ function _rgbToHex(c){
 }
 function _pvWrapStyle(prop,val){
   if(!_pvActiveEdit)return;
+  const range=_pvActiveRange();
+  if(!range||range.collapsed){alert('請先用滑鼠選取要套用的文字。');return;}
   const sel=window.getSelection();
-  if(!sel||!sel.rangeCount||sel.isCollapsed){alert('請先用滑鼠選取要套用的文字。');return;}
-  const range=sel.getRangeAt(0);
   const span=document.createElement('span');span.style[prop]=val;
   try{range.surroundContents(span);}
   catch(e){span.appendChild(range.extractContents());range.insertNode(span);}
@@ -3432,12 +3454,12 @@ function _pvWrapStyle(prop,val){
 }
 function _pvApplyColor(hex){_pvWrapStyle('color',hex);}
 function _pvApplyHighlight(hex){_pvWrapStyle('backgroundColor',hex);}
-function _pvClearFmt(){if(_pvActiveEdit){document.execCommand('removeFormat',false,null);document.execCommand('backColor',false,'transparent');}}
+function _pvClearFmt(){if(_pvRestoreSelection()){document.execCommand('removeFormat',false,null);document.execCommand('backColor',false,'transparent');}}
 function _pvApplySize(pt){
   if(!pt)return;
+  const range=_pvActiveRange();
+  if(!range||range.collapsed){alert('請先用滑鼠選取要設定字級的文字。');return;}
   const sel=window.getSelection();
-  if(!sel||!sel.rangeCount||sel.isCollapsed)return;
-  const range=sel.getRangeAt(0);
   const span=document.createElement('span');
   // 編輯器以 px 保存，匯出 Word 時再以 px × 1.5 換算 half-point；此處 1pt = 4/3px，故 Word 與畫面皆對應選取的 pt 字級。
   span.style.fontSize=Math.round(Number(pt)*4/3)+'px';
@@ -3448,15 +3470,14 @@ function _pvApplySize(pt){
 function _pvInsertLatex(kind){
   const el=_pvActiveEdit;
   if(!el){alert('請先點擊要修改的題目、答案或詳解文字。');return;}
-  const sel=window.getSelection();let range;
-  if(sel&&sel.rangeCount&&el.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0);else{range=document.createRange();range.selectNodeContents(el);range.collapse(false);}
+  const sel=window.getSelection(),range=_pvActiveRange(true);if(!range)return;
   const selected=range.toString();let text=kind,focusAt=-1;
   if(kind==='$'){text=selected?`$${selected}$`:'$公式$';focusAt=selected?-1:2;}
   else if(kind==='\\frac{}{}'){text=selected?`\\frac{${selected}}{}`:'\\frac{分子}{分母}';focusAt=selected?text.length-1:6;}
   else if(kind==='^{}'||kind==='_{}'){text=kind;focusAt=kind.indexOf('{')+1;}
   else if(kind==='\\mathrm{}'){text=selected?`\\mathrm{${selected}}`:'\\mathrm{化學式}';focusAt=selected?-1:8;}
   range.deleteContents();const node=document.createTextNode(text);range.insertNode(node);
-  const next=document.createRange(),pos=focusAt>=0?focusAt:text.length;next.setStart(node,pos);next.collapse(true);sel.removeAllRanges();sel.addRange(next);el.focus();
+  const next=document.createRange(),pos=focusAt>=0?focusAt:text.length;next.setStart(node,pos);next.collapse(true);sel.removeAllRanges();sel.addRange(next);_pvSavedRange=next.cloneRange();el.focus();
 }
 function togglePvLatexHelp(force){const box=document.getElementById('pvLatexHelp');const show=force===undefined?!box.classList.contains('show'):!!force;box.classList.toggle('show',show);}
 // 特殊符號面板：純文字符號直接插入；溫度用 LaTeX（維持全題庫一致）
@@ -3465,8 +3486,14 @@ function togglePvCharPanel(force){
   const box=document.getElementById('pvCharPanel');if(!box)return;
   const show=force===undefined?!box.classList.contains('show'):!!force;
   if(show&&!box.dataset.built){
-    box.innerHTML=PV_CHARS.map(c=>`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('${c}')">${c}</button>`).join('')
-      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('$')" title="插入行內公式 $...$">$公式$</button>`
+    box.innerHTML=`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('$')" title="插入行內公式">公式</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\frac{}{}')" title="分子分母">分子／分母</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('^{}')" title="上標">x²</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('_{}')" title="下標">x₂</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\mathrm{}')" title="化學式">化學式</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\rightarrow')" title="方程式反應箭頭">方程式 →</button>`
+      +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvLatexHelp()" title="LaTeX 與 Word 公式小抄">公式小抄</button>`
+      +PV_CHARS.map(c=>`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('${c}')">${c}</button>`).join('')
       +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{C}$')" title="攝氏度">℃</button>`
       +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{F}$')" title="華氏度">℉</button>`;
     box.dataset.built='1';
@@ -3476,13 +3503,11 @@ function togglePvCharPanel(force){
 function _pvInsertText(str){
   const el=_pvActiveEdit;
   if(!el){alert('請先點擊要插入符號的題目、答案或詳解文字。');return;}
-  const sel=window.getSelection();let range;
-  if(sel&&sel.rangeCount&&el.contains(sel.getRangeAt(0).commonAncestorContainer))range=sel.getRangeAt(0);
-  else{range=document.createRange();range.selectNodeContents(el);range.collapse(false);}
+  const sel=window.getSelection(),range=_pvActiveRange(true);if(!range)return;
   range.deleteContents();
   const node=document.createTextNode(str);range.insertNode(node);
   const next=document.createRange();next.setStartAfter(node);next.collapse(true);
-  sel.removeAllRanges();sel.addRange(next);el.focus();
+  sel.removeAllRanges();sel.addRange(next);_pvSavedRange=next.cloneRange();el.focus();
 }
 function pvAddPreviewImage(){
   if(!_pvActiveEdit){alert('請先點擊要加入圖片的題目或題組文章。');return;}
@@ -3498,7 +3523,8 @@ function pvInlineImageChange(input){
     await _pvSave(type,id);
   };reader.readAsDataURL(file);
 }
-function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0;pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle');if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);}
+function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0;pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);}
+function pvSetColumns(twoCol){paperSetLayout(!!twoCol);_pvRebuild();_rebuildLastPaperHTML();}
 async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
 async function togglePvSolutions(){await _pvCommitActive();PV_SHOW_SOL=!PV_SHOW_SOL;_pvRebuild();}
