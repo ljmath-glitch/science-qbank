@@ -7466,8 +7466,9 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            TextWrappingType,TextWrappingSide,
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
            VerticalPositionRelativeFrom,LevelFormat,UnderlineType,
-           Footer,PageNumber,SectionType}=window.docx;
+           Header,Footer,PageNumber,SectionType}=window.docx;
     const isAbk=(document.querySelector('input[name=pPaperKind]:checked')||{}).value==='abk';
+    let abkHeaderRef=null;
     const FONT=isAbk?'DFPYuanMedium-B5':'DFPZhongYuanW5';
     const DOC_FONT={name:FONT,ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:FONT};
     const tr=(opts)=>new TextRun({font:DOC_FONT,...opts});
@@ -7479,16 +7480,31 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
     if(isAbk){
       const watermark=await _fetchWatermarkLogoBytes();
-      // 依範本：淡灰浮水印置於頁面「左上」，左緣略微出血、由頂端往下佔約 40% 頁高，大面積但低對比。
-      if(watermark)headChildren.push(new Paragraph({spacing:{after:0},children:[new ImageRun({data:watermark,type:'png',transformation:{width:470,height:470},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.PAGE,offset:-2050000},verticalPosition:{relative:VerticalPositionRelativeFrom.PAGE,offset:600000},behindDocument:true,allowOverlap:true}})]}));
-      const abkCode=['SCI',(g||'JB'),(sc||'QBANK'),'A'].filter(Boolean).join('-');
-      const thin={style:BorderStyle.SINGLE,size:4,color:'777777'};
-      headChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[
-        new TableCell({width:{size:1700,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({children:[tr({text:'TZUTZU',size:18,color:'777777'})]})]}),
-        new TableCell({width:{size:7000,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({text:sc||title,bold:true,size:28})]})]}),
-        new TableCell({width:{size:2500,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[tr({text:abkCode,size:18})]})]})
-      ]})]}));
-      headChildren.push(new Paragraph({text:'',spacing:{after:100}}));
+      const abkCode=['SCI',(g||'JB3'),(sc||'QBANK'),'B'].filter(Boolean).join('-');
+      const nilB={style:BorderStyle.NIL};
+      const allNil={top:nilB,bottom:nilB,left:nilB,right:nilB,insideHorizontal:nilB,insideVertical:nilB};
+      // ── Word 頁首（每頁重複）：左品牌／右 SCI 碼 ＋ 左上淡灰浮水印（左緣出血），與實體範本一致。 ──
+      const hkids=[new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:allNil,rows:[new TableRow({children:[
+        new TableCell({width:{size:50,type:WidthType.PERCENTAGE},borders:allNil,children:[new Paragraph({children:[tr({text:'茲茲文教 TZUTZU',size:15,color:'8A8A8A'})]})]}),
+        new TableCell({width:{size:50,type:WidthType.PERCENTAGE},borders:allNil,children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[tr({text:abkCode,size:15,color:'8A8A8A'})]})]})
+      ]})]})];
+      if(watermark)hkids.push(new Paragraph({spacing:{after:0},children:[new ImageRun({data:watermark,type:'png',transformation:{width:470,height:470},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.PAGE,offset:-2050000},verticalPosition:{relative:VerticalPositionRelativeFrom.PAGE,offset:600000},behindDocument:true,allowOverlap:true}})]}));
+      abkHeaderRef=new Header({children:hkids});
+      // ── 頁1 標題帶：logo ｜ 章節標題(置中大字) ｜ 得分框＋姓名，下方雙線。 ──
+      const logoBytes=await _fetchLogoBytes();
+      const logoPara=[];
+      if(logoBytes)logoPara.push(new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:10},children:[new ImageRun({data:logoBytes,type:'png',transformation:{width:42,height:42}})]}));
+      logoPara.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new TextRun({text:'TZU TZU',size:12,color:'999999',font:{name:'Arial'}})]}));
+      const boxB={style:BorderStyle.SINGLE,size:6,color:'333333'};
+      const scoreBox=new Table({width:{size:1500,type:WidthType.DXA},borders:{top:boxB,bottom:boxB,left:boxB,right:boxB},rows:[new TableRow({height:{value:760,rule:'atLeast'},children:[new TableCell({width:{size:1500,type:WidthType.DXA},borders:{top:boxB,bottom:boxB,left:boxB,right:boxB},children:[new Paragraph({text:''})]})]})]});
+      const chLines=String(en||sc||title||'自然科').split('\n');const chRuns=[];chLines.forEach((ln,i)=>{if(i)chRuns.push(new TextRun({break:1}));chRuns.push(tr({text:ln,bold:true,size:32}));});
+      const band=new Table({width:{size:100,type:WidthType.PERCENTAGE},borders:allNil,columnWidths:[1500,7100,2600],rows:[new TableRow({children:[
+        new TableCell({width:{size:1500,type:WidthType.DXA},borders:allNil,verticalAlign:VerticalAlign.CENTER,children:logoPara}),
+        new TableCell({width:{size:7100,type:WidthType.DXA},borders:allNil,verticalAlign:VerticalAlign.CENTER,children:[new Paragraph({alignment:AlignmentType.CENTER,children:chRuns})]}),
+        new TableCell({width:{size:2600,type:WidthType.DXA},borders:allNil,verticalAlign:VerticalAlign.TOP,children:[new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:20},children:[tr({text:'得分',size:16})]}),scoreBox,new Paragraph({spacing:{before:60},children:[tr({text:'姓名｜__________',size:16})]})]})
+      ]})]});
+      headChildren.push(band);
+      headChildren.push(new Paragraph({spacing:{before:40,after:120},border:{bottom:{style:BorderStyle.DOUBLE,size:6,color:'303030'}},children:[tr({text:'',size:2})]}));
     }else if(g||s||sc||en){
       const leftText=[g+s,sc].filter(Boolean).join('　');
       const SB={style:BorderStyle.SINGLE,size:4,color:'BBBBBB'};
@@ -7606,14 +7622,15 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     const _mkFooter=()=>({default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})});
     const _contType=(SectionType&&SectionType.CONTINUOUS)||'continuous';
     let _sections;
+    const _mkHeader=()=>abkHeaderRef?{default:abkHeaderRef}:undefined;
     if(twoCol){
-      // 標頭段落維持整頁寬；題目段落用連續分節切成兩欄（同頁承接）
+      // 標頭段落維持整頁寬；題目段落用連續分節切成兩欄（同頁承接）；ABK 以頁首重複品牌/碼/浮水印。
       _sections=[
-        {properties:{page:_pageProps},footers:_mkFooter(),children:headChildren},
-        {properties:{type:_contType,page:_pageProps,column:{count:2,space:426}},footers:_mkFooter(),children}
+        {properties:{page:_pageProps},headers:_mkHeader(),footers:_mkFooter(),children:headChildren},
+        {properties:{type:_contType,page:_pageProps,column:{count:2,space:709,separator:true}},headers:_mkHeader(),footers:_mkFooter(),children}
       ];
     }else{
-      _sections=[{properties:{page:_pageProps},footers:_mkFooter(),children:headChildren.concat(children)}];
+      _sections=[{properties:{page:_pageProps},headers:_mkHeader(),footers:_mkFooter(),children:headChildren.concat(children)}];
     }
     const doc=new Document({
       numbering:{config:[{reference:'q-list',levels:[{level:0,format:LevelFormat.DECIMAL,text:'%1.',alignment:AlignmentType.LEFT,style:{paragraph:{indent:{left:480,hanging:480}}}}]}]},
