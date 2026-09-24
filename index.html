@@ -221,6 +221,7 @@
   .pdoc-paper .exam-hdr{transform:scale(.82);transform-origin:top left;width:122%;margin-bottom:2px}
   .pdoc-paper .exam-hdr-logo img{height:35px}.pdoc-paper .exam-hdr-left,.pdoc-paper .exam-hdr-right{padding:8px 11px}.pdoc-paper .exam-hdr-gs{font-size:13pt}.pdoc-paper .exam-hdr-name{font-size:11pt}
   .pdoc-paper .pdoc-meta{text-align:right;color:#888;font-size:9px;margin:3px 0 9px}.pdoc-paper .pdoc-q{margin:0 0 9px}.pdoc-paper .pdoc-more{text-align:center;color:#999;border-top:1px dashed #ccc;padding-top:9px;margin-top:14px}
+  .pdoc-paper .pdoc-major{font-size:12px;color:#70562d;letter-spacing:1px;border-bottom:1px solid #b9a480;margin:14px 0 8px;padding-bottom:3px}.pdoc-paper .pdoc-abk-head{position:relative;display:flex;justify-content:space-between;align-items:end;border-bottom:2px double #777;padding:0 4px 7px;margin-bottom:9px;font-family:'Times New Roman',serif}.pdoc-paper .pdoc-abk-head span{font-size:8px;letter-spacing:.7px}.pdoc-paper .pdoc-abk-head b{font-size:16px;letter-spacing:1px}.pdoc-paper .pdoc-abk-head em{font-size:8px;font-style:normal}
   .pdoc-paper .pdoc-question-columns{column-count:2;column-gap:26px}.pdoc-paper .pdoc-question-columns .pdoc-q{break-inside:avoid-column;-webkit-column-break-inside:avoid}
   /* 茲茲系統設定卡：保留清楚層次，但不用厚重的滿版色帶。 */
   .paper-section{border:1px solid #e2d7c8;border-radius:13px;background:#fff;overflow:hidden;margin:0 0 14px;box-shadow:0 3px 11px rgba(78,48,37,.08)}
@@ -343,6 +344,7 @@
   .exam-hdr-right{flex:1;padding:14px 24px;display:flex;align-items:center;background:transparent}
   .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
   .pv-sheet .q{margin-bottom:18px;font-style:normal;page-break-inside:avoid;break-inside:avoid}
+  .pv-sheet .paper-major{font-size:13pt;color:#70562d;letter-spacing:1px;border-bottom:1px solid #b9a480;padding-bottom:4px;margin:20px 0 10px;break-after:avoid}
   .pv-sheet .passage-block{page-break-inside:avoid;break-inside:avoid}
   .pv-sheet .qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
@@ -875,6 +877,10 @@
         </div></div>
       </div></details>
       <details class="paper-section" open><summary>基本設定 <span class="paper-section-summary">考卷樣式與標題</span></summary><div class="paper-section-body">
+        <div class="field"><label>卷別</label><div class="paper-template-row">
+          <label class="chk"><input type="radio" name="pPaperKind" value="pre" checked> 課前考</label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="abk"> 輔導課 ABK 卷</label>
+        </div><p class="paper-setting-note">輔導課 ABK 卷會套用你提供的 B4 直式雙欄卷面規格。</p></div>
         <div class="field"><label>考卷樣式</label><div class="paper-template-row">
           <label class="chk"><input type="radio" name="pTemplate" value="normal" checked> 一般考卷</label>
           <label class="chk"><input type="radio" name="pTemplate" value="mock"> 模考題本</label>
@@ -4409,21 +4415,27 @@ function paperSetLayout(twoCol){
 function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_paperSettingsPreviewTimer=setTimeout(refreshPaperSettingsPreview,90);}
 function refreshPaperSettingsPreview(){
   const target=document.getElementById('paperSettingsPreview');if(!target)return;
-  const items=orderPaperItems(pickedItems()).slice(0,3),title=(pTitle.value||'自然科測驗卷').trim();
+  const sections=paperQuestionSections(pickedItems());
+  const items=sections.ordered.slice(0,3),title=(pTitle.value||'自然科測驗卷').trim();
   const mode=paperAnsMode(),template=(document.querySelector('input[name=pTemplate]:checked')||{}).value||'normal',header=buildExamHeader();
+  const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   const showTag=(document.getElementById('pShowTag')||{}).checked,showSource=(document.getElementById('pShowSource')||{}).checked,showSourceFull=(document.getElementById('pShowSourceFull')||{}).checked;
+  let previousSection='';
   const qs=items.map(function(it,i){
+    const section=sections.groupIds.has(it.groupId)?'group':'single';
+    const sectionHead=section!==previousSection?`<h2 class="pdoc-major">${section==='single'?'一、單選題':'二、題組題'}</h2>`:'';previousSection=section;
     const text=applyRichMarks(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'));
     let extra='';
     if((mode==='inline'||mode==='full')&&it.ans)extra=`<div style="color:#a52b25;margin-left:16px">答案：${esc(it.ans)}</div>`;
     if(mode==='full'&&it.sol)extra+=`<div style="color:#286452;margin-left:16px">詳解：${applyRichMarks(esc(fixLatex(it.sol)).replace(/\n/g,'<br>'))}</div>`;
     const tag=showTag?`<div style="font-size:8px;color:#8b8176;margin-bottom:2px">${esc(it.book||'')} ${esc(it.unit||'')}・${esc(it.sub||'')}</div>`:'';
     const source=showSource||showSourceFull?`<div style="font-size:8px;color:#806450;text-align:right">［${esc(getSource(it,showSourceFull))}］</div>`:'';
-    return `<div class="pdoc-q">${tag}<b>${i+1}.</b> ${text}${extra}${source}</div>`;
+    return sectionHead+`<div class="pdoc-q">${tag}<b>${i+1}.</b> ${text}${extra}${source}</div>`;
   }).join('');
   const meta=(document.getElementById('pShowMeta')||{}).checked?'共 '+pickedItems().length+' 題　班級：______　座號：____　姓名：________':'共 '+pickedItems().length+' 題';
   const previewQuestions=(document.getElementById('pTwoCol')||{}).checked?`<div class="pdoc-question-columns">${qs}</div>`:qs;
-  const mockHead=template==='mock'?`<div class="pdoc-mock-head"><b>${esc((document.getElementById('pExamName')||{}).value||title)}</b><span>${esc([(document.getElementById('pGrade')||{}).value,(document.getElementById('pSubject')||{}).value,(document.getElementById('pScope')||{}).value].filter(Boolean).join('　'))}</span><small>茲茲文教</small></div>`:(header||`<h1>${esc(title)}</h1>`);
+  const abkHead=paperKind==='abk'?`<div class="pdoc-abk-head"><span>TZUTZU</span><b>${esc((document.getElementById('pScope')||{}).value||title)}</b><em>SCI-${esc((document.getElementById('pScope')||{}).value||'QBANK')} A</em></div>`:'';
+  const mockHead=paperKind==='abk'?abkHead:(template==='mock'?`<div class="pdoc-mock-head"><b>${esc((document.getElementById('pExamName')||{}).value||title)}</b><span>${esc([(document.getElementById('pGrade')||{}).value,(document.getElementById('pSubject')||{}).value,(document.getElementById('pScope')||{}).value].filter(Boolean).join('　'))}</span><small>茲茲文教</small></div>`:(header||`<h1>${esc(title)}</h1>`));
   const modeLabel=mode==='full'?'解析卷（答案＋詳解）':mode==='both_full'?'題目卷（另輸出解析卷）':'題目卷';
   const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${modeLabel}・前 3 題</small>`;
   target.innerHTML=mockHead+`<div class="pdoc-meta">${meta}</div>`+(previewQuestions||'<div class="pdoc-meta">尚未選題</div>')+(pickedItems().length>3?`<div class="pdoc-more">以下還有 ${pickedItems().length-3} 題…</div>`:'');
@@ -4444,6 +4456,24 @@ function orderPaperItems(items){
     if(pb!==undefined)return 1;
     return def(a,b);
   });
+}
+// 題組判定規則：只有「題組編號＋實際題組文章／圖」才算題組題。
+// 「承上題」以及沒有文章、沒有題組圖的資料，即使帶有題組編號，也維持單選題。
+function paperQuestionSections(items){
+  const ordered=orderPaperItems(items);
+  const single=[],grouped=[],groupIds=new Set();
+  const isRealGroup=(it)=>{
+    const gid=it.groupId||''; if(!gid)return false;
+    const p=PASSAGES[gid]||{};
+    const hasPassage=String(p.q||'').trim().length>0 || (p.imgs||[]).some(im=>im&&im.src);
+    const text=[it.q,it.summary,p.q].filter(Boolean).join(' ');
+    return hasPassage&&!/(承上題|承上|續前題|延續前題)/.test(text);
+  };
+  ordered.forEach(it=>{
+    if(isRealGroup(it)){grouped.push(it);groupIds.add(it.groupId);}
+    else single.push(it);
+  });
+  return {single,grouped,groupIds,ordered:[...single,...grouped]};
 }
 // 預覽「上一步／重做」：記錄排序與刪題等結構性動作的快照，供工具列 ↶/↷ 復原（文字編輯本身用瀏覽器原生 Ctrl+Z）
 let _pvUndoStack=[],_pvRedoStack=[];
@@ -4521,7 +4551,7 @@ function buildExamHeader(){
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
 }
 function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
-  const sorted=orderPaperItems(items);
+  const paperSections=paperQuestionSections(items),sorted=paperSections.ordered;
   let ansMode=forcedMode||paperAnsMode();
   // both/both_full 預覽時只顯示題目卷
   const previewMode=(ansMode==='both'||ansMode==='both_full')?'none':ansMode;
@@ -4530,17 +4560,20 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   const hdr=buildExamHeader();
   // ── 預算每題組的題號範圍 ──
   const groupRanges={};
-  {let n=0;sorted.forEach(it=>{n++;const g=it.groupId||'';if(g){if(!groupRanges[g])groupRanges[g]={min:n,max:n};else groupRanges[g].max=n;}});}
+  {let n=0;sorted.forEach(it=>{n++;const g=paperSections.groupIds.has(it.groupId)?it.groupId:'';if(g){if(!groupRanges[g])groupRanges[g]={min:n,max:n};else groupRanges[g].max=n;}});}
   const shownPassages=new Set();
   let qNum=0;
+  let currentSection='';
   const answers=[];
   const bodyParts=sorted.map(it=>{
+    const itemSection=paperSections.groupIds.has(it.groupId)?'group':'single';
+    const major=itemSection!==currentSection?`<h2 class="paper-major">${itemSection==='single'?'一、單選題':'二、題組題'}</h2>`:'';currentSection=itemSection;
     // 解析卷簡：只列「題號＋答案＋詳解」，不印題目/圖/題組/作答空白（僅輸出，不套用於預覽編輯）
     if(ansMode==='solbrief'&&!forPreview){
       qNum++;if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
       const a=`<span style="color:#c0392b">答案：${esc(it.ans||'（未填）')}</span>`;
       const s=it.sol?`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
-      return `<div class="q"><b>${qNum}.</b> ${a}${s}</div>`;
+      return major+`<div class="q"><b>${qNum}.</b> ${a}${s}</div>`;
     }
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
@@ -4548,7 +4581,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
-    if(gid&&!shownPassages.has(gid)){
+    if(paperSections.groupIds.has(gid)&&!shownPassages.has(gid)){
       shownPassages.add(gid);
       const ps=PASSAGES[gid];
       if(ps){
@@ -4584,7 +4617,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
-    return `${passageHtml}<div class="q"${qAttr}>${ctrl}${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
+    return major+`${passageHtml}<div class="q"${qAttr}>${ctrl}${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
   });
   let body=bodyParts.join('');
   // 雙欄排版：把題目區包進兩欄容器（標頭/標題/答案區維持整頁寬）；自帶 style 讓預覽與匯出一致
@@ -4604,6 +4637,7 @@ function _rebuildLastPaperHTML(){
 body{font-family:'HuaKangTNR',"Times New Roman",serif;font-size:10pt;max-width:760px;margin:30px auto;padding:0 26px;line-height:1.75;color:#1a2238}
 h1{text-align:center;border-bottom:3px solid #b8860b;padding-bottom:10px;letter-spacing:4px}
 .q{margin-bottom:18px;font-style:normal}.qimg{display:block;border:1px solid #ddd;border-radius:6px;margin:7px 0}
+.paper-major{font-size:13pt;color:#70562d;letter-spacing:1px;border-bottom:1px solid #b9a480;padding-bottom:4px;margin:20px 0 10px;break-after:avoid}
 .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}.sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
 .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
 .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
@@ -7163,16 +7197,26 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
            HorizontalPositionRelativeFrom,HorizontalPositionAlign,
            VerticalPositionRelativeFrom,LevelFormat,UnderlineType,
            Footer,PageNumber,SectionType}=window.docx;
-    const FONT='DFPZhongYuanW5';
+    const isAbk=(document.querySelector('input[name=pPaperKind]:checked')||{}).value==='abk';
+    const FONT=isAbk?'DFPYuanMedium-B5':'DFPZhongYuanW5';
     const DOC_FONT={name:FONT,ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:FONT};
     const tr=(opts)=>new TextRun({font:DOC_FONT,...opts});
-    const PAGE_W_PX=570;
-    const twoCol=(document.getElementById('pTwoCol')||{}).checked;
+    const PAGE_W_PX=isAbk?700:570;
+    const twoCol=isAbk||!!(document.getElementById('pTwoCol')||{}).checked;
     const headChildren=[];   // 雙欄時標頭/標題/名條放單欄段落，題目放雙欄段落
     const children=[];
     // ── 標題表格 ──
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
-    if(g||s||sc||en){
+    if(isAbk){
+      const abkCode=['SCI',(g||'JB'),(sc||'QBANK'),'A'].filter(Boolean).join('-');
+      const thin={style:BorderStyle.SINGLE,size:4,color:'777777'};
+      headChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[
+        new TableCell({width:{size:1700,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({children:[tr({text:'TZUTZU',size:18,color:'777777'})]})]}),
+        new TableCell({width:{size:7000,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({text:sc||title,bold:true,size:28})]})]}),
+        new TableCell({width:{size:2500,type:WidthType.DXA},borders:{bottom:thin},children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[tr({text:abkCode,size:18})]})]})
+      ]})]}));
+      headChildren.push(new Paragraph({text:'',spacing:{after:100}}));
+    }else if(g||s||sc||en){
       const leftText=[g+s,sc].filter(Boolean).join('　');
       const SB={style:BorderStyle.SINGLE,size:4,color:'BBBBBB'};
       const NB={style:BorderStyle.NIL};
@@ -7204,10 +7248,10 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       headChildren.push(new Paragraph({children:[tr({text:`共 ${items.length} 題　班級：______　座號：____　姓名：________`,size:20,color:'888888'})],alignment:AlignmentType.RIGHT,spacing:{before:40,after:260}}));
     }
     // ── 題目（與預覽共用同一份手動題序）──
-    const sorted=orderPaperItems(items);
+    const paperSections=paperQuestionSections(items),sorted=paperSections.ordered;
     // ── 預算每題組的題號範圍（Word 自動編號從 1 開始，與 sorted 順序一致）──
     const groupRangesW={};
-    {let n=0;sorted.forEach(it=>{n++;const g=it.groupId||'';if(g){if(!groupRangesW[g])groupRangesW[g]={min:n,max:n};else groupRangesW[g].max=n;}});}
+    {let n=0;sorted.forEach(it=>{n++;const g=paperSections.groupIds.has(it.groupId)?it.groupId:'';if(g){if(!groupRangesW[g])groupRangesW[g]={min:n,max:n};else groupRangesW[g].max=n;}});}
     const answers=[];
     const shownPassages=new Set();
     const PB={style:BorderStyle.SINGLE,size:4,color:'888888'};
@@ -7228,9 +7272,12 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         target.push(new Paragraph({children:[new ImageRun({data:parsed.b64,transformation:{width:dw,height:dh},type,floating:{horizontalPosition:hPos,verticalPosition:{relative:VerticalPositionRelativeFrom.PARAGRAPH,offset:vOffset},wrap:{type:TextWrappingType.TOP_AND_BOTTOM}}})],spacing:{before:80,after:80}}));
       }catch(e){console.warn('DOCX 圖片嵌入失敗：',e);}
     }
+    let currentSectionW='';
     for(let i=0;i<sorted.length;i++){
       const it=sorted[i];
       const gid=it.groupId||'';
+      const itemSection=paperSections.groupIds.has(gid)?'group':'single';
+      if(itemSection!==currentSectionW){children.push(new Paragraph({children:[tr({text:itemSection==='single'?'一、單選題':'二、題組題',bold:true,size:22,color:'70562D'})],spacing:{before:180,after:70},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:'B9A480'}}}));currentSectionW=itemSection;}
       // ── 解析卷簡：只輸出「編號＋答案＋詳解」，不印題目/圖/題組 ──
       if(ansMode==='solbrief'){
         children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:[tr({text:'答案：'+(it.ans||'（未填）'),color:'C0392B',size:22})],spacing:{before:160,after:0}}));
@@ -7240,7 +7287,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         continue;
       }
       // ── 題組文章（每組只輸出一次）──
-      if(gid&&!shownPassages.has(gid)){
+      if(paperSections.groupIds.has(gid)&&!shownPassages.has(gid)){
         shownPassages.add(gid);
         const ps=PASSAGES[gid];
         if(ps){
@@ -7281,7 +7328,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     if(ansMode==='end'&&answers.length){
       children.push(new Paragraph({children:[tr({text:'【參考答案】'+answers.join('　'),bold:true,color:'C0392B',size:20})],spacing:{before:440}}));
     }
-    const _pageProps={size:{width:11906,height:16838},margin:{top:720,right:720,bottom:720,left:720}};
+    const _pageProps=isAbk?{size:{width:14570,height:20640},margin:{top:720,right:720,bottom:720,left:720}}:{size:{width:11906,height:16838},margin:{top:720,right:720,bottom:720,left:720}};
     const _mkFooter=()=>({default:new Footer({children:[new Paragraph({alignment:AlignmentType.CENTER,children:[tr({children:[PageNumber.CURRENT],size:18}),tr({text:' / ',size:18}),tr({children:[PageNumber.TOTAL_PAGES],size:18}),tr({text:' 頁',size:18})]})]})});
     const _contType=(SectionType&&SectionType.CONTINUOUS)||'continuous';
     let _sections;
@@ -7436,8 +7483,9 @@ async function downloadWordFromDlg(){
   const title=document.getElementById('pTitle').value||'自然科測驗卷';
   const hdr=readHdrFields();
   const tmpl=(document.querySelector('input[name=pTemplate]:checked')||{}).value||'normal';
+  const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(tmpl==='mock'){
+  if(paperKind!=='abk'&&tmpl==='mock'){
     // 模考格式：題本＋卷末解析同一份檔案（依所選模式決定是否含解析）
     await generateMockWord(title,items,ansMode,hdr,showTag,showSource,showSourceFull);
   }else if(ansMode==='both'||ansMode==='both_full'){
