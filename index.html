@@ -358,6 +358,18 @@
   /* 預覽紙張以 B4 直式呈現，讓題目、圖片與雙欄排版保有接近實際列印的呼吸空間。 */
   .pv-sheet{font-family:'HuaKangTNR',"Times New Roman",serif;width:972px;min-height:1375px;margin:24px auto 60px;padding:58px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.75;color:#1a2238;font-size:10pt;box-sizing:border-box;}
   @media(max-width:1080px){.pv-sheet{width:calc(100vw - 28px);min-height:0;padding:32px 28px}}
+  /* 分頁預覽：pvSheet 變成頁面容器，每個 .pv-page 同時掛 .pv-sheet 以沿用字型/浮水印，並固定成一張 B4/A4 紙，內容超過頁高就換下一張（像 Word）。 */
+  .pv-pages{background:transparent!important;box-shadow:none!important;padding:0!important;width:auto!important;margin:0!important;min-height:0!important}
+  .pv-page{height:1375px;min-height:0!important;margin:0 auto 26px!important;overflow:hidden;position:relative}
+  .pv-page .pv-page-body{overflow:hidden}
+  .pv-page .pv-page-body.paper-2col{column-count:2;column-gap:26px}
+  .pv-page.abk-preview .pv-page-body.paper-2col{column-gap:38px;column-rule:1px solid #777}
+  .pv-page .pv-page-foot{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:10pt;color:#666;z-index:1}
+  .pv-run-head{display:flex;justify-content:space-between;align-items:center;font-size:9pt;color:#666;border-bottom:1px solid #cfcfcf;padding-bottom:6px;margin-bottom:14px;letter-spacing:.5px;font-family:"Times New Roman",serif}
+  .pvh{cursor:text;border-radius:3px;padding:0 2px;transition:background .12s,box-shadow .12s;outline:none}
+  .pvh:hover{background:rgba(133,1,3,.06);box-shadow:inset 0 0 0 1px rgba(133,1,3,.25)}
+  .pvh:focus{background:#fffef8;box-shadow:inset 0 0 0 1px rgba(133,1,3,.55)}
+  @media(max-width:1080px){.pv-page{width:calc(100vw - 28px);height:auto;overflow:visible}}
   .pv-sheet h1{text-align:center;border-bottom:3px solid var(--phy);padding-bottom:10px;letter-spacing:4px;font-size:23px}
   .exam-hdr{border:2px solid #bbb;border-radius:10px;display:flex;align-items:stretch;margin-bottom:22px;overflow:hidden;page-break-inside:avoid;background:#fff}
   .exam-hdr-logo{padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:#fff;border-right:1px solid #ddd}
@@ -3434,7 +3446,7 @@ async function _pvSave(type,id){
   if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(it)await sb.from('questions').upsert(toRow(it));}
   else{const ps=PASSAGES[id];if(ps)await sb.from('questions').upsert(toRow(ps));}
   const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
-  pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);
+  _pvRenderPaged();
   if(pv)pv.scrollTop=sy;
   _rebuildLastPaperHTML();
 }
@@ -3598,7 +3610,7 @@ function pvInlineImageChange(input){
     await _pvSave(type,id);
   };reader.readAsDataURL(file);
 }
-function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0,selectedKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';pvSheet.classList.toggle('abk-preview',selectedKind==='abk');pvSheet.innerHTML=buildPaperInner(undefined,true);renderMath(pvSheet);if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;}
+function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0,selectedKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';_pvRenderPaged();if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;}
 function pvSetColumns(twoCol){_pvPushHist();paperSetLayout(!!twoCol);_pvRebuild();_rebuildLastPaperHTML();}
 async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
@@ -4702,30 +4714,32 @@ function _pvBlankResizeEnd(el){
   el.style.height=h+'px';
   _rebuildLastPaperHTML();
 }
-function buildExamHeader(){
+// 預覽可直接點擊修改的卷頭文字：綁定到設定欄位，失焦即寫回並重繪（也同步匯出）。
+function _pvHdrEditable(txt,field){return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${esc(txt)}</span>`;}
+function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
+function buildExamHeader(forPreview){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   const g=document.getElementById('pGrade').value.trim();
   const s=document.getElementById('pSubject').value.trim();
   const sc=document.getElementById('pScope').value.trim();
   const en=document.getElementById('pExamName').value.trim();
   const title=((document.getElementById('pTitle')||{}).value||'').trim();
-  let leftText=[g+s,sc].filter(Boolean).join('　');
-  let rightName=en;
-  if(kind==='pre'){
-    // 課前考：即使卷頭留白，也用「考卷標題／預設值」組出灰底卷頭帶（貼近實體範本 [logo] 科目冊別 │ 考卷名稱）
-    if(!leftText)leftText=title||'自然科';
-    if(!rightName)rightName='課前考';
-  }
+  // 卷頭帶＝ [logo] 科目冊別(考卷標題) │ 考卷名稱(範圍)；預覽時兩段皆可直接點擊修改。
+  let leftText=title||[g+s,sc].filter(Boolean).join('　')||'自然科';
+  let rightName=en||(kind==='pre'?'課前考':'');
   if(!leftText&&!rightName)return '';
-  const rightHtml=rightName?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(rightName)}</span></div>`:'';
-  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(leftText)}</span></div>${rightHtml}</div></div>`;
+  const L=forPreview?_pvHdrEditable(leftText,'pTitle'):esc(leftText);
+  const R=forPreview?_pvHdrEditable(rightName,'pExamName'):esc(rightName);
+  const rightHtml=rightName?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${R}</span></div>`:'';
+  return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${L}</span></div>${rightHtml}</div></div>`;
 }
-function buildAbkPreviewHeader(){
+function buildAbkPreviewHeader(forPreview){
   const scope=(document.getElementById('pScope').value||'自然科').trim();
   const grade=(document.getElementById('pGrade').value||'JB').trim();
   const examName=(document.getElementById('pExamName').value||'').trim();
   const title=((document.getElementById('pTitle')||{}).value||'').trim();
-  const chapter=esc(examName||scope||title||'自然科').replace(/\n/g,'<br>');
+  const chapterRaw=examName||scope||title||'自然科';
+  const chapter=forPreview?_pvHdrEditable(chapterRaw,'pExamName'):esc(chapterRaw).replace(/\n/g,'<br>');
   const code=esc('SCI-'+[grade,scope].filter(Boolean).join('-')+' B');
   const showName=(document.getElementById('pShowMeta')||{}).checked;
   return `<div class="abk-hd">`
@@ -4742,7 +4756,7 @@ function pvSetPaperKind(kind){
   paperSetLayout(kind==='abk');
   _pvRebuild();_rebuildLastPaperHTML();paperSettingsPreviewLater();
 }
-function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
+function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=pickedItems();
   const paperSections=paperQuestionSections(items),sorted=paperSections.ordered;
   let ansMode=forcedMode||paperAnsMode();
   // both/both_full 預覽時只顯示題目卷
@@ -4750,7 +4764,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,showSourceFull=document.getElementById('pShowSourceFull').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
-  const hdr=paperKind==='abk'?buildAbkPreviewHeader():buildExamHeader();
+  const hdr=paperKind==='abk'?buildAbkPreviewHeader(forPreview):buildExamHeader(forPreview);
   // ── 預算每題組的題號範圍 ──
   const groupRanges={};
   {let n=0;sorted.forEach(it=>{n++;const g=paperSections.groupIds.has(it.groupId)?it.groupId:'';if(g){if(!groupRanges[g])groupRanges[g]={min:n,max:n};else groupRanges[g].max=n;}});}
@@ -4819,6 +4833,7 @@ function buildPaperInner(forcedMode,forPreview=false){const items=pickedItems();
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   // ABK 卷頭帶已含姓名欄，不再重複印「班級／座號／姓名」列；僅右上角標示題數。
   const meta=(paperKind==='abk')?`<p style="text-align:right;color:#888;font-size:12px">共 ${sorted.length} 題</p>`:(showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`);
+  if(asParts)return {headHtml:`${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}`,blocks:bodyParts.slice(),ansBlock,twoCol,kind:paperKind,title};
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
 function _rebuildLastPaperHTML(){
   const downloadInner=buildPaperInner();
@@ -4851,11 +4866,50 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 </style></head><body>${downloadInner}
 <button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 22px;font-size:14px;cursor:pointer">🖨 列印 / 存成 PDF</button>
 <script>renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});<\/script></body></html>`}
+// 分頁預覽的頁首（第 2 頁起）：只留精簡跑馬燈，不重複第一頁的完整卷頭。
+function _pvRunningHeader(){
+  const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  if(kind==='abk'){
+    const scope=(document.getElementById('pScope').value||'').trim();
+    const grade=(document.getElementById('pGrade').value||'JB3').trim();
+    const code=esc('SCI-'+[grade,scope].filter(Boolean).join('-')+' B');
+    return `<div class="pv-run-head"><span>茲茲文教 TZUTZU</span><span>${code}</span></div>`;
+  }
+  const t=esc(((document.getElementById('pTitle')||{}).value||'自然科').trim());
+  return `<div class="pv-run-head"><span>茲茲文教　${t}</span><span></span></div>`;
+}
+// 把題目切成一張張 B4/A4 紙（用實際量測換頁，超過頁高就換下一張，像 Word）。
+function _pvRenderPaged(){
+  const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  const parts=buildPaperInner(undefined,true,true);
+  const host=pvSheet;host.className='pv-pages';host.innerHTML='';
+  const PAGE_H=1375,PAD=116,FOOT=40;
+  const narrow=!!(window.matchMedia&&window.matchMedia('(max-width:1080px)').matches);
+  let pageIdx=0,cur=null;
+  function newPage(){
+    const pg=document.createElement('div');pg.className='pv-sheet pv-page'+(kind==='abk'?' abk-preview':'');
+    const head=document.createElement('div');head.className='pv-page-head';head.innerHTML=pageIdx===0?parts.headHtml:_pvRunningHeader();
+    const bodyWrap=document.createElement('div');bodyWrap.className='pv-page-body'+(parts.twoCol?' paper-2col':'');
+    const foot=document.createElement('div');foot.className='pv-page-foot';foot.textContent=String(pageIdx+1);
+    pg.appendChild(head);pg.appendChild(bodyWrap);pg.appendChild(foot);
+    host.appendChild(pg);cur={pg,head,bodyWrap};pageIdx++;return cur;
+  }
+  newPage();
+  const cap=()=>PAGE_H-PAD-FOOT-cur.head.offsetHeight;
+  parts.blocks.forEach(html=>{
+    const tmp=document.createElement('div');tmp.innerHTML=html;const nodes=[].slice.call(tmp.children);if(!nodes.length)return;
+    nodes.forEach(n=>cur.bodyWrap.appendChild(n));
+    if(!narrow&&cur.bodyWrap.offsetHeight>cap()&&cur.bodyWrap.children.length>nodes.length){
+      nodes.forEach(n=>cur.bodyWrap.removeChild(n));newPage();nodes.forEach(n=>cur.bodyWrap.appendChild(n));
+    }
+  });
+  if(parts.ansBlock){const d=document.createElement('div');d.innerHTML=parts.ansBlock;const n=d.firstElementChild;if(n)cur.bodyWrap.appendChild(n);}
+  renderMath(host);
+}
 function showPaperPreview(){if(!PICKS.size)return;
   _pvResetHist();
-  pvSheet.classList.toggle('abk-preview',((document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre')==='abk');
-  pvSheet.innerHTML=buildPaperInner(undefined,true);paperDlg.close();
-  document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';renderMath(pvSheet);window.scrollTo(0,0);
+  _pvRenderPaged();paperDlg.close();
+  document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';window.scrollTo(0,0);
   _rebuildLastPaperHTML();}
 function closePaper(){
   document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';
