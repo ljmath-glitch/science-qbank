@@ -182,7 +182,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 - 匯出成 Word（`.docx`，`downloadWordDoc()`）或 HTML
 - 「選題CSV」：把目前勾選的題目匯出成 CSV（跟匯入格式類似，多一個算好的「難度」欄）
 - **解析卷（新）＝不含題目**：勾「解析卷」時（`ansMode` `full` 或 `both_full`）走 `downloadSolutionWord()`／`solutionExportQuestion()`，依 `exam-answer-key-formatter` 交接文件的詳解模板輸出：無框線對齊表格＝題號｜【答案】｜【詳解】共用說明＋逐選項 `(A)~(E) 正確/錯誤：理由`，**不印題目**；開頭一列簡答速查（答案每 5 題以 `/` 分隔）。`solutionExportQuestion` 依區塊解析，略去 stored `sol` 的【解題關鍵】【觀念補充】，只留【詳解】；沒有選項行時退回純文字詳解。公式維持 `$$...$$` 純文字（便於 MathType Toggle TeX）。`both_full`＝題目卷（無答案）＋解析卷兩檔。
-- **ABK 淡灰浮水印（新）**：資產 `watermark.png`（由 `logo.png` 剪影烘焙成 960px 淡灰，印刷夠清晰；`_fetchWatermarkLogoBytes()` 直接取用、保留舊 canvas 後備）。Word 與預覽 CSS（`.pdoc-abk-watermark` / `.pv-sheet.abk-preview:before`）皆為**直立**（不再 skew）、置於頁面**左緣、垂直置中**、放大，貼近實體範本。換 logo 時重跑烘焙即可。
+- **ABK 淡灰浮水印（新）**：資產 `watermark.png`（由 `logo.png` 剪影烘焙成 960px 淡灰，印刷夠清晰；`_fetchWatermarkLogoBytes()` 直接取用、保留舊 canvas 後備）。Word 與預覽 CSS（`.pdoc-abk-watermark` / `.pv-sheet.abk-preview:before`）皆為**直立**（不再 skew）、置於頁面**左上、左緣出血**（只露閃電右半、由頂端往下約 40% 頁高），貼近實體 B4 範本。換 logo 時重跑烘焙即可。
+- **題目編輯預覽＝真分頁（新，像 Word）**：`_pvRenderPaged()` 以實際量測把題目切成一張張固定尺寸紙（B4/A4，√2 比例，超過頁高換下一張），取代原本無限延伸的單一長 sheet。每頁掛 `.pv-sheet` 沿用字型與浮水印；**第一頁完整卷頭、第二頁起只留精簡跑馬燈頁首**（`_pvRunningHeader`）；頁尾頁碼。雙欄（ABK）以欄平衡高度量測換頁。`buildPaperInner(forcedMode,forPreview,asParts)` 的 `asParts` 回傳 `{headHtml,blocks,ansBlock,twoCol,kind}` 給分頁器。踩過的坑：含段落標題的題目區塊有多個頂層節點，須整組搬移否則第一題會遺失。
+- **卷頭可即時編輯（新）**：預覽中卷頭文字可直接點擊修改，`_pvHdrEditable`/`_pvHdrBlur` 把「科目冊別→`pTitle`、考卷名稱/範圍→`pExamName`、ABK 章節標題→`pExamName`」寫回設定欄位（同步匯出）。
+- **卷頭帶（課前考/ABK，新）**：`buildExamHeader(forPreview)` 對 pre 卷別即使卷頭留白也用標題組出灰底帶 `[logo] 科目冊別 │ 考卷名稱`；`buildAbkPreviewHeader(forPreview)` 重製為範本樣式（茲茲文教/SCI碼小字列、logo、置中章節標題、得分框、姓名）。
+- **匯出設定預覽含解析卷頁（新）**：`refreshPaperSettingsPreview` 依輸出文件顯示「題目卷頁 →（含解析卷時）解析卷頁」；`_solPreviewSheet` 以詳解模板呈現；頁碼導覽涵蓋解析卷。
 
 ### 6.6 統計報表（`openReport()`，`index.html:1858`）
 
