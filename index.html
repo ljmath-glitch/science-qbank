@@ -4542,16 +4542,36 @@ function scalePaperSettingsPreview(){
   stage.style.height=Math.ceil(height*scale)+'px';
 }
 window.addEventListener('resize',scalePaperSettingsPreview);
+// 解析卷預覽紙：依交接文件詳解模板（題號｜【答案】｜【詳解】＋逐選項），無框線對齊。
+function _solPreviewSheet(title,solItems){
+  const line=(no,lbl,opt,txt)=>`<div class="pdoc-sol-line"><span class="pdoc-sol-no">${esc(no)}</span><span class="pdoc-sol-lbl">${lbl}</span><span class="pdoc-sol-opt">${esc(opt)}</span><span class="pdoc-sol-txt">${txt}</span></div>`;
+  const body=(solItems||[]).map(q=>{
+    const ans=line(q.no+'.','【答案】','',`<b>${esc(q.answer)}</b>`);
+    const det=q.detail?line('','【詳解】','',applyRichMarks(esc(fixLatex(q.detail)).replace(/\n/g,'<br>'))):'';
+    const ops=(q.options||[]).map(o=>line('','',`(${o.label})`,applyRichMarks(esc(fixLatex(o.text))))).join('');
+    return `<div class="pdoc-sol-item">${ans}${det}${ops}</div>`;
+  }).join('');
+  return `<section class="pdoc-sheet a4 solsheet"><style>.pdoc-sheet.solsheet .pdoc-sol-title{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 12px}.pdoc-sol-item{margin-bottom:10px;break-inside:avoid}.pdoc-sol-line{display:flex;align-items:flex-start;gap:3px;line-height:1.55}.pdoc-sol-no{flex:0 0 26px;font-weight:bold}.pdoc-sol-lbl{flex:0 0 56px;font-weight:bold;white-space:nowrap}.pdoc-sol-opt{flex:0 0 26px;text-align:center}.pdoc-sol-txt{flex:1;min-width:0}</style><div class="pdoc-sol-title">${esc(title)}　詳解</div>${body||'<div class="pdoc-meta">尚未選題</div>'}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
+}
 function refreshPaperSettingsPreview(){
   const target=document.getElementById('paperSettingsPreview');if(!target)return;
   const sections=paperQuestionSections(pickedItems());
   const title=(pTitle.value||'自然科測驗卷').trim();
   const mode=paperAnsMode();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
-  const chunks=paperPreviewChunks(sections.ordered,paperKind);
-  _paperSettingsPageCount=chunks.length+(paperKind==='mock'?1:0);
+  // 輸出文件：解析卷（full=只解析卷；both_full=題目卷＋解析卷）也要能在此預覽。
+  const showSolution=(mode==='full'||mode==='both_full');
+  const showQuestion=(mode!=='full');
+  const chunks=showQuestion?paperPreviewChunks(sections.ordered,paperKind):[];
+  const solItems=showSolution?sections.ordered.map((it,i)=>solutionExportQuestion(it,i+1)):[];
+  const solChunks=[];for(let i=0;i<solItems.length;i+=8)solChunks.push(solItems.slice(i,i+8));
+  const mockCover0=(paperKind==='mock'&&showQuestion)?1:0;
+  _paperSettingsPageCount=Math.max(1,mockCover0+chunks.length+solChunks.length);
   _paperSettingsPage=Math.min(_paperSettingsPage,_paperSettingsPageCount-1);
-  const questionPage=paperKind==='mock'?_paperSettingsPage-1:_paperSettingsPage;
+  const qStart=mockCover0,qEnd=qStart+chunks.length;
+  const isMockCoverPage=!!mockCover0&&_paperSettingsPage<qStart;
+  const isSolPage=_paperSettingsPage>=qEnd;
+  const questionPage=(isSolPage||isMockCoverPage)?-1:(_paperSettingsPage-qStart);
   const items=questionPage>=0?(chunks[questionPage]||[]):[];
   const previousCount=questionPage>0?chunks.slice(0,questionPage).reduce((n,chunk)=>n+chunk.length,0):0;
   const showTag=(document.getElementById('pShowTag')||{}).checked,showSource=(document.getElementById('pShowSource')||{}).checked,showSourceFull=(document.getElementById('pShowSourceFull')||{}).checked;
@@ -4585,10 +4605,11 @@ function refreshPaperSettingsPreview(){
   const abk=`<section class="pdoc-sheet b4 abk"><div class="pdoc-abk-watermark" aria-hidden="true"></div><div class="pdoc-abk-top"><span class="brand">茲茲文教<br>TZUTZU</span><b class="chapter">${esc(scope)}<br>${esc(examName||title)}</b><span class="code">SCI-${esc(grade)}-A<small>姓名：____________</small></span></div><div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
   const mockCover=`<section class="pdoc-sheet a4 mock-cover"><div class="pdoc-mock-cover-top"><img src="logo.png" alt="茲茲文教"><div class="boxes"><span>考試日期<br>　　年　月　日</span><span>考生姓名<br>____________</span><span>座號<br>______</span></div></div><div class="pdoc-mock-title">茲茲文教模考題本</div><div class="pdoc-mock-sub">${esc(subject||'自然科')}</div><div class="pdoc-mock-scope">${esc(examName||title)}<br>範圍：${esc(scope)}</div><div class="pdoc-mock-warning">請不要翻到次頁！</div><div class="pdoc-mock-instructions"><b>作答說明</b>請核對考卷名稱及個人資料。<br>本卷共 ${pickedItems().length} 題；請依題號順序作答。<br>答案請填寫於指定作答區。</div><div class="pdoc-mock-footer">TZUTZU EDUCATION</div></section>`;
   const mockBody=`<section class="pdoc-sheet a4 mock-body"><div class="pdoc-mock-body-top">茲茲文教　${esc(subject||'自然科')}　${esc(examName||title)}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage}</div></section>`;
-  const modeLabel=mode==='full'?'解析卷（答案＋詳解）':mode==='both_full'?'題目卷（另輸出解析卷）':'題目卷';
-  const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${paperKind==='abk'?'B4':'A4'} 等比縮圖・${modeLabel}</small>`;
+  const modeLabel=isSolPage?'解析卷（不含題目・逐選項詳解）':mode==='both_full'?'題目卷（另有解析卷）':mode==='full'?'解析卷':'題目卷';
+  const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${(isSolPage?'A4':(paperKind==='abk'?'B4':'A4'))} 等比縮圖・${modeLabel}</small>`;
   target.classList.remove('mock-thumbnails');
-  target.innerHTML=paperKind==='abk'?abk:(paperKind==='mock'?(_paperSettingsPage===0?mockCover:mockBody):pre);
+  if(isSolPage){target.innerHTML=_solPreviewSheet(title,solChunks[_paperSettingsPage-qEnd]||[]);}
+  else target.innerHTML=paperKind==='abk'?abk:(paperKind==='mock'?(isMockCoverPage?mockCover:mockBody):pre);
   const slider=document.getElementById('pdocPageSlider'),prev=document.getElementById('pdocPrev'),next=document.getElementById('pdocNext'),label=document.getElementById('pdocPageLabel');
   if(slider){slider.max=_paperSettingsPageCount;slider.value=_paperSettingsPage+1;}
   if(prev)prev.disabled=_paperSettingsPage===0;
