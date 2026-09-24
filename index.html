@@ -1859,32 +1859,43 @@ function sortDB(){
 async function load(){
   if(!CLOUD_READY){SYL=parseSyl(SYL_RAW);return;}
   let allQs=[],pageSize=1000,fetchErr=null;
-  try{
-    // 先取總數，再「平行」抓所有分頁（取代逐頁序列等待，大幅縮短載入時間）
-    const {count,error:cErr}=await sb.from('questions').select('id',{count:'exact',head:true});
-    if(cErr)throw cErr;
-    if(typeof count!=='number'||count<0)throw new Error('無法取得題目總數');
-    const pages=Math.max(1,Math.ceil(count/pageSize));
-    const results=await Promise.all(
-      Array.from({length:pages},(_,p)=>sb.from('questions').select('*').range(p*pageSize,p*pageSize+pageSize-1))
-    );
-    for(const {data:qs,error} of results){
-      if(error)throw error;
-      if(qs&&qs.length)allQs=allQs.concat(qs);
-    }
-  }catch(e){
-    // 保底：平行失敗時退回逐頁序列抓取
-    console.warn('平行載入失敗，改用序列載入',e);
-    allQs=[];let from=0;
-    while(true){
-      const {data:qs,error}=await sb.from('questions').select('*').range(from,from+pageSize-1);
-      if(error){fetchErr=error;break;}
-      if(qs&&qs.length)allQs=allQs.concat(qs);
-      if(!qs||qs.length<pageSize)break;
-      from+=pageSize;
+  // 最多嘗試 3 次；每次都先取總數再平行抓分頁。任何一次失敗（含「明明有資料卻抓到 0 筆」
+  // 這種暫時性網路問題）就退避後重試，避免偶發的空白題庫嚇到使用者。
+  for(let attempt=0;attempt<3;attempt++){
+    fetchErr=null;allQs=[];
+    try{
+      const {count,error:cErr}=await sb.from('questions').select('id',{count:'exact',head:true});
+      if(cErr)throw cErr;
+      if(typeof count!=='number'||count<0)throw new Error('無法取得題目總數');
+      const pages=Math.max(1,Math.ceil(count/pageSize));
+      const results=await Promise.all(
+        Array.from({length:pages},(_,p)=>sb.from('questions').select('*').range(p*pageSize,p*pageSize+pageSize-1))
+      );
+      for(const {data:qs,error} of results){
+        if(error)throw error;
+        if(qs&&qs.length)allQs=allQs.concat(qs);
+      }
+      if(count>0&&allQs.length===0)throw new Error('載入結果為空（暫時性網路問題）');
+      break; // 成功
+    }catch(e){
+      console.warn('題庫載入第 '+(attempt+1)+' 次失敗：',e);
+      fetchErr=e;
+      // 退回逐頁序列抓取再試一次（同一輪內）
+      try{
+        allQs=[];let from=0;
+        while(true){
+          const {data:qs,error}=await sb.from('questions').select('*').range(from,from+pageSize-1);
+          if(error)throw error;
+          if(qs&&qs.length)allQs=allQs.concat(qs);
+          if(!qs||qs.length<pageSize)break;
+          from+=pageSize;
+        }
+        if(allQs.length>0){fetchErr=null;break;}
+      }catch(e2){fetchErr=e2;}
+      if(attempt<2)await new Promise(r=>setTimeout(r,1200*(attempt+1)));
     }
   }
-  if(fetchErr){console.error(fetchErr);alert('讀取雲端題目失敗：'+fetchErr.message);DB=[];PASSAGES={};}
+  if(fetchErr){console.error(fetchErr);alert('讀取雲端題目失敗，請重新整理頁面再試一次。\n（'+(fetchErr.message||fetchErr)+'）');DB=[];PASSAGES={};}
   else{
     const all=allQs.map(fromRow);
     PASSAGES={};
