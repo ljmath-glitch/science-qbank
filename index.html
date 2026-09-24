@@ -244,7 +244,7 @@
   .pdoc-sheet .pdoc-more{font-size:11px;color:#888;border-top:1px dashed #ccc;text-align:center;padding-top:12px;margin-top:20px}
   .pdoc-sheet .pdoc-page-number{position:absolute;bottom:20px;left:0;right:0;text-align:center;font:11px 'Times New Roman',serif;color:#777}
   .pdoc-pre-top{font-size:10px;letter-spacing:.4px;margin-bottom:14px}.pdoc-pre-head{height:92px;display:grid;grid-template-columns:104px 1fr 7px 1fr;border:1px solid #bbb;background:linear-gradient(100deg,#fff 17%,#f4f4f4 45%,#d8d8d8);align-items:center}.pdoc-pre-logo{text-align:center;background:#fff;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#a5935b;letter-spacing:2px;font-size:9px}.pdoc-pre-logo img{height:48px;width:auto;object-fit:contain}.pdoc-pre-main{font-size:26px;font-weight:800;padding:0 20px}.pdoc-pre-divider{height:65%;background:#222}.pdoc-pre-name{font-size:22px;font-weight:800;padding:0 18px}
-  .pdoc-abk-watermark{position:absolute;z-index:0;left:24px;top:90px;width:360px;height:570px;background:url('logo.png') left top/290px auto no-repeat;opacity:.075;transform:skewX(-20deg);pointer-events:none}.pdoc-sheet.abk>*:not(.pdoc-abk-watermark){position:relative;z-index:1}.pdoc-abk-top{display:grid;grid-template-columns:1fr 2fr 1fr;align-items:start;gap:10px;border-bottom:4px double #555;padding-bottom:12px}.pdoc-abk-top .brand{font-size:12px;line-height:1.2}.pdoc-abk-top .chapter{text-align:center;font-size:20px;font-weight:800;line-height:1.25}.pdoc-abk-top .code{text-align:right;font-size:12px}.pdoc-abk-top .code small{display:block;margin-top:20px;border-bottom:1px solid #777}.pdoc-sheet.abk .pdoc-question-columns{margin-top:12px;column-gap:28px}
+  .pdoc-abk-watermark{position:absolute;z-index:0;left:6px;top:50%;transform:translateY(-50%);width:330px;height:330px;background:url('watermark.png') left center/300px auto no-repeat;opacity:.9;pointer-events:none}.pdoc-sheet.abk>*:not(.pdoc-abk-watermark){position:relative;z-index:1}.pdoc-abk-top{display:grid;grid-template-columns:1fr 2fr 1fr;align-items:start;gap:10px;border-bottom:4px double #555;padding-bottom:12px}.pdoc-abk-top .brand{font-size:12px;line-height:1.2}.pdoc-abk-top .chapter{text-align:center;font-size:20px;font-weight:800;line-height:1.25}.pdoc-abk-top .code{text-align:right;font-size:12px}.pdoc-abk-top .code small{display:block;margin-top:20px;border-bottom:1px solid #777}.pdoc-sheet.abk .pdoc-question-columns{margin-top:12px;column-gap:28px}
   .pdoc-mock-cover-top{display:flex;justify-content:space-between;align-items:start}.pdoc-mock-cover-top img{width:95px}.pdoc-mock-cover-top .boxes{display:grid;grid-template-columns:repeat(3,92px);font-size:11px}.pdoc-mock-cover-top .boxes span{border:1px solid #555;padding:9px 3px;text-align:center}.pdoc-mock-title{margin:110px auto 0;text-align:center;border:3px double #333;padding:17px;width:75%;font-size:25px;font-weight:800;letter-spacing:4px}.pdoc-mock-sub{text-align:center;font-size:35px;font-weight:900;margin-top:35px}.pdoc-mock-scope{text-align:center;font-size:18px;margin-top:15px}.pdoc-mock-warning{text-align:center;border:2px solid #333;font-size:20px;font-weight:800;padding:13px;margin:72px auto 0;width:63%}.pdoc-mock-instructions{border:2px solid #444;margin-top:60px;padding:22px 30px;font-size:14px;line-height:2}.pdoc-mock-instructions b{display:block;font-size:18px;margin-bottom:8px}.pdoc-mock-footer{position:absolute;bottom:42px;left:0;right:0;text-align:center;color:#9a8b5d;letter-spacing:4px;font-size:13px}.pdoc-mock-body-top{font-size:12px;color:#888;border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:25px}.pdoc-sheet.mock-body .pdoc-major{font-size:15px}
   .pdoc-preview-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:10px 12px;border-top:1px solid #e7ddcf;background:#fffdf9;color:#514c46;font-size:12px;font-weight:700}.pdoc-preview-nav button{width:30px;height:28px;border:1px solid #ded5c8;border-radius:7px;background:#fff;cursor:pointer;font-size:17px;color:#514c46}.pdoc-preview-nav button:disabled{opacity:.35;cursor:default}.pdoc-preview-nav input{width:min(45%,160px);accent-color:var(--red)}.pdoc-preview-nav span{white-space:nowrap}
   /* 茲茲系統設定卡：保留清楚層次，但不用厚重的滿版色帶。 */
@@ -371,7 +371,7 @@
   .exam-hdr-name{font-size:18pt;color:#252525;letter-spacing:2px}
   /* 輔導課 ABK：依提供的 B4 範本呈現左側淡浮水印、三段式卷頭、雙線與雙欄分隔。 */
   .pv-sheet.abk-preview{position:relative;overflow:hidden;padding:50px 52px 58px;font-family:'DFPYuanMedium-B5','HuaKangTNR',"Times New Roman",serif;color:#171717;line-height:1.58}
-  .pv-sheet.abk-preview:before{content:'';position:absolute;z-index:0;left:-68px;top:32px;width:300px;height:450px;background:url('logo.png') center top/180px auto no-repeat;opacity:.07;transform:skewX(-20deg)}
+  .pv-sheet.abk-preview:before{content:'';position:absolute;z-index:0;left:-10px;top:50%;transform:translateY(-50%);width:300px;height:300px;background:url('watermark.png') left center/270px auto no-repeat;opacity:.9}
   .pv-sheet.abk-preview>*{position:relative;z-index:1}
   .abk-preview-head{display:grid;grid-template-columns:1fr 2fr 1fr;align-items:end;border-bottom:3px double #303030;padding:0 2px 8px;margin:0 0 16px;font-family:"Times New Roman",serif}.abk-preview-head span{font-size:9pt;letter-spacing:.8px}.abk-preview-head b{text-align:center;font-size:17pt;letter-spacing:1px}.abk-preview-head em{text-align:right;font-size:9pt;font-style:normal;letter-spacing:.4px;white-space:nowrap}
   .pv-sheet.abk-preview .paper-2col{column-gap:38px;column-rule:1px solid #777}.pv-sheet.abk-preview .paper-major{color:#171717;border-bottom:1px solid #555;font-size:12pt;margin:14px 0 9px;padding-bottom:3px}.pv-sheet.abk-preview .q{margin-bottom:13px}.pv-sheet.abk-preview .pdoc-meta{color:#444}
@@ -895,7 +895,7 @@
         <input type="hidden" id="pAns" value="both_full"><input type="checkbox" id="pDocQuestion" checked hidden><input type="checkbox" id="pDocSolution" checked hidden>
         <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
           <button type="button" class="paper-doc-card on" id="paperDocQuestion" onclick="paperToggleDocument('question')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></button>
-          <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>每題答案＋完整詳解</small></button>
+          <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・逐選項詳解</small></button>
         </div><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
         <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
           <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
@@ -4410,6 +4410,13 @@ function buildAutoTitle(){
 }
 async function _fetchLogoBytes(){try{const r=await fetch("logo.png");if(!r.ok)return null;const ab=await r.arrayBuffer();return new Uint8Array(ab);}catch(_){return null;}}
 async function _fetchWatermarkLogoBytes(){
+  // watermark.png 已預先烘焙成淡灰色剪影（960px 高解析），直接取用原始位元組即可，
+  // 不再用 canvas 降透明度（那會把彩色 logo 疊在低透明度上，印出來偏色且較糊）。
+  try{
+    const res=await fetch('watermark.png');
+    if(res&&res.ok){const buf=await res.arrayBuffer();return new Uint8Array(buf);}
+  }catch(_){}
+  // 後備：舊作法（logo.png 疊 8% 透明度）
   try{
     const img=new Image();img.src='logo.png';await img.decode();
     const c=document.createElement('canvas');c.width=img.naturalWidth;c.height=img.naturalHeight;
@@ -4459,7 +4466,7 @@ function paperSyncDocuments(){
   document.getElementById('pAns').value=mode;
   document.getElementById('paperDocQuestion').classList.toggle('on',q.checked);
   document.getElementById('paperDocSolution').classList.toggle('on',s.checked);
-  const note=document.getElementById('paperDocNote');if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（答案＋完整詳解）。';
+  const note=document.getElementById('paperDocNote');if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷（解析卷不含題目，逐選項詳解）。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（不含題目：【答案】＋逐選項詳解）。';
 }
 function paperToggleDocument(which){
   const q=document.getElementById('pDocQuestion'),s=document.getElementById('pDocSolution');if(!q||!s)return;
@@ -4479,12 +4486,21 @@ function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_p
 function paperPreviewGo(page){_paperSettingsPage=Math.min(Math.max(0,page),_paperSettingsPageCount-1);refreshPaperSettingsPreview();}
 function paperPreviewTurn(delta){paperPreviewGo(_paperSettingsPage+delta);}
 function paperPreviewChunks(items,kind){
-  const budget=kind==='abk'?2300:kind==='mock'?1400:1250,groups=[];
-  let page=[],used=0;
+  // 以「行數」估算每題高度，並依單欄／雙欄換算整頁容量，讓每頁盡量填滿（不再半頁就換頁）。
+  const twoCol=kind==='abk'||!!(document.getElementById('pTwoCol')||{}).checked;
+  const mode=(typeof paperAnsMode==='function')?paperAnsMode():'none';
+  const cpl=twoCol?22:40;                 // 每行可容納字數（雙欄一欄較窄）
+  const linesPerCol=kind==='abk'?50:kind==='mock'?46:44;
+  const cap=twoCol?linesPerCol*2:linesPerCol;   // 整頁可容納行數（雙欄＝兩欄）
+  const groups=[];let page=[],used=0;
   items.forEach(it=>{
-    const weight=Math.max(160,String(it.q||it.summary||'').length+((it.imgs||[]).length*380));
-    if(page.length&&used+weight>budget){groups.push(page);page=[];used=0;}
-    page.push(it);used+=weight;
+    const txt=String(it.q||it.summary||'');
+    let lines=Math.max(2,Math.ceil(txt.length/cpl)+1);        // 題幹行數＋題號/間距
+    lines+=(it.imgs||[]).filter(im=>im&&im.src).length*8;      // 每張圖約 8 行高
+    if((mode==='inline'||mode==='full')&&it.ans)lines+=1;
+    if(mode==='full'&&it.sol)lines+=Math.max(1,Math.ceil(String(it.sol).length/cpl));
+    if(page.length&&used+lines>cap){groups.push(page);page=[];used=0;}
+    page.push(it);used+=lines;
   });
   if(page.length||!groups.length)groups.push(page);
   return groups;
@@ -7356,7 +7372,8 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
     if(isAbk){
       const watermark=await _fetchWatermarkLogoBytes();
-      if(watermark)headChildren.push(new Paragraph({spacing:{after:0},children:[new ImageRun({data:watermark,type:'png',transformation:{width:270,height:270},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.PAGE,offset:230000},verticalPosition:{relative:VerticalPositionRelativeFrom.PAGE,offset:980000},behindDocument:true,allowOverlap:true}})]}));
+      // 依範本：淡灰浮水印置於頁面左緣、垂直略偏上中央，大面積但低對比（B4 高約 14.3in≈13.1M EMU）。
+      if(watermark)headChildren.push(new Paragraph({spacing:{after:0},children:[new ImageRun({data:watermark,type:'png',transformation:{width:330,height:330},floating:{horizontalPosition:{relative:HorizontalPositionRelativeFrom.PAGE,offset:120000},verticalPosition:{relative:VerticalPositionRelativeFrom.PAGE,offset:3900000},behindDocument:true,allowOverlap:true}})]}));
       const abkCode=['SCI',(g||'JB'),(sc||'QBANK'),'A'].filter(Boolean).join('-');
       const thin={style:BorderStyle.SINGLE,size:4,color:'777777'};
       headChildren.push(new Table({width:{size:100,type:WidthType.PERCENTAGE},rows:[new TableRow({children:[
@@ -7506,20 +7523,26 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
 }
 // 詳解講義：依「詳解＋簡答」模板輸出。公式維持 $...$ 純文字，方便在 Word 以 MathType Toggle TeX 轉換。
 function solutionExportQuestion(it,no){
+  // 依交接文件的詳解模板產出：只保留【詳解】區塊的共用說明＋逐選項判斷；
+  // 略去【解題關鍵】【觀念補充】等其他欄位（模板不含解題關鍵）。
   const raw=String(it.sol||'').replace(/\r/g,'').trim();
-  const lines=raw.split('\n').map(x=>x.trim()).filter(Boolean);
+  const lines=raw.split('\n').map(x=>x.trim());
   const options=[];const detail=[];
-  let inDetail=false;
+  let section='';   // 'detail' = 目前在【詳解】區塊，其餘標題一律略過其內容
   lines.forEach(line=>{
+    if(!line)return;
     if(/^【答案】/.test(line))return;
-    if(/^【詳解】/.test(line)){inDetail=true;const rest=line.replace(/^【詳解】\s*/,'');if(rest)detail.push(rest);return;}
-    const m=line.match(/^[（(]([A-D])[）)]\s*(.*)$/i);
+    if(/^【詳解】/.test(line)){section='detail';const rest=line.replace(/^【詳解】[:：]?\s*/,'');if(rest)detail.push(rest);return;}
+    if(/^【[^】]+】/.test(line)){section='other';return;}   // 【解題關鍵】【觀念補充】…→ 略過整段
+    const m=line.match(/^[（(]\s*([A-Ea-e])\s*[）)]\s*[:：]?\s*(.*)$/);
     if(m){options.push({label:m[1].toUpperCase(),text:m[2]||'需人工確認'});return;}
-    if(inDetail||line)detail.push(line);
+    if(section==='detail')detail.push(line);   // 只有【詳解】區塊的共用說明才保留
   });
-  const byLabel={};options.forEach(o=>{byLabel[o.label]=o.text;});
-  const labels=options.length?['A','B','C','D']:[];
-  return {no,answer:String(it.ans||'需人工確認').trim(),detail:detail.join('\n')||'需人工確認：題庫尚未建立詳解內容。',options:labels.map(label=>({label,text:byLabel[label]||'需人工確認：尚未建立此選項的判斷說明。'}))};
+  const byLabel={};options.forEach(o=>{if(!(o.label in byLabel))byLabel[o.label]=o.text;});
+  const labels=Object.keys(byLabel).sort();   // 依實際出現的選項字母（支援到 E、多選）
+  return {no,answer:String(it.ans||'需人工確認').trim(),
+    detail:detail.join('\n')||(options.length?'':'需人工確認：題庫尚未建立詳解內容。'),
+    options:labels.map(label=>({label,text:byLabel[label]}))};
 }
 async function downloadSolutionWord(){
   if(!PICKS.size){alert('尚未選題');return;}
@@ -7696,10 +7719,16 @@ async function downloadWordFromDlg(){
       await generateMockWord(title+'（題目卷）',items,'none',hdr,showTag,showSource,showSourceFull);
       await generateMockWord(title+'（解析卷）',items,ansMode==='both_full'?'full':'inline',hdr,showTag,showSource,showSourceFull);
     }else await generateMockWord(title,items,ansMode,hdr,showTag,showSource,showSourceFull);
-  }else if(ansMode==='both'||ansMode==='both_full'){
-    const solMode=ansMode==='both_full'?'full':'inline';
+  }else if(ansMode==='full'){
+    // 解析卷（單獨輸出）：不印題目，改用詳解模板格式（【答案】＋【詳解】＋逐選項判斷、無框線對齊）
+    await downloadSolutionWord();
+  }else if(ansMode==='both_full'){
+    // 題目卷（無答案）＋ 解析卷（詳解模板，不含題目）
     await generateAndDownloadWord(title+'（題目卷）',items,'none',showMeta,showTag,showSource,hdr,showSourceFull);
-    await generateAndDownloadWord(title+'（答案卷）',items,solMode,false,showTag,showSource,hdr,showSourceFull);
+    await downloadSolutionWord();
+  }else if(ansMode==='both'){
+    await generateAndDownloadWord(title+'（題目卷）',items,'none',showMeta,showTag,showSource,hdr,showSourceFull);
+    await generateAndDownloadWord(title+'（答案卷）',items,'inline',false,showTag,showSource,hdr,showSourceFull);
   }else{
     await generateAndDownloadWord(title,items,ansMode,showMeta,showTag,showSource,hdr,showSourceFull);
   }
