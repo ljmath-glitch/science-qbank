@@ -896,7 +896,7 @@
     </div>
     <aside class="paper-settings-preview"><div class="pdoc-preview-head">文件預覽 <small>前 3 題・非實際比例</small></div><div class="pdoc-viewport"><div id="paperSettingsPreview" class="pdoc-paper"></div></div></aside>
   </div></div>
-  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">← 返回預覽</button><span class="spacer"></span><button class="btn" onclick="paperDlg.close();setTimeout(function(){window.print()},250)">儲存 PDF</button><button class="btn" onclick="exportPaperCSV();paperDlg.close()">儲存 CSV</button><button class="btn" onclick="downloadPaper();paperDlg.close()">儲存 HTML</button><button class="btn primary" onclick="downloadWordFromDlg()">儲存 Word</button></div>
+  <div class="dlg-foot"><button class="btn" onclick="paperDlg.close()">← 返回預覽</button><span class="spacer"></span><button class="btn" onclick="paperDlg.close();setTimeout(function(){window.print()},250)">儲存 PDF</button><button class="btn" onclick="exportPaperCSV();paperDlg.close()">儲存 CSV</button><button class="btn" onclick="downloadPaper();paperDlg.close()">儲存 HTML</button><button class="btn" onclick="downloadSolutionWord()">儲存詳解 Word</button><button class="btn primary" onclick="downloadWordFromDlg()">儲存 Word</button></div>
 </dialog>
 
 <!-- 自動配題 -->
@@ -7380,6 +7380,53 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),2000);
   }catch(e){alert('Word 匯出失敗：'+e.message);}
+  finally{prog.remove();}
+}
+// 詳解講義：依「詳解＋簡答」模板輸出。公式維持 $...$ 純文字，方便在 Word 以 MathType Toggle TeX 轉換。
+function solutionExportQuestion(it,no){
+  const raw=String(it.sol||'').replace(/\r/g,'').trim();
+  const lines=raw.split('\n').map(x=>x.trim()).filter(Boolean);
+  const options=[];const detail=[];
+  let inDetail=false;
+  lines.forEach(line=>{
+    if(/^【答案】/.test(line))return;
+    if(/^【詳解】/.test(line)){inDetail=true;const rest=line.replace(/^【詳解】\s*/,'');if(rest)detail.push(rest);return;}
+    const m=line.match(/^[（(]([A-D])[）)]\s*(.*)$/i);
+    if(m){options.push({label:m[1].toUpperCase(),text:m[2]||'需人工確認'});return;}
+    if(inDetail||line)detail.push(line);
+  });
+  const byLabel={};options.forEach(o=>{byLabel[o.label]=o.text;});
+  const labels=options.length?['A','B','C','D']:[];
+  return {no,answer:String(it.ans||'需人工確認').trim(),detail:detail.join('\n')||'需人工確認：題庫尚未建立詳解內容。',options:labels.map(label=>({label,text:byLabel[label]||'需人工確認：尚未建立此選項的判斷說明。'}))};
+}
+async function downloadSolutionWord(){
+  if(!PICKS.size){alert('尚未選題');return;}
+  const prog=document.createElement('div');prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:inherit;font-size:14px;z-index:9999';prog.textContent='📝 正在產生詳解 Word…';document.body.appendChild(prog);
+  try{
+    await _ensureDocxLib();
+    const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,VerticalAlign,VerticalMergeType,BorderStyle,TableLayoutType}=window.docx;
+    const FONT={ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:'DFPYuanMedium-B5',cs:'DFPYuanMedium-B5'};
+    const run=(text,bold=false)=>new TextRun({text,font:FONT,size:24,bold});
+    const dxa=cm=>Math.round(cm*566.9291339),COL_NUM=dxa(.7),COL_LABEL=dxa(2.2),COL_LETTER=dxa(.9),COL_CONTENT=dxa(14.2),COL_MERGED=COL_LETTER+COL_CONTENT;
+    const none={style:BorderStyle.NONE,size:0,color:'FFFFFF'},borders={top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none};
+    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,spacing:{line:240,lineRule:'exact'},children:text?[run(text,bold)]:[]});
+    const cell=(text,opts={})=>new TableCell({width:{size:opts.width,type:WidthType.DXA},columnSpan:opts.span,borders:{top:none,bottom:none,left:none,right:none},verticalAlign:VerticalAlign.TOP,verticalMerge:opts.merge,margins:{top:40,bottom:40,left:opts.tight?10:60,right:opts.tight?10:60},children:[para(text,opts.bold,opts.keepNext,opts.center)]});
+    const table=q=>{
+      const rows=[
+        new TableRow({cantSplit:true,children:[cell(String(q.no),{width:COL_NUM,merge:VerticalMergeType.RESTART,bold:true,keepNext:true,tight:true,center:true}),cell('【答案】',{width:COL_LABEL,bold:true,keepNext:true,tight:true}),cell(q.answer,{width:COL_MERGED,span:2,bold:true,keepNext:true})]}),
+        new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:true}),cell('【詳解】',{width:COL_LABEL,bold:true,keepNext:true,tight:true}),cell(q.detail,{width:COL_MERGED,span:2,keepNext:true})]})
+      ];
+      q.options.forEach((o,i)=>rows.push(new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:i<q.options.length-1}),cell('',{width:COL_LABEL,keepNext:i<q.options.length-1}),cell(`(${o.label})`,{width:COL_LETTER,keepNext:i<q.options.length-1,tight:true,center:true}),cell(o.text,{width:COL_CONTENT,keepNext:i<q.options.length-1})]})));
+      return new Table({layout:TableLayoutType.FIXED,width:{size:COL_NUM+COL_LABEL+COL_MERGED,type:WidthType.DXA},columnWidths:[COL_NUM,COL_LABEL,COL_LETTER,COL_CONTENT],borders,rows});
+    };
+    const title=(document.getElementById('pTitle').value||'自然科測驗卷').trim();
+    const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>solutionExportQuestion(it,i+1));
+    const answers=questions.map(q=>q.answer).join('');const groups=[];for(let i=0;i<answers.length;i+=5)groups.push(answers.slice(i,i+5));
+    const children=[new Paragraph({alignment:'center',spacing:{after:120,line:240,lineRule:'exact'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:240,lineRule:'exact'},children:[run(groups.join('/'),true)]})];
+    questions.forEach((q,i)=>{children.push(table(q));if(i<questions.length-1)children.push(new Paragraph({spacing:{before:60,after:60},children:[]}));});
+    const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:dxa(1.5),bottom:dxa(1.5),left:dxa(1.5),right:dxa(1.5)}}},children}]});
+    const blob=await Packer.toBlob(doc),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'_詳解_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);paperDlg.close();
+  }catch(e){alert('詳解 Word 匯出失敗：'+e.message);}
   finally{prog.remove();}
 }
 // 模考／會考格式：頁首「題本」樣式（標題＋範圍＋茲茲文教）、單欄自動編號題目、題組標題、卷末另起一頁「解析」（答案：(X)／解析：…）
