@@ -7834,6 +7834,43 @@ function readHdrFields(){
     en: (document.getElementById('pExamName')?document.getElementById('pExamName').value.trim():''),
   };
 }
+// ── 以「範本填入」方式產生 Word（docxtemplater）：直接拿實體範本 .docx 當底，只灌題目，
+//    頁首/浮水印/卷頭帶/字型/頁面全部沿用範本本體，避免從零組版跟範本差太多。 ──
+let _dtxLibP=null;
+function _ensureDocxTemplater(){
+  if(_dtxLibP)return _dtxLibP;
+  _dtxLibP=new Promise((res,rej)=>{
+    function load(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>rej(new Error('載入失敗：'+src));document.head.appendChild(s);}
+    if(window.PizZip&&window.docxtemplater)return res();
+    load('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js',()=>load('https://cdn.jsdelivr.net/npm/docxtemplater@3.71.0/build/docxtemplater.js',()=>res()));
+  });
+  return _dtxLibP;
+}
+function _tplQuestionText(it){
+  let t=it.q||it.summary||'';
+  try{t=stripRichMarks(t);}catch(_){}
+  try{t=latexToPlain(fixLatex(t));}catch(_){}
+  return String(t).replace(/\r/g,'').replace(/\n{2,}/g,'\n').trim();
+}
+async function downloadWordViaTemplate(kind,opts){
+  opts=opts||{};
+  await _ensureDocxTemplater();
+  const PizZip=window.PizZip,Docxtemplater=window.docxtemplater;
+  if(!PizZip||!Docxtemplater)throw new Error('範本套件載入失敗');
+  const tplUrl=kind==='abk'?'templates/abk_tpl.docx':'templates/pre_tpl.docx';
+  const resp=await fetch(tplUrl);
+  if(!resp.ok)throw new Error('找不到範本檔：'+tplUrl);
+  const buf=await resp.arrayBuffer();
+  const zip=new PizZip(buf);
+  const doc=new Docxtemplater(zip,{paragraphLoop:true,linebreaks:true});
+  const sec=paperQuestionSections(pickedItems());
+  const chapter=(document.getElementById('pExamName').value||document.getElementById('pScope').value||document.getElementById('pTitle').value||'自然科').trim();
+  let n=0;const questions=sec.ordered.map(it=>{n++;return {no:n,text:_tplQuestionText(it)};});
+  doc.render({chapter,questions});
+  const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const title=(document.getElementById('pTitle').value||'考卷').trim();
+  const url=URL.createObjectURL(out);const a=document.createElement('a');a.href=url;a.download=title+(opts.suffix||'')+'_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
 async function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
   const items=pickedItems();
@@ -7846,6 +7883,15 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
+  if(paperKind==='abk'){
+    // ABK：題目卷以「範本填入」產生（頁首/浮水印/卷頭/字型＝範本本體）；解析卷維持詳解模板。
+    try{
+      if(ansMode==='full'){await downloadSolutionWord();}
+      else if(ansMode==='both_full'){await downloadWordViaTemplate('abk',{suffix:'（題目卷）'});await downloadSolutionWord();}
+      else{await downloadWordViaTemplate('abk');}
+    }catch(e){alert('範本填入失敗，改用一般匯出：'+e.message);await generateAndDownloadWord(title,items,ansMode==='both_full'?'none':ansMode,showMeta,showTag,showSource,hdr,showSourceFull);}
+    return;
+  }
   if(paperKind==='mock'){
     if(ansMode==='both'||ansMode==='both_full'){
       await generateMockWord(title+'（題目卷）',items,'none',hdr,showTag,showSource,showSourceFull);
