@@ -56,6 +56,14 @@
     <section class="stage">
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
+      <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
+        <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1666d6;color:#fff;font-size:11px">推薦</span></div>
+        <p class="help" style="margin:6px 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
+        <input id="gvPdf" type="file" accept=".pdf" class="hide" onchange="runGeminiVisionOcr(this.files[0]);this.value=''">
+        <div class="drop" onclick="gvPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runGeminiVisionOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → Gemini 直接辨識</div>
+        <div class="status" id="gvStatus" style="margin-top:8px"></div>
+        <div id="gvTokens" class="hide" style="margin-top:8px;background:#fff;border:1px solid #1666d6;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+      </div>
       <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:#f6fbff">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div style="font-weight:700;font-size:13px">🅐 MinerU 自建 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">開發中・請勿操作</span></div>
@@ -151,8 +159,8 @@
     </section>
 
     <section class="stage" style="margin-top:20px">
-      <div class="head"><div class="no">III</div><div><h2>批次貼圖</h2><p>清稿 PDF／Word → 自動裁切候選圖表 → AI 二次檢查 → 批次貼入題庫</p></div></div>
-      <div class="notice"><b>完成標準：</b>每一張要保留的圖或表格都有正確題號，裁切範圍不含題幹、選項、題號與頁首頁尾；AI 判定為「需確認」的素材仍須人工看一次。</div>
+      <div class="head"><div class="no">III</div><div><h2>批次貼圖</h2><p>清稿 PDF → 手動框選裁切 → 批次貼入題庫</p></div></div>
+      <div class="notice"><b>完成標準：</b>每一張要保留的圖或表格都有正確題號，裁切範圍不含題幹、選項、題號與頁首頁尾。</div>
       <ol class="steps">
         <li data-step="1"><b>選擇清稿檔案</b>可只提供乾淨 PDF、只提供試卷寶 Word，或兩個都提供；系統會自動辨識檔案類型後進入下一步。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -162,26 +170,13 @@
             <div class="file-state"><span id="cropPdfDot" class="ready-dot"></span><span id="cropPdfState">尚未選擇 PDF</span><br><span id="cropWordDot" class="ready-dot"></span><span id="cropWordState">尚未選擇 Word</span></div><div id="cropPrecisionWarn" class="precision-warn">⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升裁切與題號對應的精準度。</div>
           </div>
         </li>
-        <li data-step="2"><b>AI 二次檢查（僅掃描檔需要）</b>系統會優先用精準方式抽圖（Word 原始圖／PDF 內嵌圖）；只有掃描型 PDF 抽不到內嵌圖時才需要 AI。有 Word 或數位 PDF 可略過，直接進第 3 步。
+        <li data-step="2"><b>手動框選裁切圖表素材</b>用清稿 PDF 逐張框選要保留的圖或表格（可含整張表格、題組共用圖、整組選項圖），框好後系統會建立可批次貼圖的素材包。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail">
-            <button id="openGeminiKeyBtn" class="btn primary" onclick="openGeminiKey()">✨ 啟動 AI 二次檢查</button>
-            <div id="geminiKeyPanel" class="key-panel hide">
-              <div class="detail-title">輸入 Gemini API 金鑰</div>
-              <input id="geminiApiKey" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
-              <button class="btn green" onclick="unlockGeminiCheck()">繼續進行 AI 檢查</button>
-              <div class="locked-note">金鑰只存在目前開啟的分頁記憶體；重新整理或關閉分頁就會清除。</div>
-            </div>
-            <div id="geminiState" class="status">尚未啟動 AI 二次檢查。</div>
-          </div>
+          <div class="step-detail"><p class="help"><b>建議流程：</b>按「手動框選裁切」，在下方頁面逐張框出要保留的圖／表格；框選範圍不要含題幹、選項、題號與頁首頁尾。每張框好後可在卡片上按「改題號」補上題號、或「手動修正」重新框一次，各張互不影響。<br>如果你已經自己裁好圖了，也可以用「上傳已裁切圖片」加入單張或多張，或「上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="剛在第 I 區另開分頁匯入完題目後，這裡按一下就能重抓最新題庫資料，不用整頁重新整理、不會清掉已裁切的圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:10px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><div class="status" id="cropReviewState">等待選擇檔案。按「手動框選裁切」開始，或直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
         </li>
-        <li data-step="3"><b>檢查並確認圖表素材</b>系統會先列出自動裁切候選圖表，再由 AI 標示「可保留／需人工確認／略過」。確認後才會建立可批次貼圖的素材包。
+        <li data-step="3"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help"><b>建議流程：</b>先按「① 開始抽圖（自動）」——有 Word 抽 Word 原圖、數位 PDF 抽內嵌圖，都是精準座標；只有掃描檔才會退回 AI 偵測（精準度較低）。抽完逐張檢查下方卡片，凡是標「需人工確認」或你覺得裁切範圍不對、抓錯題號的，直接點該張卡片上的「✂ 手動修正」，在下方頁面重新框選一次就會精準取代那一張，<b>不會影響其他已確認的卡片</b>。<br>如果整份都是掃描檔、想整份手動處理，也可以直接按「手動框選裁切（從頭開始）」略過自動掃描。<br>如果你已經自己裁好圖了，可以直接用「🖼 上傳已裁切圖片」加入單張或多張，或「📂 上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row"><button class="btn primary" id="startCropReviewBtn" onclick="startCropReview()">① 開始抽圖（自動）</button><button class="btn" id="manualCropBtn" onclick="startManualCrop()">✂ 手動框選裁切（從頭開始）</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">🖼 上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">📂 上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="剛在第 I 區另開分頁匯入完題目後，這裡按一下就能重抓最新題庫資料，不用整頁重新整理、不會清掉已裁切的圖片">🔄 重新整理題庫資料</button></div><div class="drop" style="margin-top:10px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><div class="status" id="cropReviewState">等待選擇檔案。建議先「開始抽圖（自動）」，檢查後對有問題的素材逐張「手動修正」。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
-        </li>
-        <li data-step="4"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help">先在第 3 步快速預覽、取消不需要的圖片；按下後會直接批次貼入已校正的這份考卷，不需要再手動選考卷。</p><div class="action-row"><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">⬇ 下載圖表素材 ZIP</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">🖼 批次貼入題庫</button></div><div class="status" id="batchImportState"></div></div>
+          <div class="step-detail"><p class="help">先在第 2 步快速預覽、取消不需要的圖片；按下後會直接批次貼入已校正的這份考卷，不需要再手動選考卷。</p><div class="action-row"><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">⬇ 下載圖表素材 ZIP</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">🖼 批次貼入題庫</button></div><div class="status" id="batchImportState"></div></div>
         </li>
       </ol>
     </section>
@@ -273,7 +268,8 @@
     function openGeminiKey(){document.getElementById('geminiKeyPanel').classList.remove('hide');document.getElementById('geminiApiKey').focus()}
     function showGeminiReady(){document.getElementById('geminiKeyPanel').classList.add('hide');document.getElementById('openGeminiKeyBtn').textContent='✓ AI 二次檢查已啟動';document.getElementById('geminiState').textContent='已啟動；重新整理本頁不必重輸入，關閉此分頁後會清除。'}
     function unlockGeminiCheck(){const key=document.getElementById('geminiApiKey').value.trim();if(!key){alert('請輸入 Gemini API 金鑰。');return}transientGeminiKey=key;sessionStorage.setItem(GEMINI_SESSION_KEY,key);document.getElementById('geminiApiKey').value='';showGeminiReady()}
-    if(transientGeminiKey)showGeminiReady();
+    // 從題庫首頁「AI 設定」取用共用 Gemini 金鑰（第 III 區「AI 重製圖」用；原本的 AI 二次檢查金鑰輸入已移除）
+    function _cropGeminiKey(){try{const w=promptSource.contentWindow;return (w&&w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||transientGeminiKey||'';}catch(e){return transientGeminiKey||'';}}
     async function loadPdfJs(){if(window.pdfjsLib)return window.pdfjsLib;const lib=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';window.pdfjsLib=lib;return lib}
     async function loadZipJs(){if(window.JSZip)return window.JSZip;await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});return window.JSZip}
     async function loadMammothJs(){if(window.mammoth)return window.mammoth;await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});return window.mammoth}
@@ -577,7 +573,8 @@
     // 用 Gemini 影像模型「忠實重繪」該張圖：適合掃描、歪斜、低畫質的圖表。回傳後並排原圖／新圖，人工核對後才採用。
     async function regenCropImage(i){
       const it=cropCandidates[i];if(!it||!it.src)return;
-      if(!transientGeminiKey){alert('要用 AI 重製圖，請先在第 2 步「AI 二次檢查」輸入並啟動 Gemini API 金鑰。');try{openGeminiKey();}catch(e){}return;}
+      const gkey=_cropGeminiKey();
+      if(!gkey){alert('要用 AI 重製圖，請先到題庫首頁的「AI 設定」填入 Gemini API 金鑰。');return;}
       const bodyEl=document.getElementById('cropModalBody');
       bodyEl.innerHTML=`<div class="crop-modal-title">🎨 AI 重製圖</div><img src="${it.src}" style="max-width:100%;opacity:.45"><div class="crop-modal-meta">正在用 Gemini 依原圖重新繪製，請稍候…（約數秒）</div>`;
       try{
@@ -585,7 +582,7 @@
         const b64=it.src.split(',')[1];
         const prompt='這是一張臺灣國高中自然科考卷的圖或表格，可能是掃描、歪斜或低畫質。請「忠實重繪」成乾淨、線條銳利、白底的高解析版本。\n極重要：所有數字、座標軸刻度與數值、資料點與曲線形狀、標籤與文字、化學式、實驗裝置與版面配置，都必須與原圖『完全相同』，不可新增、刪除或更改任何數值或文字，也不要翻譯或美化用語。若原圖是歪的請轉正。只輸出重繪後的圖片，不要輸出文字。';
         const payload={contents:[{parts:[{inlineData:{mimeType:mime,data:b64}},{text:prompt}]}],generationConfig:{responseModalities:['IMAGE','TEXT'],temperature:0}};
-        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});
+        const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':gkey},body:JSON.stringify(payload)});
         if(!res.ok){const t=await res.text();if(res.status===403)throw new Error('金鑰沒有影像生成權限或配額不足。');throw new Error('HTTP '+res.status+' '+t.slice(0,120));}
         const j=await res.json();
         const part=(j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts||[]).find(p=>p.inlineData);
@@ -633,7 +630,7 @@
     // startManualCrop 是冪等的：同一份 PDF 只渲染一次頁面，之後呼叫（含「手動修正」單張跳轉）都重用同一批頁面，
     // 不會清掉已經框好的框、也不會讓卡片重新收合。
     async function startManualCrop(){
-      if(!cropFiles.pdf){alert('手動框選需要 PDF（掃描或數位皆可）。若只有 Word，請用「開始抽圖（自動）」抽 Word 原圖。');return;}
+      if(!cropFiles.pdf){alert('手動框選需要 PDF（掃描或數位皆可）。若只有 Word，請提供該考卷的 PDF 再框選。');return;}
       const status=document.getElementById('cropReviewState'),area=document.getElementById('cropPageArea'),btn=document.getElementById('manualCropBtn');
       if(manualPagesFile===cropFiles.pdf&&manualPageWraps.size){status.textContent='已載入頁面；請直接在下方頁面拖曳框選。';return;}
       btn.disabled=true;area.innerHTML='';manualPageWraps.clear();status.textContent='正在載入 PDF 頁面…';
@@ -869,7 +866,7 @@
     async function downloadCropZip(){const keep=cropCandidates.filter(x=>!x.skip);if(!keep.length)return;const JSZip=await loadZipJs();const zip=new JSZip();const manifest=[];for(const item of keep){zip.file(item.filename,item.src.slice(item.src.indexOf(',')+1),{base64:true});manifest.push({file:item.filename,primary_question:item.qno,scope:item.scope||'single',kind:item.kind,page:item.page,needs_review:item.verdict!=='pass',note:item.reason})}zip.file('manifest.json',JSON.stringify({exam:examName.value||cropFiles.pdf?.name||'',assets:manifest},null,2));const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(examName.value||'圖表素材')+'_圖表素材.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
     function jsStr(s){return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')}
     function useSuggestedExamName(name){examName.value=name;document.getElementById('batchImportState').textContent=`已改用「${name}」，請重新按「🖼 批次貼入題庫」。`}
-    async function batchImportToQbank(){const images=cropCandidates.filter(x=>!x.skip);if(!images.length){alert('請先在第 3 步保留至少一張圖表素材。');return}if(!examName.value){alert('找不到前面校正的考卷名稱，請先在第 I 區丟入考卷檔案，或直接在上方欄位手動輸入。');return}const btn=document.getElementById('toBatchImageBtn'),state=document.getElementById('batchImportState');btn.disabled=true;state.textContent='正在批次貼入題庫…';try{const importer=await waitForPromptBuilder('importBatchHandoffImages');const result=await importer({exam:examName.value,images:images.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});const examNote=result.matchedExam&&result.matchedExam!==examName.value?`（已自動對應「${result.matchedExam}」）`:'';const bits=[];if(result.unmatchedQnos&&result.unmatchedQnos.length)bits.push(`題庫裡找不到第 ${result.unmatchedQnos.join('、')} 題（請確認這些題號是否已匯入、或素材題號是否打錯）`);if(result.noPassageQnos&&result.noPassageQnos.length)bits.push(`第 ${result.noPassageQnos.join('、')} 題設為題組共用圖，但題庫裡這些題號沒有對應的題組文章（請先確認該題有填題組ID、且已建立題組文章，或改回「單題圖」）`);if(result.unknownQno)bits.push(`${result.unknownQno} 張題號未知（請用「改題號」補上）`);if(result.failed)bits.push(`${result.failed} 張上傳失敗，請重試`);state.textContent=`完成：成功貼入 ${result.done} 張。${bits.join('；')}${examNote}`;if(result.done){document.getElementById('finishRawBtn').disabled=false}}catch(e){const sug=e.suggestions&&e.suggestions.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+e.suggestions.map(n=>`<button class="btn" onclick="useSuggestedExamName('${esc(jsStr(n))}')">用「${esc(n)}」</button>`).join('')+'</div>':'';state.innerHTML=esc('批次貼圖失敗：'+(e.message||e))+sug}finally{btn.disabled=false}}
+    async function batchImportToQbank(){const images=cropCandidates.filter(x=>!x.skip);if(!images.length){alert('請先在第 2 步保留至少一張圖表素材。');return}if(!examName.value){alert('找不到前面校正的考卷名稱，請先在第 I 區丟入考卷檔案，或直接在上方欄位手動輸入。');return}const btn=document.getElementById('toBatchImageBtn'),state=document.getElementById('batchImportState');btn.disabled=true;state.textContent='正在批次貼入題庫…';try{const importer=await waitForPromptBuilder('importBatchHandoffImages');const result=await importer({exam:examName.value,images:images.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});const examNote=result.matchedExam&&result.matchedExam!==examName.value?`（已自動對應「${result.matchedExam}」）`:'';const bits=[];if(result.unmatchedQnos&&result.unmatchedQnos.length)bits.push(`題庫裡找不到第 ${result.unmatchedQnos.join('、')} 題（請確認這些題號是否已匯入、或素材題號是否打錯）`);if(result.noPassageQnos&&result.noPassageQnos.length)bits.push(`第 ${result.noPassageQnos.join('、')} 題設為題組共用圖，但題庫裡這些題號沒有對應的題組文章（請先確認該題有填題組ID、且已建立題組文章，或改回「單題圖」）`);if(result.unknownQno)bits.push(`${result.unknownQno} 張題號未知（請用「改題號」補上）`);if(result.failed)bits.push(`${result.failed} 張上傳失敗，請重試`);state.textContent=`完成：成功貼入 ${result.done} 張。${bits.join('；')}${examNote}`;if(result.done){document.getElementById('finishRawBtn').disabled=false}}catch(e){const sug=e.suggestions&&e.suggestions.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+e.suggestions.map(n=>`<button class="btn" onclick="useSuggestedExamName('${esc(jsStr(n))}')">用「${esc(n)}」</button>`).join('')+'</div>':'';state.innerHTML=esc('批次貼圖失敗：'+(e.message||e))+sug}finally{btn.disabled=false}}
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
 
     // ── 自動 OCR（本機服務）——把清稿 PDF 送到公司電腦的 OCR 服務，回來再交給 Ollama/Gemini 分類成 CSV ──
@@ -890,6 +887,58 @@
     }
     function onOcrPresetChange(v){localStorage.setItem('ocrPreset',v);const urlEl=document.getElementById('ocrUrl');if(v!=='custom'&&urlEl){urlEl.value=OCR_PRESETS[v]||'';localStorage.setItem('ocrUrl',urlEl.value);}}
     function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
+    // ── 用 Gemini 視覺直接辨識掃描卷（免本機 OCR 服務）：每頁 render 成圖 → 一次送 Gemini → 23 欄 CSV ──
+    // 同時統計「這一份考卷」用掉多少 Gemini token 與估算費用，供評估是否值得訂閱 Gemini。
+    // gemini-2.5-flash 參考單價（美元／每百萬 token），請依 Google 官方最新報價調整：
+    const GEMINI_PRICE={input:0.30,output:2.50};   // USD / 1M tokens（僅供估算）
+    const USD_TWD=32;                              // 粗略匯率（僅供估算）
+    async function runGeminiVisionOcr(file){
+      if(!file)return;
+      const st=document.getElementById('gvStatus');
+      document.getElementById('gvTokens').classList.add('hide');
+      const w=promptSource.contentWindow;
+      const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
+      if(!key){st.textContent='找不到 Gemini API Key，請先到題庫首頁的「AI 設定」填入 Gemini 金鑰。';return}
+      if(typeof w.callGemini!=='function'||typeof w.resetGeminiUsage!=='function'){st.textContent='題庫尚未載入完成，請稍候幾秒再試。';return}
+      OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供第 III 區手動框選／裁圖沿用同一份 PDF
+      st.textContent='正在把 PDF 逐頁轉成圖片…';
+      try{
+        const pdfjs=await loadPdfJs();
+        const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+        const imgs=[];
+        for(let p=1;p<=doc.numPages;p++){
+          const page=await doc.getPage(p);
+          const vp=page.getViewport({scale:2.0});   // 掃描卷放大到約 144dpi 起，字夠清楚
+          const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+          await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+          imgs.push({src:cv.toDataURL('image/jpeg',0.85)});   // JPEG 較小，省頻寬
+          st.textContent=`正在把 PDF 逐頁轉成圖片…（${p}/${doc.numPages}）`;
+        }
+        if(!imgs.length){st.textContent='這個 PDF 沒有可辨識的頁面。';return}
+        const build=await waitForPromptBuilder('buildPrompt');
+        let instruction=build.call(w);
+        if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;
+        const msg=instruction+'\n\n════════\n上面是規則。附上的圖片就是這份清稿考卷的每一頁，請「完全依照上述規則」判讀並輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字。';
+        st.textContent=`已轉 ${imgs.length} 頁，正在送 Gemini 辨識中…（依頁數約數十秒，請稍候）`;
+        w.resetGeminiUsage();
+        let csv=await w.callGemini('',msg,key,imgs);
+        csv=(csv||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+        _renderGvTokens(w.getGeminiUsage(),imgs.length);
+        if(!csv){st.textContent='Gemini 沒有回傳內容，請重試。';return}
+        questionCsv.value=csv;inspectCsv();
+        st.textContent='辨識完成，已把 CSV 填入下方第 4 步，請人工核對。圖表素材請到第 III 區用同一份 PDF 裁切。';
+        questionCsv.scrollIntoView({behavior:'smooth',block:'center'});
+      }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
+    }
+    function _renderGvTokens(u,pages){
+      const tokEl=document.getElementById('gvTokens');if(!tokEl)return;
+      if(!u||!u.total){tokEl.classList.add('hide');return}
+      const usd=(u.prompt/1e6*GEMINI_PRICE.input)+(u.output/1e6*GEMINI_PRICE.output);
+      tokEl.classList.remove('hide');
+      tokEl.innerHTML='<b>📊 這份考卷的 Gemini 用量</b>（'+pages+' 頁・模型 '+(u.model||'gemini-2.5-flash')+'）<br>'+
+        '輸入 '+u.prompt.toLocaleString()+' token　輸出 '+u.output.toLocaleString()+' token　合計 <b>'+u.total.toLocaleString()+' token</b><br>'+
+        '<span class="help">估算費用 ≈ US$'+usd.toFixed(4)+'（約 NT$'+(usd*USD_TWD).toFixed(2)+'）　單價：輸入 $'+GEMINI_PRICE.input+'／1M、輸出 $'+GEMINI_PRICE.output+'／1M（gemini-2.5-flash，僅供估算，實際請以 Google 官方報價為準）</span>';
+    }
     async function testOcrService(){
       const el=document.getElementById('ocrHealth');const base=ocrBase();
       if(!base){el.textContent='請先填 OCR 服務網址。';return}
