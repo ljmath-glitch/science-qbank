@@ -7885,13 +7885,18 @@ function _ensureDocxTemplater(){
   })().catch(e=>{_dtxLibP=null;throw e;});
   return _dtxLibP;
 }
-function _tplQuestionText(it){
+function _tplQuestionText(it,withChoices=true){
   let t=it.q||it.summary||'';
   try{t=stripRichMarks(t);}catch(_){}
   try{t=latexToPlain(fixLatex(t));}catch(_){}
   t=String(t).replace(/\r/g,'').replace(/\n{2,}/g,'\n').trim();
-  // 選項前插入 tab，讓 (A)(B)(C)(D) 對齊範本設定的定位點
-  t=t.replace(/\s*([（(][A-Da-d][）)])/g,'\t$1');
+  if(withChoices){
+    // 同一題只用一個 Word 段落；選項與題幹內換行交給 docxtemplater 轉成 w:br。
+    // 不吞掉題幹與選項的分界，也不把四個選項擠在同一行。
+    t=t.replace(/（([A-Da-d])）/g,'($1)')
+      .replace(/[ \t]*\n?[ \t]*(\([A-Da-d]\))/g,'\n\t$1')
+      .replace(/^\n/,'');
+  }
   return t;
 }
 // 影像位元組解析尺寸（PNG/JPEG），用於 docxtemplater image module getSize
@@ -7924,25 +7929,44 @@ async function downloadWordViaTemplate(kind,opts){
   const examName=(document.getElementById('pExamName').value||'').trim();
   const chapter=(examName||scope||document.getElementById('pTitle').value||'自然科').trim();
   const book=(grade.match(/\d/)||[''])[0]||'';   // 冊數（取數字，如 JB3→3）
-  // 依題型分節；題號全卷連續（手動帶入 no，範本用 {no} 顯示）；灌入圖片與題組文章。
+  // 依題型分節；題號由 Word 原生清單連續產生，no 僅用於題組文章的題號範圍。
   const order=['single','multi','group','nonchoice'];
+  const groupRanges=new Map();
+  sec.ordered.forEach((it,i)=>{
+    if(sec.kindOf(it)!=='group'||!it.groupId)return;
+    const range=groupRanges.get(it.groupId)||{first:i+1,last:i+1};
+    range.last=i+1;
+    groupRanges.set(it.groupId,range);
+  });
   const shownG=new Set();
   const sections=[];let qno=0;
   for(const k of order){
     const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
     if(!its.length)continue;
-    const items=[];let passage=null;
+    const items=[];
     for(const it of its){
+      let passage=null;
       if(k==='group'&&it.groupId&&!shownG.has(it.groupId)){
         shownG.add(it.groupId);const ps=PASSAGES[it.groupId];
-        if(ps&&(ps.q||(ps.imgs||[]).length)){passage={text:_tplQuestionText(ps),imgs:await _tplResolveImgs(ps.imgs)};}
+        if(ps&&(ps.q||(ps.imgs||[]).length)){
+          const range=groupRanges.get(it.groupId);
+          let text=_tplQuestionText(ps,false);
+          if(range&&!/根據.{0,12}回答以下/.test(text))text+='\n根據文章內容，請回答以下'+range.first+'～'+range.last+'題。';
+          passage={text,imgs:await _tplResolveImgs(ps.imgs)};
+        }
       }
       qno++;
-      items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs)});
+      items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs),passage});
     }
-    sections.push({title:paperSectionLabel(k,sec),passage:(k==='group'?passage:null),items});
+    sections.push({title:paperSectionLabel(k,sec),items});
   }
-  const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b)=>{const d=_imgDims(b);const maxW=kind==='abk'?250:460;const w=Math.min(maxW,d[0]);return [Math.round(w),Math.round(w*d[1]/d[0])];}};
+  const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b)=>{
+    const d=_imgDims(b);
+    // Ideal ABK 卷的題內圖高度約 10–35 mm；隨文圖片不得把單欄撐開。
+    const maxW=kind==='abk'?270:460,maxH=kind==='abk'?135:380;
+    const scale=Math.min(1,maxW/d[0],maxH/d[1]);
+    return [Math.max(1,Math.round(d[0]*scale)),Math.max(1,Math.round(d[1]*scale))];
+  }};
   const zip=new PizZip(buf);
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
   doc.render({chapter,book,unit:scope,ver:(opts.ver||'B'),sections});
