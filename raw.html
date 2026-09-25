@@ -887,6 +887,13 @@
     }
     function onOcrPresetChange(v){localStorage.setItem('ocrPreset',v);const urlEl=document.getElementById('ocrUrl');if(v!=='custom'&&urlEl){urlEl.value=OCR_PRESETS[v]||'';localStorage.setItem('ocrUrl',urlEl.value);}}
     function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
+    // 把 CSV 填入後，自動展開第 4 步（貼回 CSV）的收合區並捲過去，避免「跑完看不到結果」。
+    function _revealQuestionCsv(){
+      const ta=document.getElementById('questionCsv');if(!ta)return;
+      const detail=ta.closest('.step-detail');
+      if(detail&&!detail.classList.contains('open')){const tb=detail.parentElement.querySelector('.toggle-detail');if(tb)tb.click();}
+      ta.scrollIntoView({behavior:'smooth',block:'center'});
+    }
     // ── 用 Gemini 視覺直接辨識掃描卷（免本機 OCR 服務）：每頁 render 成圖 → 一次送 Gemini → 23 欄 CSV ──
     // 同時統計「這一份考卷」用掉多少 Gemini token 與估算費用，供評估是否值得訂閱 Gemini。
     // gemini-2.5-flash 參考單價（美元／每百萬 token），請依 Google 官方最新報價調整：
@@ -927,7 +934,7 @@
         if(!csv){st.textContent='Gemini 沒有回傳內容，請重試。';return}
         questionCsv.value=csv;inspectCsv();
         st.textContent='辨識完成，已把 CSV 填入下方第 4 步，請人工核對。圖表素材請到第 III 區用同一份 PDF 裁切。';
-        questionCsv.scrollIntoView({behavior:'smooth',block:'center'});
+        _revealQuestionCsv();
       }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
     }
     function _renderGvTokens(u,pages){
@@ -1033,7 +1040,7 @@
     }
     async function ocrMakeCsv(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
-      if(OCR_DEMO){questionCsv.value=DEMO_CSV;inspectCsv();document.getElementById('ocrStatus').textContent='（示範）已將樣本 CSV 填入第 4 步；正式使用時會由 Ollama 或 Gemini 依 MinerU 辨識內容產生。';questionCsv.scrollIntoView({behavior:'smooth',block:'center'});return}
+      if(OCR_DEMO){questionCsv.value=DEMO_CSV;inspectCsv();document.getElementById('ocrStatus').textContent='（示範）已將樣本 CSV 填入第 4 步；正式使用時會由 Ollama 或 Gemini 依 MinerU 辨識內容產生。';_revealQuestionCsv();return}
       const st=document.getElementById('ocrStatus');
       const engine=document.getElementById('ocrClassifier').value;
       st.textContent='正在用 '+(engine==='gemini'?'Gemini':'Ollama')+' 分類、產生 23 欄 CSV…';
@@ -1059,7 +1066,7 @@
         if(!csv){st.textContent='分類引擎沒有回傳內容，請重試或改用另一個引擎。';return}
         questionCsv.value=csv;inspectCsv();
         st.textContent='CSV 已產生並填入第 4 步，請人工核對後再匯入題庫。';
-        questionCsv.scrollIntoView({behavior:'smooth',block:'center'});
+        _revealQuestionCsv();
       }catch(e){st.textContent='產生 CSV 失敗：'+(e.message||e);}
     }
   </script>
