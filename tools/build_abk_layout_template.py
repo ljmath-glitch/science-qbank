@@ -48,27 +48,64 @@ def set_question_properties(paragraph):
     paragraph.insert(0, props)
 
 
+def set_heading_properties(paragraph):
+    """Use the supplied ABK template's section-heading ruler and native list."""
+    old = paragraph.find("w:pPr", NS)
+    if old is not None:
+        paragraph.remove(old)
+    props = etree.Element(tag("pPr"))
+    etree.SubElement(props, tag("pStyle"), {tag("val"): "ListParagraph"})
+    etree.SubElement(props, tag("keepNext"))
+    numbering = etree.SubElement(props, tag("numPr"))
+    etree.SubElement(numbering, tag("ilvl"), {tag("val"): "0"})
+    etree.SubElement(numbering, tag("numId"), {tag("val"): "87"})
+    tabs = etree.SubElement(props, tag("tabs"))
+    etree.SubElement(tabs, tag("tab"), {tag("val"): "left", tag("pos"): "0"})
+    etree.SubElement(props, tag("spacing"), {tag("after"): "120", tag("line"): "288", tag("lineRule"): "auto"})
+    etree.SubElement(props, tag("ind"), {tag("left"): "284", tag("hanging"): "567"})
+    run_props = etree.SubElement(props, tag("rPr"))
+    etree.SubElement(run_props, tag("rFonts"), {tag("eastAsia"): "DFPYuanMedium-B5"})
+    etree.SubElement(run_props, tag("sz"), {tag("val"): "20"})
+    etree.SubElement(run_props, tag("szCs"), {tag("val"): "20"})
+    paragraph.insert(0, props)
+
+    text = "".join(paragraph.xpath(".//w:t/text()", namespaces=NS))
+    if "每題＿＿分，共＿＿分" not in text:
+        score = etree.SubElement(paragraph, tag("r"))
+        score_props = etree.SubElement(score, tag("rPr"))
+        etree.SubElement(
+            score_props,
+            tag("rFonts"),
+            {tag("ascii"): "Times New Roman", tag("hAnsi"): "Times New Roman", tag("eastAsia"): "DFPYuanMedium-B5"},
+        )
+        etree.SubElement(score_props, tag("sz"), {tag("val"): "20"})
+        etree.SubElement(score_props, tag("szCs"), {tag("val"): "20"})
+        score_text = etree.SubElement(score, tag("t"), {"{http://www.w3.org/XML/1998/namespace}space": "preserve"})
+        score_text.text = "  /每題＿＿分，共＿＿分"
+
+
 def build(source):
     root = etree.fromstring(source)
     body = root.find("w:body", NS)
     paragraphs = body.findall("w:p", NS)
     assert len(paragraphs) == 13, "ABK body template changed; check its slots before rebuilding"
     # The generated template lives at this path too. Re-running the builder
-    # should be harmless; never try to reinterpret the already-reordered loops.
+    # updates only the heading without reinterpreting already-reordered loops.
     if "{no}. " not in "".join(paragraphs[10].xpath(".//w:t/text()", namespaces=NS)):
         question = paragraphs[10]
         assert question.find("w:pPr/w:numPr/w:numId", NS).get(tag("val")) == "100"
         assert "{text}" in "".join(question.xpath(".//w:t/text()", namespaces=NS))
-        return source
+        heading = paragraphs[5]
+        assert "{title}" in "".join(heading.xpath(".//w:t/text()", namespaces=NS))
+        set_heading_properties(heading)
+        return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
     assert "{no}. " in "".join(paragraphs[10].xpath(".//w:t/text()", namespaces=NS))
 
     title = deepcopy(paragraphs[5])
     for run in list(title.findall("w:r", NS)):
         if "每題" in "".join(run.xpath(".//w:t/text()", namespaces=NS)):
             title.remove(run)  # Per the current export requirement, do not print scoring.
-    title_props = title.find("w:pPr", NS)
-    if title_props is not None:
-        etree.SubElement(title_props, tag("keepNext"))
+    set_heading_properties(title)
 
     passage = deepcopy(paragraphs[7])
     passage_props = passage.find("w:pPr", NS)

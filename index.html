@@ -7958,7 +7958,8 @@ async function downloadWordViaTemplate(kind,opts){
       qno++;
       items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs),passage});
     }
-    sections.push({title:paperSectionLabel(k,sec),items});
+    // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
+    sections.push({title:kind==='abk'?_PAPER_SECTION_LABEL[k]:paperSectionLabel(k,sec),items});
   }
   const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b)=>{
     const d=_imgDims(b);
