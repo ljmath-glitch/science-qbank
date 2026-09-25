@@ -59,7 +59,7 @@
       <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">開發中・請勿操作</span></div>
-          <button id="gvToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="gvPanel" onclick="toggleGvPanel()" style="font-size:11px;padding:3px 9px">展開</button>
+          <button id="gvToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="gvPanel" onclick="toggleGvPanel()" style="font-size:11px;padding:3px 9px">主管／測試人員展開</button>
         </div>
         <div id="gvPanel" class="hide" style="margin-top:10px;border-top:1px solid #cfe0f7;padding-top:10px">
         <p class="help" style="margin:0 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
@@ -888,7 +888,7 @@
       const panel=document.getElementById('gvPanel'),btn=document.getElementById('gvToggleBtn');
       const opening=panel.classList.contains('hide');
       panel.classList.toggle('hide',!opening);btn.setAttribute('aria-expanded',String(opening));
-      btn.textContent=opening?'收合':'展開';
+      btn.textContent=opening?'收合 Gemini 測試功能':'主管／測試人員展開';
     }
     function initOcrUi(){
       const p=localStorage.getItem('ocrPreset')||'company';
