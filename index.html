@@ -7906,21 +7906,21 @@ async function downloadWordViaTemplate(kind,opts){
   const examName=(document.getElementById('pExamName').value||'').trim();
   const chapter=(examName||scope||document.getElementById('pTitle').value||'自然科').trim();
   const book=(grade.match(/\d/)||[''])[0]||'';   // 冊數（取數字，如 JB3→3）
-  // 依題型分節；題號用 Word 自動編號（不手打），全卷連續；灌入圖片與題組文章。
+  // 依題型分節；題號全卷連續（手動帶入 no，範本用 {no} 顯示）；灌入圖片與題組文章。
   const order=['single','multi','group','nonchoice'];
   const shownG=new Set();
-  const sections=[];
+  const sections=[];let qno=0;
   for(const k of order){
     const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
     if(!its.length)continue;
     const items=[];let passage=null;
     for(const it of its){
-      // 題組文章：每組第一次出現時帶入該節 passage（◎ 文字方塊改為 ◎ 段落）
       if(k==='group'&&it.groupId&&!shownG.has(it.groupId)){
         shownG.add(it.groupId);const ps=PASSAGES[it.groupId];
         if(ps&&(ps.q||(ps.imgs||[]).length)){passage={text:_tplQuestionText(ps),imgs:await _tplResolveImgs(ps.imgs)};}
       }
-      items.push({text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs)});
+      qno++;
+      items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs)});
     }
     sections.push({title:paperSectionLabel(k,sec),passage:(k==='group'?passage:null),items});
   }
