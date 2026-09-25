@@ -57,12 +57,17 @@
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
-        <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1666d6;color:#fff;font-size:11px">推薦</span></div>
-        <p class="help" style="margin:6px 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1666d6;color:#fff;font-size:11px">推薦</span></div>
+          <button id="gvToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="gvPanel" onclick="toggleGvPanel()" style="font-size:11px;padding:3px 9px">展開</button>
+        </div>
+        <div id="gvPanel" class="hide" style="margin-top:10px;border-top:1px solid #cfe0f7;padding-top:10px">
+        <p class="help" style="margin:0 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
         <input id="gvPdf" type="file" accept=".pdf" class="hide" onchange="runGeminiVisionOcr(this.files[0]);this.value=''">
         <div class="drop" onclick="gvPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runGeminiVisionOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → Gemini 直接辨識</div>
         <div class="status" id="gvStatus" style="margin-top:8px"></div>
         <div id="gvTokens" class="hide" style="margin-top:8px;background:#fff;border:1px solid #1666d6;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+        </div>
       </div>
       <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:#f6fbff">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -878,6 +883,12 @@
       const opening=panel.classList.contains('hide');
       panel.classList.toggle('hide',!opening);btn.setAttribute('aria-expanded',String(opening));
       btn.textContent=opening?'收合 MinerU 測試功能':'主管／測試人員展開';
+    }
+    function toggleGvPanel(){
+      const panel=document.getElementById('gvPanel'),btn=document.getElementById('gvToggleBtn');
+      const opening=panel.classList.contains('hide');
+      panel.classList.toggle('hide',!opening);btn.setAttribute('aria-expanded',String(opening));
+      btn.textContent=opening?'收合':'展開';
     }
     function initOcrUi(){
       const p=localStorage.getItem('ocrPreset')||'company';
