@@ -56,6 +56,14 @@
     <section class="stage">
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
+      <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
+        <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1666d6;color:#fff;font-size:11px">推薦</span></div>
+        <p class="help" style="margin:6px 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
+        <input id="gvPdf" type="file" accept=".pdf" class="hide" onchange="runGeminiVisionOcr(this.files[0]);this.value=''">
+        <div class="drop" onclick="gvPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runGeminiVisionOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → Gemini 直接辨識</div>
+        <div class="status" id="gvStatus" style="margin-top:8px"></div>
+        <div id="gvTokens" class="hide" style="margin-top:8px;background:#fff;border:1px solid #1666d6;border-radius:8px;padding:8px 10px;font-size:12px"></div>
+      </div>
       <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:#f6fbff">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div style="font-weight:700;font-size:13px">🅐 MinerU 自建 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">開發中・請勿操作</span></div>
@@ -890,6 +898,58 @@
     }
     function onOcrPresetChange(v){localStorage.setItem('ocrPreset',v);const urlEl=document.getElementById('ocrUrl');if(v!=='custom'&&urlEl){urlEl.value=OCR_PRESETS[v]||'';localStorage.setItem('ocrUrl',urlEl.value);}}
     function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
+    // ── 用 Gemini 視覺直接辨識掃描卷（免本機 OCR 服務）：每頁 render 成圖 → 一次送 Gemini → 23 欄 CSV ──
+    // 同時統計「這一份考卷」用掉多少 Gemini token 與估算費用，供評估是否值得訂閱 Gemini。
+    // gemini-2.5-flash 參考單價（美元／每百萬 token），請依 Google 官方最新報價調整：
+    const GEMINI_PRICE={input:0.30,output:2.50};   // USD / 1M tokens（僅供估算）
+    const USD_TWD=32;                              // 粗略匯率（僅供估算）
+    async function runGeminiVisionOcr(file){
+      if(!file)return;
+      const st=document.getElementById('gvStatus');
+      document.getElementById('gvTokens').classList.add('hide');
+      const w=promptSource.contentWindow;
+      const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
+      if(!key){st.textContent='找不到 Gemini API Key，請先到題庫首頁的「AI 設定」填入 Gemini 金鑰。';return}
+      if(typeof w.callGemini!=='function'||typeof w.resetGeminiUsage!=='function'){st.textContent='題庫尚未載入完成，請稍候幾秒再試。';return}
+      OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供第 III 區手動框選／裁圖沿用同一份 PDF
+      st.textContent='正在把 PDF 逐頁轉成圖片…';
+      try{
+        const pdfjs=await loadPdfJs();
+        const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+        const imgs=[];
+        for(let p=1;p<=doc.numPages;p++){
+          const page=await doc.getPage(p);
+          const vp=page.getViewport({scale:2.0});   // 掃描卷放大到約 144dpi 起，字夠清楚
+          const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+          await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+          imgs.push({src:cv.toDataURL('image/jpeg',0.85)});   // JPEG 較小，省頻寬
+          st.textContent=`正在把 PDF 逐頁轉成圖片…（${p}/${doc.numPages}）`;
+        }
+        if(!imgs.length){st.textContent='這個 PDF 沒有可辨識的頁面。';return}
+        const build=await waitForPromptBuilder('buildPrompt');
+        let instruction=build.call(w);
+        if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;
+        const msg=instruction+'\n\n════════\n上面是規則。附上的圖片就是這份清稿考卷的每一頁，請「完全依照上述規則」判讀並輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字。';
+        st.textContent=`已轉 ${imgs.length} 頁，正在送 Gemini 辨識中…（依頁數約數十秒，請稍候）`;
+        w.resetGeminiUsage();
+        let csv=await w.callGemini('',msg,key,imgs);
+        csv=(csv||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+        _renderGvTokens(w.getGeminiUsage(),imgs.length);
+        if(!csv){st.textContent='Gemini 沒有回傳內容，請重試。';return}
+        questionCsv.value=csv;inspectCsv();
+        st.textContent='辨識完成，已把 CSV 填入下方第 4 步，請人工核對。圖表素材請到第 III 區用同一份 PDF 裁切。';
+        questionCsv.scrollIntoView({behavior:'smooth',block:'center'});
+      }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
+    }
+    function _renderGvTokens(u,pages){
+      const tokEl=document.getElementById('gvTokens');if(!tokEl)return;
+      if(!u||!u.total){tokEl.classList.add('hide');return}
+      const usd=(u.prompt/1e6*GEMINI_PRICE.input)+(u.output/1e6*GEMINI_PRICE.output);
+      tokEl.classList.remove('hide');
+      tokEl.innerHTML='<b>📊 這份考卷的 Gemini 用量</b>（'+pages+' 頁・模型 '+(u.model||'gemini-2.5-flash')+'）<br>'+
+        '輸入 '+u.prompt.toLocaleString()+' token　輸出 '+u.output.toLocaleString()+' token　合計 <b>'+u.total.toLocaleString()+' token</b><br>'+
+        '<span class="help">估算費用 ≈ US$'+usd.toFixed(4)+'（約 NT$'+(usd*USD_TWD).toFixed(2)+'）　單價：輸入 $'+GEMINI_PRICE.input+'／1M、輸出 $'+GEMINI_PRICE.output+'／1M（gemini-2.5-flash，僅供估算，實際請以 Google 官方報價為準）</span>';
+    }
     async function testOcrService(){
       const el=document.getElementById('ocrHealth');const base=ocrBase();
       if(!base){el.textContent='請先填 OCR 服務網址。';return}

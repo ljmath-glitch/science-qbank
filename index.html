@@ -6369,6 +6369,22 @@ async function getGeminiModel(key){
   if(AI_CFG.geminiModel)return AI_CFG.geminiModel;
   return 'gemini-2.5-flash';
 }
+// ── Gemini token 用量統計（供 raw 前處理計算「一份考卷花多少 token」，用來評估成本）──
+// 每次 callGemini 都會把 usageMetadata 累加進來；raw.html 在辨識一份考卷前呼叫 resetGeminiUsage()，
+// 辨識後呼叫 getGeminiUsage() 取回這份考卷的總用量。
+window.GEMINI_USAGE=window.GEMINI_USAGE||{prompt:0,output:0,total:0,calls:0,model:''};
+window.resetGeminiUsage=function(){window.GEMINI_USAGE={prompt:0,output:0,total:0,calls:0,model:''};};
+window.getGeminiUsage=function(){return Object.assign({},window.GEMINI_USAGE);};
+function _accumGeminiUsage(u,model){
+  if(!u)return;
+  const g=window.GEMINI_USAGE;
+  g.prompt+=u.promptTokenCount||0;
+  g.output+=u.candidatesTokenCount||0;
+  // 有些回應的 totalTokenCount 會含 thinking/tool token，優先採用；否則自行加總
+  g.total+=(u.totalTokenCount!=null)?u.totalTokenCount:((u.promptTokenCount||0)+(u.candidatesTokenCount||0));
+  g.calls+=1;
+  if(model)g.model=model;
+}
 async function callGemini(sys,msg,key,imgs=[]){
   const model=await getGeminiModel(key);
   const parts=[];
@@ -6387,6 +6403,7 @@ async function callGemini(sys,msg,key,imgs=[]){
     }else throw new Error(msg2);
   }
   const gData=await r.json().catch(()=>({}));
+  _accumGeminiUsage(gData?.usageMetadata,model);
   const text=gData?.candidates?.[0]?.content?.parts?.[0]?.text;
   if(!text){
     const reason=gData?.candidates?.[0]?.finishReason||gData?.promptFeedback?.blockReason||'';
