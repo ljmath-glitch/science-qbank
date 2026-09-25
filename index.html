@@ -7854,17 +7854,35 @@ function readHdrFields(){
 // ── 以「範本填入」方式產生 Word（docxtemplater）：直接拿實體範本 .docx 當底，只灌題目，
 //    頁首/浮水印/卷頭帶/字型/頁面全部沿用範本本體，避免從零組版跟範本差太多。 ──
 let _dtxLibP=null;
+function _loadTemplateScript(src){
+  return new Promise((resolve,reject)=>{
+    const script=document.createElement('script');
+    script.src=src;
+    script.onload=resolve;
+    script.onerror=()=>reject(new Error('載入失敗：'+src));
+    document.head.appendChild(script);
+  });
+}
+async function _loadTemplateImageModule(){
+  // image-module-free 1.1.1 writes to Element.namespaceURI in two places.
+  // That DOM property is read-only in Safari, so image-bearing exams fail to export.
+  const src='https://cdn.jsdelivr.net/npm/docxtemplater-image-module-free@1.1.1/build/imagemodule.js';
+  const response=await fetch(src);
+  if(!response.ok)throw new Error('載入失敗：'+src);
+  const source=await response.text();
+  const readonlyWrite='newTag.namespaceURI = null;';
+  if(source.split(readonlyWrite).length!==3)throw new Error('圖片模組格式已變更，無法套用 Safari 相容修正');
+  const url=URL.createObjectURL(new Blob([source.split(readonlyWrite).join('')],{type:'text/javascript'}));
+  try{await _loadTemplateScript(url);}finally{URL.revokeObjectURL(url);}
+  if(!window.ImageModule)throw new Error('圖片模組載入失敗');
+}
 function _ensureDocxTemplater(){
   if(_dtxLibP)return _dtxLibP;
-  _dtxLibP=new Promise((res,rej)=>{
-    function load(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>rej(new Error('載入失敗：'+src));document.head.appendChild(s);}
-    function step(){
-      if(!window.docxtemplater){load('https://cdn.jsdelivr.net/npm/docxtemplater@3.71.0/build/docxtemplater.js',step);return;}
-      if(!window.ImageModule){load('https://cdn.jsdelivr.net/npm/docxtemplater-image-module-free@1.1.1/build/imagemodule.js',()=>res());return;}
-      res();
-    }
-    if(!window.PizZip)load('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js',step);else step();
-  });
+  _dtxLibP=(async()=>{
+    if(!window.PizZip)await _loadTemplateScript('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js');
+    if(!window.docxtemplater)await _loadTemplateScript('https://cdn.jsdelivr.net/npm/docxtemplater@3.71.0/build/docxtemplater.js');
+    if(!window.ImageModule)await _loadTemplateImageModule();
+  })().catch(e=>{_dtxLibP=null;throw e;});
   return _dtxLibP;
 }
 function _tplQuestionText(it){
