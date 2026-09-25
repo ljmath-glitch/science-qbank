@@ -1,7 +1,7 @@
 """Keep the ABK page furniture while rebuilding its repeatable exam body.
 
 The source template already contains the approved B4 header, watermark, and
-numbering definition (numId 100). Only word/document.xml is changed here.
+numbering definition (numId 100). The group-passage bullet adds numId 108.
 """
 
 from copy import deepcopy
@@ -15,10 +15,17 @@ from lxml import etree
 TEMPLATE = Path(__file__).resolve().parents[1] / "templates" / "abk_tpl.docx"
 W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NS = {"w": W}
+WP = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+A = "http://schemas.openxmlformats.org/drawingml/2006/main"
+WPS = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
 
 
 def tag(name):
     return f"{{{W}}}{name}"
+
+
+def ns_tag(namespace, name):
+    return f"{{{namespace}}}{name}"
 
 
 def set_question_properties(paragraph):
@@ -55,7 +62,6 @@ def set_heading_properties(paragraph):
         paragraph.remove(old)
     props = etree.Element(tag("pPr"))
     etree.SubElement(props, tag("pStyle"), {tag("val"): "ListParagraph"})
-    etree.SubElement(props, tag("keepNext"))
     numbering = etree.SubElement(props, tag("numPr"))
     etree.SubElement(numbering, tag("ilvl"), {tag("val"): "0"})
     etree.SubElement(numbering, tag("numId"), {tag("val"): "87"})
@@ -84,6 +90,102 @@ def set_heading_properties(paragraph):
         score_text.text = "  /每題＿＿分，共＿＿分"
 
 
+def set_passage_properties(paragraph):
+    """Put the real ◎ bullet at the top of an inline, editable Word text box."""
+    existing = paragraph.xpath(".//w:txbxContent/w:p", namespaces=NS)
+    if existing:
+        outer = paragraph.find("w:pPr", NS)
+        for child in list(outer):
+            if child.tag in {tag("pStyle"), tag("numPr"), tag("tabs"), tag("ind")}:
+                outer.remove(child)
+        inner_props = existing[0].find("w:pPr", NS)
+        for child in list(inner_props):
+            inner_props.remove(child)
+        set_inner_passage_properties(inner_props)
+        return
+    runs = [deepcopy(run) for run in paragraph.findall("w:r", NS)]
+    for run in runs:
+        for text in run.xpath(".//w:t", namespaces=NS):
+            if text.text and text.text.startswith("◎ "):
+                text.text = text.text[2:]
+    for child in list(paragraph):
+        paragraph.remove(child)
+
+    props = etree.SubElement(paragraph, tag("pPr"))
+    etree.SubElement(props, tag("spacing"), {tag("after"): "120"})
+
+    run = etree.SubElement(paragraph, tag("r"))
+    drawing = etree.SubElement(run, tag("drawing"))
+    inline = etree.SubElement(drawing, ns_tag(WP, "inline"), {"distT": "0", "distB": "0", "distL": "0", "distR": "0"})
+    etree.SubElement(inline, ns_tag(WP, "extent"), {"cx": "3500000", "cy": "1200000"})
+    etree.SubElement(inline, ns_tag(WP, "docPr"), {"id": "9000001", "name": "Group Passage"})
+    etree.SubElement(inline, ns_tag(WP, "cNvGraphicFramePr"))
+    graphic = etree.SubElement(inline, ns_tag(A, "graphic"))
+    graphic_data = etree.SubElement(graphic, ns_tag(A, "graphicData"), {"uri": WPS})
+    shape = etree.SubElement(graphic_data, ns_tag(WPS, "wsp"))
+    etree.SubElement(shape, ns_tag(WPS, "cNvSpPr"), {"txBox": "1"})
+    shape_props = etree.SubElement(shape, ns_tag(WPS, "spPr"))
+    transform = etree.SubElement(shape_props, ns_tag(A, "xfrm"))
+    etree.SubElement(transform, ns_tag(A, "off"), {"x": "0", "y": "0"})
+    etree.SubElement(transform, ns_tag(A, "ext"), {"cx": "3500000", "cy": "1200000"})
+    geometry = etree.SubElement(shape_props, ns_tag(A, "prstGeom"), {"prst": "rect"})
+    etree.SubElement(geometry, ns_tag(A, "avLst"))
+    etree.SubElement(shape_props, ns_tag(A, "noFill"))
+    line = etree.SubElement(shape_props, ns_tag(A, "ln"), {"w": "6350"})
+    fill = etree.SubElement(line, ns_tag(A, "solidFill"))
+    etree.SubElement(fill, ns_tag(A, "prstClr"), {"val": "black"})
+    text_box = etree.SubElement(shape, ns_tag(WPS, "txbx"))
+    content = etree.SubElement(text_box, tag("txbxContent"))
+    inner = etree.SubElement(content, tag("p"))
+    inner_props = etree.SubElement(inner, tag("pPr"))
+    set_inner_passage_properties(inner_props)
+    for child in runs:
+        inner.append(child)
+    body = etree.SubElement(
+        shape,
+        ns_tag(WPS, "bodyPr"),
+        {"rot": "0", "vert": "horz", "wrap": "square", "lIns": "91440", "tIns": "45720", "rIns": "91440", "bIns": "45720"},
+    )
+    etree.SubElement(body, ns_tag(A, "spAutoFit"))
+
+
+def set_inner_passage_properties(inner_props):
+    etree.SubElement(inner_props, tag("pStyle"), {tag("val"): "ListParagraph"})
+    number = etree.SubElement(inner_props, tag("numPr"))
+    etree.SubElement(number, tag("ilvl"), {tag("val"): "0"})
+    etree.SubElement(number, tag("numId"), {tag("val"): "108"})
+    tabs = etree.SubElement(inner_props, tag("tabs"))
+    etree.SubElement(tabs, tag("tab"), {tag("val"): "left", tag("pos"): "0"})
+    etree.SubElement(inner_props, tag("spacing"), {tag("after"): "0"})
+    etree.SubElement(inner_props, tag("ind"), {tag("left"): "284", tag("hanging"): "284"})
+
+
+def ensure_group_bullet_numbering(source):
+    root = etree.fromstring(source)
+    if root.xpath('./w:num[@w:numId="108"]', namespaces=NS):
+        return source
+    abstract_ids = [int(item.get(tag("abstractNumId"))) for item in root.findall("w:abstractNum", NS)]
+    abstract_id = str(max(abstract_ids) + 1)
+    abstract = etree.Element(tag("abstractNum"), {tag("abstractNumId"): abstract_id})
+    etree.SubElement(abstract, tag("multiLevelType"), {tag("val"): "singleLevel"})
+    level = etree.SubElement(abstract, tag("lvl"), {tag("ilvl"): "0"})
+    etree.SubElement(level, tag("start"), {tag("val"): "1"})
+    etree.SubElement(level, tag("numFmt"), {tag("val"): "bullet"})
+    etree.SubElement(level, tag("lvlText"), {tag("val"): "◎"})
+    etree.SubElement(level, tag("lvlJc"), {tag("val"): "left"})
+    etree.SubElement(level, tag("suff"), {tag("val"): "space"})
+    level_props = etree.SubElement(level, tag("pPr"))
+    etree.SubElement(level_props, tag("ind"), {tag("left"): "284", tag("hanging"): "284"})
+    run_props = etree.SubElement(level, tag("rPr"))
+    etree.SubElement(run_props, tag("rFonts"), {tag("eastAsia"): "DFPYuanMedium-B5"})
+    etree.SubElement(run_props, tag("sz"), {tag("val"): "20"})
+    first_num = root.find("w:num", NS)
+    root.insert(root.index(first_num), abstract)
+    number = etree.SubElement(root, tag("num"), {tag("numId"): "108"})
+    etree.SubElement(number, tag("abstractNumId"), {tag("val"): abstract_id})
+    return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+
+
 def build(source):
     root = etree.fromstring(source)
     body = root.find("w:body", NS)
@@ -98,6 +200,7 @@ def build(source):
         heading = paragraphs[5]
         assert "{title}" in "".join(heading.xpath(".//w:t/text()", namespaces=NS))
         set_heading_properties(heading)
+        set_passage_properties(paragraphs[8])
         return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
     assert "{no}. " in "".join(paragraphs[10].xpath(".//w:t/text()", namespaces=NS))
 
@@ -108,9 +211,7 @@ def build(source):
     set_heading_properties(title)
 
     passage = deepcopy(paragraphs[7])
-    passage_props = passage.find("w:pPr", NS)
-    if passage_props is not None:
-        etree.SubElement(passage_props, tag("keepNext"))
+    set_passage_properties(passage)
 
     question = deepcopy(paragraphs[10])
     for run in list(question.findall("w:r", NS)):
@@ -141,12 +242,13 @@ def build(source):
 def main():
     with ZipFile(TEMPLATE) as original:
         replacement = build(original.read("word/document.xml"))
+        numbering = ensure_group_bullet_numbering(original.read("word/numbering.xml"))
         with NamedTemporaryFile(dir=TEMPLATE.parent, suffix=".docx", delete=False) as temp:
             temporary = Path(temp.name)
         try:
             with ZipFile(temporary, "w") as output:
                 for info in original.infolist():
-                    data = replacement if info.filename == "word/document.xml" else original.read(info.filename)
+                    data = replacement if info.filename == "word/document.xml" else numbering if info.filename == "word/numbering.xml" else original.read(info.filename)
                     output.writestr(info, data)
             temporary.replace(TEMPLATE)
         finally:

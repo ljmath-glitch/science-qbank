@@ -7895,6 +7895,7 @@ function _tplQuestionText(it,withChoices=true){
     // 不吞掉題幹與選項的分界，也不把四個選項擠在同一行。
     t=t.replace(/（([A-Da-d])）/g,'($1)')
       .replace(/[ \t]*\n?[ \t]*(\([A-Da-d]\))/g,'\n\t$1')
+      .replace(/(\([A-Da-d]\))[ \t\u3000]+/g,'$1')
       .replace(/^\n/,'');
   }
   return t;
@@ -7971,7 +7972,16 @@ async function downloadWordViaTemplate(kind,opts){
   const zip=new PizZip(buf);
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
   doc.render({chapter,book,unit:scope,ver:(opts.ver||'B'),sections});
-  const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const renderedZip=doc.getZip();
+  if(kind==='abk'){
+    // 題組文字方塊會隨題組複製；每個 Word drawing 必須有自己的 docPr id。
+    const expected=sections.reduce((count,section)=>count+section.items.filter(item=>item.passage).length,0);
+    let boxCount=0;
+    const xml=renderedZip.file('word/document.xml').asText().replace(/(<wp:docPr )id="9000001"( name="Group Passage")/g,(_m,start,end)=>`${start}id="${9000001+boxCount++}"${end}`);
+    if(boxCount!==expected)throw new Error('題組文字方塊數量與題組文章不一致');
+    renderedZip.file('word/document.xml',xml);
+  }
+  const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const title=(document.getElementById('pTitle').value||'考卷').trim();
   const url=URL.createObjectURL(out);const a=document.createElement('a');a.href=url;a.download=title+(opts.suffix||'')+'_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
