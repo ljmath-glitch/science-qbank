@@ -7841,8 +7841,12 @@ function _ensureDocxTemplater(){
   if(_dtxLibP)return _dtxLibP;
   _dtxLibP=new Promise((res,rej)=>{
     function load(src,cb){const s=document.createElement('script');s.src=src;s.onload=cb;s.onerror=()=>rej(new Error('載入失敗：'+src));document.head.appendChild(s);}
-    if(window.PizZip&&window.docxtemplater)return res();
-    load('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js',()=>load('https://cdn.jsdelivr.net/npm/docxtemplater@3.71.0/build/docxtemplater.js',()=>res()));
+    function step(){
+      if(!window.docxtemplater){load('https://cdn.jsdelivr.net/npm/docxtemplater@3.71.0/build/docxtemplater.js',step);return;}
+      if(!window.ImageModule){load('https://cdn.jsdelivr.net/npm/docxtemplater-image-module-free@1.1.1/build/imagemodule.js',()=>res());return;}
+      res();
+    }
+    if(!window.PizZip)load('https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js',step);else step();
   });
   return _dtxLibP;
 }
@@ -7850,30 +7854,63 @@ function _tplQuestionText(it){
   let t=it.q||it.summary||'';
   try{t=stripRichMarks(t);}catch(_){}
   try{t=latexToPlain(fixLatex(t));}catch(_){}
-  return String(t).replace(/\r/g,'').replace(/\n{2,}/g,'\n').trim();
+  t=String(t).replace(/\r/g,'').replace(/\n{2,}/g,'\n').trim();
+  // 選項前插入 tab，讓 (A)(B)(C)(D) 對齊範本設定的定位點
+  t=t.replace(/\s*([（(][A-Da-d][）)])/g,'\t$1');
+  return t;
+}
+// 影像位元組解析尺寸（PNG/JPEG），用於 docxtemplater image module getSize
+function _imgDims(b){
+  if(b[0]===0x89&&b[1]===0x50)return [(b[16]<<24|b[17]<<16|b[18]<<8|b[19])>>>0,(b[20]<<24|b[21]<<16|b[22]<<8|b[23])>>>0];
+  if(b[0]===0xFF&&b[1]===0xD8){let i=2;while(i<b.length){if(b[i]!==0xFF){i++;continue;}const m=b[i+1];if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)return [(b[i+7]<<8)|b[i+8],(b[i+5]<<8)|b[i+6]];i+=2+((b[i+2]<<8)|b[i+3]);}}
+  return [240,180];
+}
+function _b64ToBytes(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+async function _tplResolveImgs(imgs){
+  const out=[];
+  for(const im of (imgs||[])){
+    if(!im||!im.src)continue;
+    try{const p=await _imgToBase64(im);if(p&&p.b64)out.push({src:p.b64});}catch(_){}
+  }
+  return out;
 }
 async function downloadWordViaTemplate(kind,opts){
   opts=opts||{};
   await _ensureDocxTemplater();
-  const PizZip=window.PizZip,Docxtemplater=window.docxtemplater;
+  const PizZip=window.PizZip,Docxtemplater=window.docxtemplater,ImageModule=window.ImageModule;
   if(!PizZip||!Docxtemplater)throw new Error('範本套件載入失敗');
   const tplUrl=kind==='abk'?'templates/abk_tpl.docx':'templates/pre_tpl.docx';
   const resp=await fetch(tplUrl);
   if(!resp.ok)throw new Error('找不到範本檔：'+tplUrl);
   const buf=await resp.arrayBuffer();
-  const zip=new PizZip(buf);
-  const doc=new Docxtemplater(zip,{paragraphLoop:true,linebreaks:true});
   const sec=paperQuestionSections(pickedItems());
-  const chapter=(document.getElementById('pExamName').value||document.getElementById('pScope').value||document.getElementById('pTitle').value||'自然科').trim();
-  // 依題型分節（單選/多選/題組/非選），每節一個大標題「一、單選題」…，題號全卷連續。
+  const grade=(document.getElementById('pGrade').value||'').trim();
+  const scope=(document.getElementById('pScope').value||'').trim();
+  const examName=(document.getElementById('pExamName').value||'').trim();
+  const chapter=(examName||scope||document.getElementById('pTitle').value||'自然科').trim();
+  const book=(grade.match(/\d/)||[''])[0]||'';   // 冊數（取數字，如 JB3→3）
+  // 依題型分節；題號用 Word 自動編號（不手打），全卷連續；灌入圖片與題組文章。
   const order=['single','multi','group','nonchoice'];
-  let n=0;const sections=[];
-  order.forEach(k=>{
+  const shownG=new Set();
+  const sections=[];
+  for(const k of order){
     const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
-    if(!its.length)return;
-    sections.push({title:paperSectionLabel(k,sec),items:its.map(it=>{n++;return {no:n,text:_tplQuestionText(it)};})});
-  });
-  doc.render({chapter,sections});
+    if(!its.length)continue;
+    const items=[];let passage=null;
+    for(const it of its){
+      // 題組文章：每組第一次出現時帶入該節 passage（◎ 文字方塊改為 ◎ 段落）
+      if(k==='group'&&it.groupId&&!shownG.has(it.groupId)){
+        shownG.add(it.groupId);const ps=PASSAGES[it.groupId];
+        if(ps&&(ps.q||(ps.imgs||[]).length)){passage={text:_tplQuestionText(ps),imgs:await _tplResolveImgs(ps.imgs)};}
+      }
+      items.push({text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs)});
+    }
+    sections.push({title:paperSectionLabel(k,sec),passage:(k==='group'?passage:null),items});
+  }
+  const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b)=>{const d=_imgDims(b);const maxW=kind==='abk'?250:460;const w=Math.min(maxW,d[0]);return [Math.round(w),Math.round(w*d[1]/d[0])];}};
+  const zip=new PizZip(buf);
+  const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
+  doc.render({chapter,book,unit:scope,ver:(opts.ver||'B'),sections});
   const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const title=(document.getElementById('pTitle').value||'考卷').trim();
   const url=URL.createObjectURL(out);const a=document.createElement('a');a.href=url;a.download=title+(opts.suffix||'')+'_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
