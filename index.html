@@ -7865,8 +7865,15 @@ async function downloadWordViaTemplate(kind,opts){
   const doc=new Docxtemplater(zip,{paragraphLoop:true,linebreaks:true});
   const sec=paperQuestionSections(pickedItems());
   const chapter=(document.getElementById('pExamName').value||document.getElementById('pScope').value||document.getElementById('pTitle').value||'自然科').trim();
-  let n=0;const questions=sec.ordered.map(it=>{n++;return {no:n,text:_tplQuestionText(it)};});
-  doc.render({chapter,questions});
+  // 依題型分節（單選/多選/題組/非選），每節一個大標題「一、單選題」…，題號全卷連續。
+  const order=['single','multi','group','nonchoice'];
+  let n=0;const sections=[];
+  order.forEach(k=>{
+    const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
+    if(!its.length)return;
+    sections.push({title:paperSectionLabel(k,sec),items:its.map(it=>{n++;return {no:n,text:_tplQuestionText(it)};})});
+  });
+  doc.render({chapter,sections});
   const out=doc.getZip().generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const title=(document.getElementById('pTitle').value||'考卷').trim();
   const url=URL.createObjectURL(out);const a=document.createElement('a');a.href=url;a.download=title+(opts.suffix||'')+'_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
