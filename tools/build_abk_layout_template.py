@@ -61,6 +61,10 @@ def set_question_properties(paragraph):
     for position in (0, 709, 1985, 3260, 4536):
         etree.SubElement(tabs, tag("tab"), {tag("val"): "left", tag("pos"): str(position)})
     set_body_layout(props)
+    # Numbered questions need their own ruler: the marker starts at 0.25 cm,
+    # and the stem/continuation text at 1 cm (0.75 cm hanging). Using the
+    # article's 0.25 cm text indent puts the marker outside the column.
+    props.find("w:ind", NS).set(tag("left"), "567")
     run_props = etree.SubElement(props, tag("rPr"))
     etree.SubElement(
         run_props,

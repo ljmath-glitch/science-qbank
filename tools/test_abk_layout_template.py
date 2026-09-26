@@ -5,10 +5,10 @@ from lxml import etree
 from build_abk_layout_template import A, NS, TEMPLATE, WP, build, tag
 
 
-def check_body_layout(props):
+def check_body_layout(props, left="142"):
     expected = {
         "jc": {"val": "left"}, "outlineLvl": {"val": "9"},
-        "ind": {"left": "142", "right": "0", "hanging": "425"},
+        "ind": {"left": left, "right": "0", "hanging": "425"},
         "spacing": {"before": "0", "after": "120", "line": "240", "lineRule": "auto"},
         "adjustRightInd": {"val": "1"}, "snapToGrid": {"val": "0"},
         "contextualSpacing": {"val": "0"}, "mirrorIndents": {"val": "0"},
@@ -23,7 +23,11 @@ with ZipFile(TEMPLATE) as package:
     source = package.read("word/document.xml")
     root = etree.fromstring(source)
     paragraphs = root.find("w:body", NS).findall("w:p", NS)
-    check_body_layout(paragraphs[10].find("w:pPr", NS))
+    question_props = paragraphs[10].find("w:pPr", NS)
+    check_body_layout(question_props, left="567")
+    question_indent = question_props.find("w:ind", NS)
+    assert int(question_indent.get(tag("left"))) - int(question_indent.get(tag("hanging"))) == 142, "Question markers must stay inside both columns"
+    assert [item.get(tag("pos")) for item in question_props.findall("w:tabs/w:tab", NS)] == ["0", "709", "1985", "3260", "4536"]
     assert paragraphs[10].find("w:pPr/w:numPr/w:numId", NS).get(tag("val")) == "100"
     passage = paragraphs[8]
     for inner in passage.xpath(".//w:txbxContent/w:p", namespaces=NS):
