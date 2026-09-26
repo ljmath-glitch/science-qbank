@@ -1,4 +1,4 @@
-/* One full-size paper layout for ABK export settings and the print/PDF window.
+/* One full-size paper layout for ABK/prequiz settings and the print/PDF window.
  * Word remains template-backed; this module never changes the approved DOCX.
  */
 async function paperOutputWait(root) {
@@ -18,6 +18,7 @@ async function buildPaperOutputPages() {
   // Save the in-progress selection edit locally before rebuilding. Do not issue
   // a new cloud write just because the user opened export settings.
   if (typeof _pvSyncActiveMarkup === 'function') _pvSyncActiveMarkup();
+  if (typeof syncPaperMetadataControls === 'function') syncPaperMetadataControls();
   const state = () => JSON.stringify({
     kind: (document.querySelector('input[name=pPaperKind]:checked') || {}).value,
     mode: paperAnsMode(),
@@ -93,9 +94,9 @@ async function refreshAbkOutputPreview() {
   const target = document.getElementById('paperSettingsPreview');
   let rendered;
   try {
-    rendered = await buildPaperOutputPages();
-    if (revision !== paperOutputPreviewRevision || !['abk','pre'].includes((document.querySelector('input[name=pPaperKind]:checked') || {}).value)) return;
     const mode = paperAnsMode();
+    rendered = mode === 'full' ? {pages:[],dispose(){}} : await buildPaperOutputPages();
+    if (revision !== paperOutputPreviewRevision || !['abk','pre'].includes((document.querySelector('input[name=pPaperKind]:checked') || {}).value)) return;
     const questionPages = mode === 'full' ? [] : rendered.pages;
     const solutions = (mode === 'full' || mode === 'both_full')
       ? paperQuestionSections(pickedItems()).ordered.map((item,index) => solutionExportQuestion(item,index+1)) : [];
@@ -146,7 +147,7 @@ async function printPaperOutput() {
     if (output.closed) return;
     const doc = output.document;
     const base = doc.createElement('base');base.href = document.baseURI;doc.head.appendChild(base);
-    doc.title = (document.getElementById('pTitle').value || 'ABK 考卷') + '（題目卷）';
+    doc.title = (document.getElementById('pTitle').value || (kind === 'pre' ? '課前考' : 'ABK 考卷')) + '（題目卷）';
     document.querySelectorAll('link[rel=stylesheet]').forEach(link => doc.head.appendChild(link.cloneNode(true)));
     const style = doc.createElement('style');
     const fonts = [...document.querySelectorAll('style')].map(node => (node.textContent.match(/@font-face\s*\{[^}]*\}/g) || []).join('\n')).join('\n');
@@ -167,7 +168,7 @@ async function printPaperOutput() {
   }
 }
 
-// Keep other paper types on their established export path for this first phase.
+// Keep mock papers on their established export path.
 document.querySelectorAll('#paperDlg button[onclick*="window.print"]').forEach(button => {
   const original = button.onclick;
   button.onclick = function(event) {
