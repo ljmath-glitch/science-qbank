@@ -7917,14 +7917,43 @@ function _tplQuestionText(it,withChoices=true){
 function _imgDims(b){
   if(b[0]===0x89&&b[1]===0x50)return [(b[16]<<24|b[17]<<16|b[18]<<8|b[19])>>>0,(b[20]<<24|b[21]<<16|b[22]<<8|b[23])>>>0];
   if(b[0]===0xFF&&b[1]===0xD8){let i=2;while(i<b.length){if(b[i]!==0xFF){i++;continue;}const m=b[i+1];if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)return [(b[i+7]<<8)|b[i+8],(b[i+5]<<8)|b[i+6]];i+=2+((b[i+2]<<8)|b[i+3]);}}
-  return [240,180];
+  throw new Error('無法辨識圖片尺寸，請先將圖片轉為 PNG');
 }
 function _b64ToBytes(b64){const bin=atob(b64);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u;}
+async function _tplPrepareImage(parsed){
+  // Let the browser decode WebP/GIF/SVG as well as PNG/JPEG. A guessed 4:3
+  // fallback stretches portrait figures and narrow tables in Word.
+  const image=new Image();
+  await new Promise((resolve,reject)=>{
+    image.onload=resolve;
+    image.onerror=()=>reject(new Error('無法讀取匯出圖片的原始尺寸'));
+    image.src='data:'+parsed.mimeType+';base64,'+parsed.b64;
+  });
+  const width=image.naturalWidth,height=image.naturalHeight;
+  if(!(width>0&&height>0))throw new Error('匯出圖片尺寸無效');
+  let src=parsed.b64;
+  if(parsed.mimeType!=='image/png'){
+    // The template image module names its media .png. Convert other formats
+    // to actual PNG bytes, retaining natural dimensions and transparency.
+    const canvas=document.createElement('canvas');
+    canvas.width=width;canvas.height=height;
+    canvas.getContext('2d').drawImage(image,0,0);
+    src=canvas.toDataURL('image/png').split(',')[1];
+  }
+  return {src,width,height};
+}
+function _tplFitImage(width,height,kind){
+  if(!(width>0&&height>0))throw new Error('匯出圖片尺寸無效');
+  const maxW=kind==='abk'?270:460,maxH=kind==='abk'?135:380;
+  const scale=Math.min(1,maxW/width,maxH/height);
+  return [width*scale,height*scale];
+}
 async function _tplResolveImgs(imgs){
   const out=[];
   for(const im of (imgs||[])){
     if(!im||!im.src)continue;
-    try{const p=await _imgToBase64(im);if(p&&p.b64)out.push({src:p.b64});}catch(_){}
+    const p=await _imgToBase64(im);
+    if(p&&p.b64)out.push(await _tplPrepareImage(p));
   }
   return out;
 }
@@ -7975,12 +8004,15 @@ async function downloadWordViaTemplate(kind,opts){
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
     sections.push({title:kind==='abk'?_PAPER_SECTION_LABEL[k]:paperSectionLabel(k,sec),items});
   }
-  const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b)=>{
-    const d=_imgDims(b);
+  const imageSizes=new Map();
+  for(const section of sections)for(const item of section.items){
+    for(const image of [...item.imgs,...(item.passage?item.passage.imgs:[])])imageSizes.set(image.src,[image.width,image.height]);
+  }
+  const imageOpts={getImage:(tag)=>_b64ToBytes(tag),getSize:(b,tag)=>{
+    const d=imageSizes.get(tag);
+    if(!d)throw new Error('找不到匯出圖片的原始尺寸');
     // Ideal ABK 卷的題內圖高度約 10–35 mm；隨文圖片不得把單欄撐開。
-    const maxW=kind==='abk'?270:460,maxH=kind==='abk'?135:380;
-    const scale=Math.min(1,maxW/d[0],maxH/d[1]);
-    return [Math.max(1,Math.round(d[0]*scale)),Math.max(1,Math.round(d[1]*scale))];
+    return _tplFitImage(d[0],d[1],kind);
   }};
   const zip=new PizZip(buf);
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
