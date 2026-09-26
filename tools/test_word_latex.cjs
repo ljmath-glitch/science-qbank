@@ -28,7 +28,12 @@ assert.equal(context.normalizeWordLatex(null), '');
 assert.equal(context._tplQuestionText({ q: raw }, false), expected);
 assert.equal(context._tplQuestionText({ summary: raw }, false), expected);
 assert.equal(context._tplQuestionText({ q: '**' + raw + '**(A) 甲(B) 乙(C) 丙(D) 丁' }),
-  expected + '\n\t(A)甲\n\t(B)乙\n\t(C)丙\n\t(D)丁');
+  expected + '\n(A)甲\n(B)乙\n(C)丙\n(D)丁');
+const fiveChoices = context._tplQuestionText({ q: '題幹\n\t（A） 甲\n\t(B)　乙(C) 丙\n(D) 丁\n(E) 戊' });
+assert.equal(fiveChoices, '題幹\n(A)甲\n(B)乙\n(C)丙\n(D)丁\n(E)戊');
+assert.ok(!fiveChoices.includes('\t'), 'Options must follow the paragraph ruler without an extra tab');
+assert.equal(context._tplQuestionText({ q: '題幹\n續行(A)長選項\n選項續行(E) 最後選項' }),
+  '題幹\n續行\n(A)長選項\n選項續行\n(E)最後選項');
 
 class TextRun { constructor(opts) { Object.assign(this, opts); } }
 const tr = opts => new TextRun(opts);

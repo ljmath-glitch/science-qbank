@@ -7898,9 +7898,11 @@ function _tplQuestionText(it,withChoices=true){
   if(withChoices){
     // 同一題只用一個 Word 段落；選項與題幹內換行交給 docxtemplater 轉成 w:br。
     // 不吞掉題幹與選項的分界，也不把四個選項擠在同一行。
-    t=t.replace(/（([A-Da-d])）/g,'($1)')
-      .replace(/[ \t]*\n?[ \t]*(\([A-Da-d]\))/g,'\n\t$1')
-      .replace(/(\([A-Da-d]\))[ \t\u3000]+/g,'$1')
+    // 範本的續行左縮排已是 1 cm；不能再加 Tab 推到 1.25 cm 定位點。
+    // 含五選項題的 (E) 都使用相同的 Shift+Enter 及縮排。
+    t=t.replace(/（([A-Ea-e])）/g,'($1)')
+      .replace(/[ \t\u3000]*\n?[ \t\u3000]*(\([A-Ea-e]\))/g,'\n$1')
+      .replace(/(\([A-Ea-e]\))[ \t\u3000]+/g,'$1')
       .replace(/^\n/,'');
   }
   return t;
