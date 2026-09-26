@@ -1,0 +1,35 @@
+/* Physical dimensions from the approved ABK DOCX; 1 twip = 1/15 CSS px. */
+.pv-sheet.pv-page.template-paper{font:10pt/1 'HuaKangTNR','DFPYuanMedium-B5','Times New Roman',serif;color:#171717;background:#fff;box-sizing:border-box}
+.pv-sheet.template-paper.abk-preview::before,.pv-sheet.template-paper:not(.abk-preview)::before{content:'';position:absolute;z-index:0;left:-54.8px;top:16.1px;width:350.9px;height:465.5px;background:url('templates/abk_watermark.png') -102.6px -26.2px/556.2px 667.5px no-repeat;filter:brightness(0);opacity:.1;pointer-events:none}
+.pv-sheet.template-paper>*{position:relative;z-index:1}
+.pv-sheet.pv-page.template-paper .pv-page-foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font:10pt 'Times New Roman',serif;color:#777}
+.pv-sheet.pv-page.template-paper .pv-page-body{overflow:visible}
+.pv-sheet.pv-page.template-paper .pv-page-body.paper-2col{column-gap:47.27px;column-rule:1px solid #171717}
+.pv-sheet.pv-page.template-paper .paper-major{font-size:12pt;line-height:1.2;letter-spacing:0;border:0;color:#171717;padding:0;margin:0 0 8px 9.47px;font-weight:700}
+.paper-manual-score{font-size:10pt;font-weight:400}
+.pv-sheet.pv-page.template-paper .q.template-question{padding-left:37.8px;margin:0 0 8px;line-height:normal;font-size:10pt;font-weight:400}
+.paper-question-marker{position:absolute;left:9.47px;top:0;transform:translateX(-50%);white-space:nowrap;font-family:'Times New Roman',serif;font-weight:400}
+.pv-sheet.pv-page.template-paper .template-passage{position:relative;width:416.5px;max-width:100%;box-sizing:border-box;padding:9.6px 9.6px 9.6px 28.35px;margin-bottom:8px;border:1px solid #171717;background:transparent;line-height:normal;font-size:10pt}
+.paper-passage-marker{display:inline-block;margin-left:-18.75px;width:18.75px;font-family:'HuaKangTNR',serif}
+.pv-sheet.pv-page.template-paper .qimg{display:block;width:auto;height:auto;max-width:270px;max-height:135px;margin:0;border:0;border-radius:0;object-fit:contain}
+.pv-sheet.pv-page.template-paper .abk-hd{position:relative;height:94px;border:0;margin:0;padding:0;font-family:'HuaKangTNR','Times New Roman',serif}
+.template-paper .abk-hd::after{content:'';position:absolute;top:73.85px;left:0;width:100%;height:2.75px;border-top:1px solid #171717;border-bottom:1px solid #171717}
+.template-paper .abk-hd .abk-hd-top{position:absolute;top:-28px;left:0;right:0;font-size:9pt;letter-spacing:0;color:#555;line-height:1}
+.template-paper .abk-hd .abk-hd-main{display:block;margin:0}
+.template-paper .abk-hd .abk-hd-logo{position:absolute;top:9.2px;left:0;width:61.8px}
+.template-paper .abk-hd .abk-hd-logo img{width:61.8px;height:58px;object-fit:fill}
+.template-paper .abk-hd .abk-hd-title{position:absolute;left:335.9px;top:8px;width:201.2px;height:62px;display:flex;align-items:center;justify-content:center;font-size:18pt;line-height:1.2;letter-spacing:0}
+.template-paper .abk-hd .abk-hd-score{position:absolute;right:0;top:-7.9px;width:138.2px;height:83.4px;display:block;min-width:0}
+.template-paper .abk-hd .abk-hd-box{position:absolute;right:0;top:11.8px;width:84.4px;height:71.5px;border:2px solid #171717;box-sizing:border-box}
+.template-paper .abk-hd .abk-hd-scorebox span{position:absolute;left:0;top:17px;font-size:10pt}
+.template-paper .abk-hd .abk-hd-name{position:absolute;right:165px;top:55px;width:100px;font-size:10pt}
+.pre-template-header{position:relative;height:94px;padding-top:28px;box-sizing:border-box}
+.pre-template-header .pre-running-title{position:absolute;top:-28px;left:0;font-size:9pt;color:#555}
+.pre-template-header>img{position:absolute;left:0;top:8px;width:61.8px;height:58px}
+.pre-header-band{position:absolute;left:65px;right:0;top:8px;height:61px;border-radius:9px;background:linear-gradient(to right,#fff,#aaa);display:flex;align-items:center;gap:18px;padding:0 10px;font-size:20pt;line-height:1.2;white-space:nowrap}
+.pre-header-band i{height:42px;width:2px;background:#555;flex-shrink:0}
+.pv-sheet.template-paper .pv-run-head{position:relative;top:-28px;height:0;border:0;padding:0;margin:0;font-size:9pt;color:#555}
+.pv-page-stage{position:relative;margin:0 auto 26px;flex-shrink:0}
+.pv-page-stage>.pv-page{position:absolute;left:0;top:0;margin:0!important;transform-origin:0 0}
+#pvSheet.pv-pages{box-sizing:border-box;padding:24px 0}
+@media print{.pv-page-stage{width:972px!important;height:1375px!important;margin:0;break-after:page}.pv-page-stage>.pv-page{transform:none!important}.template-paper .paper-manual-score{color:#171717}}

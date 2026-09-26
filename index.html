@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="/logo.png">
 <link rel="manifest" href="/manifest-qbank.json">
 <title>茲茲文教｜自然題庫系統</title>
+<link rel="stylesheet" href="paper-layout.css">
 <script>(()=>{try{const p=new URLSearchParams(location.search);if(p.has('exam')||p.has('exams')||p.has('handoff')||p.has('mode')){sessionStorage.setItem('tzutzu_qbank_unlock_until',String(Date.now()+7200000));return;}}catch(e){}const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
 <script>
 /* 從首頁「組卷精靈」進入時，開頁就先蓋一層載入中轉圈，避免閃過題庫管理頁面 */
@@ -385,6 +386,7 @@
   .pv-sheet.abk-preview{position:relative;overflow:hidden;padding:50px 52px 58px;font-family:'DFPYuanMedium-B5','HuaKangTNR',"Times New Roman",serif;color:#171717;line-height:1.58}
   .pv-sheet.abk-preview:before{content:'';position:absolute;z-index:0;left:-150px;top:52px;width:430px;height:540px;background:url('watermark.png') left top/380px auto no-repeat;opacity:.82}
   .pv-sheet.abk-preview>*{position:relative;z-index:1}
+  .pv-page.abk-preview>.pv-page-foot{position:absolute}
   /* ABK 卷頭帶：貼近實體範本（茲茲文教/SCI碼小字列＋logo＋章節標題＋得分框＋姓名） */
   .abk-hd{font-family:"Times New Roman",'DFPYuanMedium-B5',serif;border-bottom:2.5px solid #303030;padding-bottom:8px;margin:0 0 14px}
   .abk-hd-top{display:flex;justify-content:space-between;align-items:flex-start;font-size:9pt;color:#333;letter-spacing:.5px}
@@ -934,11 +936,17 @@
       </div></details>
       <details class="paper-section" open><summary>基本設定 <span class="paper-section-summary">卷別與標題</span></summary><div class="paper-section-body">
         <div class="field"><label>卷別</label><div class="paper-kind-row">
-          <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)" checked><span>課前考<small>A4・單欄・灰階卷頭</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)" checked><span>課前考<small>B4・單欄・灰階卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>B4・雙欄・淡色浮水印</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>A4・封面＋單欄題本</small></span></label>
         </div></div>
         <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
+        <div id="paperAbkFields" class="grid4" hidden>
+          <div class="field"><label for="pAbkVariant">ABK 卷種</label><select id="pAbkVariant"><option value="A">A 卷</option><option value="B" selected>B 卷</option><option value="K">K 卷</option></select></div>
+          <div class="field"><label for="pBookCode">冊次</label><select id="pBookCode"><option value="JB1">第一冊</option><option value="JB2">第二冊</option><option value="JB3" selected>第三冊</option><option value="JB4">第四冊</option><option value="JB5">第五冊</option><option value="JB6">第六冊</option></select></div>
+          <div class="field"><label for="pChapterRange">章節範圍</label><input id="pChapterRange" placeholder="CH1+CH2（也可輸入 1-1+1-2）"></div>
+          <div class="field"><label for="pPaperCode">考卷編號（自動）</label><input id="pPaperCode" readonly aria-live="polite"></div>
+        </div>
       </div></details>
       <details class="paper-section"><summary>卷頭設定 <span class="paper-section-summary">選填・留白則不顯示</span></summary><div class="paper-section-body"><div class="grid4">
         <div class="field"><label>年級</label><input type="text" id="pGrade" placeholder="國七/國八/國九"></div>
@@ -1177,6 +1185,15 @@
     <button class="btn" onclick="closePaper()">返回</button><span class="spacer"></span>
     <span class="pv-edit-label" style="margin-right:10px">確認題目、排序與內容後，按下一步設定並匯出</span>
     <button class="btn primary" onclick="openPaperSettings()">下一步：匯出設定 →</button>
+  </div>
+  <div id="pvPaperMetadata" class="pv-fmt-bar noprint" style="position:relative;top:auto">
+    <label>考卷標題 <input id="pvTitle" type="text" aria-label="考卷標題"></label>
+    <span id="pvAbkFields" hidden>
+      <label>卷種 <select id="pvAbkVariant" aria-label="ABK 卷種"><option value="A">A 卷</option><option value="B">B 卷</option><option value="K">K 卷</option></select></label>
+      <label>冊次 <select id="pvBookCode" aria-label="冊次"><option value="JB1">第一冊</option><option value="JB2">第二冊</option><option value="JB3">第三冊</option><option value="JB4">第四冊</option><option value="JB5">第五冊</option><option value="JB6">第六冊</option></select></label>
+      <label>章節 <input id="pvChapterRange" type="text" placeholder="CH1+CH2" aria-label="章節範圍"></label>
+      <output id="pvPaperCode" aria-live="polite"></output>
+    </span>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
@@ -4469,6 +4486,7 @@ function openPaperDlg(){
 }
 function openPaperSettings(){
   if(!PICKS.size){alert('尚未選題');return}
+  if(typeof syncPaperMetadataControls==='function')syncPaperMetadataControls();
   paperDlg.showModal();
   if(!paperDlg.dataset.previewBound){
     paperDlg.dataset.previewBound='1';
@@ -4491,6 +4509,7 @@ function _computePaperDefaults(){
   const shortRnd=rnd==='第一次'?'一段':rnd==='第二次'?'二段':rnd==='第三次'?'三段':et==='會考'?'會考':'';
   const semStr=fSem.value;
   document.getElementById('pExamName').value=(sc||yr||shortRnd)?[(yr?yr+(semStr?semStr+'學期':'')+'.':''),sc?normalizeSchool(sc):'',shortRnd?'('+shortRnd+')':''].join(''):'';
+  if(typeof initPaperMetadataDefaults==='function')initPaperMetadataDefaults();
 }
 let lastPaperHTML='',lastPaperTitle='自然科測驗卷',lastAnsMode='none';
 let _paperSettingsPreviewTimer=0,_paperSettingsPage=0,_paperSettingsPageCount=1;
@@ -4543,8 +4562,9 @@ function paperPreviewChunks(items,kind){
 function scalePaperSettingsPreview(){
   const viewport=document.getElementById('paperSettingsViewport'),stage=document.getElementById('paperSettingsStage'),inner=document.getElementById('paperSettingsPreview');
   if(!viewport||!stage||!inner)return;
-  const width=inner.querySelector('.pdoc-sheet.b4')?972:794;
-  const height=inner.querySelector('.pdoc-sheet.b4')?1376:1123;
+  const isB4=!!inner.querySelector('.pdoc-sheet.b4,.pv-page.template-paper');
+  const width=isB4?972:794;
+  const height=isB4?1376:1123;
   inner.style.width=width+'px';
   const availableWidth=Math.max(240,viewport.clientWidth-40),availableHeight=Math.max(300,viewport.clientHeight-40);
   const scale=Math.min(1,availableWidth/width,availableHeight/height*.9);
@@ -4570,6 +4590,9 @@ function refreshPaperSettingsPreview(){
   const title=(pTitle.value||'自然科測驗卷').trim();
   const mode=paperAnsMode();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  if((paperKind==='abk'||paperKind==='pre')&&typeof refreshAbkOutputPreview==='function'){
+    refreshAbkOutputPreview();return;
+  }
   // 輸出文件：解析卷（full=只解析卷；both_full=題目卷＋解析卷）也要能在此預覽。
   const showSolution=(mode==='full'||mode==='both_full');
   const showQuestion=(mode!=='full');
@@ -4613,7 +4636,7 @@ function refreshPaperSettingsPreview(){
   const content=previewQuestions||'<div class="pdoc-meta">尚未選題</div>';
   const preName=examName||'課前考',preMain=[grade+subject,scope].filter(Boolean).join(' ')||title;
   const pre=`<section class="pdoc-sheet a4 pre"><div class="pdoc-pre-top">茲茲文教　${esc(grade+subject)}　課前考</div><div class="pdoc-pre-head"><div class="pdoc-pre-logo"><img src="logo.png" alt="茲茲文教">TZU TZU</div><div class="pdoc-pre-main">${esc(preMain)}</div><div class="pdoc-pre-divider"></div><div class="pdoc-pre-name">${esc(preName)}</div></div><div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
-  const abk=`<section class="pdoc-sheet b4 abk"><div class="pdoc-abk-watermark" aria-hidden="true"></div><div class="pdoc-abk-top"><span class="brand">茲茲文教<br>TZUTZU</span><b class="chapter">${esc(scope)}<br>${esc(examName||title)}</b><span class="code">SCI-${esc(grade)}-A<small>姓名：____________</small></span></div><div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
+  const abk=`<section class="pdoc-sheet b4 abk"><div class="pdoc-abk-watermark" aria-hidden="true"></div>${buildAbkPreviewHeader(false)}<div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
   const mockCover=`<section class="pdoc-sheet a4 mock-cover"><div class="pdoc-mock-cover-top"><img src="logo.png" alt="茲茲文教"><div class="boxes"><span>考試日期<br>　　年　月　日</span><span>考生姓名<br>____________</span><span>座號<br>______</span></div></div><div class="pdoc-mock-title">茲茲文教模考題本</div><div class="pdoc-mock-sub">${esc(subject||'自然科')}</div><div class="pdoc-mock-scope">${esc(examName||title)}<br>範圍：${esc(scope)}</div><div class="pdoc-mock-warning">請不要翻到次頁！</div><div class="pdoc-mock-instructions"><b>作答說明</b>請核對考卷名稱及個人資料。<br>本卷共 ${pickedItems().length} 題；請依題號順序作答。<br>答案請填寫於指定作答區。</div><div class="pdoc-mock-footer">TZUTZU EDUCATION</div></section>`;
   const mockBody=`<section class="pdoc-sheet a4 mock-body"><div class="pdoc-mock-body-top">茲茲文教　${esc(subject||'自然科')}　${esc(examName||title)}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage}</div></section>`;
   const modeLabel=isSolPage?'解析卷（不含題目・逐選項詳解）':mode==='both_full'?'題目卷（另有解析卷）':mode==='full'?'解析卷':'題目卷';
@@ -4748,7 +4771,7 @@ function _pvBlankResizeEnd(el){
 }
 // 預覽可直接點擊修改的卷頭文字：綁定到設定欄位，失焦即寫回並重繪（也同步匯出）。
 function _pvHdrEditable(txt,field){return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${esc(txt)}</span>`;}
-function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
+function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(el.dataset.hf==='pTitle'&&typeof paperMetadataChanged==='function'){paperMetadataChanged('pTitle',v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
 function buildExamHeader(forPreview){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   const g=document.getElementById('pGrade').value.trim();
@@ -4756,6 +4779,13 @@ function buildExamHeader(forPreview){
   const sc=document.getElementById('pScope').value.trim();
   const en=document.getElementById('pExamName').value.trim();
   const title=((document.getElementById('pTitle')||{}).value||'').trim();
+  if(kind==='pre'){
+    const subject=s||title.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科';
+    const metadata=readPaperTemplateMetadata();
+    const left=subject+' '+PAPER_BOOK_NAMES[Number(metadata.book)-1];
+    const right=en||'課前考　'+(metadata.chapterRange||sc);
+    return `<div class="pre-template-header"><span class="pre-running-title">福大自然 課前考</span><img src="templates/abk_logo.png" alt="TZU TZU"><div class="pre-header-band"><span>${esc(left)}</span><i></i><span>${forPreview?_pvHdrEditable(right,'pExamName'):esc(right)}</span></div></div>`;
+  }
   // 卷頭帶＝ [logo] 科目冊別(考卷標題) │ 考卷名稱(範圍)；預覽時兩段皆可直接點擊修改。
   let leftText=title||[g+s,sc].filter(Boolean).join('　')||'自然科';
   let rightName=en||(kind==='pre'?'課前考':'');
@@ -4766,26 +4796,24 @@ function buildExamHeader(forPreview){
   return `<div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${L}</span></div>${rightHtml}</div></div>`;
 }
 function buildAbkPreviewHeader(forPreview){
-  const scope=(document.getElementById('pScope').value||'自然科').trim();
-  const grade=(document.getElementById('pGrade').value||'JB').trim();
-  const examName=(document.getElementById('pExamName').value||'').trim();
-  const title=((document.getElementById('pTitle')||{}).value||'').trim();
-  const chapterRaw=examName||scope||title||'自然科';
-  const chapter=forPreview?_pvHdrEditable(chapterRaw,'pExamName'):esc(chapterRaw).replace(/\n/g,'<br>');
-  const code=esc('SCI-'+[grade,scope].filter(Boolean).join('-')+' B');
+  const metadata=readPaperTemplateMetadata();
+  const chapterRaw=metadata.title||'自然科';
+  const chapter=forPreview?_pvHdrEditable(chapterRaw,'pTitle'):esc(chapterRaw).replace(/\n/g,'<br>');
+  const code=esc(metadata.code);
   const showName=(document.getElementById('pShowMeta')||{}).checked;
   return `<div class="abk-hd">`
     +`<div class="abk-hd-top"><span>茲茲文教 TZUTZU</span><span>${code}</span></div>`
     +`<div class="abk-hd-main">`
-      +`<div class="abk-hd-logo"><img src="logo.png" alt="TZU TZU"><small>TZU TZU</small></div>`
+      +`<div class="abk-hd-logo"><img src="templates/abk_logo.png" alt="TZU TZU"></div>`
       +`<div class="abk-hd-title">${chapter}</div>`
-      +`<div class="abk-hd-score"><div class="abk-hd-scorebox"><span>得分</span><div class="abk-hd-box"></div></div>${showName?'<div class="abk-hd-name">姓名｜__________</div>':''}</div>`
+      +`<div class="abk-hd-score"><div class="abk-hd-scorebox"><span>得分</span><div class="abk-hd-box"></div></div>${showName?'<div class="abk-hd-name">姓名｜</div>':''}</div>`
     +`</div></div>`;
 }
 function pvSetPaperKind(kind){
   const input=document.querySelector(`input[name=pPaperKind][value="${kind}"]`);if(input)input.checked=true;
   _paperSettingsPage=0;
   paperSetLayout(kind==='abk');
+  if(typeof syncPaperMetadataControls==='function')syncPaperMetadataControls();
   _pvRebuild();_rebuildLastPaperHTML();paperSettingsPreviewLater();
 }
 function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=pickedItems();
@@ -4796,6 +4824,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,showSourceFull=document.getElementById('pShowSourceFull').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  const templateLayout=paperKind==='abk'||paperKind==='pre';
   const hdr=paperKind==='abk'?buildAbkPreviewHeader(forPreview):buildExamHeader(forPreview);
   // ── 預算每題組的題號範圍 ──
   const groupRanges={};
@@ -4806,7 +4835,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
   const answers=[];
   const bodyParts=sorted.map(it=>{
     const itemSection=paperSections.kindOf(it);
-    const major=itemSection!==currentSection?`<h2 class="paper-major">${paperSectionTitle(itemSection,paperSections)}</h2>`:'';currentSection=itemSection;
+    const major=itemSection!==currentSection?`<h2 class="paper-major">${paperSectionTitle(itemSection,paperSections)}${templateLayout?'<span class="paper-manual-score"> /每題＿＿分，共＿＿分</span>':''}</h2>`:'';currentSection=itemSection;
     // 解析卷簡：只列「題號＋答案＋詳解」，不印題目/圖/題組/作答空白（僅輸出，不套用於預覽編輯）
     if(ansMode==='solbrief'&&!forPreview){
       qNum++;if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
@@ -4817,20 +4846,20 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
     const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
-    const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
+    const imgs=(it.imgs||[]).map((im,i)=>templateLayout?paperTemplateImage(im):forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
     if(paperSections.groupIds.has(gid)&&!shownPassages.has(gid)){
       shownPassages.add(gid);
       const ps=PASSAGES[gid];
       if(ps){
-        const pImgs=(ps.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
+        const pImgs=(ps.imgs||[]).map((im,i)=>templateLayout?paperTemplateImage(im):forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
         const r=groupRanges[gid];
         const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
         const hdrLine=rangeStr?`<div style="margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
-        const pTextInner=applyRichMarks(esc(fixLatex(ps.q||'')).replace(/\n/g,'<br>'));
+        const pTextInner=applyRichMarks(esc(fixLatex(templateLayout?(ps.q||'').replace(/^\s*◎\s*/,''):ps.q||'')).replace(/\n/g,'<br>'));
         const pText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="p" data-rid="${gid}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${pTextInner}</span>`:pTextInner;
-        passageHtml=`<div class="passage-block">${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${pText}${pImgs}</div></div>`;
+        passageHtml=templateLayout?`<div class="passage-block template-passage"><span class="paper-passage-marker">◎</span>${pText}${rangeStr?'<br>根據文章內容，請回答以下'+rangeStr+'。':''}${pImgs}</div>`:`<div class="passage-block">${hdrLine}<div style="border:1px solid #888;padding:10px 14px;margin-bottom:10px;background:#fff;line-height:1.8">${pText}${pImgs}</div></div>`;
       }
     }
     qNum++;
@@ -4852,11 +4881,13 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
       }
     }
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
-    const qTextInner=applyRichMarks(hlNames(hlKw(esc(fixLatex(it.q||it.summary||'')).replace(/\n/g,'<br>'))));
+    const rawQuestion=templateLayout?(it.q||it.summary||'').replace(/(\([A-E]\))[ \t　]+/g,'$1'):(it.q||it.summary||'');
+    const plainQuestion=esc(fixLatex(rawQuestion)).replace(/\n/g,'<br>');
+    const qTextInner=applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
-    return major+`${passageHtml}<div class="q"${qAttr}>${ctrl}${tag}<b>${qNum}.</b> ${qText}${imgs}${extra}${src}</div>`;
+    return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${ctrl}${tag}${templateLayout?'<span class="paper-question-marker">'+qNum+'.(　　)</span>':'<b>'+qNum+'.</b> '}${qText}${imgs}${extra}${src}</div>`;
   });
   let body=bodyParts.join('');
   // 雙欄排版：把題目區包進兩欄容器（標頭/標題/答案區維持整頁寬）；自帶 style 讓預覽與匯出一致
@@ -4864,7 +4895,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
   if(twoCol)body=`<style>.paper-2col{column-count:2;column-gap:26px}.paper-2col .q,.paper-2col .passage-block{break-inside:avoid;-webkit-column-break-inside:avoid}</style><div class="paper-2col">${body}</div>`;
   let ansBlock='';if(ansMode==='end'){const a=answers.filter(Boolean).join('　');ansBlock=`<div class="ans">【參考答案】${a||'（未填）'}</div>`}
   // ABK 卷頭帶已含姓名欄，不再重複印「班級／座號／姓名」列；僅右上角標示題數。
-  const meta=(paperKind==='abk')?`<p style="text-align:right;color:#888;font-size:12px">共 ${sorted.length} 題</p>`:(showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`);
+  const meta=templateLayout?'':(showMeta?`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題　班級：______　座號：____　姓名：________</p>`:`<p style="text-align:right;color:#888;font-size:13px">共 ${sorted.length} 題</p>`);
   if(asParts)return {headHtml:`${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}`,blocks:bodyParts.slice(),ansBlock,twoCol,kind:paperKind,title};
   return `${hdr}${hdr?'':`<h1>${esc(title)}</h1>`}${meta}${body}${ansBlock}`}
 function _rebuildLastPaperHTML(){
@@ -4901,25 +4932,27 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 // 分頁預覽的頁首（第 2 頁起）：只留精簡跑馬燈，不重複第一頁的完整卷頭。
 function _pvRunningHeader(){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  if(kind==='pre')return '<div class="pv-run-head"><span>福大自然 課前考</span><span></span></div>';
   if(kind==='abk'){
-    const scope=(document.getElementById('pScope').value||'').trim();
-    const grade=(document.getElementById('pGrade').value||'JB3').trim();
-    const code=esc('SCI-'+[grade,scope].filter(Boolean).join('-')+' B');
+    const code=esc(readPaperTemplateMetadata().code);
     return `<div class="pv-run-head"><span>茲茲文教 TZUTZU</span><span>${code}</span></div>`;
   }
   const t=esc(((document.getElementById('pTitle')||{}).value||'自然科').trim());
   return `<div class="pv-run-head"><span>茲茲文教　${t}</span><span></span></div>`;
 }
 // 把題目切成一張張 B4/A4 紙（用實際量測換頁，超過頁高就換下一張，像 Word）。
-function _pvRenderPaged(){
+function _pvRenderPaged(outputHost,editable=true){
+  if(typeof syncPaperMetadataControls==='function')syncPaperMetadataControls();
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
-  const parts=buildPaperInner(undefined,true,true);
-  const host=pvSheet;host.className='pv-pages';host.innerHTML='';
+  const parts=buildPaperInner(undefined,editable,true);
+  const host=outputHost||pvSheet;host.className='pv-pages';host.innerHTML='';
   const PAGE_H=1375,PAD=116,FOOT=40;
-  const narrow=!!(window.matchMedia&&window.matchMedia('(max-width:1080px)').matches);
+  const templateLayout=kind==='abk'||kind==='pre';
+  const narrow=!templateLayout&&!outputHost&&!!(window.matchMedia&&window.matchMedia('(max-width:1080px)').matches);
   let pageIdx=0,cur=null;
   function newPage(){
-    const pg=document.createElement('div');pg.className='pv-sheet pv-page'+(kind==='abk'?' abk-preview':'');
+    const pg=document.createElement('div');pg.className='pv-sheet pv-page'+(kind==='abk'?' abk-preview':'')+(templateLayout?' template-paper':'');
+    if(outputHost||templateLayout){pg.style.width='972px';pg.style.height=PAGE_H+'px';pg.style.overflow='hidden';pg.style.padding=templateLayout?'48px':'58px';}
     const head=document.createElement('div');head.className='pv-page-head';head.innerHTML=pageIdx===0?parts.headHtml:_pvRunningHeader();
     const bodyWrap=document.createElement('div');bodyWrap.className='pv-page-body'+(parts.twoCol?' paper-2col':'');
     const foot=document.createElement('div');foot.className='pv-page-foot';foot.textContent=String(pageIdx+1);
@@ -4931,17 +4964,21 @@ function _pvRenderPaged(){
   parts.blocks.forEach(html=>{
     const tmp=document.createElement('div');tmp.innerHTML=html;const nodes=[].slice.call(tmp.children);if(!nodes.length)return;
     nodes.forEach(n=>cur.bodyWrap.appendChild(n));
+    nodes.forEach(n=>renderMath(n));
     if(!narrow&&cur.bodyWrap.offsetHeight>cap()&&cur.bodyWrap.children.length>nodes.length){
       nodes.forEach(n=>cur.bodyWrap.removeChild(n));newPage();nodes.forEach(n=>cur.bodyWrap.appendChild(n));
     }
   });
   if(parts.ansBlock){const d=document.createElement('div');d.innerHTML=parts.ansBlock;const n=d.firstElementChild;if(n)cur.bodyWrap.appendChild(n);}
   renderMath(host);
+  if(!outputHost&&templateLayout&&typeof scalePaperEditorPages==='function')scalePaperEditorPages();
 }
 function showPaperPreview(){if(!PICKS.size)return;
   _pvResetHist();
   _pvRenderPaged();paperDlg.close();
   document.getElementById('paperView').classList.add('show');document.getElementById('pvFmtBar').style.display='flex';window.scrollTo(0,0);
+  if(typeof scalePaperEditorPages==='function')requestAnimationFrame(scalePaperEditorPages);
+  if(typeof refreshPaperEditorWhenReady==='function')refreshPaperEditorWhenReady();
   _rebuildLastPaperHTML();}
 function closePaper(){
   document.getElementById('paperView').classList.remove('show');document.getElementById('pvFmtBar').style.display='none';
@@ -7944,7 +7981,7 @@ async function _tplPrepareImage(parsed){
 }
 function _tplFitImage(width,height,kind){
   if(!(width>0&&height>0))throw new Error('匯出圖片尺寸無效');
-  const maxW=kind==='abk'?270:460,maxH=kind==='abk'?135:380;
+  const maxW=270,maxH=135;
   const scale=Math.min(1,maxW/width,maxH/height);
   return [width*scale,height*scale];
 }
@@ -7970,8 +8007,9 @@ async function downloadWordViaTemplate(kind,opts){
   const grade=(document.getElementById('pGrade').value||'').trim();
   const scope=(document.getElementById('pScope').value||'').trim();
   const examName=(document.getElementById('pExamName').value||'').trim();
-  const chapter=(examName||scope||document.getElementById('pTitle').value||'自然科').trim();
-  const book=(grade.match(/\d/)||[''])[0]||'';   // 冊數（取數字，如 JB3→3）
+  const metadata=readPaperTemplateMetadata(kind==='abk',opts.ver);
+  const chapter=(metadata.title||'自然科').trim();
+  const book=metadata.book;
   // 依題型分節；題號由 Word 原生清單連續產生，no 僅用於題組文章的題號範圍。
   const order=['single','multi','group','nonchoice'];
   const groupRanges=new Map();
@@ -8002,7 +8040,7 @@ async function downloadWordViaTemplate(kind,opts){
       items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
-    sections.push({title:kind==='abk'?_PAPER_SECTION_LABEL[k]:paperSectionLabel(k,sec),items});
+    sections.push({title:_PAPER_SECTION_LABEL[k],items});
   }
   const imageSizes=new Map();
   for(const section of sections)for(const item of section.items){
@@ -8015,10 +8053,14 @@ async function downloadWordViaTemplate(kind,opts){
     return _tplFitImage(d[0],d[1],kind);
   }};
   const zip=new PizZip(buf);
+  if(kind==='abk')patchAbkTemplateCode(zip,metadata.code);
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
-  doc.render({chapter,book,unit:scope,ver:(opts.ver||'B'),sections});
+  const preSubject=(document.getElementById('pSubject').value||chapter.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科');
+  doc.render({chapter,book:kind==='pre'?PAPER_BOOK_NAMES[Number(book)-1]:book,unit:metadata.chapterRange,ver:metadata.variant,sections,
+    subject:preSubject,quiz_label:examName||'課前考　'+(metadata.chapterRange||scope),
+    running_header:'福大自然 課前考'});
   const renderedZip=doc.getZip();
-  if(kind==='abk'){
+  if(kind==='abk'||kind==='pre'){
     // 題組文字方塊會隨題組複製；每個 Word drawing 必須有自己的 docPr id。
     const expected=sections.reduce((count,section)=>count+section.items.filter(item=>item.passage).length,0);
     let boxCount=0;
@@ -8042,13 +8084,13 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(paperKind==='abk'){
+  if(paperKind==='abk'||paperKind==='pre'){
     // ABK：題目卷以「範本填入」產生（頁首/浮水印/卷頭/字型＝範本本體）；解析卷維持詳解模板。
     try{
       if(ansMode==='full'){await downloadSolutionWord();}
-      else if(ansMode==='both_full'){await downloadWordViaTemplate('abk',{suffix:'（題目卷）'});await downloadSolutionWord();}
-      else{await downloadWordViaTemplate('abk');}
-    }catch(e){alert('範本填入失敗，改用一般匯出：'+e.message);await generateAndDownloadWord(title,items,ansMode==='both_full'?'none':ansMode,showMeta,showTag,showSource,hdr,showSourceFull);}
+      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{suffix:'（題目卷）'});await downloadSolutionWord();}
+      else{await downloadWordViaTemplate(paperKind);}
+    }catch(e){alert('範本匯出未完成：'+e.message);}
     return;
   }
   if(paperKind==='mock'){
@@ -8176,6 +8218,8 @@ async function downloadWordDoc(){
   window.alert=appAlert;
 })();
 </script>
+  <script src="paper-metadata.js"></script>
+  <script src="paper-output.js"></script>
   <script src="announce.js"></script>
 </body>
 </html>

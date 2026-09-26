@@ -57,6 +57,8 @@ if (process.argv.includes('--browser')) (async()=>{
       pickedItems=()=>[];
       document.getElementById('pTitle').value='Image proportions';
       document.getElementById('pExamName').value='Image proportions';
+      document.getElementById('pBookCode').value='JB3';
+      document.getElementById('pChapterRange').value='CH1+CH2';
       await downloadWordViaTemplate('abk');
     },samples);
     await (await downloadPromise).saveAs(arg('--out'));
