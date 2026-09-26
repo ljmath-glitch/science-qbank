@@ -25,6 +25,20 @@ const raw = String.raw`20\% 30\\% 40% $\frac{1}{\sqrt{x^{2}+1}}$ $\ce{H2O}$ $\al
 const expected = String.raw`20% 30% 40% $\frac{1}{\sqrt{x^{2}+1}}$ $\ce{H2O}$ $\alpha\times\unknown{a}$`;
 assert.equal(context.normalizeWordLatex(raw), expected);
 assert.equal(context.normalizeWordLatex(null), '');
+for (const temperature of [
+  String.raw`$25^\circ\mathrm{C}$`,
+  String.raw`$25^{\circ}\mathrm{C}$`,
+  String.raw`$25^\circ C$`,
+  String.raw`$25\degree C$`,
+  String.raw`$25^\\circ\\text{C}$`,
+  '25°C', '25℃',
+]) assert.equal(context.normalizeWordLatex(temperature), '25℃', temperature);
+assert.equal(context.normalizeWordLatex(String.raw`$^\circ\mathrm{C}$`), '℃');
+assert.equal(context.normalizeWordLatex(String.raw`$-10.5^\circ\mathrm{C}$`), '-10.5℃');
+assert.equal(context.normalizeWordLatex(String.raw`角度 $30^\circ$，華氏 $32^\circ\mathrm{F}$，碳 $\mathrm{C}$`),
+  String.raw`角度 $30^\circ$，華氏 $32^\circ\mathrm{F}$，碳 $\mathrm{C}$`);
+assert.equal(context.normalizeWordLatex(String.raw`$T=\frac{a}{b}+25^\circ\mathrm{C}$`),
+  String.raw`$T=\frac{a}{b}+25℃$`);
 assert.equal(context._tplQuestionText({ q: raw }, false), expected);
 assert.equal(context._tplQuestionText({ summary: raw }, false), expected);
 assert.equal(context._tplQuestionText({ q: '**' + raw + '**(A) 甲(B) 乙(C) 丙(D) 丁' }),

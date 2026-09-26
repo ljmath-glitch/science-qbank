@@ -7180,9 +7180,15 @@ function copyModalTA(id,btn){
 <script>
 /* ===== RTF / Word 匯出（從零實作；放獨立 script 以利 Safari 相容） ===== */
 // Word 內由使用者的 MathType 工具轉換 TeX：保留界定符、指令與巢狀括號。
-// 只移除百分號前的跳脫（包含重複跳脫）；不可刪除其他反斜線。
+// 百分號與攝氏單位直接輸出可讀符號；其餘公式不可刪除反斜線。
 function normalizeWordLatex(text){
-  return String(text==null?'':text).replace(/\\+%/g,'%');
+  let s=String(text==null?'':text).replace(/\\+%/g,'%');
+  // 僅辨識攝氏單位，不把角度的 ^\circ 或化學元素 C 當成溫度。
+  s=s.replace(/(?:\{\})?(?:\^\s*\{\s*\\+circ\s*\}|\^\s*\\+circ\b|\\+degree\b|\^?°)\s*(?:\\+(?:mathrm|text)\s*\{\s*C\s*\}|C(?![a-zA-Z]))/g,'℃');
+  s=s.replace(/\\+(?:mathrm|text)\s*\{\s*℃\s*\}/g,'℃');
+  // 獨立的「數值＋℃」不需要 MathType；複合算式仍保留原本的 $...$。
+  s=s.replace(/\$(\s*(?:[+−-]?\d+(?:\.\d+)?\s*)?℃\s*)\$/g,(_match,value)=>value.trim());
+  return s;
 }
 function latexToPlain(t){
   if(!t)return '';
