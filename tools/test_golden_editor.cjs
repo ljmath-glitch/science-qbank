@@ -18,7 +18,9 @@ const {webkit, chromium} = require('playwright');
         PASSAGES['gold-g']={groupId:'gold-g',type:'passage',q:'兩位同學量測液體體積，請根據量筒的讀數回答以下問題。',imgs:[]};
         PICKS=new Set(DB.map(item=>item.id));pTitle.value='黃金模擬考驗收';pAns.value='none';
         pExamName.value='';pSubject.value='';pScope.value='';
-        initPaperMetadataDefaults();pvSetPaperKind('golden');showPaperPreview();
+        initPaperMetadataDefaults();pvSetPaperKind('golden');
+        if(typeof WZ_SCORE!=='undefined')WZ_SCORE={single:5,group:5};
+        showPaperPreview();
       });
       assert.ok(await page.locator('#pvGoldenFields').isVisible());
       assert.equal(await page.locator('#pvPreFields').isVisible(),false);
@@ -40,6 +42,8 @@ const {webkit, chromium} = require('playwright');
       assert.ok(Math.abs(geometry.logoRatio-geometry.natural)<.01,JSON.stringify(geometry));
       assert.ok(Math.abs(geometry.width-geometry.areaWidth)<.1&&Math.abs(geometry.left-geometry.right)<.1,JSON.stringify(geometry));
       assert.equal(geometry.columns,false);assert.equal(geometry.watermark,'none');
+      assert.ok((await page.locator('#pvSheet .paper-major').first().textContent()).includes('每題＿＿分'));
+      assert.ok(!(await page.locator('#pvSheet .paper-major').first().textContent()).includes('每題 5 分'));
       await page.screenshot({path:'/tmp/'+engine.name()+'-golden-editor.png'});
       await page.evaluate(()=>openPaperSettings());
       await page.waitForFunction(()=>document.getElementById('paperSettingsPreview').textContent.includes('115 學年度第 1 學期 理化科'));
@@ -66,6 +70,7 @@ for name in ['word/header1.xml','word/header2.xml']:
  assert not E.fromstring(z.read(name)).xpath('//w:drawing|//w:t',namespaces=n)
 f=E.fromstring(z.read('word/footer1.xml'));assert 'PAGE' in ''.join(f.itertext());assert '理化' in ''.join(f.itertext())
 assert '{gold_' not in text
+assert '每題＿＿分' in text and '每題 5 分' not in text
 print('Native header/body/PAGE, B4 single column and full-width passage: PASS')`,output]);
       // Multi-page PDF/layout uses the same header once and a footer on every page.
       const rendered=await page.evaluate(async()=>{

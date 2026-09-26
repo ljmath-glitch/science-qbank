@@ -2052,7 +2052,7 @@ function _paperMetaFromPicks(){
     version:_modeOf(items.map(it=>_publisherOf(it.bookName))),
     book:_modeOf(items.map(it=>it.book)),
     bookLabel:_bookLabel(_modeOf(items.map(it=>it.book))),
-    kind, kindLabel:(kind==='abk'?'ABK':kind==='mock'?'模考':'課前考'),
+    kind, kindLabel:(kind==='abk'?'ABK':kind==='golden'?'段考黃金模擬考':kind==='mock'?'模考':'課前考'),
     diff:_paperOverallDiff(items),
     date:new Date().toISOString(), qids
   };
@@ -4934,7 +4934,7 @@ function paperSectionLabel(kind,sections){
   const i=pres.indexOf(kind);
   let s=`${_PAPER_CN[i]||''}、${_PAPER_SECTION_LABEL[kind]||kind}`;
   // 組卷精靈配分：預覽標題同步顯示「/每題X分，共Y分」（與 Word 匯出一致）
-  if(typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[kind]!=null&&sections&&sections.ordered){
+  if(document.querySelector('input[name=pPaperKind]:checked')?.value!=='golden'&&typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[kind]!=null&&sections&&sections.ordered){
     const per=+WZ_SCORE[kind]||0,cnt=sections.ordered.filter(it=>sections.kindOf(it)===kind).length;
     if(per&&cnt)s+=`  /每題 ${per} 分，共 ${per*cnt} 分`;
   }
@@ -8281,7 +8281,7 @@ async function downloadWordViaTemplate(kind,opts){
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
     // 組卷精靈設定了配分時，把「/每題X分，共Y分」直接帶進標題（取代範本的手填 ＿＿ 佔位）。
     let secTitle=_PAPER_SECTION_LABEL[k];
-    const _per=(typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[k]!=null)?(+WZ_SCORE[k]||0):null;
+    const _per=(kind!=='golden'&&typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[k]!=null)?(+WZ_SCORE[k]||0):null;
     if(_per!=null){secTitle+='  /每題 '+_per+' 分，共 '+(_per*items.length)+' 分';scoringActive=true;}
     sections.push({title:secTitle,items});
   }
