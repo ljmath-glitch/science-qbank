@@ -1032,7 +1032,8 @@
 #composer .wz-top{display:flex;align-items:center;gap:16px;padding:9px 18px;background:#fffefb;color:var(--ink);flex-shrink:0;border-bottom:1px solid var(--line)}
 #composer .wz-brand{font-size:15px;font-weight:800;letter-spacing:1px;white-space:nowrap;color:var(--red)}
 #composer .wz-steps{display:flex;gap:7px;flex:1;justify-content:center;flex-wrap:wrap}
-#composer .wz-step{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;font-size:13.5px;font-weight:700;background:#f2ede4;color:#9a8f83}
+#composer .wz-step{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;font-size:13.5px;font-weight:700;background:#f2ede4;color:#9a8f83;cursor:pointer;transition:background .15s,color .15s}
+#composer .wz-step:hover{background:#e7ddcb;color:#6e5a3c}
 #composer .wz-step .wz-num{display:inline-flex;width:19px;height:19px;border-radius:50%;background:#d9cfc0;color:#fff;align-items:center;justify-content:center;font-size:11.5px}
 #composer .wz-step.on{background:var(--red);color:#fff}
 #composer .wz-step.on .wz-num{background:#fff;color:var(--red)}
@@ -1119,9 +1120,9 @@
   <div class="wz-top">
     <div class="wz-brand">組卷精靈</div>
     <div class="wz-steps">
-      <div class="wz-step" data-s="1"><span class="wz-num">1</span>範圍</div>
-      <div class="wz-step" data-s="2"><span class="wz-num">2</span>選題</div>
-      <div class="wz-step" data-s="3"><span class="wz-num">3</span>設定與輸出</div>
+      <div class="wz-step" data-s="1" onclick="wzJump(1)"><span class="wz-num">1</span>範圍</div>
+      <div class="wz-step" data-s="2" onclick="wzJump(2)"><span class="wz-num">2</span>選題</div>
+      <div class="wz-step" data-s="3" onclick="wzJump(3)"><span class="wz-num">3</span>設定與輸出</div>
     </div>
     <button class="wz-x" onclick="wzClose()" title="離開精靈">✕</button>
   </div>
@@ -1171,8 +1172,16 @@
     <section class="wz-pane" data-s="3" hidden>
       <div class="wz-card">
         <h3>③ 設定與輸出</h3>
-        <p style="font-size:13.5px;color:#6e6f74;line-height:1.8">已選 <b id="wzStep3N" style="color:var(--red)">0</b> 題。按下方「開啟預覽與輸出」進入考卷預覽（可線上編輯題目、排序、加卷頭），確認後即可選擇輸出格式（題目卷／答案卷／解析卷簡／雙欄排版，Word／HTML／PDF）。</p>
-        <button type="button" class="btn primary" style="margin-top:6px" onclick="wzToExport()">開啟預覽與輸出 →</button>
+        <p style="font-size:13.5px;color:#6e6f74;line-height:1.8">已選 <b id="wzStep3N" style="color:var(--red)">0</b> 題。設定配分與過濾後，按「開啟預覽與輸出」進入考卷預覽（可線上編輯題目、加卷頭），確認即可輸出 Word／HTML。</p>
+        <div class="wz-set-row">
+          <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 過濾試卷（排除已出過的題目）</button>
+          <span id="wzExcludeInfo" class="wz-set-note"></span>
+        </div>
+        <div class="wz-score-wrap">
+          <div class="wz-score-head"><b>配分設定</b><span class="wz-set-note">各題型每題配分可調，共計即時計算</span><button type="button" class="btn sm" style="margin-left:auto" onclick="wzAutoScore()">↻ 重新配分</button></div>
+          <div id="wzScoreTable"></div>
+        </div>
+        <button type="button" class="btn primary" style="margin-top:14px" onclick="wzToExport()">開啟預覽與輸出 →</button>
       </div>
     </section>
   </div>
@@ -1182,6 +1191,47 @@
     <button class="btn primary" id="wzNext" onclick="wzGo(1)">下一步 →</button>
   </div>
 </div>
+<style>
+  .wz-set-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:6px 0 4px}
+  .wz-set-note{font-size:12px;color:#8a8f94}
+  .wz-score-wrap{margin-top:14px;border:1px solid #e6ddce;border-radius:10px;padding:12px 14px;background:#fffdf9}
+  .wz-score-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .wz-score-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .wz-score-tbl th,.wz-score-tbl td{border:1px solid #e9e0d2;padding:6px 8px;text-align:center}
+  .wz-score-tbl thead th{background:#f4ece0;color:#6e5a3c;font-weight:700}
+  .wz-score-tbl .wz-sc-name{text-align:left;font-weight:700;color:#5b4a30}
+  .wz-score-tbl .wz-sc-in{width:64px;text-align:center;padding:4px;border:1px solid #d8cbb6;border-radius:6px;font-family:inherit}
+  .wz-score-tbl .wz-sc-sum{font-weight:700;color:var(--red)}
+  .wz-score-tbl tfoot td{background:#faf4ea;font-weight:800}
+  .wz-score-tbl .wz-sc-total{color:var(--red);font-size:15px}
+  .wz-score-empty{color:#9a8f83;font-size:13px;padding:10px 4px}
+  #wzFilterPapersDlg{border:0;border-radius:14px;padding:0;width:min(900px,94vw);max-height:88vh;box-shadow:0 30px 80px -20px rgba(45,48,56,.5)}
+  #wzFilterPapersDlg::backdrop{background:rgba(45,48,56,.45)}
+  .wz-fp-head{background:var(--red);color:#fff;padding:14px 20px;font-size:16px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+  .wz-fp-head .wz-fp-x{background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer}
+  .wz-fp-body{padding:14px 18px;overflow:auto;max-height:60vh}
+  .wz-fp-filters{background:#fffdf9;border:1px solid #e6ddce;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+  .wz-fp-frow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:5px 0;font-size:13px}
+  .wz-fp-frow>span:first-child{font-weight:700;color:#6e5a3c;min-width:44px}
+  .wz-fp-frow label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+  .wz-fp-frow input[type=text]{flex:1;min-width:160px;padding:5px 9px;border:1px solid #d8cbb6;border-radius:7px;font-family:inherit}
+  .wz-fp-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .wz-fp-tbl th,.wz-fp-tbl td{border-bottom:1px solid #eee;padding:8px 8px;text-align:center}
+  .wz-fp-tbl thead th{color:#6e5a3c;font-weight:700;border-bottom:2px solid #e9e0d2}
+  .wz-fp-tbl tbody tr{cursor:pointer}
+  .wz-fp-tbl tbody tr:hover{background:#faf4ea}
+  .wz-fp-empty{color:#9a8f83;font-size:13px;padding:24px 4px;text-align:center}
+  .wz-fp-foot{display:flex;justify-content:center;align-items:center;gap:14px;padding:14px;border-top:1px solid #eee}
+  .wz-fp-foot .wz-fp-cnt{font-size:13px;color:#6e5a3c;margin-right:auto;padding-left:8px}
+  .wz-fp-foot button{min-width:96px;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid var(--red)}
+  .wz-fp-foot .wz-fp-cancel{background:#fff;color:var(--red)}
+  .wz-fp-foot .wz-fp-ok{background:var(--red);color:#fff}
+</style>
+<dialog id="wzFilterPapersDlg">
+  <div class="wz-fp-head"><span>過濾試卷（排除已出過的題目）</span><button type="button" class="wz-fp-x" onclick="document.getElementById('wzFilterPapersDlg').close()">✕</button></div>
+  <div class="wz-fp-body" id="wzFpBody"></div>
+  <div class="wz-fp-foot"><span class="wz-fp-cnt">已勾選 <b id="wzFpCount">0</b> 份</span><button type="button" class="wz-fp-cancel" onclick="document.getElementById('wzFilterPapersDlg').close()">取消</button><button type="button" class="wz-fp-ok" onclick="wzApplyFilterPapers()">確認</button></div>
+</dialog>
 
 <!-- 知識點分析報表 -->
 
@@ -1857,7 +1907,7 @@ async function applyGroupIdTool(){
   render();
 }
 
-let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={};
+let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[];
 let QUICK_CHAPTER_RANGE=null, QUICK_CHAPTERS=[];
 window.__qbankDataReady=false;
 // 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
@@ -1947,6 +1997,9 @@ async function load(){
   SYL=parseSyl(SYL_RAW);
   // 考卷原稿 PDF 對應表（考試名稱 → 公開URL），存在 syllabus_doc id=4
   try{const {data:pdfRow}=await sb.from('syllabus_doc').select('content').eq('id',4).maybeSingle();EXAM_PDFS=pdfRow&&pdfRow.content?JSON.parse(pdfRow.content):{};}catch(e){EXAM_PDFS={};}
+  // 產生過的考卷紀錄（最近20份，供組卷精靈「過濾試卷」排除已出題），存 syllabus_doc id=5
+  try{const {data:phRow}=await sb.from('syllabus_doc').select('content').eq('id',5).maybeSingle();PAPER_HISTORY=phRow&&phRow.content?JSON.parse(phRow.content):[];}catch(e){PAPER_HISTORY=[];}
+  if(!Array.isArray(PAPER_HISTORY))PAPER_HISTORY=[];
 }
 async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
 
@@ -1971,6 +2024,50 @@ async function uploadImgs(imgs,qid){const out=[];
 async function _saveExamPdfsMap(){
   try{await sb.from('syllabus_doc').upsert({id:4,content:JSON.stringify(EXAM_PDFS)});}
   catch(e){console.error('儲存原稿對應表失敗',e);alert('原稿對應表儲存失敗：'+(e.message||e));}
+}
+/* ===== 產生過的考卷紀錄（過濾試卷用）：存 syllabus_doc id=5，保留最近 20 份 ===== */
+async function _savePaperHistory(){
+  try{await sb.from('syllabus_doc').upsert({id:5,content:JSON.stringify(PAPER_HISTORY.slice(0,20))});}
+  catch(e){console.error('儲存考卷紀錄失敗',e);}
+}
+function _modeOf(arr){const m={};let best='',bn=0;arr.forEach(v=>{if(v==null||v==='')return;m[v]=(m[v]||0)+1;if(m[v]>bn){bn=m[v];best=v;}});return best;}
+function _publisherOf(bookName){const s=String(bookName||'');const m=s.match(/^([^\/／]+)/);return m?m[1].trim():'';}
+function _bookLabel(code){const map={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};return map[code]||code||'';}
+function _paperOverallDiff(items){
+  const cnt={簡單:0,中等:0,困難:0,極難:0};
+  items.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl;if(cnt[l]!=null)cnt[l]++;});
+  let best='',bn=0;Object.keys(cnt).forEach(k=>{if(cnt[k]>bn){bn=cnt[k];best=k;}});return best;
+}
+// 由目前已選題目組出一份考卷的 metadata（不含題組文章本身）
+function _paperMetaFromPicks(){
+  const items=pickedItems().filter(it=>it&&it.type!=='passage');
+  const qids=items.map(it=>it.id);
+  if(!qids.length)return null;
+  const name=(document.getElementById('pExamName')&&document.getElementById('pExamName').value||'').trim()
+    ||(document.getElementById('pTitle')&&document.getElementById('pTitle').value||'').trim()||'未命名考卷';
+  const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  return {
+    id:'ph'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    name, field:_modeOf(items.map(it=>it.field)),
+    version:_modeOf(items.map(it=>_publisherOf(it.bookName))),
+    book:_modeOf(items.map(it=>it.book)),
+    bookLabel:_bookLabel(_modeOf(items.map(it=>it.book))),
+    kind, kindLabel:(kind==='abk'?'ABK':kind==='mock'?'模考':'課前考'),
+    diff:_paperOverallDiff(items),
+    date:new Date().toISOString(), qids
+  };
+}
+// 匯出／產生考卷時呼叫：把該份考卷記進紀錄（去重、上限 20），供之後過濾排除
+function _recordGeneratedPaper(){
+  try{
+    const meta=_paperMetaFromPicks();
+    if(!meta)return;
+    const sig=meta.qids.slice().sort().join(',');
+    PAPER_HISTORY=PAPER_HISTORY.filter(p=>!(p&&p.qids&&p.qids.slice().sort().join(',')===sig&&p.name===meta.name));
+    PAPER_HISTORY.unshift(meta);
+    if(PAPER_HISTORY.length>20)PAPER_HISTORY=PAPER_HISTORY.slice(0,20);
+    _savePaperHistory();
+  }catch(e){console.error('記錄考卷失敗',e);}
 }
 function _examPdfSlug(name){return String(name||'').replace(/[^一-鿿0-9a-zA-Z]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'exam';}
 async function uploadExamPdfFile(file,examName){
@@ -4109,6 +4206,8 @@ let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收�
 let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（field|book|unit|sub）
 let WZ_TREEDATA=[];              // [{field,book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
+let WZ_SCORE={};                 // 配分：{題型kind: 每題配分}
+let WZ_EXCLUDE=new Set();        // 過濾試卷：已勾選排除的考卷 id（對應 PAPER_HISTORY）
 const WZ_SEP='\u0001';
 const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
@@ -4122,12 +4221,18 @@ function _wzFieldFor(it){
 function _wzFieldOrder(f){const i=['生物','理化','地科','物理','化學'].indexOf(f);return i<0?99:i;}
 function _wzLeafKey(it){return _wzFieldFor(it)+WZ_SEP+(it.book||'')+WZ_SEP+(it.unit||'（未分類）')+WZ_SEP+(it.sub||'（未分類）');}
 function _wzPath(it){return _wzLeafKey(it)+WZ_SEP+(it.kp||'（未標知識點）');}
-function _wzPool(){return DB.filter(it=>it&&it.type!=='passage');}
+function _wzExcludedQids(){
+  const s=new Set();
+  if(WZ_EXCLUDE&&WZ_EXCLUDE.size){(PAPER_HISTORY||[]).forEach(p=>{if(p&&WZ_EXCLUDE.has(p.id))(p.qids||[]).forEach(id=>s.add(id));});}
+  return s;
+}
+function _wzPool(){const ex=_wzExcludedQids();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id));}
 function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
 function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
+  WZ_SCORE={};WZ_EXCLUDE=new Set();   // 每次開精靈重置配分與過濾
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
   // 先要求選學制，選了才顯示章節樹
@@ -4141,6 +4246,7 @@ function wzOpen(){
   sel.innerHTML='<option value="">全部題型</option>'+types.map(t=>`<option value="${esc(t)}">${esc(typeof typeName==='function'?typeName(t):t)}</option>`).join('');
 }
 function wzClose(){
+  WZ_SCORE={};WZ_EXCLUDE=new Set();   // 離開精靈清掉配分/過濾，避免影響題庫管理的一般匯出
   // composer.html 是精靈的獨立入口；在該頁離開時直接回題庫管理，不露出 iframe 內的題庫畫面。
   if(WZ_EMBEDDED){top.location.href='index.html';return;}
   document.getElementById('composer').hidden=true;document.body.style.overflow='';
@@ -4245,27 +4351,132 @@ function wzSetStep(n){
   document.querySelectorAll('#composer .wz-pane').forEach(p=>p.hidden=(+p.dataset.s!==n));
   document.querySelectorAll('#composer .wz-step').forEach(s=>{const si=+s.dataset.s;s.classList.toggle('on',si===n);s.classList.toggle('done',si<n);});
   document.getElementById('wzPrev').style.visibility=n===1?'hidden':'visible';
-  document.getElementById('wzNext').textContent=n===2?'下一步：預覽 →':n===3?'—':'下一步 →';
+  document.getElementById('wzNext').textContent=n===2?'下一步：設定 →':n===3?'—':'下一步 →';
   document.getElementById('wzNext').style.visibility=n===3?'hidden':'visible';
   if(n===2)wzRenderList();
-  if(n===3)document.getElementById('wzStep3N').textContent=PICKS.size;
+  if(n===3){document.getElementById('wzStep3N').textContent=PICKS.size;wzRenderScoreTable();wzUpdateExcludeInfo();}
   wzUpdateFoot();
 }
 function wzGo(dir){
   if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
-  if(dir>0&&WZ_STEP===2){
-    if(PICKS.size===0){alert('請先選擇至少一題');return;}
-    wzToExport();   // 選題→下一步 直接進考卷預覽（跳過中間卡片）
-    return;
-  }
+  if(dir>0&&WZ_STEP===2&&PICKS.size===0){alert('請先選擇至少一題');return;}
   const n=WZ_STEP+dir;
   if(n<1||n>3)return;
+  wzSetStep(n);   // 選題→下一步進 Step 3 設定頁（配分／過濾），Step 3 再按「開啟預覽與輸出」
+}
+// 步驟列可點擊跳轉：往回隨時可點；往前需符合各步驟前置條件
+function wzJump(n){
+  if(n===WZ_STEP)return;
+  if(n>WZ_STEP){
+    if(WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+    if(n>=3&&PICKS.size===0){alert('請先選擇至少一題');return;}
+  }
   wzSetStep(n);
 }
 function wzUpdateFoot(){
   const info=document.getElementById('wzFootInfo');
   if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`;
   else info.innerHTML=`已選 <b>${PICKS.size}</b> 題`;
+}
+/* ===== Step 3：配分設定（TESTGO 式總分調整表） ===== */
+function wzScoreData(){
+  const items=pickedItems().filter(it=>it&&it.type!=='passage');
+  const sec=paperQuestionSections(items);
+  const rows=[];
+  _PAPER_SECTION_ORDER.forEach(k=>{
+    const its=items.filter(it=>sec.kindOf(it)===k);
+    if(!its.length)return;
+    const d={簡單:0,中等:0,困難:0,極難:0};
+    its.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl;if(d[l]!=null)d[l]++;});
+    rows.push({kind:k,label:_PAPER_SECTION_LABEL[k],count:its.length,diff:d});
+  });
+  return rows;
+}
+function wzRenderScoreTable(){
+  const box=document.getElementById('wzScoreTable');if(!box)return;
+  const rows=wzScoreData();
+  if(!rows.length){box.innerHTML='<div class="wz-score-empty">尚未選題，回上一步挑題後這裡會出現配分表。</div>';return;}
+  rows.forEach(r=>{if(WZ_SCORE[r.kind]==null)WZ_SCORE[r.kind]=5;});
+  let total=0,totalQ=0;
+  let h='<table class="wz-score-tbl"><thead><tr><th>題型</th><th>簡單</th><th>中等</th><th>困難</th><th>極難</th><th>總題數</th><th>每題配分</th><th>共計</th></tr></thead><tbody>';
+  rows.forEach(r=>{
+    const per=+WZ_SCORE[r.kind]||0;const sub=per*r.count;total+=sub;totalQ+=r.count;
+    h+=`<tr><td class="wz-sc-name">${r.label}</td><td>${r.diff.簡單||''}</td><td>${r.diff.中等||''}</td><td>${r.diff.困難||''}</td><td>${r.diff.極難||''}</td><td>${r.count}</td>`
+      +`<td><input type="number" min="0" class="wz-sc-in" value="${per}" onchange="wzScoreInput('${r.kind}',this.value)"></td>`
+      +`<td class="wz-sc-sum">${sub}</td></tr>`;
+  });
+  h+=`</tbody><tfoot><tr><td>總計</td><td></td><td></td><td></td><td></td><td>${totalQ}</td><td></td><td class="wz-sc-total">${total}</td></tr></tfoot></table>`;
+  box.innerHTML=h;
+}
+function wzScoreInput(kind,val){WZ_SCORE[kind]=Math.max(0,parseFloat(val)||0);wzRenderScoreTable();}
+function wzAutoScore(){
+  const rows=wzScoreData();const totalQ=rows.reduce((a,r)=>a+r.count,0);if(!totalQ){alert('尚未選題');return;}
+  const t=prompt('目標總分？（會平均分配到每一題）','100');if(t==null)return;
+  const target=parseFloat(t);if(!target||target<=0)return;
+  const per=Math.round(target/totalQ);
+  rows.forEach(r=>{WZ_SCORE[r.kind]=per;});
+  wzRenderScoreTable();
+}
+/* ===== Step 3：過濾試卷（排除已出過的考卷題目） ===== */
+let _wzFpTmp=new Set(),_wzFpFilter={books:new Set(),versions:new Set(),diffs:new Set(),q:''};
+function _wzFmtDate(iso){try{const d=new Date(iso);const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());}catch(e){return '';}}
+function wzOpenFilterPapers(){
+  _wzFpTmp=new Set(WZ_EXCLUDE);
+  _wzFpFilter={books:new Set(),versions:new Set(),diffs:new Set(),q:''};
+  wzRenderFilterPapers();
+  document.getElementById('wzFilterPapersDlg').showModal();
+}
+function wzFpToggleFilter(kind,val){const s=_wzFpFilter[kind];if(s.has(val))s.delete(val);else s.add(val);wzRenderFilterPapers();}
+function wzFpSearch(v){_wzFpFilter.q=(v||'').trim();wzRenderFilterPapers();}
+function wzFpToggle(id){if(_wzFpTmp.has(id))_wzFpTmp.delete(id);else _wzFpTmp.add(id);wzRenderFilterPapers();}
+function wzRenderFilterPapers(){
+  const box=document.getElementById('wzFpBody');if(!box)return;
+  const hist=PAPER_HISTORY||[];
+  const booksAll=[...new Set(hist.map(p=>p.bookLabel).filter(Boolean))];
+  const versAll=[...new Set(hist.map(p=>p.version).filter(Boolean))];
+  const diffAll=['簡單','中等','困難','極難'];
+  const f=_wzFpFilter;
+  const rows=hist.filter(p=>{
+    if(f.books.size&&!f.books.has(p.bookLabel))return false;
+    if(f.versions.size&&!f.versions.has(p.version))return false;
+    if(f.diffs.size&&!f.diffs.has(p.diff))return false;
+    if(f.q&&!String(p.name||'').includes(f.q))return false;
+    return true;
+  });
+  let h='<div class="wz-fp-filters">';
+  if(booksAll.length)h+='<div class="wz-fp-frow"><span>冊次</span>'+booksAll.map(b=>`<label><input type="checkbox" ${f.books.has(b)?'checked':''} onchange="wzFpToggleFilter('books','${esc(b)}')">${esc(b)}</label>`).join('')+'</div>';
+  if(versAll.length)h+='<div class="wz-fp-frow"><span>版本</span>'+versAll.map(v=>`<label><input type="checkbox" ${f.versions.has(v)?'checked':''} onchange="wzFpToggleFilter('versions','${esc(v)}')">${esc(v)}</label>`).join('')+'</div>';
+  h+='<div class="wz-fp-frow"><span>程度</span>'+diffAll.map(d=>`<label><input type="checkbox" ${f.diffs.has(d)?'checked':''} onchange="wzFpToggleFilter('diffs','${d}')">${d}</label>`).join('')+'</div>';
+  h+=`<div class="wz-fp-frow"><span>搜尋</span><input type="text" value="${esc(f.q)}" oninput="wzFpSearch(this.value)" placeholder="輸入考卷名稱…"></div></div>`;
+  if(!rows.length){h+='<div class="wz-fp-empty">'+(hist.length?'沒有符合條件的考卷':'目前沒有產生過的考卷紀錄。<br>從題庫匯出考卷後會自動記錄（最多保留 20 份），即可在此勾選排除。')+'</div>';}
+  else{
+    h+='<table class="wz-fp-tbl"><thead><tr><th></th><th>科目</th><th>版本</th><th>冊次</th><th>名稱</th><th>卷別</th><th>難易度</th><th>出卷日</th></tr></thead><tbody>';
+    rows.forEach(p=>{
+      h+=`<tr onclick="wzFpToggle('${p.id}')"><td><input type="checkbox" ${_wzFpTmp.has(p.id)?'checked':''} onclick="event.stopPropagation();wzFpToggle('${p.id}')"></td>`
+        +`<td>${esc(p.field||'')}</td><td>${esc(p.version||'')}</td><td>${esc(p.bookLabel||'')}</td><td style="text-align:left">${esc(p.name||'')}</td><td>${esc(p.kindLabel||'')}</td><td>${esc(p.diff||'')}</td><td>${_wzFmtDate(p.date)}</td></tr>`;
+    });
+    h+='</tbody></table>';
+  }
+  box.innerHTML=h;
+  const n=document.getElementById('wzFpCount');if(n)n.textContent=_wzFpTmp.size;
+}
+function wzApplyFilterPapers(){
+  WZ_EXCLUDE=new Set(_wzFpTmp);
+  document.getElementById('wzFilterPapersDlg').close();
+  // 已選但被排除的題目一併移除
+  const ex=_wzExcludedQids();
+  [...PICKS].forEach(id=>{if(ex.has(id))PICKS.delete(id);});
+  wzUpdateExcludeInfo();
+  if(typeof wzRenderTree==='function')wzRenderTree();
+  if(typeof wzRenderList==='function')wzRenderList();
+  if(typeof wzRenderScoreTable==='function')wzRenderScoreTable();
+  document.getElementById('wzStep3N').textContent=PICKS.size;
+  wzUpdateFoot();
+}
+function wzUpdateExcludeInfo(){
+  const el=document.getElementById('wzExcludeInfo');if(!el)return;
+  const n=WZ_EXCLUDE.size,q=_wzExcludedQids().size;
+  el.textContent=n?`已排除 ${n} 份考卷（${q} 題不再出現）`:'尚未排除任何考卷';
 }
 // Step 2 清單
 function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
@@ -4721,7 +4932,13 @@ const _PAPER_CN=['一','二','三','四','五','六'];
 function paperSectionLabel(kind,sections){
   const pres=_PAPER_SECTION_ORDER.filter(k=>sections&&sections.present&&sections.present.has(k));
   const i=pres.indexOf(kind);
-  return `${_PAPER_CN[i]||''}、${_PAPER_SECTION_LABEL[kind]||kind}`;
+  let s=`${_PAPER_CN[i]||''}、${_PAPER_SECTION_LABEL[kind]||kind}`;
+  // 組卷精靈配分：預覽標題同步顯示「/每題X分，共Y分」（與 Word 匯出一致）
+  if(typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[kind]!=null&&sections&&sections.ordered){
+    const per=+WZ_SCORE[kind]||0,cnt=sections.ordered.filter(it=>sections.kindOf(it)===kind).length;
+    if(per&&cnt)s+=`  /每題 ${per} 分，共 ${per*cnt} 分`;
+  }
+  return s;
 }
 function paperSectionTitle(kind,sections){return paperSectionLabel(kind,sections);}
 // 預覽「上一步／重做」：記錄排序與刪題等結構性動作的快照，供工具列 ↶/↷ 復原（文字編輯本身用瀏覽器原生 Ctrl+Z）
@@ -8042,7 +8259,7 @@ async function downloadWordViaTemplate(kind,opts){
     groupRanges.set(it.groupId,range);
   });
   const shownG=new Set();
-  const sections=[];let qno=0;
+  const sections=[];let qno=0;let scoringActive=false;
   for(const k of order){
     const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
     if(!its.length)continue;
@@ -8062,7 +8279,11 @@ async function downloadWordViaTemplate(kind,opts){
       items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
-    sections.push({title:_PAPER_SECTION_LABEL[k],items});
+    // 組卷精靈設定了配分時，把「/每題X分，共Y分」直接帶進標題（取代範本的手填 ＿＿ 佔位）。
+    let secTitle=_PAPER_SECTION_LABEL[k];
+    const _per=(typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[k]!=null)?(+WZ_SCORE[k]||0):null;
+    if(_per!=null){secTitle+='  /每題 '+_per+' 分，共 '+(_per*items.length)+' 分';scoringActive=true;}
+    sections.push({title:secTitle,items});
   }
   const imageSizes=new Map();
   for(const section of sections)for(const item of section.items){
@@ -8088,7 +8309,9 @@ async function downloadWordViaTemplate(kind,opts){
     let boxCount=0;
     const xml=renderedZip.file('word/document.xml').asText().replace(/(<wp:docPr )id="9000001"( name="Group Passage")/g,(_m,start,end)=>`${start}id="${9000001+boxCount++}"${end}`);
     if(boxCount!==expected)throw new Error('題組文字方塊數量與題組文章不一致');
-    renderedZip.file('word/document.xml',xml);
+    // 配分已填進標題時，移除範本大題標題後方「  /每題＿＿分，共＿＿分」手填佔位（避免與配分重複）。
+    const xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
+    renderedZip.file('word/document.xml',xml2);
   }
   const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
   const title=(document.getElementById('pTitle').value||'考卷').trim();
@@ -8096,6 +8319,7 @@ async function downloadWordViaTemplate(kind,opts){
 }
 async function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
+  _recordGeneratedPaper();   // 記錄本次產生的考卷（供組卷精靈過濾試卷排除已出題）
   const items=pickedItems();
   const ansMode=paperAnsMode();
   const showMeta=document.getElementById('pShowMeta').checked;
