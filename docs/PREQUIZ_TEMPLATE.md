@@ -1,8 +1,10 @@
 # 課前考 Word 模板
 
-`templates/pre_tpl.docx` 從已確認 ABK 模板衍生，差異為：原生課前考標頭、所有分節改單欄、無浮水印。其他正文段落、ruler、清單編號、題組框、字型、B4 紙張和頁尾不變。原始 ABK 檔未修改。課前考的標頭 Logo 與灰色橫幅仍保留；網頁預覽、PDF、Word 均不顯示背景浮水印。
+`templates/pre_tpl.docx` 從已確認 ABK 模板衍生，差異為：原生課前考標頭、所有分節改單欄、無浮水印及加寬題組框。其他正文段落、ruler、清單編號、字型、B4 紙張和頁尾不變。原始 ABK 檔未修改。課前考的標頭 Logo 與灰色橫幅仍保留；網頁預覽、PDF、Word 均不顯示背景浮水印。
 
-重建工具：`tools/build_prequiz_template.py --abk templates/abk_tpl.docx --header-source SOURCE.docx --output NEW.docx`。輸出既存時拒絕覆寫；工具驗證原 ABK 41 個未變更 part 及正文 slot 的 canonical 保真。
+依後續要求，課前考的題組框加寬至完整單欄文字區域（8337550 EMU，約 23.16 cm），保留內文尺規與自動增高，左右外緣與文字區域對齊；ABK 雙欄題組框仍為 11.02 cm。網頁課前考 Logo 依自然 225:270 比例顯示，不再強制套用寬高。工具列可直接填科目、課前考名稱、冊次及章節，與設定頁及 Word 標頭同步。
+
+重建工具：`tools/build_prequiz_template.py --abk templates/abk_tpl.docx --header-source SOURCE.docx --output NEW.docx`。輸出既存時拒絕覆寫；工具驗證原 ABK 41 個未變更 part 及正文 slot 的 canonical 保真，只容許單欄及題組框寬度的差異。
 
 新標頭欄位為 `subject`、`book`、`quiz_label`、`running_header`。內文仍為 ABK 的 sections/items/passage/text/imgs loops。
 

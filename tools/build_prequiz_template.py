@@ -37,6 +37,13 @@ def remove_watermark(hdr):
     return removed
 
 
+def widen_passage_boxes(root, width):
+    """Fill the single-column text area without changing inner ruler or height."""
+    for inline in root.xpath('.//wp:inline[.//w:txbxContent/w:p/w:pPr/w:numPr/w:numId[@w:val="108"]]', namespaces=NS):
+        inline.find('wp:extent', NS).set('cx', str(width))
+        inline.find('.//wps:spPr/a:xfrm/a:ext', NS).set('cx', str(width))
+
+
 def fill_slot(paragraph, token):
     runs = paragraph.findall('w:r', NS)
     props = deepcopy(runs[0].find('w:rPr', NS)) if runs else None
@@ -113,6 +120,7 @@ def build(abk, source, output):
         cols.set(f'{{{W}}}sep', '0')
         for child in list(cols):
             cols.remove(child)
+    widen_passage_boxes(root, width)
 
     pre_running = E.fromstring(pre['word/header1.xml']).find('w:p', NS)
     fill_slot(pre_running, '{running_header}')
@@ -151,7 +159,7 @@ def build(abk, source, output):
         for name, raw in parts.items():
             z.writestr(name, raw)
 
-    # Only header, column count, and imported header media may differ.
+    # Only header, column count, full-column passage width and header media differ.
     allowed = {'word/document.xml', 'word/header1.xml', 'word/header2.xml', 'word/_rels/document.xml.rels'}
     base = package(abk)
     assert all(parts[n] == raw for n, raw in base.items() if n not in allowed)
@@ -159,11 +167,12 @@ def build(abk, source, output):
     old_body = base_root.find('w:body', NS)
     for index in range(1, len(body)):
         before, after = deepcopy(old_body[index]), deepcopy(body[index])
+        widen_passage_boxes(before, width)
         for node in before.xpath('.//w:cols|self::w:cols', namespaces=NS) + after.xpath('.//w:cols|self::w:cols', namespaces=NS):
             node.set(f'{{{W}}}num', '1')
             node.set(f'{{{W}}}sep', '0')
         assert E.tostring(before, method='c14n') == E.tostring(after, method='c14n'), index
-    print(f'PASS: header replaced; single column; no watermark; {len(base)-len(allowed)} original parts preserved; body slots unchanged. {output}')
+    print(f'PASS: header replaced; single column; no watermark; full-column passage boxes; {len(base)-len(allowed)} original parts preserved; other body rules unchanged. {output}')
 
 
 if __name__ == '__main__':

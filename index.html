@@ -1194,6 +1194,12 @@
       <label>章節 <input id="pvChapterRange" type="text" placeholder="CH1+CH2" aria-label="章節範圍"></label>
       <output id="pvPaperCode" aria-live="polite"></output>
     </span>
+    <span id="pvPreFields" hidden>
+      <label>科目 <input id="pvPreSubject" type="text" aria-label="課前考科目" placeholder="國八理化"></label>
+      <label>課前考名稱 <input id="pvExamName" type="text" aria-label="課前考名稱" placeholder="課前考06-Ch1-1"></label>
+      <label>冊次 <select id="pvPreBookCode" aria-label="課前考冊次"><option value="JB1">第一冊</option><option value="JB2">第二冊</option><option value="JB3">第三冊</option><option value="JB4">第四冊</option><option value="JB5">第五冊</option><option value="JB6">第六冊</option></select></label>
+      <label>章節 <input id="pvPreChapterRange" type="text" aria-label="課前考章節範圍" placeholder="CH1-1"></label>
+    </span>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
@@ -4771,7 +4777,7 @@ function _pvBlankResizeEnd(el){
 }
 // 預覽可直接點擊修改的卷頭文字：綁定到設定欄位，失焦即寫回並重繪（也同步匯出）。
 function _pvHdrEditable(txt,field){return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${esc(txt)}</span>`;}
-function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(el.dataset.hf==='pTitle'&&typeof paperMetadataChanged==='function'){paperMetadataChanged('pTitle',v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
+function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(['pTitle','pExamName','pSubject'].includes(el.dataset.hf)&&typeof paperMetadataChanged==='function'){paperMetadataChanged(el.dataset.hf,v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
 function buildExamHeader(forPreview){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   const g=document.getElementById('pGrade').value.trim();

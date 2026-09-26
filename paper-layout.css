@@ -11,6 +11,7 @@
 .pv-sheet.pv-page.template-paper .q.template-question{padding-left:66.17px;margin:0 0 8px;line-height:normal;font-size:10pt;font-weight:400}
 .paper-question-marker{position:absolute;left:9.47px;top:0;white-space:nowrap;font-family:'Times New Roman',serif;font-weight:400}
 .pv-sheet.pv-page.template-paper .template-passage{position:relative;width:416.5px;max-width:100%;box-sizing:border-box;padding:9.6px 9.6px 9.6px 28.35px;margin-bottom:8px;border:1px solid #171717;background:transparent;line-height:normal;font-size:10pt}
+.pv-sheet.pv-page.template-paper:not(.abk-preview) .pv-page-body:not(.paper-2col) .template-passage{width:100%;margin-left:0;margin-right:0}
 .paper-passage-marker{display:inline-block;margin-left:-18.75px;width:18.75px;font-family:'HuaKangTNR',serif}
 .pv-sheet.pv-page.template-paper .qimg{display:block;width:auto;height:auto;max-width:270px;max-height:135px;margin:0;border:0;border-radius:0;object-fit:contain}
 .pv-sheet.pv-page.template-paper .abk-hd{position:relative;height:94px;border:0;margin:0;padding:0;font-family:'HuaKangTNR','Times New Roman',serif}
@@ -26,7 +27,7 @@
 .template-paper .abk-hd .abk-hd-name{position:absolute;right:165px;top:55px;width:100px;font-size:10pt}
 .pre-template-header{position:relative;height:94px;padding-top:28px;box-sizing:border-box}
 .pre-template-header .pre-running-title{position:absolute;top:-28px;left:0;font-size:9pt;color:#555}
-.pre-template-header>img{position:absolute;left:0;top:8px;width:61.8px;height:58px}
+.pre-template-header>img{position:absolute;left:0;top:8px;width:61.8px;height:auto;object-fit:contain}
 .pre-header-band{position:absolute;left:65px;right:0;top:8px;height:61px;border-radius:9px;background:linear-gradient(to right,#fff,#aaa);display:flex;align-items:center;gap:18px;padding:0 10px;font-size:20pt;line-height:1.2;white-space:nowrap}
 .pre-header-band i{height:42px;width:2px;background:#555;flex-shrink:0}
 .pv-sheet.template-paper .pv-run-head{position:relative;top:-28px;height:0;border:0;padding:0;margin:0;font-size:9pt;color:#555}

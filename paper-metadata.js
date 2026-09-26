@@ -3,6 +3,8 @@ const PAPER_BOOK_NAMES = ['第一冊','第二冊','第三冊','第四冊','第�
 const PAPER_METADATA_PAIRS = [
   ['pTitle','pvTitle'], ['pAbkVariant','pvAbkVariant'],
   ['pBookCode','pvBookCode'], ['pChapterRange','pvChapterRange'],
+  ['pExamName','pvExamName'], ['pSubject','pvPreSubject'],
+  ['pBookCode','pvPreBookCode'], ['pChapterRange','pvPreChapterRange'],
 ];
 function paperTemplateImage(image) {
   return image && image.src ? `<img class="qimg" src="${esc(image.src)}" alt="題目圖片">` : '';
@@ -70,6 +72,7 @@ function readPaperTemplateMetadata(validate = false, variantOverride) {
 function syncPaperMetadataControls() {
   const abk = document.querySelector('input[name=pPaperKind]:checked')?.value === 'abk';
   for (const id of ['paperAbkFields', 'pvAbkFields']) document.getElementById(id).hidden = !abk;
+  document.getElementById('pvPreFields').hidden = document.querySelector('input[name=pPaperKind]:checked')?.value !== 'pre';
   for (const [source, mirror] of PAPER_METADATA_PAIRS) {
     const original = document.getElementById(source), target = document.getElementById(mirror);
     if (target.value !== original.value) target.value = original.value;
@@ -146,10 +149,10 @@ function patchAbkTemplateCode(zip, code) {
   }
 }
 const paperMetadataStyle = document.createElement('style');
-paperMetadataStyle.textContent = `#pvPaperMetadata{display:flex}#paperAbkFields[hidden],#pvAbkFields[hidden]{display:none!important}
+paperMetadataStyle.textContent = `#pvPaperMetadata{display:flex;flex-wrap:wrap;gap:12px}#paperAbkFields[hidden],#pvAbkFields[hidden],#pvPreFields[hidden]{display:none!important}
 #pvPaperMetadata label{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#555}
 #pvPaperMetadata input,#pvPaperMetadata select{font:inherit;padding:7px;border:1px solid #ddd;border-radius:6px;background:white}
-#pvTitle{width:240px}#pvChapterRange{width:155px}#pvAbkFields:not([hidden]){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#pvTitle{width:240px}#pvChapterRange,#pvPreChapterRange{width:155px}#pvPreSubject{width:100px}#pvExamName{width:240px}#pvAbkFields:not([hidden]),#pvPreFields:not([hidden]){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 #pvPaperCode{font:12px monospace;color:#777}#pPaperCode{font-size:12px}
 #paperView.show{display:flex;flex-direction:column;overflow:hidden}#paperView .pv-bar,#paperView .pv-fmt-bar{position:relative!important;top:auto!important;flex-shrink:0;background:#fffdf9;z-index:30}
 #paperView.show>#pvSheet{overflow:auto;flex:1;min-height:0;margin-bottom:0;width:100%}
