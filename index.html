@@ -1026,7 +1026,8 @@
 #composer .wz-top{display:flex;align-items:center;gap:16px;padding:9px 18px;background:#fffefb;color:var(--ink);flex-shrink:0;border-bottom:1px solid var(--line)}
 #composer .wz-brand{font-size:15px;font-weight:800;letter-spacing:1px;white-space:nowrap;color:var(--red)}
 #composer .wz-steps{display:flex;gap:7px;flex:1;justify-content:center;flex-wrap:wrap}
-#composer .wz-step{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;font-size:13.5px;font-weight:700;background:#f2ede4;color:#9a8f83}
+#composer .wz-step{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:18px;font-size:13.5px;font-weight:700;background:#f2ede4;color:#9a8f83;cursor:pointer;transition:background .15s,color .15s}
+#composer .wz-step:hover{background:#e7ddcb;color:#6e5a3c}
 #composer .wz-step .wz-num{display:inline-flex;width:19px;height:19px;border-radius:50%;background:#d9cfc0;color:#fff;align-items:center;justify-content:center;font-size:11.5px}
 #composer .wz-step.on{background:var(--red);color:#fff}
 #composer .wz-step.on .wz-num{background:#fff;color:var(--red)}
@@ -1113,9 +1114,9 @@
   <div class="wz-top">
     <div class="wz-brand">組卷精靈</div>
     <div class="wz-steps">
-      <div class="wz-step" data-s="1"><span class="wz-num">1</span>範圍</div>
-      <div class="wz-step" data-s="2"><span class="wz-num">2</span>選題</div>
-      <div class="wz-step" data-s="3"><span class="wz-num">3</span>設定與輸出</div>
+      <div class="wz-step" data-s="1" onclick="wzJump(1)"><span class="wz-num">1</span>範圍</div>
+      <div class="wz-step" data-s="2" onclick="wzJump(2)"><span class="wz-num">2</span>選題</div>
+      <div class="wz-step" data-s="3" onclick="wzJump(3)"><span class="wz-num">3</span>設定與輸出</div>
     </div>
     <button class="wz-x" onclick="wzClose()" title="離開精靈">✕</button>
   </div>
@@ -4336,7 +4337,7 @@ function wzSetStep(n){
   document.querySelectorAll('#composer .wz-pane').forEach(p=>p.hidden=(+p.dataset.s!==n));
   document.querySelectorAll('#composer .wz-step').forEach(s=>{const si=+s.dataset.s;s.classList.toggle('on',si===n);s.classList.toggle('done',si<n);});
   document.getElementById('wzPrev').style.visibility=n===1?'hidden':'visible';
-  document.getElementById('wzNext').textContent=n===2?'下一步：預覽 →':n===3?'—':'下一步 →';
+  document.getElementById('wzNext').textContent=n===2?'下一步：設定 →':n===3?'—':'下一步 →';
   document.getElementById('wzNext').style.visibility=n===3?'hidden':'visible';
   if(n===2)wzRenderList();
   if(n===3){document.getElementById('wzStep3N').textContent=PICKS.size;wzRenderScoreTable();wzUpdateExcludeInfo();}
@@ -4344,13 +4345,18 @@ function wzSetStep(n){
 }
 function wzGo(dir){
   if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
-  if(dir>0&&WZ_STEP===2){
-    if(PICKS.size===0){alert('請先選擇至少一題');return;}
-    wzToExport();   // 選題→下一步 直接進考卷預覽（跳過中間卡片）
-    return;
-  }
+  if(dir>0&&WZ_STEP===2&&PICKS.size===0){alert('請先選擇至少一題');return;}
   const n=WZ_STEP+dir;
   if(n<1||n>3)return;
+  wzSetStep(n);   // 選題→下一步進 Step 3 設定頁（配分／過濾），Step 3 再按「開啟預覽與輸出」
+}
+// 步驟列可點擊跳轉：往回隨時可點；往前需符合各步驟前置條件
+function wzJump(n){
+  if(n===WZ_STEP)return;
+  if(n>WZ_STEP){
+    if(WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+    if(n>=3&&PICKS.size===0){alert('請先選擇至少一題');return;}
+  }
   wzSetStep(n);
 }
 function wzUpdateFoot(){
