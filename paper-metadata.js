@@ -5,7 +5,27 @@ const PAPER_METADATA_PAIRS = [
   ['pBookCode','pvBookCode'], ['pChapterRange','pvChapterRange'],
   ['pExamName','pvExamName'], ['pSubject','pvPreSubject'],
   ['pBookCode','pvPreBookCode'], ['pChapterRange','pvPreChapterRange'],
+  ['pGoldenYear','pvGoldenYear'], ['pGoldenSemester','pvGoldenSemester'],
+  ['pGoldenVersion','pvGoldenVersion'], ['pSubject','pvGoldenSubject'],
+  ['pExamName','pvGoldenExamName'], ['pScope','pvGoldenScope'],
 ];
+function readGoldenMetadata() {
+  const value = (id, fallback) => document.getElementById(id).value.trim() || fallback;
+  const subject = value('pSubject', '＿＿科');
+  return {gold_year:value('pGoldenYear','＿＿＿'),gold_semester:value('pGoldenSemester','＿'),
+    gold_subject:subject,gold_exam_title:value('pExamName','＿＿年級第＿＿次定期考模擬試卷'),
+    gold_version:value('pGoldenVersion','＿＿＿＿'),gold_scope:value('pScope','＿＿＿＿＿＿＿＿'),
+    gold_footer_subject:subject.replace(/科$/, '')};
+}
+function buildGoldenPreviewHeader(editable) {
+  const data = readGoldenMetadata();
+  const text = (key,id) => editable ? _pvHdrEditable(data[key],id) : esc(data[key]);
+  return `<div class="golden-template-header"><table><colgroup><col style="width:19.86%"><col style="width:29.38%"><col style="width:11.19%"><col style="width:39.57%"></colgroup>
+    <tr><td rowspan="2"></td><td colspan="2">${text('gold_year','pGoldenYear')} 學年度第 ${esc(data.gold_semester)} 學期 ${text('gold_subject','pSubject')}</td><td class="golden-right">${text('gold_exam_title','pExamName')}</td></tr>
+    <tr><td>版本：${text('gold_version','pGoldenVersion')}</td><td colspan="2" class="golden-right">範圍：${text('gold_scope','pScope')}</td></tr>
+    <tr><td></td><td colspan="3" class="golden-right">____年____班　 座號：_____ 姓名：_______________</td></tr></table>
+    <img src="templates/golden_logo.png" alt="TZU TZU"></div>`;
+}
 function paperTemplateImage(image) {
   return image && image.src ? `<img class="qimg" src="${esc(image.src)}" alt="題目圖片">` : '';
 }
@@ -73,6 +93,8 @@ function syncPaperMetadataControls() {
   const abk = document.querySelector('input[name=pPaperKind]:checked')?.value === 'abk';
   for (const id of ['paperAbkFields', 'pvAbkFields']) document.getElementById(id).hidden = !abk;
   document.getElementById('pvPreFields').hidden = document.querySelector('input[name=pPaperKind]:checked')?.value !== 'pre';
+  const golden = document.querySelector('input[name=pPaperKind]:checked')?.value === 'golden';
+  for (const id of ['paperGoldenFields','pvGoldenFields']) document.getElementById(id).hidden = !golden;
   for (const [source, mirror] of PAPER_METADATA_PAIRS) {
     const original = document.getElementById(source), target = document.getElementById(mirror);
     if (target.value !== original.value) target.value = original.value;
@@ -149,10 +171,11 @@ function patchAbkTemplateCode(zip, code) {
   }
 }
 const paperMetadataStyle = document.createElement('style');
-paperMetadataStyle.textContent = `#pvPaperMetadata{display:flex;flex-wrap:wrap;gap:12px}#paperAbkFields[hidden],#pvAbkFields[hidden],#pvPreFields[hidden]{display:none!important}
+paperMetadataStyle.textContent = `#pvPaperMetadata{display:flex;flex-wrap:wrap;gap:12px}#paperAbkFields[hidden],#paperGoldenFields[hidden],#pvGoldenFields[hidden],#pvAbkFields[hidden],#pvPreFields[hidden]{display:none!important}
 #pvPaperMetadata label{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#555}
 #pvPaperMetadata input,#pvPaperMetadata select{font:inherit;padding:7px;border:1px solid #ddd;border-radius:6px;background:white}
-#pvTitle{width:240px}#pvChapterRange,#pvPreChapterRange{width:155px}#pvPreSubject{width:100px}#pvExamName{width:240px}#pvAbkFields:not([hidden]),#pvPreFields:not([hidden]){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#pvTitle{width:240px}#pvChapterRange,#pvPreChapterRange{width:155px}#pvPreSubject{width:100px}#pvExamName{width:240px}#pvAbkFields:not([hidden]),#pvPreFields:not([hidden]),#pvGoldenFields:not([hidden]){display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#pvGoldenYear{width:65px}#pvGoldenSubject,#pvGoldenVersion{width:95px}#pvGoldenExamName{width:260px}#pvGoldenScope{width:240px}
 #pvPaperCode{font:12px monospace;color:#777}#pPaperCode{font-size:12px}
 #paperView.show{display:flex;flex-direction:column;overflow:hidden}#paperView .pv-bar,#paperView .pv-fmt-bar{position:relative!important;top:auto!important;flex-shrink:0;background:#fffdf9;z-index:30}
 #paperView.show>#pvSheet{overflow:auto;flex:1;min-height:0;margin-bottom:0;width:100%}

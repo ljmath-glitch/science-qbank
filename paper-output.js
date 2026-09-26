@@ -96,7 +96,7 @@ async function refreshAbkOutputPreview() {
   try {
     const mode = paperAnsMode();
     rendered = mode === 'full' ? {pages:[],dispose(){}} : await buildPaperOutputPages();
-    if (revision !== paperOutputPreviewRevision || !['abk','pre'].includes((document.querySelector('input[name=pPaperKind]:checked') || {}).value)) return;
+    if (revision !== paperOutputPreviewRevision || !['abk','pre','golden'].includes((document.querySelector('input[name=pPaperKind]:checked') || {}).value)) return;
     const questionPages = mode === 'full' ? [] : rendered.pages;
     const solutions = (mode === 'full' || mode === 'both_full')
       ? paperQuestionSections(pickedItems()).ordered.map((item,index) => solutionExportQuestion(item,index+1)) : [];
@@ -129,8 +129,8 @@ async function refreshAbkOutputPreview() {
 async function printPaperOutput() {
   if (!PICKS.size) {alert('尚未選題'); return;}
   const kind = (document.querySelector('input[name=pPaperKind]:checked') || {}).value || 'pre';
-  if (!['abk','pre'].includes(kind) || paperAnsMode() === 'full') {
-    alert('這個整頁 PDF 流程支援 ABK／課前考題目卷。請勾選「題目卷」；解析卷仍可下載 Word。');
+  if (!['abk','pre','golden'].includes(kind) || paperAnsMode() === 'full') {
+    alert('這個整頁 PDF 流程支援 ABK／課前考／黃金模擬考題目卷。請勾選「題目卷」；解析卷仍可下載 Word。');
     return;
   }
   if (kind === 'abk') {
@@ -147,7 +147,7 @@ async function printPaperOutput() {
     if (output.closed) return;
     const doc = output.document;
     const base = doc.createElement('base');base.href = document.baseURI;doc.head.appendChild(base);
-    doc.title = (document.getElementById('pTitle').value || (kind === 'pre' ? '課前考' : 'ABK 考卷')) + '（題目卷）';
+    doc.title = (document.getElementById('pTitle').value || (kind === 'pre' ? '課前考' : kind === 'golden' ? '段考黃金模擬考' : 'ABK 考卷')) + '（題目卷）';
     document.querySelectorAll('link[rel=stylesheet]').forEach(link => doc.head.appendChild(link.cloneNode(true)));
     const style = doc.createElement('style');
     const fonts = [...document.querySelectorAll('style')].map(node => (node.textContent.match(/@font-face\s*\{[^}]*\}/g) || []).join('\n')).join('\n');
@@ -173,7 +173,7 @@ document.querySelectorAll('#paperDlg button[onclick*="window.print"]').forEach(b
   const original = button.onclick;
   button.onclick = function(event) {
     const kind = (document.querySelector('input[name=pPaperKind]:checked') || {}).value;
-    if (kind === 'abk' || kind === 'pre') return printPaperOutput();
+    if (['abk','pre','golden'].includes(kind)) return printPaperOutput();
     return original && original.call(this, event);
   };
 });

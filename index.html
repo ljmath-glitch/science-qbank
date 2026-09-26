@@ -938,9 +938,15 @@
         <div class="field"><label>卷別</label><div class="paper-kind-row">
           <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)" checked><span>課前考<small>B4・單欄・灰階卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>B4・雙欄・淡色浮水印</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="golden" onchange="pvSetPaperKind(this.value)"><span>段考黃金模擬考<small>B4・單欄・學期考次卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>A4・封面＋單欄題本</small></span></label>
         </div></div>
         <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
+        <div id="paperGoldenFields" class="grid4" hidden>
+          <div class="field"><label for="pGoldenYear">學年度</label><input id="pGoldenYear" placeholder="例如 115" maxlength="6"></div>
+          <div class="field"><label for="pGoldenSemester">學期</label><select id="pGoldenSemester"><option value="">請選擇</option><option value="1">第 1 學期</option><option value="2">第 2 學期</option></select></div>
+          <div class="field"><label for="pGoldenVersion">版本</label><input id="pGoldenVersion" placeholder="綜合版／翰林版"></div>
+        </div>
         <div id="paperAbkFields" class="grid4" hidden>
           <div class="field"><label for="pAbkVariant">ABK 卷種</label><select id="pAbkVariant"><option value="A">A 卷</option><option value="B" selected>B 卷</option><option value="K">K 卷</option></select></div>
           <div class="field"><label for="pBookCode">冊次</label><select id="pBookCode"><option value="JB1">第一冊</option><option value="JB2">第二冊</option><option value="JB3" selected>第三冊</option><option value="JB4">第四冊</option><option value="JB5">第五冊</option><option value="JB6">第六冊</option></select></div>
@@ -1200,13 +1206,21 @@
       <label>冊次 <select id="pvPreBookCode" aria-label="課前考冊次"><option value="JB1">第一冊</option><option value="JB2">第二冊</option><option value="JB3">第三冊</option><option value="JB4">第四冊</option><option value="JB5">第五冊</option><option value="JB6">第六冊</option></select></label>
       <label>章節 <input id="pvPreChapterRange" type="text" aria-label="課前考章節範圍" placeholder="CH1-1"></label>
     </span>
+    <span id="pvGoldenFields" hidden>
+      <label>學年度 <input id="pvGoldenYear" aria-label="黃金模擬考學年度" placeholder="115" maxlength="6"></label>
+      <label>學期 <select id="pvGoldenSemester" aria-label="黃金模擬考學期"><option value="">請選擇</option><option value="1">第 1 學期</option><option value="2">第 2 學期</option></select></label>
+      <label>科目 <input id="pvGoldenSubject" aria-label="黃金模擬考科目" placeholder="理化科"></label>
+      <label>考次名稱 <input id="pvGoldenExamName" aria-label="黃金模擬考名稱" placeholder="八年級第一次定期考模擬試卷"></label>
+      <label>版本 <input id="pvGoldenVersion" aria-label="黃金模擬考版本" placeholder="綜合版"></label>
+      <label>範圍 <input id="pvGoldenScope" aria-label="黃金模擬考範圍" placeholder="第三冊 CH0～CH2-2"></label>
+    </span>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
     <span class="pv-tool-group"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
-    <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="mock">模考題本</option></select></span>
+    <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
@@ -4596,7 +4610,7 @@ function refreshPaperSettingsPreview(){
   const title=(pTitle.value||'自然科測驗卷').trim();
   const mode=paperAnsMode();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
-  if((paperKind==='abk'||paperKind==='pre')&&typeof refreshAbkOutputPreview==='function'){
+  if(['abk','pre','golden'].includes(paperKind)&&typeof refreshAbkOutputPreview==='function'){
     refreshAbkOutputPreview();return;
   }
   // 輸出文件：解析卷（full=只解析卷；both_full=題目卷＋解析卷）也要能在此預覽。
@@ -4777,9 +4791,10 @@ function _pvBlankResizeEnd(el){
 }
 // 預覽可直接點擊修改的卷頭文字：綁定到設定欄位，失焦即寫回並重繪（也同步匯出）。
 function _pvHdrEditable(txt,field){return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${esc(txt)}</span>`;}
-function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(['pTitle','pExamName','pSubject'].includes(el.dataset.hf)&&typeof paperMetadataChanged==='function'){paperMetadataChanged(el.dataset.hf,v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
+function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(['pTitle','pExamName','pSubject','pScope','pGoldenYear','pGoldenVersion'].includes(el.dataset.hf)&&typeof paperMetadataChanged==='function'){paperMetadataChanged(el.dataset.hf,v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
 function buildExamHeader(forPreview){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
+  if(kind==='golden')return buildGoldenPreviewHeader(forPreview);
   const g=document.getElementById('pGrade').value.trim();
   const s=document.getElementById('pSubject').value.trim();
   const sc=document.getElementById('pScope').value.trim();
@@ -4830,7 +4845,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,showSourceFull=document.getElementById('pShowSourceFull').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
-  const templateLayout=paperKind==='abk'||paperKind==='pre';
+  const templateLayout=['abk','pre','golden'].includes(paperKind);
   const hdr=paperKind==='abk'?buildAbkPreviewHeader(forPreview):buildExamHeader(forPreview);
   // ── 預算每題組的題號範圍 ──
   const groupRanges={};
@@ -4939,6 +4954,7 @@ body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC","Heiti TC","M
 function _pvRunningHeader(){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(kind==='pre')return '<div class="pv-run-head"><span>福大自然 課前考</span><span></span></div>';
+  if(kind==='golden')return '';
   if(kind==='abk'){
     const code=esc(readPaperTemplateMetadata().code);
     return `<div class="pv-run-head"><span>茲茲文教 TZUTZU</span><span>${code}</span></div>`;
@@ -4953,15 +4969,15 @@ function _pvRenderPaged(outputHost,editable=true){
   const parts=buildPaperInner(undefined,editable,true);
   const host=outputHost||pvSheet;host.className='pv-pages';host.innerHTML='';
   const PAGE_H=1375,PAD=116,FOOT=40;
-  const templateLayout=kind==='abk'||kind==='pre';
+  const templateLayout=['abk','pre','golden'].includes(kind);
   const narrow=!templateLayout&&!outputHost&&!!(window.matchMedia&&window.matchMedia('(max-width:1080px)').matches);
   let pageIdx=0,cur=null;
   function newPage(){
-    const pg=document.createElement('div');pg.className='pv-sheet pv-page'+(kind==='abk'?' abk-preview':'')+(templateLayout?' template-paper':'');
+    const pg=document.createElement('div');pg.className='pv-sheet pv-page'+(kind==='abk'?' abk-preview':'')+(kind==='golden'?' golden-preview':'')+(templateLayout?' template-paper':'');
     if(outputHost||templateLayout){pg.style.width='972px';pg.style.height=PAGE_H+'px';pg.style.overflow='hidden';pg.style.padding=templateLayout?'48px':'58px';}
     const head=document.createElement('div');head.className='pv-page-head';head.innerHTML=pageIdx===0?parts.headHtml:_pvRunningHeader();
     const bodyWrap=document.createElement('div');bodyWrap.className='pv-page-body'+(parts.twoCol?' paper-2col':'');
-    const foot=document.createElement('div');foot.className='pv-page-foot';foot.textContent=String(pageIdx+1);
+    const foot=document.createElement('div');foot.className='pv-page-foot';foot.textContent=kind==='golden'?`茲茲  ${pageIdx+1}  ${readGoldenMetadata().gold_footer_subject}`:String(pageIdx+1);
     pg.appendChild(head);pg.appendChild(bodyWrap);pg.appendChild(foot);
     host.appendChild(pg);cur={pg,head,bodyWrap};pageIdx++;return cur;
   }
@@ -8005,7 +8021,7 @@ async function downloadWordViaTemplate(kind,opts){
   await _ensureDocxTemplater();
   const PizZip=window.PizZip,Docxtemplater=window.docxtemplater,ImageModule=window.ImageModule;
   if(!PizZip||!Docxtemplater)throw new Error('範本套件載入失敗');
-  const tplUrl=kind==='abk'?'templates/abk_tpl.docx':'templates/pre_tpl.docx';
+  const tplUrl=kind==='abk'?'templates/abk_tpl.docx':kind==='golden'?'templates/golden_tpl.docx':'templates/pre_tpl.docx';
   const resp=await fetch(tplUrl);
   if(!resp.ok)throw new Error('找不到範本檔：'+tplUrl);
   const buf=await resp.arrayBuffer();
@@ -8064,9 +8080,9 @@ async function downloadWordViaTemplate(kind,opts){
   const preSubject=(document.getElementById('pSubject').value||chapter.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科');
   doc.render({chapter,book:kind==='pre'?PAPER_BOOK_NAMES[Number(book)-1]:book,unit:metadata.chapterRange,ver:metadata.variant,sections,
     subject:preSubject,quiz_label:examName||'課前考　'+(metadata.chapterRange||scope),
-    running_header:'福大自然 課前考'});
+    running_header:'福大自然 課前考',...(kind==='golden'?readGoldenMetadata():{})});
   const renderedZip=doc.getZip();
-  if(kind==='abk'||kind==='pre'){
+  if(['abk','pre','golden'].includes(kind)){
     // 題組文字方塊會隨題組複製；每個 Word drawing 必須有自己的 docPr id。
     const expected=sections.reduce((count,section)=>count+section.items.filter(item=>item.passage).length,0);
     let boxCount=0;
@@ -8090,7 +8106,7 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(paperKind==='abk'||paperKind==='pre'){
+  if(['abk','pre','golden'].includes(paperKind)){
     // ABK：題目卷以「範本填入」產生（頁首/浮水印/卷頭/字型＝範本本體）；解析卷維持詳解模板。
     try{
       if(ansMode==='full'){await downloadSolutionWord();}
