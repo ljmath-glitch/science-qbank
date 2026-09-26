@@ -18,6 +18,8 @@ NS = {"w": W}
 WP = "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
 A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 WPS = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape"
+PASSAGE_WIDTH_EMU = "3967200"  # 11.02 cm, as specified in the Word screenshot.
+PASSAGE_HEIGHT_EMU = "2059200"  # Initial 5.72 cm; spAutoFit grows with the article.
 
 
 def tag(name):
@@ -26,6 +28,23 @@ def tag(name):
 
 def ns_tag(namespace, name):
     return f"{{{namespace}}}{name}"
+
+
+def set_body_layout(props):
+    """Match the supplied Word Paragraph dialog, without style inheritance."""
+    etree.SubElement(props, tag("adjustRightInd"), {tag("val"): "1"})
+    etree.SubElement(props, tag("snapToGrid"), {tag("val"): "0"})
+    etree.SubElement(props, tag("spacing"), {
+        tag("before"): "0", tag("after"): "120",
+        tag("line"): "240", tag("lineRule"): "auto",
+    })
+    etree.SubElement(props, tag("ind"), {
+        tag("left"): "142", tag("right"): "0", tag("hanging"): "425",
+    })
+    etree.SubElement(props, tag("contextualSpacing"), {tag("val"): "0"})
+    etree.SubElement(props, tag("mirrorIndents"), {tag("val"): "0"})
+    etree.SubElement(props, tag("jc"), {tag("val"): "left"})
+    etree.SubElement(props, tag("outlineLvl"), {tag("val"): "9"})
 
 
 def set_question_properties(paragraph):
@@ -41,9 +60,7 @@ def set_question_properties(paragraph):
     tabs = etree.SubElement(props, tag("tabs"))
     for position in (0, 709, 1985, 3260, 4536):
         etree.SubElement(tabs, tag("tab"), {tag("val"): "left", tag("pos"): str(position)})
-    etree.SubElement(props, tag("snapToGrid"), {tag("val"): "0"})
-    etree.SubElement(props, tag("spacing"), {tag("after"): "120"})
-    etree.SubElement(props, tag("ind"), {tag("left"): "567", tag("hanging"): "425"})
+    set_body_layout(props)
     run_props = etree.SubElement(props, tag("rPr"))
     etree.SubElement(
         run_props,
@@ -98,10 +115,21 @@ def set_passage_properties(paragraph):
         for child in list(outer):
             if child.tag in {tag("pStyle"), tag("numPr"), tag("tabs"), tag("ind")}:
                 outer.remove(child)
-        inner_props = existing[0].find("w:pPr", NS)
-        for child in list(inner_props):
-            inner_props.remove(child)
-        set_inner_passage_properties(inner_props)
+        for inner in existing:
+            inner_props = inner.find("w:pPr", NS)
+            if inner_props is None:
+                inner_props = etree.Element(tag("pPr"))
+                inner.insert(0, inner_props)
+            for child in list(inner_props):
+                inner_props.remove(child)
+            set_inner_passage_properties(inner_props)
+        for extent in paragraph.iter(ns_tag(WP, "extent"), ns_tag(A, "ext")):
+            extent.set("cx", PASSAGE_WIDTH_EMU)
+            extent.set("cy", PASSAGE_HEIGHT_EMU)
+        # The requested hanging indent puts the bullet 0.5 cm to the left
+        # of the text origin. Reserve space inside the box, not outside it.
+        for body in paragraph.iter(ns_tag(WPS, "bodyPr")):
+            body.set("lIns", "270000")
         return
     runs = [deepcopy(run) for run in paragraph.findall("w:r", NS)]
     for run in runs:
@@ -117,7 +145,7 @@ def set_passage_properties(paragraph):
     run = etree.SubElement(paragraph, tag("r"))
     drawing = etree.SubElement(run, tag("drawing"))
     inline = etree.SubElement(drawing, ns_tag(WP, "inline"), {"distT": "0", "distB": "0", "distL": "0", "distR": "0"})
-    etree.SubElement(inline, ns_tag(WP, "extent"), {"cx": "3500000", "cy": "1200000"})
+    etree.SubElement(inline, ns_tag(WP, "extent"), {"cx": PASSAGE_WIDTH_EMU, "cy": PASSAGE_HEIGHT_EMU})
     etree.SubElement(inline, ns_tag(WP, "docPr"), {"id": "9000001", "name": "Group Passage"})
     etree.SubElement(inline, ns_tag(WP, "cNvGraphicFramePr"))
     graphic = etree.SubElement(inline, ns_tag(A, "graphic"))
@@ -127,7 +155,7 @@ def set_passage_properties(paragraph):
     shape_props = etree.SubElement(shape, ns_tag(WPS, "spPr"))
     transform = etree.SubElement(shape_props, ns_tag(A, "xfrm"))
     etree.SubElement(transform, ns_tag(A, "off"), {"x": "0", "y": "0"})
-    etree.SubElement(transform, ns_tag(A, "ext"), {"cx": "3500000", "cy": "1200000"})
+    etree.SubElement(transform, ns_tag(A, "ext"), {"cx": PASSAGE_WIDTH_EMU, "cy": PASSAGE_HEIGHT_EMU})
     geometry = etree.SubElement(shape_props, ns_tag(A, "prstGeom"), {"prst": "rect"})
     etree.SubElement(geometry, ns_tag(A, "avLst"))
     etree.SubElement(shape_props, ns_tag(A, "noFill"))
@@ -144,7 +172,7 @@ def set_passage_properties(paragraph):
     body = etree.SubElement(
         shape,
         ns_tag(WPS, "bodyPr"),
-        {"rot": "0", "vert": "horz", "wrap": "square", "lIns": "91440", "tIns": "45720", "rIns": "91440", "bIns": "45720"},
+        {"rot": "0", "vert": "horz", "wrap": "square", "lIns": "270000", "tIns": "45720", "rIns": "91440", "bIns": "45720"},
     )
     etree.SubElement(body, ns_tag(A, "spAutoFit"))
 
@@ -156,8 +184,7 @@ def set_inner_passage_properties(inner_props):
     etree.SubElement(number, tag("numId"), {tag("val"): "108"})
     tabs = etree.SubElement(inner_props, tag("tabs"))
     etree.SubElement(tabs, tag("tab"), {tag("val"): "left", tag("pos"): "0"})
-    etree.SubElement(inner_props, tag("spacing"), {tag("after"): "0"})
-    etree.SubElement(inner_props, tag("ind"), {tag("left"): "284", tag("hanging"): "284"})
+    set_body_layout(inner_props)
 
 
 def ensure_group_bullet_numbering(source):
@@ -192,7 +219,7 @@ def build(source):
     paragraphs = body.findall("w:p", NS)
     assert len(paragraphs) == 13, "ABK body template changed; check its slots before rebuilding"
     # The generated template lives at this path too. Re-running the builder
-    # updates only the heading without reinterpreting already-reordered loops.
+    # updates formatting without reinterpreting already-reordered loops.
     if "{no}. " not in "".join(paragraphs[10].xpath(".//w:t/text()", namespaces=NS)):
         question = paragraphs[10]
         assert question.find("w:pPr/w:numPr/w:numId", NS).get(tag("val")) == "100"
@@ -200,6 +227,7 @@ def build(source):
         heading = paragraphs[5]
         assert "{title}" in "".join(heading.xpath(".//w:t/text()", namespaces=NS))
         set_heading_properties(heading)
+        set_question_properties(question)
         set_passage_properties(paragraphs[8])
         return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
     assert "{no}. " in "".join(paragraphs[10].xpath(".//w:t/text()", namespaces=NS))
