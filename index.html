@@ -3363,7 +3363,7 @@ function stripRichMarks(s){
   if(!s)return s;
   return s.replace(/\{\{[ch]#[0-9a-fA-F]{3,6}\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\{\{\d+\}\}([\s\S]*?)\{\{\/\}\}/g,'$1').replace(/\*\*([\s\S]+?)\*\*/g,'$1').replace(/##([\s\S]+?)##/g,'$1').replace(/__([\s\S]+?)__/g,'$1').replace(/~~([\s\S]+?)~~/g,'$1');
 }
-// 解析成 [{t,bold,italic,underline,size}]，供 Word(.docx)/RTF 產生 TextRun 使用；要在 latexToPlain 之前跑，避免 {} 被吃掉
+// 解析成 [{t,bold,italic,underline,size}]，供 Word(.docx) 產生 TextRun 使用；保留公式的大括號與指令。
 function richTextSegs(text){
   const tokens=[];
   const re=/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}|\{\{c#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\{\{h#([0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}|\*\*([\s\S]+?)\*\*|##([\s\S]+?)##|__([\s\S]+?)__|~~([\s\S]+?)~~/g;
@@ -3388,7 +3388,7 @@ const HL_NAME={'FFFF00':'yellow','00FF00':'green','00FFFF':'cyan','FF00FF':'mage
 function buildRichRuns(rawText,defaultSize,trFn,TextRunClass,UnderlineTypeClass){
   const runs=[];
   richTextSegs(rawText).forEach(seg=>{
-    const plain=latexToPlain(seg.t);
+    const plain=normalizeWordLatex(seg.t);
     const lines=plain.split('\n');
     const hasExplicit=seg.bold||seg.italic||seg.underline||seg.size||seg.color||seg.highlight;
     lines.forEach((line,li)=>{
@@ -7179,6 +7179,11 @@ function copyModalTA(id,btn){
 </script>
 <script>
 /* ===== RTF / Word 匯出（從零實作；放獨立 script 以利 Safari 相容） ===== */
+// Word 內由使用者的 MathType 工具轉換 TeX：保留界定符、指令與巢狀括號。
+// 只移除百分號前的跳脫（包含重複跳脫）；不可刪除其他反斜線。
+function normalizeWordLatex(text){
+  return String(text==null?'':text).replace(/\\+%/g,'%');
+}
 function latexToPlain(t){
   if(!t)return '';
   var s=String(t);
@@ -7231,7 +7236,7 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
   var answers=[];
   sorted.forEach(function(it,i){
     var num=(i+1)+'.';
-    var qRaw=latexToPlain(fixLatex(it.q||it.summary||''));
+    var qRaw=normalizeWordLatex(it.q||it.summary||'');
     var lines2=qRaw.split('\n').filter(function(l){return l.trim();});
     if(showTag&&(it.unit||it.sub)){
       lines.push('\\pard\\sb80\\sa40{\\f0\\fs18\\i\\cf3 '+
@@ -7248,7 +7253,7 @@ function buildRtf(title,items,ansMode,showMeta,showTag){
       lines.push('\\pard\\sb20\\sa40{\\f0\\fs20\\cf1 '+escRtf('答案：'+it.ans)+'}\\par');
     }
     if(ansMode==='full'&&it.sol){
-      lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+latexToPlain(it.sol||'').split('\n').map((l,i)=>escRtf(i===0?'詳解：'+l:l)).join('\\line\n')+'}\\par');
+      lines.push('\\pard\\sb20\\sa80{\\f0\\fs20\\cf2 '+normalizeWordLatex(it.sol||'').split('\n').map((l,i)=>escRtf(i===0?'詳解：'+l:l)).join('\\line\n')+'}\\par');
     }
     if(it.ans)answers.push((i+1)+'.'+it.ans);
   });
@@ -7441,7 +7446,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
     if(showTag&&(it.unit||it.sub)){
       body+='<div class="tag">'+esc((it.book||'')+' '+(it.unit||'')+'・'+(it.sub||'')+(it.type?'・'+it.type:''))+'</div>';
     }
-    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+renderTextWithMath(it.q||it.summary||'')+'</div>';
+    body+='<div class="qtext"><b>'+(i+1)+'.</b> '+esc(stripRichMarks(normalizeWordLatex(it.q||it.summary||''))).replace(/\n/g,'<br>')+'</div>';
     (it.imgs||[]).forEach(function(img){
       if(img.src){
         var style='max-width:85%;height:auto;display:block;';
@@ -7453,7 +7458,7 @@ function buildWordHtml(title,items,ansMode,showMeta,showTag,showSource,hdr){
       body+='<div class="ans">答案：'+esc(it.ans)+'</div>';
     }
     if(ansMode==='full'&&it.sol){
-      body+='<div class="sol">詳解：'+renderTextWithMath(it.sol||'')+'</div>';
+      body+='<div class="sol">詳解：'+esc(stripRichMarks(normalizeWordLatex(it.sol||''))).replace(/\n/g,'<br>')+'</div>';
     }
     if(showSource&&getSource(it)){
       body+='<div class="src" style="text-align:right">['+esc(getSource(it))+']</div>';
@@ -7499,7 +7504,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
     let docHeaderRef=null;
     const FONT=isAbk?'DFPYuanMedium-B5':'DFPZhongYuanW5';
     const DOC_FONT={name:FONT,ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:FONT};
-    const tr=(opts)=>new TextRun({font:DOC_FONT,...opts});
+    const tr=(opts)=>new TextRun({font:DOC_FONT,...opts,...(opts.text!=null?{text:normalizeWordLatex(opts.text)}:{})});
     const PAGE_W_PX=isAbk?700:570;
     const twoCol=isAbk||!!(document.getElementById('pTwoCol')||{}).checked;
     const headChildren=[];   // 雙欄時標頭/標題/名條放單欄段落，題目放雙欄段落
@@ -7596,7 +7601,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
       // ── 解析卷簡：只輸出「編號＋答案＋詳解」，不印題目/圖/題組 ──
       if(ansMode==='solbrief'){
         children.push(new Paragraph({numbering:{reference:'q-list',level:0},children:[tr({text:'答案：'+(it.ans||'（未填）'),color:'C0392B',size:22})],spacing:{before:160,after:0}}));
-        if(it.sol){latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{const isH=line.startsWith('【')&&line.includes('】');children.push(new Paragraph({children:[tr({text:(li===0?'詳解　':'')+line,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));});}
+        if(it.sol){normalizeWordLatex(it.sol||'').split('\n').forEach((line,li)=>{const isH=line.startsWith('【')&&line.includes('】');children.push(new Paragraph({children:[tr({text:(li===0?'詳解　':'')+line,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));});}
         children.push(new Paragraph({text:'',spacing:{after:160}}));
         if(it.ans)answers.push(`${i+1}.${it.ans}`);
         continue;
@@ -7627,7 +7632,7 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
         children.push(new Paragraph({children:[tr({text:'答案：'+it.ans,color:'C0392B',size:20})],spacing:{before:60,after:0}}));
       }
       if(ansMode==='full'&&it.sol){
-        latexToPlain(it.sol||'').split('\n').forEach((line,li)=>{
+        normalizeWordLatex(it.sol||'').split('\n').forEach((line,li)=>{
           const isH=line.startsWith('【')&&line.includes('】');
           const txt=(li===0?'詳解　':'')+line;
           children.push(new Paragraph({children:[tr({text:txt,bold:isH,color:'1F6F5C',size:isH?22:18})],spacing:{before:isH&&li!==0?120:16,after:0}}));
@@ -7700,7 +7705,7 @@ async function downloadSolutionWord(){
     await _ensureDocxLib();
     const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,VerticalAlign,VerticalMergeType,BorderStyle,TableLayoutType}=window.docx;
     const FONT={ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:'DFPYuanMedium-B5',cs:'DFPYuanMedium-B5'};
-    const run=(text,bold=false)=>new TextRun({text,font:FONT,size:24,bold});
+    const run=(text,bold=false)=>new TextRun({text:normalizeWordLatex(text),font:FONT,size:24,bold});
     const dxa=cm=>Math.round(cm*566.9291339),COL_NUM=dxa(.7),COL_LABEL=dxa(2.2),COL_LETTER=dxa(.9),COL_CONTENT=dxa(14.2),COL_MERGED=COL_LETTER+COL_CONTENT;
     const none={style:BorderStyle.NONE,size:0,color:'FFFFFF'},borders={top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none};
     const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,spacing:{line:240,lineRule:'exact'},children:text?[run(text,bold)]:[]});
@@ -7738,7 +7743,7 @@ async function generateMockWord(title,items,ansMode,hdr,showTag,showSource,showS
            Header,Footer,PageNumber}=window.docx;
     const FONT='DFPZhongYuanW5';
     const DOC_FONT={name:FONT,ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:FONT};
-    const tr=(opts)=>new TextRun({font:DOC_FONT,...opts});
+    const tr=(opts)=>new TextRun({font:DOC_FONT,...opts,...(opts.text!=null?{text:normalizeWordLatex(opts.text)}:{})});
     const PAGE_W_PX=600;
     const g=(hdr&&hdr.g)||'',s=(hdr&&hdr.s)||'',sc=(hdr&&hdr.sc)||'',en=(hdr&&hdr.en)||'';
     const headTitle=en||title||'自然科題本';
@@ -7812,7 +7817,7 @@ async function generateMockWord(title,items,ansMode,hdr,showTag,showSource,showS
         const it=sorted[i];
         const runs=[tr({text:'答案：',bold:true,size:22}),tr({text:'　'+(it.ans||'（未填）'),size:22,color:'C0392B'})];
         if(includeSol&&it.sol){
-          const lines=latexToPlain(it.sol||'').split('\n');
+          const lines=normalizeWordLatex(it.sol||'').split('\n');
           runs.push(new TextRun({break:1}));
           runs.push(tr({text:'解析：',bold:true,size:20}));
           lines.forEach((ln,li)=>{
@@ -7888,7 +7893,7 @@ function _ensureDocxTemplater(){
 function _tplQuestionText(it,withChoices=true){
   let t=it.q||it.summary||'';
   try{t=stripRichMarks(t);}catch(_){}
-  try{t=latexToPlain(fixLatex(t));}catch(_){}
+  t=normalizeWordLatex(t);
   t=String(t).replace(/\r/g,'').replace(/\n{2,}/g,'\n').trim();
   if(withChoices){
     // 同一題只用一個 Word 段落；選項與題幹內換行交給 docxtemplater 轉成 w:br。
