@@ -1201,25 +1201,25 @@
   .wz-score-empty{color:#9a8f83;font-size:13px;padding:10px 4px}
   #wzFilterPapersDlg{border:0;border-radius:14px;padding:0;width:min(900px,94vw);max-height:88vh;box-shadow:0 30px 80px -20px rgba(45,48,56,.5)}
   #wzFilterPapersDlg::backdrop{background:rgba(45,48,56,.45)}
-  .wz-fp-head{background:#2f6fb3;color:#fff;padding:14px 20px;font-size:16px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+  .wz-fp-head{background:var(--red);color:#fff;padding:14px 20px;font-size:16px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
   .wz-fp-head .wz-fp-x{background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer}
   .wz-fp-body{padding:14px 18px;overflow:auto;max-height:60vh}
-  .wz-fp-filters{background:#f6f8fb;border:1px solid #e3e9f0;border-radius:10px;padding:10px 14px;margin-bottom:12px}
+  .wz-fp-filters{background:#fffdf9;border:1px solid #e6ddce;border-radius:10px;padding:10px 14px;margin-bottom:12px}
   .wz-fp-frow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:5px 0;font-size:13px}
-  .wz-fp-frow>span:first-child{font-weight:700;color:#42556b;min-width:44px}
+  .wz-fp-frow>span:first-child{font-weight:700;color:#6e5a3c;min-width:44px}
   .wz-fp-frow label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
-  .wz-fp-frow input[type=text]{flex:1;min-width:160px;padding:5px 9px;border:1px solid #cfd8e2;border-radius:7px;font-family:inherit}
+  .wz-fp-frow input[type=text]{flex:1;min-width:160px;padding:5px 9px;border:1px solid #d8cbb6;border-radius:7px;font-family:inherit}
   .wz-fp-tbl{width:100%;border-collapse:collapse;font-size:13px}
   .wz-fp-tbl th,.wz-fp-tbl td{border-bottom:1px solid #eee;padding:8px 8px;text-align:center}
-  .wz-fp-tbl thead th{color:#42556b;font-weight:700;border-bottom:2px solid #dde4ec}
+  .wz-fp-tbl thead th{color:#6e5a3c;font-weight:700;border-bottom:2px solid #e9e0d2}
   .wz-fp-tbl tbody tr{cursor:pointer}
-  .wz-fp-tbl tbody tr:hover{background:#f2f7fd}
+  .wz-fp-tbl tbody tr:hover{background:#faf4ea}
   .wz-fp-empty{color:#9a8f83;font-size:13px;padding:24px 4px;text-align:center}
   .wz-fp-foot{display:flex;justify-content:center;align-items:center;gap:14px;padding:14px;border-top:1px solid #eee}
-  .wz-fp-foot .wz-fp-cnt{font-size:13px;color:#42556b;margin-right:auto;padding-left:8px}
-  .wz-fp-foot button{min-width:96px;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid #2f6fb3}
-  .wz-fp-foot .wz-fp-cancel{background:#fff;color:#2f6fb3}
-  .wz-fp-foot .wz-fp-ok{background:#2f6fb3;color:#fff}
+  .wz-fp-foot .wz-fp-cnt{font-size:13px;color:#6e5a3c;margin-right:auto;padding-left:8px}
+  .wz-fp-foot button{min-width:96px;padding:9px 18px;border-radius:999px;font-weight:700;cursor:pointer;font-family:inherit;border:1px solid var(--red)}
+  .wz-fp-foot .wz-fp-cancel{background:#fff;color:var(--red)}
+  .wz-fp-foot .wz-fp-ok{background:var(--red);color:#fff}
 </style>
 <dialog id="wzFilterPapersDlg">
   <div class="wz-fp-head"><span>過濾試卷（排除已出過的題目）</span><button type="button" class="wz-fp-x" onclick="document.getElementById('wzFilterPapersDlg').close()">✕</button></div>
