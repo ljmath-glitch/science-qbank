@@ -1,6 +1,6 @@
 # 課前考 Word 模板
 
-`templates/pre_tpl.docx` 從已確認 ABK 模板衍生，只有兩類差異：原生課前考標頭、所有分節改單欄。其他正文段落、ruler、清單編號、題組框、字型、B4 紙張、浮水印和頁尾不變。原始 ABK 檔未修改。
+`templates/pre_tpl.docx` 從已確認 ABK 模板衍生，差異為：原生課前考標頭、所有分節改單欄、無浮水印。其他正文段落、ruler、清單編號、題組框、字型、B4 紙張和頁尾不變。原始 ABK 檔未修改。課前考的標頭 Logo 與灰色橫幅仍保留；網頁預覽、PDF、Word 均不顯示背景浮水印。
 
 重建工具：`tools/build_prequiz_template.py --abk templates/abk_tpl.docx --header-source SOURCE.docx --output NEW.docx`。輸出既存時拒絕覆寫；工具驗證原 ABK 41 個未變更 part 及正文 slot 的 canonical 保真。
 

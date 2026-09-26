@@ -1,14 +1,15 @@
 /* Physical dimensions from the approved ABK DOCX; 1 twip = 1/15 CSS px. */
 .pv-sheet.pv-page.template-paper{font:10pt/1 'HuaKangTNR','DFPYuanMedium-B5','Times New Roman',serif;color:#171717;background:#fff;box-sizing:border-box}
-.pv-sheet.template-paper.abk-preview::before,.pv-sheet.template-paper:not(.abk-preview)::before{content:'';position:absolute;z-index:0;left:-54.8px;top:16.1px;width:350.9px;height:465.5px;background:url('templates/abk_watermark.png') -102.6px -26.2px/556.2px 667.5px no-repeat;filter:brightness(0);opacity:.1;pointer-events:none}
+.pv-sheet.template-paper.abk-preview::before{content:'';position:absolute;z-index:0;left:-54.8px;top:16.1px;width:350.9px;height:465.5px;background:url('templates/abk_watermark.png') -102.6px -26.2px/556.2px 667.5px no-repeat;filter:brightness(0);opacity:.1;pointer-events:none}
+.pv-sheet.template-paper:not(.abk-preview)::before{content:none;background:none}
 .pv-sheet.template-paper>*{position:relative;z-index:1}
 .pv-sheet.pv-page.template-paper .pv-page-foot{position:absolute;bottom:24px;left:0;right:0;text-align:center;font:10pt 'Times New Roman',serif;color:#777}
 .pv-sheet.pv-page.template-paper .pv-page-body{overflow:visible}
 .pv-sheet.pv-page.template-paper .pv-page-body.paper-2col{column-gap:47.27px;column-rule:1px solid #171717}
 .pv-sheet.pv-page.template-paper .paper-major{font-size:12pt;line-height:1.2;letter-spacing:0;border:0;color:#171717;padding:0;margin:0 0 8px 9.47px;font-weight:700}
 .paper-manual-score{font-size:10pt;font-weight:400}
-.pv-sheet.pv-page.template-paper .q.template-question{padding-left:37.8px;margin:0 0 8px;line-height:normal;font-size:10pt;font-weight:400}
-.paper-question-marker{position:absolute;left:9.47px;top:0;transform:translateX(-50%);white-space:nowrap;font-family:'Times New Roman',serif;font-weight:400}
+.pv-sheet.pv-page.template-paper .q.template-question{padding-left:66.17px;margin:0 0 8px;line-height:normal;font-size:10pt;font-weight:400}
+.paper-question-marker{position:absolute;left:9.47px;top:0;white-space:nowrap;font-family:'Times New Roman',serif;font-weight:400}
 .pv-sheet.pv-page.template-paper .template-passage{position:relative;width:416.5px;max-width:100%;box-sizing:border-box;padding:9.6px 9.6px 9.6px 28.35px;margin-bottom:8px;border:1px solid #171717;background:transparent;line-height:normal;font-size:10pt}
 .paper-passage-marker{display:inline-block;margin-left:-18.75px;width:18.75px;font-family:'HuaKangTNR',serif}
 .pv-sheet.pv-page.template-paper .qimg{display:block;width:auto;height:auto;max-width:270px;max-height:135px;margin:0;border:0;border-radius:0;object-fit:contain}

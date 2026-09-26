@@ -78,7 +78,7 @@ const path = require('node:path');
       const preOutput = path.join(path.dirname(output),'prequiz.docx');
       await (await preDownloadPromise).saveAs(preOutput);
       execFileSync(process.env.PAPER_TEST_PYTHON || 'python3',['-c',
-        'import sys,zipfile,xml.etree.ElementTree as E\nz=zipfile.ZipFile(sys.argv[1]); r=E.fromstring(z.read("word/document.xml")); t="".join(r.itertext()); assert "理化" in t and "第五冊" in t and "課前考06-Ch2-1" in t and "{subject}" not in t\nns="{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"\nassert all(c.get(ns+"num")=="1" for c in r.iter(ns+"cols"))\n',preOutput]);
+        'import sys,zipfile,xml.etree.ElementTree as E\nz=zipfile.ZipFile(sys.argv[1]); r=E.fromstring(z.read("word/document.xml")); t="".join(r.itertext()); assert "理化" in t and "第五冊" in t and "課前考06-Ch2-1" in t and "{subject}" not in t\nns="{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"\nassert all(c.get(ns+"num")=="1" for c in r.iter(ns+"cols"))\nfor p in ["word/header1.xml","word/header2.xml"]:\n h=E.fromstring(z.read(p)); assert not list(h.iter(ns+"drawing")), "Prequiz must not inherit background watermark"\nassert list(r.iter(ns+"drawing")), "Native header logo must be retained"\n',preOutput]);
       console.log(engine.name()+': editor/settings synchronization, title/book inference, A/B/K code, native DOCX headers: PASS ('+output+')');
     } finally {await browser.close();}
   }

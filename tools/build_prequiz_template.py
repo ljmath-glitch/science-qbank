@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Derive prequiz from approved ABK: replace header, use one column only."""
+"""Derive prequiz from approved ABK: prequiz header, one column, no watermark."""
 import argparse
 from copy import deepcopy
 from pathlib import Path
@@ -25,6 +25,16 @@ def package(path):
 
 def xml(node):
     return E.tostring(node, encoding='UTF-8', xml_declaration=True, standalone=True)
+
+
+def remove_watermark(hdr):
+    """Remove only the inherited low-opacity ABK background picture."""
+    removed = 0
+    for run in list(hdr.xpath('.//w:r', namespaces=NS)):
+        if run.xpath('.//a:blip[a:alphaModFix[@amt="10000"]]', namespaces=NS):
+            run.getparent().remove(run)
+            removed += 1
+    return removed
 
 
 def fill_slot(paragraph, token):
@@ -106,9 +116,11 @@ def build(abk, source, output):
 
     pre_running = E.fromstring(pre['word/header1.xml']).find('w:p', NS)
     fill_slot(pre_running, '{running_header}')
-    # Replace ABK's top brand/code row but retain its watermark, rels and media.
+    # Replace ABK's top brand/code row and remove its background watermark.
+    # Keep unused media/relationships to preserve all unrelated package parts.
     for name in ('word/header1.xml', 'word/header2.xml'):
         hdr = E.fromstring(parts[name])
+        assert remove_watermark(hdr) == 1, name
         for drawing in hdr.xpath('.//wp:docPr[@name="Group 18"]', namespaces=NS):
             run = drawing
             while run.getparent() is not None and run.tag != f'{{{W}}}r':
@@ -119,7 +131,7 @@ def build(abk, source, output):
         for run in first.findall('w:r', NS):
             if not run.xpath('.//w:drawing|.//w:pict', namespaces=NS):
                 first.remove(run)
-        # Keep watermark runs in the same header paragraph to avoid moving it.
+        # The prequiz running header has text only; its body logo is untouched.
         for run in pre_running.findall('w:r', NS):
             first.append(deepcopy(run))
         first.find('w:pPr', NS).replace(first.find('w:pPr/w:rPr', NS), deepcopy(pre_running.find('w:pPr/w:rPr', NS)))
@@ -151,7 +163,7 @@ def build(abk, source, output):
             node.set(f'{{{W}}}num', '1')
             node.set(f'{{{W}}}sep', '0')
         assert E.tostring(before, method='c14n') == E.tostring(after, method='c14n'), index
-    print(f'PASS: header replaced; single column; {len(base)-len(allowed)} original parts preserved; body slots unchanged. {output}')
+    print(f'PASS: header replaced; single column; no watermark; {len(base)-len(allowed)} original parts preserved; body slots unchanged. {output}')
 
 
 if __name__ == '__main__':

@@ -79,7 +79,16 @@ const {webkit, chromium} = require('playwright');
         await popup.waitForFunction(() => window.__printReady === true);
         await popup.pdf({path: '/tmp/abk-web-preview-test.pdf', preferCSSPageSize: true, printBackground: true});
       }
-      console.log(engine.name() + ': shared pages, watermark, no tools, PDF click, narrow viewport: PASS');
+      const prequiz = await page.evaluate(async () => {
+        pvSetPaperKind('pre');
+        const output = await buildPaperOutputPages();
+        const pages = output.pages.map(p => paperOutputSnapshot(p).outerHTML);
+        output.dispose();
+        return {pages,logo:pages.some(p=>p.includes('abk_logo.png'))};
+      });
+      assert.ok(prequiz.pages.length > 0 && prequiz.logo, 'Prequiz print pages retain the header logo');
+      assert.ok(prequiz.pages.every(p=>!p.includes('abk_watermark.png')), 'Prequiz PDF snapshots must have no watermark on any page');
+      console.log(engine.name() + ': shared pages, ABK watermark, no prequiz watermark, no tools, PDF click, narrow viewport: PASS');
     } finally {await browser.close();}
   }
 })().catch(error => {console.error(error);process.exitCode = 1;});

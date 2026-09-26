@@ -23,6 +23,7 @@ const {webkit,chromium}=require('playwright');
         return {pages:document.querySelectorAll('#pvSheet .pv-page').length,width:first.offsetWidth,height:first.offsetHeight,
           gap:parseFloat(columns.columnGap),indent:getComputedStyle(question).paddingLeft,after:getComputedStyle(question).marginBottom,
           overlap:marker.getBoundingClientRect().right>text.getBoundingClientRect().left,
+          beforeHeading:marker.getBoundingClientRect().left<first.querySelector('.paper-major').getBoundingClientRect().left-.1,
           ratio:image.clientWidth/image.clientHeight,imageHeight:image.clientHeight,
           marker:marker.textContent,choiceGap:/\([A-D]\)\s/.test(text.textContent),
           root:getComputedStyle(document.getElementById('paperView')).overflow,scroll:getComputedStyle(document.getElementById('pvSheet')).overflow,
@@ -30,8 +31,9 @@ const {webkit,chromium}=require('playwright');
       };
       const wide=await page.evaluate(measure);
       assert.ok(wide.pages>=2);assert.equal(wide.width,972);assert.equal(wide.height,1375);
-      assert.ok(Math.abs(wide.gap-47.27)<.01);assert.ok(Math.abs(parseFloat(wide.indent)-37.8)<.01);assert.equal(wide.after,'8px');
+      assert.ok(Math.abs(wide.gap-47.27)<.01);assert.ok(Math.abs(parseFloat(wide.indent)-66.17)<.01);assert.equal(wide.after,'8px');
       assert.equal(wide.overlap,false,'Answer blank must not overlap question text');
+      assert.equal(wide.beforeHeading,false,'Question number must not precede the major heading left edge');
       assert.ok(Math.abs(wide.ratio-.25)<.01&&wide.imageHeight<=135);
       assert.equal(wide.choiceGap,false);assert.equal(wide.root,'hidden');assert.equal(wide.scroll,'auto');assert.ok(wide.watermark.includes('abk_watermark.png'));
       await page.setViewportSize({width:720,height:900});
@@ -45,8 +47,13 @@ const {webkit,chromium}=require('playwright');
       await page.evaluate(()=>{for(const dialog of document.querySelectorAll('dialog[open]'))dialog.close();});
       await page.screenshot({path:'/tmp/'+engine.name()+'-abk-layout.png'});
       await page.evaluate(()=>pvSetPaperKind('pre'));
-      const pre=await page.evaluate(()=>({column:getComputedStyle(document.querySelector('#pvSheet .pv-page-body')).columnCount,header:!!document.querySelector('.pre-header-band'),abkVisible:!document.getElementById('pvAbkFields').hidden}));
+      const pre=await page.evaluate(()=>({column:getComputedStyle(document.querySelector('#pvSheet .pv-page-body')).columnCount,header:!!document.querySelector('.pre-header-band'),abkVisible:!document.getElementById('pvAbkFields').hidden,
+        noWatermark:[...document.querySelectorAll('#pvSheet .pv-page')].every(p=>getComputedStyle(p,'::before').content==='none'&&getComputedStyle(p,'::before').backgroundImage==='none'),
+        beforeHeading:document.querySelector('.paper-question-marker').getBoundingClientRect().left<document.querySelector('.paper-major').getBoundingClientRect().left-.1,
+        logo:!!document.querySelector('.pre-template-header>img')}));
       assert.equal(pre.column,'auto');assert.ok(pre.header);assert.equal(pre.abkVisible,false);
+      assert.ok(pre.noWatermark);assert.ok(pre.logo);assert.equal(pre.beforeHeading,false);
+      await page.screenshot({path:'/tmp/'+engine.name()+'-prequiz-no-watermark.png'});
       console.log(engine.name()+': B4 scaling without reflow, ruler, inline image ratios, no overlap, single scroll and prequiz header: PASS');
     }finally{await browser.close();}
   }
