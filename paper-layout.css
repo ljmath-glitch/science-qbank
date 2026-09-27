@@ -30,11 +30,12 @@
 .pre-template-header>img{position:absolute;left:0;top:8px;width:61.8px;height:auto;object-fit:contain}
 .pre-header-band{position:absolute;left:65px;right:0;top:8px;height:61px;border-radius:9px;background:linear-gradient(to right,#fff,#aaa);display:flex;align-items:center;gap:18px;padding:0 10px;font-size:20pt;line-height:1.2;white-space:nowrap}
 .pre-header-band i{height:42px;width:2px;background:#555;flex-shrink:0}
-.golden-template-header{position:relative;min-height:256px;font:bold 14pt/24px 'Times New Roman','芫荽','Kaiti TC','BiauKai','DFKai-SB',serif;padding-top:34px;padding-bottom:84px;box-sizing:border-box}
+.golden-template-header{position:relative;min-height:188px;font:bold 14pt/24px 'HuaKangTNR','DFPYuanMedium-B5','Times New Roman',serif;padding-top:34px;padding-bottom:12px;box-sizing:border-box}
 .golden-template-header table{table-layout:fixed;border-collapse:collapse;margin-left:5.33px;width:calc(100% - 5.33px);border:0}
 .golden-template-header td{padding:10.5px 7.2px;vertical-align:top;border:0;overflow-wrap:anywhere}
 .golden-template-header .golden-right{text-align:right}
 .golden-template-header>img{position:absolute;left:6.2px;top:34px;width:119px;height:auto;object-fit:contain}
+.golden-preview .paper-question-marker{font-family:'HuaKangTNR','DFPYuanMedium-B5','Times New Roman',serif}
 .pv-sheet.pv-page.golden-preview .pv-page-foot{font:12pt 'HuaKangTNR','Times New Roman',serif;color:#171717;white-space:pre}
 .pv-sheet.template-paper .pv-run-head{position:relative;top:-28px;height:0;border:0;padding:0;margin:0;font-size:9pt;color:#555}
 .pv-page-stage{position:relative;margin:0 auto 26px;flex-shrink:0}

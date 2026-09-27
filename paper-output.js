@@ -150,9 +150,19 @@ async function printPaperOutput() {
     doc.title = (document.getElementById('pTitle').value || (kind === 'pre' ? '課前考' : kind === 'golden' ? '段考黃金模擬考' : 'ABK 考卷')) + '（題目卷）';
     document.querySelectorAll('link[rel=stylesheet]').forEach(link => doc.head.appendChild(link.cloneNode(true)));
     const style = doc.createElement('style');
-    const fonts = [...document.querySelectorAll('style')].map(node => (node.textContent.match(/@font-face\s*\{[^}]*\}/g) || []).join('\n')).join('\n');
+    const paperFaces = document.fonts ? [...document.fonts].filter(face => face.family.replace(/['"]/g, '') === 'HuaKangTNR') : [];
+    const sharePaperFaces = doc.fonts && paperFaces.length && paperFaces.every(face => face.status === 'loaded');
+    const fonts = [...document.querySelectorAll('style')].flatMap(node => node.textContent.match(/@font-face\s*\{[^}]*\}/g) || [])
+      .filter(rule => !sharePaperFaces || !/font-family\s*:\s*['"]?HuaKangTNR/.test(rule)).join('\n');
     style.textContent = fonts + '\n@page{size:257mm 364mm;margin:0}body{margin:0;background:white} .pv-page{break-after:page;page-break-after:always;print-color-adjust:exact;-webkit-print-color-adjust:exact}.pv-page:last-child{break-after:auto;page-break-after:auto}@media screen{body{background:#e7e2d9}.pv-page{margin:20px auto!important}}';
     doc.head.appendChild(style);
+    // The editor has already loaded this exact split CJK/Latin family. Share
+    // those ready FontFace objects with the blank print window before layout,
+    // rather than requesting the same CJK file again from an about:blank page.
+    // Keep the CSS declarations as a fallback for engines without FontFaceSet.
+    if (sharePaperFaces) {
+      for (const face of paperFaces) doc.fonts.add(face);
+    }
     doc.body.replaceChildren(...rendered.pages.map(page => doc.importNode(paperOutputSnapshot(page), true)));
     doc.body.lastElementChild.style.breakAfter = 'auto';
     doc.body.lastElementChild.style.pageBreakAfter = 'auto';

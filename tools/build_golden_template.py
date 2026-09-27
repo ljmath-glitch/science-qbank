@@ -8,6 +8,35 @@ from lxml import etree as E
 from build_prequiz_template import W, R, REL, NS, package, xml, fill_slot
 
 
+def normalize_fonts(root):
+    """Use the approved CJK/Latin pair, including inherited and list fonts."""
+    for fonts in root.xpath('.//w:rFonts', namespaces=NS):
+        fonts.attrib.clear()  # Theme font aliases must not override this pair.
+        fonts.attrib.update({f'{{{W}}}ascii': 'Times New Roman',
+                            f'{{{W}}}hAnsi': 'Times New Roman',
+                            f'{{{W}}}eastAsia': 'DFPYuanMedium-B5',
+                            f'{{{W}}}cs': 'Times New Roman'})
+
+
+def compact_header_spacers(body):
+    """Keep the filler slot indexes; reserve only enough room for the logo."""
+    for index in (1, 2, 3):
+        p = body[index]
+        assert p.tag == f'{{{W}}}p' and not p.xpath('.//w:t', namespaces=NS)
+        props = p.find('w:pPr', NS)
+        if props is None:
+            props = E.Element(f'{{{W}}}pPr'); p.insert(0, props)
+        spacing = props.find('w:spacing', NS)
+        if spacing is None:
+            spacing = E.SubElement(props, f'{{{W}}}spacing')
+        spacing.attrib.clear()
+        # The anchored logo extends 7.8 pt below the header table. One 12-pt
+        # clearance is enough; the old two full-size blank paragraphs are not.
+        spacing.attrib.update({f'{{{W}}}before': '0',
+                              f'{{{W}}}after': '240' if index == 1 else '0',
+                              f'{{{W}}}line': '20', f'{{{W}}}lineRule': 'exact'})
+
+
 def build(base_path, source_path, output):
     parts, source = package(base_path), package(source_path)
     root = E.fromstring(parts['word/document.xml'])
@@ -56,7 +85,7 @@ def build(base_path, source_path, output):
         style.attrib.pop(f'{{{W}}}default', None)
         if style_id == 'Normal':
             props = E.SubElement(style, f'{{{W}}}rPr')
-            E.SubElement(props, f'{{{W}}}rFonts', {f'{{{W}}}ascii':'Times New Roman', f'{{{W}}}hAnsi':'Times New Roman', f'{{{W}}}eastAsia':'芫荽'})
+            E.SubElement(props, f'{{{W}}}rFonts', {f'{{{W}}}ascii':'Times New Roman', f'{{{W}}}hAnsi':'Times New Roman', f'{{{W}}}eastAsia':'DFPYuanMedium-B5'})
             E.SubElement(props, f'{{{W}}}sz', {f'{{{W}}}val':'24'})
         for ref in style.xpath('./w:basedOn|./w:next|./w:link', namespaces=NS):
             if ref.get(f'{{{W}}}val') in style_ids:
@@ -86,6 +115,7 @@ def build(base_path, source_path, output):
     blip.set(f'{{{R}}}embed', 'rIdGoldenLogo')
     E.SubElement(rels, f'{{{REL}}}Relationship', Id='rIdGoldenLogo', Type=R+'/image', Target='media/golden_logo.png')
     body.replace(body[0], table);body.replace(body[1], logo)
+    compact_header_spacers(body)
     for name in ('word/header1.xml', 'word/header2.xml'):
         header = E.fromstring(parts[name])
         for child in list(header):
@@ -97,16 +127,31 @@ def build(base_path, source_path, output):
     parts['word/document.xml'] = xml(root)
     parts['word/styles.xml'] = xml(styles)
     parts['word/_rels/document.xml.rels'] = xml(rels)
+    # Source header/footer direct formatting previously kept a third font,
+    # even when the Normal style was corrected. Normalize every Word text
+    # part so metadata, body, native list markers and PAGE fields agree.
+    for name in list(parts):
+        if name.startswith('word/') and name.endswith('.xml'):
+            tree = E.fromstring(parts[name])
+            if tree.xpath('.//w:rFonts', namespaces=NS):
+                normalize_fonts(tree)
+                parts[name] = xml(tree)
     output = Path(output)
     if output.exists():
         raise FileExistsError(output)
     with ZipFile(output, 'w', ZIP_DEFLATED) as z:
         for name, raw in parts.items():
             z.writestr(name, raw)
-    # All question/section/passage body nodes are preserved exactly.
+    # Preserve all approved ruler/list/paragraph/shape settings. Only font
+    # declarations and the three header spacer paragraphs may differ.
     before = E.fromstring(package(base_path)['word/document.xml']).find('w:body', NS)
+    normalize_fonts(before)
+    normalize_fonts(body)
+    compact_header_spacers(before)
     assert all(E.tostring(before[i], method='c14n') == E.tostring(body[i], method='c14n') for i in range(2, len(body)))
-    assert parts['word/numbering.xml'] == package(base_path)['word/numbering.xml']
+    numbering = E.fromstring(package(base_path)['word/numbering.xml'])
+    normalize_fonts(numbering)
+    assert E.tostring(numbering, method='c14n') == E.tostring(E.fromstring(parts['word/numbering.xml']), method='c14n')
     with ZipFile(output) as z:
         assert z.testzip() is None
     # This is the source logo, not a flattened screenshot of the header.
