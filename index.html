@@ -1237,6 +1237,24 @@
 
 <!-- 考卷預覽 -->
 <div id="paperView" class="paperview">
+  <style>
+  /* 手機版預覽：三條工具列壓成單行可橫向滑動、隱藏冗長說明，讓考卷更快出現 */
+  @media(max-width:820px){
+    .pv-bar{padding:7px 10px!important;gap:8px}
+    .pv-bar .pv-edit-label{display:none!important}
+    .pv-bar .btn{height:32px;padding:0 12px;font-size:12px;white-space:nowrap}
+    #pvPaperMetadata,#pvFmtBar{flex-wrap:nowrap!important;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+    #pvPaperMetadata::-webkit-scrollbar,#pvFmtBar::-webkit-scrollbar{display:none}
+    #pvPaperMetadata{gap:8px;padding:7px 10px}
+    #pvPaperMetadata label{flex:0 0 auto;white-space:nowrap;font-size:11px;gap:3px;color:var(--muted)}
+    #pvPaperMetadata input{width:118px;font-size:12px;padding:4px 7px}
+    #pvPaperMetadata select{font-size:12px;padding:4px 7px}
+    #pvPaperMetadata #pvPreFields:not([hidden]),#pvPaperMetadata #pvAbkFields:not([hidden]){display:contents}
+    #pvFmtBar{gap:5px;padding:6px 9px;top:0}
+    #pvFmtBar .pv-tool-group{flex:0 0 auto;padding-right:6px}
+    #pvFmtBar .pv-edit-label{display:none!important}
+  }
+  </style>
   <div class="pv-bar noprint">
     <button class="btn" onclick="closePaper()">返回</button><span class="spacer"></span>
     <span class="pv-edit-label" style="margin-right:10px">確認題目、排序與內容後，按下一步設定並匯出</span>
