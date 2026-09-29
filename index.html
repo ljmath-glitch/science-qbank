@@ -8008,7 +8008,7 @@ async function downloadSolutionWord(){
     const run=(text,bold=false)=>new TextRun({text:normalizeWordLatex(text),font:FONT,size:24,bold});
     const dxa=cm=>Math.round(cm*566.9291339),COL_NUM=dxa(.7),COL_LABEL=dxa(2.2),COL_LETTER=dxa(.9),COL_CONTENT=dxa(14.2),COL_MERGED=COL_LETTER+COL_CONTENT;
     const none={style:BorderStyle.NONE,size:0,color:'FFFFFF'},borders={top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none};
-    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,spacing:{line:240,lineRule:'exact'},children:text?[run(text,bold)]:[]});
+    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,spacing:{line:360,lineRule:'auto'},children:text?[run(text,bold)]:[]});
     const cell=(text,opts={})=>new TableCell({width:{size:opts.width,type:WidthType.DXA},columnSpan:opts.span,borders:{top:none,bottom:none,left:none,right:none},verticalAlign:VerticalAlign.TOP,verticalMerge:opts.merge,margins:{top:40,bottom:40,left:opts.tight?10:60,right:opts.tight?10:60},children:[para(text,opts.bold,opts.keepNext,opts.center)]});
     const table=q=>{
       const rows=[
@@ -8021,7 +8021,7 @@ async function downloadSolutionWord(){
     const title=(document.getElementById('pTitle').value||'自然科測驗卷').trim();
     const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>solutionExportQuestion(it,i+1));
     const answers=questions.map(q=>q.answer).join('');const groups=[];for(let i=0;i<answers.length;i+=5)groups.push(answers.slice(i,i+5));
-    const children=[new Paragraph({alignment:'center',spacing:{after:120,line:240,lineRule:'exact'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:240,lineRule:'exact'},children:[run(groups.join('/'),true)]})];
+    const children=[new Paragraph({alignment:'center',spacing:{after:120,line:360,lineRule:'auto'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:360,lineRule:'auto'},children:[run(groups.join('/'),true)]})];
     questions.forEach((q,i)=>{children.push(table(q));if(i<questions.length-1)children.push(new Paragraph({spacing:{before:60,after:60},children:[]}));});
     const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:dxa(1.5),bottom:dxa(1.5),left:dxa(1.5),right:dxa(1.5)}}},children}]});
     const blob=await Packer.toBlob(doc),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'_詳解_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);paperDlg.close();
