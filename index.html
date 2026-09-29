@@ -966,24 +966,6 @@
 </dialog>
 
 <!-- 自動配題 -->
-<dialog id="quickPaperDlg">
-  <div class="dlg-head">快速出題：先設定範圍<button class="x" onclick="quickPaperDlg.close()">×</button></div>
-  <div class="dlg-body">
-    <p>請先選擇要抽題的學制、科目、年級、學期與章節範圍；下一步再設定題數與難度比例。</p>
-    <div class="grid4">
-      <div class="field"><label>學制</label><select id="qpLevel" onchange="onQuickPaperLevel()"><option value="">請選擇</option><option>國中</option><option>高中</option></select></div>
-      <div class="field"><label>科目</label><select id="qpField" onchange="updateQuickChapters()"><option value="">請選擇</option></select></div>
-      <div class="field"><label>年級</label><select id="qpGrade" onchange="updateQuickChapters()"><option value="">請選擇</option></select></div>
-      <div class="field"><label>學期</label><select id="qpSem"><option value="">請選擇</option><option value="上">上學期</option><option value="下">下學期</option></select></div>
-    </div>
-    <div class="grid2">
-      <div class="field"><label>起始章節</label><select id="qpStart" onchange="onQuickChapterStart()"><option value="">請先選擇上方範圍</option></select></div>
-      <div class="field"><label>結束章節</label><select id="qpEnd"><option value="">與起始章節相同</option></select></div>
-    </div>
-    <p style="font-size:12px;color:#8a6d3b">章節範圍會直接套用到抽題池；未選結束章節時，只抽起始章節。</p>
-  </div>
-  <div class="dlg-foot"><button class="btn" onclick="quickPaperDlg.close()">取消</button><button class="btn primary" onclick="applyQuickPaperSetup()">下一步：設定題數與難度</button></div>
-</dialog>
 <dialog id="mixDlg">
   <div class="dlg-head">智慧組卷<button class="x" onclick="mixDlg.close()">×</button></div>
   <div class="dlg-body">
@@ -1925,7 +1907,6 @@ async function applyGroupIdTool(){
 }
 
 let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[];
-let QUICK_CHAPTER_RANGE=null, QUICK_CHAPTERS=[];
 window.__qbankDataReady=false;
 // 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
 window.getExamNames=function(){try{return [...new Set(DB.map(function(x){return x&&x.exam}).filter(Boolean))].sort();}catch(e){return [];}};
@@ -3304,7 +3285,7 @@ function buildFiltersKeep(){
   });
 }
 function resetFilters(){
-  _pinId=null;_pinGroupId=null;QUICK_CHAPTER_RANGE=null;
+  _pinId=null;_pinGroupId=null;
   ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   onFilterSchoolLevel();
   document.getElementById('fRoundWrap').style.display='none';
@@ -3405,63 +3386,6 @@ function onFilterSchoolLevel(){
   fillSelect(fSchool,uniqSchoolForLevel(lvl),true);
   onFilterExamType();onFilterField();}
 
-/* ===== 快速出題：範圍設定 ===== */
-function openQuickPaperSetup(){
-  QUICK_CHAPTER_RANGE=null;
-  qpLevel.value=fSchoolLevel.value||'';
-  onQuickPaperLevel();
-  if(fField.value)qpField.value=fField.value;
-  if(fGrade.value)qpGrade.value=fGrade.value;
-  if(fSem.value)qpSem.value=fSem.value;
-  updateQuickChapters();
-  quickPaperDlg.showModal();
-}
-function onQuickPaperLevel(){
-  const lvl=qpLevel.value;
-  qpField.innerHTML='<option value="">請選擇</option>'+(FIELDS_BY_LEVEL[lvl]||[]).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  qpGrade.innerHTML='<option value="">請選擇</option>'+(GRADES_BY_LEVEL[lvl]||[]).map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  updateQuickChapters();
-}
-function quickChapterKey(it){return [it.book||'',it.unit||'',it.sub||''].join('|||');}
-function getQuickChapterRows(){
-  const field=qpField.value, grade=qpGrade.value, allowed=booksForGrade(grade);
-  const seen=new Map();
-  const add=(it)=>{
-    if(!it||!it.unit)return;
-    if(field&&it.field!==field)return;
-    const itGrade=gradeFromExam(it.exam||'',it.book||'');
-    if(grade&&!(allowed&&allowed.includes(it.book)||itGrade===grade))return;
-    const key=quickChapterKey(it);
-    if(!seen.has(key))seen.set(key,{key,label:[it.bookName||it.book,it.unit,it.sub].filter(Boolean).join('｜')});
-  };
-  SYL.forEach(add);DB.forEach(add);
-  return [...seen.values()];
-}
-function updateQuickChapters(){
-  if(!window.qpStart||!window.qpEnd)return;
-  QUICK_CHAPTERS=getQuickChapterRows();
-  const opts=QUICK_CHAPTERS.map(r=>`<option value="${esc(r.key)}">${esc(r.label)}</option>`).join('');
-  qpStart.innerHTML='<option value="">請選擇起始章節</option>'+opts;
-  qpEnd.innerHTML='<option value="">與起始章節相同</option>'+opts;
-}
-function onQuickChapterStart(){
-  if(!qpEnd.value)qpEnd.value=qpStart.value;
-}
-function applyQuickPaperSetup(){
-  const level=qpLevel.value, field=qpField.value, grade=qpGrade.value, sem=qpSem.value;
-  const start=qpStart.value, end=qpEnd.value||start;
-  if(!level||!field||!grade||!sem||!start){alert('請先選擇學制、科目、年級、學期與起始章節。');return;}
-  const startIndex=QUICK_CHAPTERS.findIndex(r=>r.key===start);
-  const endIndex=QUICK_CHAPTERS.findIndex(r=>r.key===end);
-  if(startIndex<0||endIndex<startIndex){alert('章節範圍有誤，結束章節不能排在起始章節之前。');return;}
-  QUICK_CHAPTER_RANGE={keys:new Set(QUICK_CHAPTERS.slice(startIndex,endIndex+1).map(r=>r.key))};
-  fSchoolLevel.value=level;onFilterSchoolLevel();
-  fGrade.value=grade;fField.value=field;onFilterGrade();fSem.value=sem;
-  quickPaperDlg.close();render();
-  const available=DB.filter(matches).length;
-  if(!available){alert('目前設定範圍沒有可抽題，請調整學期或章節範圍。');return;}
-  autoMix();
-}
 /* selectFiltered 統一用 matches()，見下方 script */
 function examRound(exam){if(!exam)return '';if(exam.includes('會考'))return '會考';if(exam.includes('學測'))return '學測';if(exam.includes('分科測驗'))return '分科測驗';const mk=exam.includes('模擬')||exam.includes('模考');if(exam.includes('第一次'))return mk?'第一次模擬考':'第一次段考';if(exam.includes('第二次'))return mk?'第二次模擬考':'第二次段考';if(exam.includes('第三次'))return mk?'第三次模擬考':'第三次段考';return '';}
 /* ===== 渲染 ===== */
@@ -3866,7 +3790,6 @@ function typeName(code){const t=QTYPES.find(x=>x.code===normType(code));return t
 function matches(it){
   if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
   if(_pinExam&&!_pinExam.includes(it.exam))return false;
-  if(QUICK_CHAPTER_RANGE&&!QUICK_CHAPTER_RANGE.keys.has(quickChapterKey(it)))return false;
   const s=fSearch.value.trim();
   if(s&&!((it.q||'')+(it.summary||'')+(it.kp||'')+(it.sol||'')).includes(s))return false;
   if(fBook.value&&it.book!==fBook.value)return false;
@@ -7312,10 +7235,6 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
   }else{
     render();
     updateBell();
-  }
-  if(entryMode==='quick-paper'){
-    history.replaceState(null,'',location.pathname);
-    setTimeout(()=>openQuickPaperSetup(),120);
   }
   if(entryMode==='compose'){
     history.replaceState(null,'',location.pathname);
