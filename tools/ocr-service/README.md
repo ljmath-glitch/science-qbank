@@ -3,7 +3,39 @@
 > 給完全不懂程式的人看。照著複製貼上即可。這台電腦＝「後端」，負責幫瀏覽器做 OCR 重工。
 > 建議就裝在**大南路櫃2**那台（已經在跑 Ollama 的同一台）。
 
-> **⚡ 已裝好、每天只想開服務？** 直接雙擊本資料夾的 **`啟動OCR.bat`**（引擎預設 auto：有文字層自動用文字層引擎、純掃描才用 MinerU）。看到 `Uvicorn running on http://0.0.0.0:8000` 就成功，**視窗保持開著**。要純 MinerU 就把 bat 裡的 `OCR_ENGINE=auto` 改成 `mineru`。
+> **⚡ 已裝好、每天只想開服務？** 直接雙擊本資料夾的 **`啟動OCR.bat`**（Windows）或 **`啟動OCR.command`**（macOS）。引擎預設 auto：有文字層自動用文字層引擎、純掃描才用 MinerU。看到 `Uvicorn running on http://0.0.0.0:8000` 就成功，**視窗保持開著**。要純 MinerU 就把啟動檔裡的 `OCR_ENGINE=auto` 改成 `mineru`。
+
+---
+
+## macOS 安裝（在 MacBook 上跑，複製貼上到「終端機」）
+
+> 適用：先在自己的 Mac 把服務跑通，之後公司電腦（Windows）用同一套邏輯當主伺服器。
+
+```bash
+# 1. 取得程式（若已 clone 過就 cd 進去、git pull 即可）
+git clone https://github.com/ljmath-glitch/science-qbank.git ~/science-qbank
+cd ~/science-qbank/tools/ocr-service
+
+# 2. 建立 Python 環境並安裝套件（venv 放在 ~/ocr-env）
+python3 -m venv ~/ocr-env
+~/ocr-env/bin/pip install --upgrade pip
+~/ocr-env/bin/pip install fastapi "uvicorn[standard]" python-multipart pdfplumber pypdfium2 Pillow
+
+# 3.（可先跳過）安裝真正的辨識引擎 MinerU —— 檔案很大，第一次辨識還會自動下載模型
+~/ocr-env/bin/pip install "mineru[core]"
+
+# 4. 啟動服務（引擎 auto）
+chmod +x 啟動OCR.command   # 只需第一次
+./啟動OCR.command
+#   或不用啟動檔，直接：
+#   OCR_ENGINE=auto OCR_ALLOW_ORIGIN='*' MINERU_CMD="$HOME/ocr-env/bin/mineru" ~/ocr-env/bin/python 題庫OCR_server.py
+```
+
+看到 `Uvicorn running on http://0.0.0.0:8000` 就成功。之後每天雙擊本資料夾的 **`啟動OCR.command`** 即可（第一次雙擊若被 Gatekeeper 擋，右鍵 →「打開」一次就好）。
+
+**從網頁連（同一台 Mac）**：題庫是 https、本服務是 http，**請用 Chrome/Edge，不要用 Safari**（Safari 會顯示 `Load failed`，無解）。在 raw 分頁把「OCR 服務」下拉選 **本機(localhost)**、網址 `http://localhost:8000`，按「測試連線」；若被擋，點網址列鎖頭 → 網站設定 → 允許「不安全的內容」再重試。健康檢查：瀏覽器開 `http://localhost:8000/health`，看到 `"mineru_available": true` 代表 MinerU 也就緒。
+
+> 之後要讓**別台裝置**（iPhone／工讀生電腦）也連得到這台 Mac，改用 Tailscale，比照下方 C 節（用本機 Tailscale IP，不是 localhost）。
 
 ---
 
