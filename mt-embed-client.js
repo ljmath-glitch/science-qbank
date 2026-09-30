@@ -15,11 +15,13 @@
   // 允許的工具來源（精確比對，不用萬用字元）。第一個是正式站。
   var TOOL_ORIGINS = [
     'https://tzutzu-course-system.vercel.app', // 正式站
-    'http://localhost:8766'                    // 本機開發用
+    'http://localhost:8766',                   // 本機開發用
+    'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app',   // 數學工具整合分支的 Vercel 預覽（測試用）
   ];
   // 要改連本機開發版時，把這裡改成 'http://localhost:8766'（必須在上面清單內）；
   // 空字串＝用正式站。上線前務必改回空字串。
-  var TOOL_ORIGIN_OVERRIDE = '';
+  // ⚠️ 測試用：分支上先指向數學工具的預覽版；合併進 main 之前改回 ''（＝正式版 https://tzutzu-course-system.vercel.app）
+  var TOOL_ORIGIN_OVERRIDE = 'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app';
   var TOOL_ORIGIN = (TOOL_ORIGIN_OVERRIDE && TOOL_ORIGINS.indexOf(TOOL_ORIGIN_OVERRIDE) >= 0) ? TOOL_ORIGIN_OVERRIDE : TOOL_ORIGINS[0];
 
   var PROTO = 1;                              // 訊息格式版本
