@@ -100,6 +100,23 @@
         </div>
         </div>
       </div>
+      <div class="ocr-auto" style="border:1px solid #1f6f5c;border-radius:12px;padding:10px 12px;margin:12px 0;background:#f0faf5">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div style="font-weight:700;font-size:13px">🤖 Claude 一鍵（本機主機）<span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#e3f0ea;color:#177052;font-size:11px">建議</span></div>
+          <button id="clToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="clPanel" onclick="document.getElementById('clPanel').classList.toggle('hide')" style="font-size:11px;padding:3px 9px">展開</button>
+        </div>
+        <div id="clPanel" class="hide" style="margin-top:10px;border-top:1px solid #cde9df;padding-top:10px">
+        <p class="help" style="margin:0 0 10px">丟入掃描/清稿 PDF，由你本機主機的 <b>Claude</b> 一次讀圖，產出可匯入的 <b>23 欄 CSV</b>（自動填入下方第 4 步）＋<b>乾淨考卷 Word</b>。圖表素材仍請到第 III 區用同一份 PDF 裁切。<br><span class="help">需主機已開 Tailscale HTTPS（<code>tailscale serve --bg 8787</code>），後端網址用 <code>https://</code>。</span></p>
+        <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="help">主機後端：</span>
+          <input id="clBackend" placeholder="https://ljm2222.tail3d3c18.ts.net" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;width:290px;font-family:inherit">
+        </div>
+        <input id="clPdf" type="file" accept=".pdf,.png,.jpg,.jpeg" class="hide" onchange="runClaudePackage(this.files[0]);this.value=''">
+        <div class="drop" style="margin-top:10px" onclick="clPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runClaudePackage(event.dataTransfer.files[0])">丟入或選擇 PDF → Claude 一鍵產出</div>
+        <div class="status" id="clStatus" style="margin-top:8px"></div>
+        <div id="clResult" class="hide" style="margin-top:10px;background:#fff;border:1px solid #cde9df;border-radius:8px;padding:10px;font-size:12px;line-height:1.7"></div>
+        </div>
+      </div>
       <ol class="steps">
         <li data-step="1"><b>清除筆跡</b>開啟試卷寶，登入帳號密碼請詢問主管；完成清稿後輸出乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" target="_blank" rel="noopener" onclick="return openAppOrWeb('shijuanbao://','https://shijuanbao.aizuoye100.com/home',event)">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
@@ -1079,6 +1096,31 @@
         st.textContent='CSV 已產生並填入第 4 步，請人工核對後再匯入題庫。';
         _revealQuestionCsv();
       }catch(e){st.textContent='產生 CSV 失敗：'+(e.message||e);}
+    }
+    // ===== 🤖 Claude 一鍵（本機主機）：掃描 PDF → 23 欄 CSV（填入第4步）＋ 乾淨 Word =====
+    (function(){ try{ var v=localStorage.getItem('clBackend'); var el=document.getElementById('clBackend'); if(el) el.value = v || 'https://ljm2222.tail3d3c18.ts.net'; }catch(e){} })();
+    async function runClaudePackage(file){
+      if(!file) return;
+      var st=document.getElementById('clStatus'), box=document.getElementById('clResult');
+      var base=(document.getElementById('clBackend').value||'').trim().replace(/\/+$/,'');
+      if(!base){ st.style.color='#a14736'; st.textContent='請先填主機後端網址（例 https://ljm2222.tail3d3c18.ts.net）'; return; }
+      try{ localStorage.setItem('clBackend', base); }catch(e){}
+      st.style.color=''; st.textContent='Claude 一次讀圖產出中…約 4–5 分鐘，請勿關閉此頁。'; box.classList.add('hide');
+      try{
+        var b64=await new Promise(function(res,rej){var r=new FileReader();r.onerror=function(){rej(new Error('讀檔失敗'));};r.onload=function(){res(String(r.result).split(',')[1]||'');};r.readAsDataURL(file);});
+        var r=await fetch(base+'/api/exam-package',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:b64})});
+        var j=await r.json(); if(!j.ok) throw new Error(j.error||'產生失敗');
+        if(j.csvUrl){ var cr=await fetch(base+j.csvUrl); var csv=await cr.text(); questionCsv.value=csv; inspectCsv(); if(typeof _revealQuestionCsv==='function') _revealQuestionCsv(); }
+        st.style.color='#177052'; st.textContent='完成：'+(j.summary||'已產出')+'　CSV 已填入下方第 4 步。';
+        var html='';
+        if(j.docxUrl) html+='<a class="btn primary" href="'+base+j.docxUrl+'" style="margin-right:6px">⬇ 乾淨考卷 Word</a>';
+        if(j.csvUrl) html+='<a class="btn" href="'+base+j.csvUrl+'">⬇ CSV 備份</a>';
+        if((j.reviewItems||[]).length){ html+='<div class="help" style="margin-top:8px"><b>需人工確認：</b><br>'+j.reviewItems.map(function(x){return String(x).replace(/[&<>]/g,'');}).join('<br>')+'</div>'; }
+        box.innerHTML=html; box.classList.remove('hide');
+      }catch(e){
+        st.style.color='#a14736';
+        st.textContent='錯誤：'+e.message+'（若連不到，請確認：主機已開 Tailscale HTTPS、後端網址用 https、主機服務開著）';
+      }
     }
   </script>
   <script src="announce.js"></script>
