@@ -324,6 +324,7 @@
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
+  .pvq-answer-slot{display:inline-block;min-width:1.8em;text-align:center;white-space:nowrap;color:#c0392b;font-weight:700}
   .pv-sheet .q{position:relative}
   .pvq-ctrl{position:absolute;left:-34px;top:0;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s}
   .pv-sheet .q:hover .pvq-ctrl{opacity:1}
@@ -5042,8 +5043,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     }
     qNum++;
     let extra='';
-    if(forPreview&&PV_SHOW_ANS){const ansInner=applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-answer-block"><div class="pv-answer-title">答案（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="ans" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${ansInner||'（尚未填寫）'}</span></div>`;}
-    else if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
+    if(!forPreview&&((ansMode==='inline'||ansMode==='full')&&it.ans))extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(forPreview&&PV_SHOW_SOL){const solInner=applyRichMarks(esc(fixLatex(it.sol||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-sol-block"><div class="pv-sol-title">詳解（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="sol" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${solInner||'（尚未填寫）'}</span></div>`;}
     else if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     // 非選題（填充/計算）依題目內偵測到的子問句數量各留一格手寫作答空白，答案卷模式（已顯示答案/詳解）就不用留空白
@@ -5065,7 +5065,10 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
-    return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${ctrl}${tag}${templateLayout?'<span class="paper-question-marker">'+qNum+'.(　　)</span>':'<b>'+qNum+'.</b> '}${qText}${imgs}${extra}${src}</div>`;
+    const answerInNumber=forPreview&&(PV_SHOW_ANS||ansMode==='inline'||ansMode==='full');
+    const answerSlot=answerInNumber?`<span class="pvq-text pvq-answer-slot" contenteditable="true" data-rtype="ans" data-rid="${it.id}" title="點擊修改答案" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'))}</span>`:'　　';
+    const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
+    return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}</div>`;
   });
   let body=bodyParts.join('');
   // 雙欄排版：把題目區包進兩欄容器（標頭/標題/答案區維持整頁寬）；自帶 style 讓預覽與匯出一致
