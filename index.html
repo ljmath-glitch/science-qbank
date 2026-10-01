@@ -324,6 +324,7 @@
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
+  .pvq-answer-slot{display:inline-block;min-width:1.8em;text-align:center;white-space:nowrap;color:#c0392b;font-weight:700}
   .pv-sheet .q{position:relative}
   .pvq-ctrl{position:absolute;left:-34px;top:0;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s}
   .pv-sheet .q:hover .pvq-ctrl{opacity:1}
@@ -579,6 +580,8 @@
   #batchImgDlg .dlg-body{max-height:76vh;overflow-y:auto;padding:0}
   .bimg-drop{border:2px dashed #ccc;border-radius:10px;padding:18px 20px;text-align:center;cursor:pointer;transition:.2s;margin:8px 16px 10px;user-select:none}
   .bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#eaf6ff}
+  .edit-img-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 0}
+  .edit-img-actions .btn{min-height:34px;padding:6px 13px}
   .bimg-table-wrap{padding:0 16px 10px;overflow-x:auto}
   .bimg-table{width:100%;border-collapse:collapse;font-size:12.5px}
   .bimg-table th{text-align:left;padding:6px 8px;font-size:11px;font-weight:700;color:#888;border-bottom:1px solid #e0e0e0;letter-spacing:.3px}
@@ -844,10 +847,13 @@
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
       <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
-      <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:inherit;font-size:13px">
-      <button type="button" class="btn sm" id="mtFigBtn" onclick="mtEditInsertFig()" title="用茲茲數學工具畫圖，完成後自動加入（依上方「加入：題目／題組文章」）" style="margin-left:6px">📐 插入繪圖</button>
+      <div class="edit-img-actions">
+        <input id="editImgFileInput" type="file" accept="image/*" multiple onchange="addImages(event)" hidden>
+        <button type="button" class="btn sm" onclick="document.getElementById('editImgFileInput').click()">選擇圖片</button>
+        <button type="button" class="btn sm" id="mtFigBtn" onclick="mtEditInsertFig()" title="用茲茲數學工具畫圖，完成後自動加入（依上方「加入：題目／題組文章」）">📐 插入繪圖</button>
+      </div>
       <div class="bimg-drop" style="margin:8px 0 0;padding:14px 12px"
-           onclick="this.previousElementSibling.click()"
+           onclick="document.getElementById('editImgFileInput').click()"
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="onEditImgDrop(event)">
@@ -5230,8 +5236,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     }
     qNum++;
     let extra='';
-    if(forPreview&&PV_SHOW_ANS){const ansInner=applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-answer-block"><div class="pv-answer-title">答案（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="ans" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${ansInner||'（尚未填寫）'}</span></div>`;}
-    else if((ansMode==='inline'||ansMode==='full')&&it.ans)extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
+    if(!forPreview&&((ansMode==='inline'||ansMode==='full')&&it.ans))extra+=`<div style="color:#c0392b;margin-left:1.5em">答案：${esc(it.ans)}</div>`;
     if(forPreview&&PV_SHOW_SOL){const solInner=applyRichMarks(esc(fixLatex(it.sol||'')).replace(/\n/g,'<br>'));extra+=`<div class="pv-sol-block"><div class="pv-sol-title">詳解（點擊可修改）</div><span class="pvq-text" contenteditable="true" data-rtype="sol" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${solInner||'（尚未填寫）'}</span></div>`;}
     else if(ansMode==='full'&&it.sol)extra+=`<div class="sol" style="white-space:pre-line">詳解：${esc(it.sol)}</div>`;
     // 非選題（填充/計算）依題目內偵測到的子問句數量各留一格手寫作答空白，答案卷模式（已顯示答案/詳解）就不用留空白
@@ -5253,7 +5258,10 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
-    return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${ctrl}${tag}${templateLayout?'<span class="paper-question-marker">'+qNum+'.(　　)</span>':'<b>'+qNum+'.</b> '}${qText}${imgs}${extra}${src}</div>`;
+    const answerInNumber=forPreview&&(PV_SHOW_ANS||ansMode==='inline'||ansMode==='full');
+    const answerSlot=answerInNumber?`<span class="pvq-text pvq-answer-slot" contenteditable="true" data-rtype="ans" data-rid="${it.id}" title="點擊修改答案" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'))}</span>`:'　　';
+    const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
+    return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}</div>`;
   });
   let body=bodyParts.join('');
   // 雙欄排版：把題目區包進兩欄容器（標頭/標題/答案區維持整頁寬）；自帶 style 讓預覽與匯出一致
