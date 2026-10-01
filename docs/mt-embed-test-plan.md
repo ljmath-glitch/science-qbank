@@ -108,7 +108,7 @@
   mt: { v: 1, figureId, config /* 工具回傳，原樣保存 */, widthCm, pxW, pxH } }
 ```
 
-**上線前要做的（由工具端處理）**：先合併數學工具分支，再把題庫分支 `mt-embed-client.js` 的 `TOOL_ORIGIN_OVERRIDE` 改回 `''`（正式站）後合併。
+**目前部署狀態**：題庫暫時連到工具整合分支的預覽網址（使用者已確認）；工具正式站的 `/mt-embed.html` 尚未部署。工具端正式部署並通過實測後，再把 `mt-embed-client.js` 的 `TOOL_ORIGIN_OVERRIDE` 改回 `''`。測試資料仍會寫入正式 Supabase，請只使用測試題。
 
 ---
 

@@ -31,10 +31,8 @@ ${TOOL_ORIGIN}/mt-embed.html?origin=${encodeURIComponent(location.origin)}&rid=$
 ```
 
 - 預設開在題庫頁內的 iframe 視窗；右上角「在新視窗開啟」改用 `window.open`（Safari 若 iframe 內無法登入就用這個）。切換時會換一個新的 requestId，舊 iframe 的訊息一律不理。
-- `TOOL_ORIGIN` 來自 `mt-embed-client.js` 的精確白名單 `TOOL_ORIGINS`：
-  - `https://tzutzu-course-system.vercel.app`（正式，預設）
-  - `http://localhost:8766`（本機開發）
-- 要改連本機開發版：把 `TOOL_ORIGIN_OVERRIDE` 改成 `'http://localhost:8766'`（必須在白名單內，不接受萬用字元）。**上線前改回空字串。**
+- `TOOL_ORIGIN` 來自 `mt-embed-client.js` 的精確白名單 `TOOL_ORIGINS`。目前題庫正式版暫連工具整合分支的預覽網址（使用者已確認）；工具正式站的 `/mt-embed.html` 尚未部署，不能把 override 提前設成空字串。
+- 要改連本機開發版：把 `TOOL_ORIGIN_OVERRIDE` 改成 `'http://localhost:8766'`（必須在白名單內，不接受萬用字元）。等工具正式嵌入頁部署並驗證後，再把 override 改回空字串。
 - 工具端也要把題庫的來源列入它的白名單（`mt-embed.html` 的 `ALLOWED` 與 `vercel.json` 的 `frame-ancestors`）；目前允許 `https://science-qbank.vercel.app` 與 `http://localhost:8765`。
 
 ## 訊息處理（摘要）

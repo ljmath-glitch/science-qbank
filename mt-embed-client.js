@@ -18,9 +18,9 @@
     'http://localhost:8766',                   // 本機開發用
     'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app',   // 數學工具整合分支的 Vercel 預覽（測試用）
   ];
-  // 要改連本機開發版時，把這裡改成 'http://localhost:8766'（必須在上面清單內）；
-  // 空字串＝用正式站。上線前務必改回空字串。
-  // ⚠️ 測試用：分支上先指向數學工具的預覽版；合併進 main 之前改回 ''（＝正式版 https://tzutzu-course-system.vercel.app）
+  // 暫時連數學工具預覽版：使用者已確認要讓題庫 main 先使用此網址。
+  // 工具正式站的 /mt-embed.html 部署後，才將此值改為空字串；不要提前切換到目前不存在的正式嵌入頁。
+  // 要改連本機開發版時，把這裡改成 'http://localhost:8766'（必須在上面清單內）。
   var TOOL_ORIGIN_OVERRIDE = 'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app';
   var TOOL_ORIGIN = (TOOL_ORIGIN_OVERRIDE && TOOL_ORIGINS.indexOf(TOOL_ORIGIN_OVERRIDE) >= 0) ? TOOL_ORIGIN_OVERRIDE : TOOL_ORIGINS[0];
 
