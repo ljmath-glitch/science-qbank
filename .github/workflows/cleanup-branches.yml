@@ -1,0 +1,87 @@
+name: Cleanup old branches
+# 一次性清理：刪除 61 條已過時、功能都已在 main 的舊分支（逐條驗證過功能都在 main）。
+# 用法：GitHub → Actions 分頁 → 左側「Cleanup old branches」→ 右側「Run workflow」按一下。
+# 刪完會自動移除這個工作流程檔，不留痕跡。
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete stale branches
+        run: |
+          set +e
+          for b in \
+            claude/admin-announcement \
+            claude/announce-restyle \
+            claude/batch-img-size \
+            claude/claudemd-update \
+            claude/crop-accuracy \
+            claude/crop-ai-regen \
+            claude/crop-modal-btn-uniform \
+            claude/crop-rotate \
+            claude/daily-formula-parity \
+            claude/edit-dialog-tools \
+            claude/edit-img-eraser \
+            claude/editable-examname \
+            claude/eraser \
+            claude/eraser-cursor \
+            claude/eraser-toolbar-fix \
+            claude/eraser-visible \
+            claude/exam-pdf-original \
+            claude/exam-type-matching \
+            claude/examround-mock \
+            claude/fix-example-font \
+            claude/group-shared-images \
+            claude/guide-docs-update \
+            claude/hide-grade-filter \
+            claude/hide-sem-filter \
+            claude/home-ref-compact \
+            claude/home-reference-links \
+            claude/kp-inquiry-codes \
+            claude/manual-crop \
+            claude/manual-crop-group-btn \
+            claude/merge-edit-cheatsheet \
+            claude/mobile-rwd \
+            claude/mock-exam-format \
+            claude/mock-exam-naming \
+            claude/mock-naming-source-fix \
+            claude/ocr-bat-encoding \
+            claude/ocr-prep-tool \
+            claude/ocr-rename-shortcut \
+            claude/ocr-start-script \
+            claude/paper-flow-editor \
+            claude/paper-preview-reorder \
+            claude/paper-toolbar \
+            claude/per-image-crop \
+            claude/progress-grade-filter \
+            claude/progress-group-type \
+            claude/progress-link-fix \
+            claude/prompt-mock-naming \
+            claude/raw-examname-nooverwrite \
+            claude/raw-merge-sol-steps \
+            claude/remove-python-zip-btn \
+            claude/root-to-home \
+            claude/simplify-selectall \
+            claude/site-harmonize \
+            claude/split-crosssection-filter \
+            claude/syllabus-dedup \
+            claude/temp-latex-toolbar \
+            claude/toolbar-reposition \
+            claude/undo-and-revert-latex \
+            claude/undo-redo-icons \
+            claude/word-img-topbottom \
+            claude/word-keep-latex \
+            claude/word-tight-hotfix; do
+            if git push origin --delete "$b"; then echo "deleted $b"; else echo "skip $b"; fi
+          done
+      - name: Remove this one-off workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/cleanup-branches.yml
+          git commit -m "chore: remove one-off branch-cleanup workflow after run"
+          git push origin HEAD:main
