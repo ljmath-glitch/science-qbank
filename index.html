@@ -1120,19 +1120,37 @@
     <section class="wz-pane" data-s="1">
       <div class="wz-card">
         <h3>① 選擇出題範圍</h3>
-        <div class="wz-chips" style="margin-bottom:10px">
-          <span style="font-weight:700;color:#6e6f74">學制：</span>
-          <button type="button" class="wz-chip" data-lv="國中" onclick="wzSetLevel(this,'國中')">國中</button>
-          <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
+        <div class="wz-chips" style="margin-bottom:12px">
+          <span style="font-weight:700;color:#6e6f74">選題方式：</span>
+          <button type="button" class="wz-chip on" id="wzModeChapter" onclick="wzSetMode('chapter')">依章節</button>
+          <button type="button" class="wz-chip" id="wzModeSchool" onclick="wzSetMode('school')">依學校</button>
+          <span id="wzModeHint" style="font-size:12px;color:#9a8f83;margin-left:4px">依課綱章節選題，適合組新卷</span>
         </div>
-        <div id="wzLevelGate" style="padding:34px 16px;text-align:center;color:#9a8f83;font-size:14.5px;line-height:1.9">請先選擇<b style="color:var(--red)">學制</b>（國中／高中），<br>再從課綱樹狀選擇章節範圍</div>
-        <div id="wzScopeArea" hidden>
-          <div class="wz-tree-tools">
-            <button type="button" onclick="wzTreeAll(true)">全選</button>
-            <button type="button" onclick="wzTreeAll(false)">全部清除</button>
-            <input type="text" id="wzTreeSearch" placeholder="搜尋章節／單元…" oninput="wzFilterTree(this.value)">
+        <!-- 依章節 -->
+        <div id="wzChapterMode">
+          <div class="wz-chips" style="margin-bottom:10px">
+            <span style="font-weight:700;color:#6e6f74">學制：</span>
+            <button type="button" class="wz-chip" data-lv="國中" onclick="wzSetLevel(this,'國中')">國中</button>
+            <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
           </div>
-          <div id="wzTree" class="wz-tree"></div>
+          <div id="wzLevelGate" style="padding:34px 16px;text-align:center;color:#9a8f83;font-size:14.5px;line-height:1.9">請先選擇<b style="color:var(--red)">學制</b>（國中／高中），<br>再從課綱樹狀選擇章節範圍</div>
+          <div id="wzScopeArea" hidden>
+            <div class="wz-tree-tools">
+              <button type="button" onclick="wzTreeAll(true)">全選</button>
+              <button type="button" onclick="wzTreeAll(false)">全部清除</button>
+              <input type="text" id="wzTreeSearch" placeholder="搜尋章節／單元…" oninput="wzFilterTree(this.value)">
+            </div>
+            <div id="wzTree" class="wz-tree"></div>
+          </div>
+        </div>
+        <!-- 依學校 -->
+        <div id="wzSchoolMode" hidden>
+          <div class="wz-tree-tools">
+            <button type="button" onclick="wzSchoolAll(true)">全選</button>
+            <button type="button" onclick="wzSchoolAll(false)">全部清除</button>
+            <input type="text" id="wzSchoolSearch" placeholder="搜尋學校／考試名稱…" oninput="wzRenderSchoolTree()">
+          </div>
+          <div id="wzSchoolTree" class="wz-tree"></div>
         </div>
       </div>
     </section>
@@ -4369,6 +4387,10 @@ let WZ_TREEDATA=[];              // [{field,book,label,count,units:[{unit,count,
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
 let WZ_SCORE={};                 // 配分：{題型kind: 每題配分}
 let WZ_EXCLUDE=new Set();        // 過濾試卷：已勾選排除的考卷 id（對應 PAPER_HISTORY）
+let WZ_MODE='chapter';           // 選題方式：'chapter' 依章節 | 'school' 依學校
+let WZ_SCHOOLSCOPE=new Set();    // 依學校模式已勾選的考試葉 key（school\u0001exam）
+let WZ_SCHOOLTREE=[];            // [{school,count,exams:[{exam,count,key}]}]
+let WZ_SCHOOLCOLLAPSED=new Set();// 依學校樹收合的學校節點 id
 const WZ_SEP='\u0001';
 const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
@@ -4388,18 +4410,21 @@ function _wzExcludedQids(){
   return s;
 }
 function _wzPool(){const ex=_wzExcludedQids();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id));}
-function wzInScope(it){return WZ_SCOPE.has(_wzLeafKey(it));}
+function _wzSchoolKey(it){return (it.school||'（未填學校）')+WZ_SEP+(it.exam||'（未填考試）');}
+function wzInScope(it){return WZ_MODE==='school'?WZ_SCHOOLSCOPE.has(_wzSchoolKey(it)):WZ_SCOPE.has(_wzLeafKey(it));}
 function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
   WZ_SCORE={};WZ_EXCLUDE=new Set();   // 每次開精靈重置配分與過濾
+  WZ_MODE='chapter';WZ_SCHOOLSCOPE=new Set();WZ_SCHOOLCOLLAPSED=new Set();  // 重置選題方式
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
   // 先要求選學制，選了才顯示章節樹
   document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.remove('on'));
   document.getElementById('wzLevelGate').hidden=false;
   document.getElementById('wzScopeArea').hidden=true;
+  wzSetMode('chapter');
   wzSetStep(1);
   // 題型下拉
   const pool=_wzPool();const types=[...new Set(pool.map(x=>x.type).filter(Boolean))];
@@ -4500,6 +4525,70 @@ function wzTreeAll(on){
   wzRenderTree();
 }
 function wzFilterTree(){wzRenderTree();}
+/* ===== Step 1：依學校選題（學校→考試 兩層樹，抓某校原始考卷／比對各校） ===== */
+function wzSetMode(mode){
+  WZ_MODE=mode;
+  document.getElementById('wzModeChapter').classList.toggle('on',mode==='chapter');
+  document.getElementById('wzModeSchool').classList.toggle('on',mode==='school');
+  document.getElementById('wzChapterMode').hidden=(mode!=='chapter');
+  document.getElementById('wzSchoolMode').hidden=(mode!=='school');
+  const hint=document.getElementById('wzModeHint');
+  if(hint)hint.textContent=mode==='school'?'依學校／考試選題，適合抓某校原始考卷、比對各校':'依課綱章節選題，適合組新卷';
+  if(mode==='school')wzBuildSchoolTree();
+  wzUpdateFoot();
+}
+function _wzEscKey(k){return String(k).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function wzBuildSchoolTree(){
+  const by={};
+  _wzPool().forEach(it=>{
+    const sc=it.school||'（未填學校）',ex=it.exam||'（未填考試）';
+    by[sc]=by[sc]||{school:sc,exams:{}};
+    by[sc].exams[ex]=(by[sc].exams[ex]||0)+1;
+  });
+  WZ_SCHOOLTREE=Object.values(by).map(g=>{
+    const exams=Object.keys(g.exams).sort((a,b)=>b.localeCompare(a,'zh-Hant')).map(ex=>({exam:ex,count:g.exams[ex],key:g.school+WZ_SEP+ex}));
+    return {school:g.school,count:exams.reduce((n,x)=>n+x.count,0),exams};
+  }).sort((a,b)=>a.school.localeCompare(b.school,'zh-Hant'));
+  WZ_SCHOOLCOLLAPSED=new Set(WZ_SCHOOLTREE.map((_,i)=>'s'+i)); // 預設全收合
+  wzRenderSchoolTree();
+}
+function wzRenderSchoolTree(){
+  const q=(document.getElementById('wzSchoolSearch').value||'').trim();
+  let html='';
+  WZ_SCHOOLTREE.forEach((g,si)=>{
+    if(q&&!g.school.includes(q)&&!g.exams.some(e=>e.exam.includes(q)))return;
+    const sid='s'+si,col=WZ_SCHOOLCOLLAPSED.has(sid);
+    const keys=g.exams.map(e=>e.key),inN=keys.filter(k=>WZ_SCHOOLSCOPE.has(k)).length;
+    const state=inN===0?'none':inN===keys.length?'all':'some';
+    html+=`<div class="wz-row lv0" data-sid="${sid}"><span class="wz-tw" onclick="event.stopPropagation();wzSchoolToggleCol('${sid}')">${col?'▶':'▼'}</span>`
+      +`<input type="checkbox" ${state==='all'?'checked':''} onclick="event.stopPropagation();wzSchoolToggleSchool(${si})">`
+      +`<span class="wz-lbl" onclick="wzSchoolToggleCol('${sid}')">${esc(g.school)}</span><span class="wz-cnt">${g.count}</span></div>`;
+    if(col)return;
+    g.exams.forEach(e=>{
+      if(q&&!g.school.includes(q)&&!e.exam.includes(q))return;
+      const ek=_wzEscKey(e.key);
+      html+=`<div class="wz-row lv1" style="padding-left:52px" onclick="wzSchoolToggleExam('${ek}')">`
+        +`<span class="wz-tw"></span><input type="checkbox" ${WZ_SCHOOLSCOPE.has(e.key)?'checked':''} onclick="event.stopPropagation();wzSchoolToggleExam('${ek}')">`
+        +`<span class="wz-lbl">${esc(e.exam)}</span><span class="wz-cnt">${e.count}</span></div>`;
+    });
+  });
+  document.getElementById('wzSchoolTree').innerHTML=html||'<div style="padding:16px;color:#9a8f83">沒有符合的學校／考試</div>';
+  WZ_SCHOOLTREE.forEach((g,si)=>{const keys=g.exams.map(e=>e.key),inN=keys.filter(k=>WZ_SCHOOLSCOPE.has(k)).length;const el=document.querySelector(`#wzSchoolTree .wz-row[data-sid="s${si}"] input`);if(el)el.indeterminate=(inN>0&&inN<keys.length);});
+  wzUpdateFoot();
+}
+function wzSchoolToggleCol(id){if(WZ_SCHOOLCOLLAPSED.has(id))WZ_SCHOOLCOLLAPSED.delete(id);else WZ_SCHOOLCOLLAPSED.add(id);wzRenderSchoolTree();}
+function wzSchoolToggleSchool(si){
+  const g=WZ_SCHOOLTREE[si];if(!g)return;const keys=g.exams.map(e=>e.key);
+  const allIn=keys.every(k=>WZ_SCHOOLSCOPE.has(k));
+  if(allIn)keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));else keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));
+  wzRenderSchoolTree();
+}
+function wzSchoolToggleExam(key){if(WZ_SCHOOLSCOPE.has(key))WZ_SCHOOLSCOPE.delete(key);else WZ_SCHOOLSCOPE.add(key);wzRenderSchoolTree();}
+function wzSchoolAll(on){
+  const keys=[];WZ_SCHOOLTREE.forEach(g=>g.exams.forEach(e=>keys.push(e.key)));
+  if(on)keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));else keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));
+  wzRenderSchoolTree();
+}
 function wzScopeCount(){return _wzPool().filter(wzInScope).length;}
 // 步驟切換
 function wzSetStep(n){
@@ -4519,7 +4608,7 @@ function wzSetStep(n){
   wzUpdateFoot();
 }
 function wzGo(dir){
-  if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+  if(dir>0&&WZ_STEP===1&&wzScopeCount()===0){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
   if(dir>0&&WZ_STEP===2&&PICKS.size===0){alert('請先選擇至少一題');return;}
   const n=WZ_STEP+dir;
   if(n<1||n>3)return;
@@ -4529,7 +4618,7 @@ function wzGo(dir){
 function wzJump(n){
   if(n===WZ_STEP)return;
   if(n>WZ_STEP){
-    if(WZ_STEP===1&&wzScopeCount()===0){alert('請先在範圍樹勾選至少一個章節');return;}
+    if(WZ_STEP===1&&wzScopeCount()===0){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
     if(n>=3&&PICKS.size===0){alert('請先選擇至少一題');return;}
   }
   wzSetStep(n);
