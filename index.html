@@ -580,6 +580,8 @@
   #batchImgDlg .dlg-body{max-height:76vh;overflow-y:auto;padding:0}
   .bimg-drop{border:2px dashed #ccc;border-radius:10px;padding:18px 20px;text-align:center;cursor:pointer;transition:.2s;margin:8px 16px 10px;user-select:none}
   .bimg-drop:hover,.bimg-drop.drag-over{border-color:#3498db;background:#eaf6ff}
+  .edit-img-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:8px 0 0}
+  .edit-img-actions .btn{min-height:34px;padding:6px 13px}
   .bimg-table-wrap{padding:0 16px 10px;overflow-x:auto}
   .bimg-table{width:100%;border-collapse:collapse;font-size:12.5px}
   .bimg-table th{text-align:left;padding:6px 8px;font-size:11px;font-weight:700;color:#888;border-bottom:1px solid #e0e0e0;letter-spacing:.3px}
@@ -778,7 +780,8 @@
     </div>
     <div id="passageSection" style="display:none;border:1px solid #c8b87a;border-radius:8px;padding:10px 12px;background:#fffdf2;margin-top:2px;margin-bottom:4px">
       <div style="font-weight:bold;color:#7c5c00;margin-bottom:6px;font-family:inherit;font-size:13px">📖 題組文章（同題組所有小題共用）</div>
-      <div class="field"><textarea id="ePassage" rows="5" placeholder="輸入共用閱讀材料…" style="font-family:inherit"></textarea></div>
+      <div class="field"><textarea id="ePassage" rows="5" placeholder="輸入共用閱讀材料…" style="font-family:inherit" onfocus="editRichSetTarget(this)"></textarea></div>
+      <div style="margin:-2px 0 6px"><button type="button" class="btn sm" id="mtPassageFigBtn" onclick="mtEditInsertFig('p')" title="用茲茲數學工具畫一張題組共用圖（存在題組文章）">📐 插入繪圖（題組共用圖）</button></div>
       <div class="imgprev" id="ePassageImgPrev"></div>
     </div>
 
@@ -815,7 +818,7 @@
     <div class="sectionhead">題目內容</div>
     <div class="field"><label>題目（公式用 $...$，單位用 \text{}）</label>
     <div class="edit-rich-toolbar" id="editRichToolbar">
-      <span style="font-size:11px;color:var(--muted);font-weight:700;padding:0 4px">選取文字後：</span><button type="button" onclick="editRichWrap('**','**')" title="粗體">B</button><button type="button" style="font-style:italic" onclick="editRichWrap('##','##')" title="斜體">I</button><button type="button" style="text-decoration:underline" onclick="editRichWrap('__','__')" title="底線">U</button><button type="button" style="text-decoration:line-through" onclick="editRichWrap('~~','~~')" title="刪除線">S</button><span class="edit-sep"></span><button type="button" class="edit-math" onclick="document.getElementById('editLatexHelp').open=true;document.getElementById('editLatexHelp').scrollIntoView({block:'nearest'})" title="開啟公式、化學式與符號寫法">公式／符號</button><span class="edit-target" id="editRichTarget">目前：題目</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:700;padding:0 4px">選取文字後：</span><button type="button" onclick="editRichWrap('**','**')" title="粗體">B</button><button type="button" style="font-style:italic" onclick="editRichWrap('##','##')" title="斜體">I</button><button type="button" style="text-decoration:underline" onclick="editRichWrap('__','__')" title="底線">U</button><button type="button" style="text-decoration:line-through" onclick="editRichWrap('~~','~~')" title="刪除線">S</button><span class="edit-sep"></span><button type="button" class="edit-math" onclick="document.getElementById('editLatexHelp').open=true;document.getElementById('editLatexHelp').scrollIntoView({block:'nearest'})" title="開啟公式、化學式與符號寫法">公式／符號</button><button type="button" class="edit-math" id="mtEqBtn" onmousedown="event.preventDefault()" onclick="mtEditInsertEq()" title="用茲茲數學工具插入數學式；游標放在既有的 $…$ 裡面可直接回編那一段">插入數學式</button><span class="edit-target" id="editRichTarget">目前：題目</span>
     </div>
     <details class="edit-latex-help" id="editLatexHelp"><summary>公式／Word 輸入小抄</summary><div class="latex-cheat">
       <p style="margin:0 0 6px">題庫公式一律用單錢號 <code>$…$</code> 包住。一種公式一條：</p>
@@ -844,9 +847,13 @@
     <div class="field"><label style="display:flex;align-items:center;gap:8px">圖片（可貼上截圖或選檔）
       <span id="imgTargetWrap" style="display:none;font-family:inherit;font-size:12px;font-weight:normal">加入：<select id="imgTarget" style="font-size:12px;padding:1px 4px;border:1px solid var(--line);border-radius:4px"><option value="q">題目</option><option value="p">題組文章</option></select></span>
     </label>
-      <input type="file" accept="image/*" multiple onchange="addImages(event)" style="font-family:inherit;font-size:13px">
+      <div class="edit-img-actions">
+        <input id="editImgFileInput" type="file" accept="image/*" multiple onchange="addImages(event)" hidden>
+        <button type="button" class="btn sm" onclick="document.getElementById('editImgFileInput').click()">選擇圖片</button>
+        <button type="button" class="btn sm" id="mtFigBtn" onclick="mtEditInsertFig()" title="用茲茲數學工具畫圖，完成後自動加入（依上方「加入：題目／題組文章」）">📐 插入繪圖</button>
+      </div>
       <div class="bimg-drop" style="margin:8px 0 0;padding:14px 12px"
-           onclick="this.previousElementSibling.click()"
+           onclick="document.getElementById('editImgFileInput').click()"
            ondragover="event.preventDefault();this.classList.add('drag-over')"
            ondragleave="this.classList.remove('drag-over')"
            ondrop="onEditImgDrop(event)">
@@ -1268,7 +1275,7 @@
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
     <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
     <span class="pv-tool-group"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
-    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button></span>
+    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
     <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
@@ -2006,16 +2013,26 @@ async function reloadCloud(){if(!requireCloud())return;await load();buildFilters
 function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=(h.match(/:(.*?);/)||[])[1]||'image/jpeg';
   const bin=atob(b);const u8=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u8[i]=bin.charCodeAt(i);
   return new Blob([u8],{type:mime});}
+// 上傳單張 data: 圖到 Storage（路徑 {題目id}/{時間戳}_{序號}_{隨機碼}.{副檔名}），回傳 {url} 或 {error}
+async function _uploadImgDataURL(src,qid,i){
+  const mime=(src.match(/^data:(.*?)[;,]/)||[])[1]||'image/jpeg';
+  const ext=mime==='image/png'?'png':'jpg';
+  const path=`${qid}/${Date.now().toString(36)}_${i}_${Math.random().toString(36).slice(2,6)}.${ext}`;
+  try{
+    const {error}=await sb.storage.from(IMG_BUCKET).upload(path,dataURLtoBlob(src),{contentType:mime,upsert:true});
+    if(error)return {error};
+    const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
+    if(!data||!data.publicUrl)return {error:new Error('取不到公開網址')};
+    return {url:data.publicUrl};
+  }catch(e){return {error:e};}
+}
 async function uploadImgs(imgs,qid){const out=[];
   for(let i=0;i<imgs.length;i++){const im=imgs[i];
     if(im.src&&im.src.startsWith('data:')){
-      const mime=(im.src.match(/^data:(.*?)[;,]/)||[])[1]||'image/jpeg';
-      const ext=mime==='image/png'?'png':'jpg';
-      const path=`${qid}/${Date.now().toString(36)}_${i}_${Math.random().toString(36).slice(2,6)}.${ext}`;
-      const {error}=await sb.storage.from(IMG_BUCKET).upload(path,dataURLtoBlob(im.src),{contentType:mime,upsert:true});
-      if(error){alert('圖片上傳失敗：'+error.message+'\n（此圖暫以原格式保留）');out.push(im);continue;}
-      const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
-      out.push({src:data.publicUrl,width:im.width,align:im.align});
+      const r=await _uploadImgDataURL(im.src,qid,i);
+      if(r.error){alert('圖片上傳失敗：'+(r.error.message||r.error)+'\n（此圖暫以原格式保留）');out.push(im);continue;}
+      // 只換 src，其他欄位（寬度、對齊、位置 x/y、數學工具回編資料 mt…）全部保留
+      out.push({...im,src:r.url});
     }else out.push(im); // 已是 URL 或舊 base64：原樣保留
   }
   return out;}
@@ -2811,8 +2828,8 @@ async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardDat
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('q',${i})">
   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
-    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
-    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('q',${i})">編輯</button><button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">刪除</button></span>
+    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}${_mtHas(im)?' · 📐 數學工具繪圖':''}</span>
+    <span style="display:flex;gap:6px">${_mtHas(im)?`<button class="btn sm" onclick="mtEditFig('q',${i})">編輯繪圖</button>`:''}<button class="btn sm" onclick="openImgAttrDlg('q',${i})">編輯</button><button class="btn sm" onclick="curImgs.splice(${i},1);renderImgPrev()">刪除</button></span>
   </div></div>`).join('')}
 function setImg(i,k,v){curImgs[i][k]=(k==='width'?+v:v);renderImgPrev()}
 // 把已上傳的圖在「題目」與「題組文章」之間搬移，不用刪除重傳；只在有題組文章（groupId 已設定）時才顯示選單。
@@ -2925,8 +2942,8 @@ function renderPassageImgPrev(){
   el.innerHTML=curPassageImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('p',${i})">
   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
-    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}</span>
-    <span style="display:flex;gap:6px"><button class="btn sm" onclick="openImgAttrDlg('p',${i})">編輯</button><button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">刪除</button></span>
+    <span style="color:var(--muted)">${im.width}% · ${im.align==='left'?'靠左':im.align==='right'?'靠右':'置中'}${_mtHas(im)?' · 📐 數學工具繪圖':''}</span>
+    <span style="display:flex;gap:6px">${_mtHas(im)?`<button class="btn sm" onclick="mtEditFig('p',${i})">編輯繪圖</button>`:''}<button class="btn sm" onclick="openImgAttrDlg('p',${i})">編輯</button><button class="btn sm" onclick="curPassageImgs.splice(${i},1);renderPassageImgPrev()">刪除</button></span>
   </div></div>`).join('')}
 // ── 圖片編輯子視窗：統一入口，把寬度／對齊／歸屬／橡皮擦裁切／移除都收進同一個彈窗，避免每張圖底下按鈕一長排 ──
 let _iaTarget=null;
@@ -2958,6 +2975,7 @@ function renderImgAttrDlg(){
     </div>
     ${hasPassage?`<div style="margin-bottom:10px">歸屬：<select onchange="moveImgScope('${scope}',${i},this.value);_iaTarget=null;document.getElementById('imgAttrDlg').close()"><option value="q" ${scope!=='p'?'selected':''}>題目</option><option value="p" ${scope==='p'?'selected':''}>題組文章</option></select></div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+      ${_mtHas(im)?`<button class="btn" onclick="imgAttrDlg.close();mtEditFig('${scope}',${i})">📐 編輯繪圖</button>`:''}
       <button class="btn" onclick="openImgEraser('${scope}',${i})">🧽 橡皮擦／裁切</button>
       <button class="btn" onclick="removeImgFromAttrDlg('${scope}',${i})">刪除</button>
       <button class="btn" onclick="imgAttrDlg.close()">關閉</button>
@@ -2982,11 +3000,186 @@ function onGroupIdChange(){
   renderImgPrev();renderPassageImgPrev();
 }
 
+/* ===== 茲茲數學工具整合：插入／回編繪圖、插入／回編數學式（通訊在 mt-embed-client.js，說明見 docs/mt-embed.md） =====
+   規則：工具回傳 DONE 才動資料；取消／錯誤／逾時／視窗關閉／上傳失敗一律不改資料。
+   繪圖存在 imgs[] 那一張圖的 mt 欄位：{v:1, figureId, config(原樣), widthCm, pxW, pxH}；公開圖片網址不帶任何可編輯資料。
+   數學式不存在 imgs，直接以 $…$ 插進文字。 */
+function _mtHas(im){return !!(im&&im.mt&&typeof im.mt==='object'&&im.mt.config&&typeof im.mt.config==='object');}
+function _mtMeta(r){return {v:1,figureId:r.figureId,config:r.config,widthCm:r.widthCm,pxW:r.width,pxH:r.height};}
+// 新圖預設寬度：依工具建議的公分寬換成版心 %；沒有就用一般圖片預設寬
+function _mtDefaultWidth(r){
+  const cm=+r.widthCm,full=(window.MTEmbed&&MTEmbed.PAPER_CONTENT_CM)||17;
+  if(!(cm>0))return IMG_DEFAULT_W;
+  return Math.max(20,Math.min(100,Math.round(cm/full*100)));
+}
+function _mtReady(){if(!window.MTEmbed){alert('數學工具模組沒有載入，請重新整理頁面。');return false;}return true;}
+function _mtNotify(r){
+  if(!r||r.status==='cancel')return; // 取消：什麼都不做
+  if(r.status==='busy'){alert('數學工具已經開著了，請先完成或關閉它。');return;}
+  alert((r.status==='timeout'?'':'數學工具：')+(r.message||'發生錯誤')+(r.status==='error'?'\n（資料未變更）':''));
+}
+// ── 數學式：找出文字中的 $…$ 範圍（跳過 \$；$$…$$ 視為顯示公式，不回編） ──
+function _mtMathSpans(t){
+  const spans=[];let i=0,open=-1;
+  while(i<t.length){
+    const c=t[i];
+    if(c==='\\'){i+=2;continue;}
+    if(c==='$'){
+      if(open<0&&t[i+1]==='$'){const j=t.indexOf('$$',i+2);if(j<0)break;spans.push({a:i,b:j+2,display:true});i=j+2;continue;}
+      if(open<0)open=i;else{spans.push({a:open,b:i+1});open=-1;}
+    }
+    i++;
+  }
+  return spans;
+}
+// 決定要插入／取代的位置：游標或選取在某段 $…$ 裡（或剛好選取整段）→ 回編那一段；否則插在游標（取代選取文字）
+function _mtEqPlan(text,start,end){
+  if(start>end){const t=start;start=end;end=t;}
+  for(const s of _mtMathSpans(text)){
+    const inside=(s.a<start&&end<s.b)||(start===s.a&&end===s.b);
+    const overlap=start<s.b&&end>s.a;
+    if(inside&&!s.display)return {a:s.a,b:s.b,latex:text.slice(s.a+1,s.b-1)};
+    if(inside&&s.display)return {error:'這段是 $$…$$ 顯示公式，題庫只用單錢號 $…$，請先改成單錢號再回編。'};
+    if(overlap&&start!==end)return {error:'選取範圍跨到公式的 $ 邊界，請只選公式整段（含兩個 $）或只選一般文字。'};
+  }
+  const sel=text.slice(start,end);
+  return {a:start,b:end,latex:sel&&!sel.includes('$')&&!/[\r\n]/.test(sel)?sel:''};
+}
+// 組出要插入的文字；前後緊貼 $ 時加空白，避免變成 $$
+function _mtEqText(text,a,b,latex){
+  return (a>0&&text[a-1]==='$'?' ':'')+'$'+latex+'$'+(text[b]==='$'?' ':'');
+}
+async function mtEditInsertEq(){
+  if(!_mtReady())return;
+  const el=document.getElementById(editRichTargetId)||document.getElementById('eQ');
+  if(!el||typeof el.selectionStart!=='number')return;
+  const text=el.value,plan=_mtEqPlan(text,el.selectionStart,el.selectionEnd);
+  if(plan.error){alert(plan.error);return;}
+  const r=await MTEmbed.open('eq',plan.latex?{latex:plan.latex}:{});
+  if(r.status!=='done'){_mtNotify(r);try{el.focus();el.setSelectionRange(plan.a,plan.b);}catch(e){}return;}
+  if(!editDlg.open||el.value!==text){alert('文字在數學工具開啟期間有變動，未插入數學式。');return;}
+  const ins=_mtEqText(text,plan.a,plan.b,r.latex);
+  el.focus();el.setRangeText(ins,plan.a,plan.b,'end');
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+}
+// ── 繪圖：題目編輯視窗（先放進 curImgs／curPassageImgs，按「儲存」時由 uploadImgs 上傳並寫入） ──
+async function mtEditInsertFig(scope){
+  if(!_mtReady())return;
+  if(!scope)scope=_imgTargetIsPassage()?'p':'q';
+  if(scope==='p'&&!document.getElementById('eGroupId').value.trim()){alert('請先填題組 ID，才有題組文章可以放共用圖。');return;}
+  const r=await MTEmbed.open('fig',{});
+  if(r.status!=='done'){_mtNotify(r);return;}
+  if(!editDlg.open)return;
+  const im={src:r.png,width:_mtDefaultWidth(r),align:'center',mt:_mtMeta(r)};
+  if(scope==='p'){curPassageImgs.push(im);renderPassageImgPrev();}else{curImgs.push(im);renderImgPrev();}
+}
+async function mtEditFig(scope,i){
+  if(!_mtReady())return;
+  const im=(scope==='p'?curPassageImgs:curImgs)[i];
+  if(!_mtHas(im))return;
+  const r=await MTEmbed.open('fig',{config:im.mt.config,figureId:im.mt.figureId});
+  if(r.status!=='done'){_mtNotify(r);return;}
+  const arr=scope==='p'?curPassageImgs:curImgs;
+  if(!editDlg.open||arr.indexOf(im)<0){alert('題目在數學工具開啟期間已變動，未更新這張圖。');return;}
+  // 只換圖檔與回編資料；寬度、對齊、位置等其他欄位不動
+  im.src=r.png;im.mt=_mtMeta(r);
+  if(scope==='p')renderPassageImgPrev();else renderImgPrev();
+  if(_iaTarget)renderImgAttrDlg();
+}
+// ── 繪圖／數學式：組卷後可編輯預覽（直接回寫題庫原題／題組文章那一筆） ──
+function _mtPvRec(type,id){return type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);}
+function _mtPvTarget(what){
+  const el=_pvActiveEdit;
+  if(!el){alert('請先點一下要'+what+'的題目或題組文章文字（選取該題）。');return null;}
+  return {type:el.dataset.rtype==='p'?'p':'q',field:el.dataset.rtype,id:el.dataset.rid};
+}
+async function _mtPvPersist(type,id,rec,rollback){
+  if(!requireCloud()){rollback();return false;}
+  let error=null;
+  try{({error}=await sb.from('questions').upsert(toRow(rec)));}catch(e){error=e;}
+  if(error){rollback();alert('寫回題庫失敗：'+(error.message||error)+'\n（題庫資料未變更）');return false;}
+  if(type==='q')precompute(rec);
+  const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
+  _pvRenderPaged();if(pv)pv.scrollTop=sy;
+  _rebuildLastPaperHTML();
+  return true;
+}
+function _mtChooseFig(list){
+  return new Promise(resolve=>{
+    let d=document.getElementById('mtPickDlg');
+    if(!d){d=document.createElement('dialog');d.id='mtPickDlg';d.style.cssText='border:0;border-radius:10px;padding:14px 16px;max-width:560px';document.body.appendChild(d);}
+    d.innerHTML='<div style="font-weight:bold;margin-bottom:10px">要回編哪一張繪圖？</div><div style="display:flex;flex-wrap:wrap;gap:10px">'
+      +list.map((x,k)=>`<button type="button" data-k="${k}" style="border:1px solid #ccc;border-radius:8px;background:#fff;padding:6px;cursor:pointer"><img src="${esc(x.im.src)}" style="max-width:150px;max-height:110px;display:block"><span style="font-size:12px">第 ${x.i+1} 張</span></button>`).join('')
+      +'</div><div style="text-align:right;margin-top:12px"><button type="button" class="btn" data-k="-1">取消</button></div>';
+    const done=v=>{d.onclick=null;d.oncancel=null;if(d.open)d.close();resolve(v);};
+    d.onclick=e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=+b.dataset.k;done(k>=0?list[k]:null);};
+    d.oncancel=e=>{e.preventDefault();done(null);};
+    d.showModal();
+  });
+}
+async function pvMtInsertFig(){
+  if(!_mtReady())return;
+  const tg=_mtPvTarget('插入繪圖');if(!tg)return;
+  await _pvCommitActive();
+  const r=await MTEmbed.open('fig',{});
+  if(r.status!=='done'){_mtNotify(r);return;}
+  const rec=_mtPvRec(tg.type,tg.id);if(!rec){alert('找不到這一題，未插入。');return;}
+  const up=await _uploadImgDataURL(r.png,rec.id,(rec.imgs||[]).length);
+  if(up.error){alert('圖片上傳失敗：'+(up.error.message||up.error)+'\n（題庫資料未變更）');return;}
+  const w=_mtDefaultWidth(r),before=rec.imgs;
+  rec.imgs=[...(rec.imgs||[]),{src:up.url,width:w,align:'center',x:Math.round((100-w)/2*10)/10,y:0,mt:_mtMeta(r)}];
+  await _mtPvPersist(tg.type,tg.id,rec,()=>{rec.imgs=before;});
+}
+async function pvMtEditFig(){
+  if(!_mtReady())return;
+  const tg=_mtPvTarget('回編繪圖');if(!tg)return;
+  const rec0=_mtPvRec(tg.type,tg.id);
+  const list=((rec0&&rec0.imgs)||[]).map((im,i)=>({im,i})).filter(x=>_mtHas(x.im));
+  if(!list.length){alert(tg.type==='p'?'這篇題組文章沒有用數學工具畫的圖可以回編。':'這一題沒有用數學工具畫的圖可以回編（題組共用圖請點題組文章）。');return;}
+  await _pvCommitActive();
+  const pick=list.length===1?list[0]:await _mtChooseFig(list);if(!pick)return;
+  const im=pick.im;
+  const r=await MTEmbed.open('fig',{config:im.mt.config,figureId:im.mt.figureId});
+  if(r.status!=='done'){_mtNotify(r);return;}
+  const rec=_mtPvRec(tg.type,tg.id);
+  if(!rec||!(rec.imgs||[]).includes(im)){alert('題目在數學工具開啟期間已變動，未更新這張圖。');return;}
+  const up=await _uploadImgDataURL(r.png,rec.id,rec.imgs.indexOf(im));
+  if(up.error){alert('圖片上傳失敗：'+(up.error.message||up.error)+'\n（題庫資料未變更）');return;}
+  const old={src:im.src,mt:im.mt};
+  im.src=up.url;im.mt=_mtMeta(r);
+  await _mtPvPersist(tg.type,tg.id,rec,()=>{im.src=old.src;im.mt=old.mt;});
+}
+async function pvMtInsertEq(){
+  if(!_mtReady())return;
+  const el=_pvActiveEdit;
+  if(!el){alert('請先點一下要插入數學式的題目、答案、詳解或題組文章文字。');return;}
+  const field=el.dataset.rtype,id=el.dataset.rid,type=field==='p'?'p':'q',key=field==='ans'||field==='sol'?field:'q';
+  // 用暫時標記算出游標／選取在「原始文字（含 $…$）」中的位置，算完馬上拿掉
+  const range=_pvActiveRange(true);if(!range)return;
+  const M0='',M1='',n0=document.createTextNode(M0),n1=document.createTextNode(M1);
+  const rEnd=range.cloneRange();rEnd.collapse(false);rEnd.insertNode(n1);
+  const rStart=range.cloneRange();rStart.collapse(true);rStart.insertNode(n0);
+  const withM=serializeRichText(el);
+  n0.remove();n1.remove();el.normalize();
+  const a=withM.indexOf(M0),b=withM.indexOf(M1);
+  if(a<0||b<0||b<a){alert('抓不到游標位置，請重新點一下文字再試。');return;}
+  const text=withM.replace(M0,'').replace(M1,''),plan=_mtEqPlan(text,a,b-1);
+  if(plan.error){alert(plan.error);return;}
+  await _pvTextBlur(el); // 先把目前文字照原本流程存回
+  const r=await MTEmbed.open('eq',plan.latex?{latex:plan.latex}:{});
+  if(r.status!=='done'){_mtNotify(r);return;}
+  const rec=_mtPvRec(type,id);
+  if(!rec||(rec[key]||'')!==text){alert('文字在數學工具開啟期間有變動，未插入數學式。');return;}
+  const old=rec[key];
+  rec[key]=text.slice(0,plan.a)+_mtEqText(text,plan.a,plan.b,r.latex)+text.slice(plan.b);
+  await _mtPvPersist(type,id,rec,()=>{rec[key]=old;});
+}
+
 /* ===== 新增/編輯 ===== */
 let editRichTargetId='eQ';
 function editRichSetTarget(el){
   editRichTargetId=el.id;
-  const label=document.getElementById('editRichTarget');if(label)label.textContent='目前：'+(el.id==='eSol'?'詳解':el.id==='eAns'?'答案':'題目');
+  const label=document.getElementById('editRichTarget');if(label)label.textContent='目前：'+(el.id==='eSol'?'詳解':el.id==='eAns'?'答案':el.id==='ePassage'?'題組文章':'題目');
 }
 function _editRichTarget(){const el=document.getElementById(editRichTargetId)||document.getElementById('eQ');el.focus();return el;}
 function editRichWrap(before,after){
@@ -8432,6 +8625,7 @@ async function downloadWordDoc(){
 </script>
   <script src="paper-metadata.js"></script>
   <script src="paper-output.js"></script>
+  <script src="mt-embed-client.js"></script>
   <script src="announce.js"></script>
 </body>
 </html>

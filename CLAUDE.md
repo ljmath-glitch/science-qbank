@@ -94,7 +94,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 | `q` | `q` | 題目內容（可含 LaTeX，`$...$` 包住） |
 | `sol` | `sol` | AI 或人工寫的詳解 |
 | `group_id` | `groupId` | 題組 ID，同一組的子題與題組文章共用同一個值 |
-| `imgs` | `imgs` | **JSONB array**，格式：`[{src:"data:image/png;base64,..."或公開URL, width:數字}]` |
+| `imgs` | `imgs` | **JSONB array**，格式：`[{src:"data:image/png;base64,..."或公開URL, width:數字(%), align, x?, y?, mt?}]`；`mt` 只在「茲茲數學工具」畫的圖才有（可回編資料，見 §6.15） |
 | `updated_at` | — | 每次 `toRow()` 都會自動蓋成 `new Date().toISOString()` |
 
 > 舊圖片可能還是 base64 直接存在 `imgs` 裡；新上傳的圖片會先丟到 Supabase Storage 拿到公開 URL 再存（省資料庫空間），見 `uploadImgs()`，`index.html:1002`。
@@ -247,6 +247,13 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 **Step 3 設定與輸出**：目前先交接既有的預覽/匯出流程（`wzToExport`→`openPaperDlg`）。之後要做成 TESTGO 式內建設定頁（題型×難易度規格表、卷頭級距表等）。
 
 > 章節分類健檢結論（`.claude/skills/qbank-data-normalize`）：結構稽核 99.6% 符合課綱、**0 筆跨冊污染**；Gemini 語意抽樣 raw ~6.5% 但過半是 Gemini 自己判錯（如密度本就在 JB3 C1、維管束本就在 C4），真實錯誤率極低。**不要做全量 AI 自動重分類**（會改對為錯），有具體錯例再針對性修。
+
+### 6.15 茲茲數學工具整合（插入／回編繪圖、數學式）
+
+- 通訊模組 `mt-embed-client.js`（`window.MTEmbed.open(mode,data)`）：開 iframe（備援「在新視窗開啟」），驗證 postMessage。工具網址白名單 `TOOL_ORIGINS` 與開發用 `TOOL_ORIGIN_OVERRIDE` 只在這支檔案。
+- `index.html` 的「茲茲數學工具整合」區塊：編輯視窗 `mtEditInsertFig`/`mtEditFig`/`mtEditInsertEq`，可編輯預覽 `pvMtInsertFig`/`pvMtEditFig`/`pvMtInsertEq`（直接回寫原題／題組文章那筆）。
+- 圖存在 `imgs[i].mt = {v:1, figureId, config, widthCm, pxW, pxH}`；`uploadImgs()` 現在只換 `src`、其他欄位全保留。
+- 詳細格式與測試步驟：`docs/mt-embed.md`。
 
 ---
 
