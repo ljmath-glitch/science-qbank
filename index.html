@@ -296,7 +296,7 @@
   .ie-stage canvas{max-width:100%;height:auto;cursor:none;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.15);touch-action:none;border-radius:4px}
   .ie-cursor{position:absolute;left:0;top:0;border:1.5px solid var(--red);background:rgba(133,1,3,.08);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);display:none;z-index:5;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
   .ie-sel{position:absolute;left:0;top:0;border:2px dashed var(--red);background:rgba(133,1,3,.12);pointer-events:none;display:none;z-index:6}
-  .float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:var(--ink);padding:8px 22px;display:flex;align-items:center;gap:13px;z-index:600;border-top:1px solid var(--line);box-shadow:0 -6px 24px -14px rgba(45,48,56,.3);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
+  .float{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);color:var(--ink);padding:8px 22px;display:flex;align-items:center;gap:13px;z-index:600;border-top:1px solid var(--line);box-shadow:0 -6px 24px -14px rgba(45,48,56,.3);font-family:inherit;transform:translateY(110%);transition:.25s;flex-wrap:wrap}
   .float.show{transform:translateY(0)}
   /* 往下捲動時自動隱藏底部匯出列，往上捲動才露出 */
   .float.show.float-autohide{transform:translateY(110%)}
@@ -3520,7 +3520,7 @@ function serializeRichText(container){
   }
   return walk(container);
 }
-function imgHtml(im){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}" style="width:${im.width}%;display:block;margin:${m}">`}
+function imgHtml(im,lazy=false){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}"${lazy?' loading="lazy" decoding="async"':''} style="width:${im.width}%;display:block;margin:${m}">`}
 // ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
 let _pvDrag=null,_pvResize=null;
 function _pvContentW(){const s=document.getElementById('pvSheet');return s?s.clientWidth-96:698;}
@@ -3871,23 +3871,47 @@ function render(opts){opts=opts||{};const list=document.getElementById('list');l
     setTimeout(_restore,60);
     setTimeout(_restore,320);
   }}
-function renderPage(list,shown,page){
-  const pageItems=shown.slice(0,_renderLimit);
-  const _shownPs=new Set();
-  list.innerHTML=pageItems.map(it=>{
+let _listMathObserver=null;
+function scheduleListMath(list){
+  if(_listMathObserver){_listMathObserver.disconnect();_listMathObserver=null;}
+  const targets=list.querySelectorAll('.card:not([data-math-ready]),.list-passage:not([data-math-ready])');
+  if(!('IntersectionObserver' in window)){
+    (window.requestIdleCallback||setTimeout)(()=>targets.forEach(el=>{renderMath(el);el.dataset.mathReady='1';}));
+    return;
+  }
+  _listMathObserver=new IntersectionObserver(entries=>{
+    for(const entry of entries){
+      if(!entry.isIntersecting)continue;
+      const el=entry.target;
+      _listMathObserver.unobserve(el);
+      renderMath(el);
+      el.dataset.mathReady='1';
+    }
+  },{rootMargin:'600px 0px'});
+  targets.forEach(el=>_listMathObserver.observe(el));
+}
+function showMoreQuestions(){
+  const start=_renderLimit;
+  _renderLimit+=RENDER_BATCH;
+  renderPage(document.getElementById('list'),_lastShown,start);
+}
+function renderPage(list,shown,start){
+  const pageItems=shown.slice(start,_renderLimit);
+  const _shownPs=new Set(shown.slice(0,start).map(it=>it.groupId).filter(Boolean));
+  const html=pageItems.map(it=>{
     let passageHtml='';
     const _gid=it.groupId||'';
     if(_gid&&PASSAGES[_gid]&&!_shownPs.has(_gid)){
       _shownPs.add(_gid);
       const _ps=PASSAGES[_gid];
-      const _pImgs=(_ps.imgs||[]).map(imgHtml).join('');
+      const _pImgs=(_ps.imgs||[]).map(im=>imgHtml(im,true)).join('');
       const _pText=applyRichMarks(esc(fixLatex(_ps.q||''))).replace(/\n/g,'<br>');
-      passageHtml=`<div style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:inherit;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
+      passageHtml=`<div class="list-passage" style="border:1px solid #888;padding:10px 14px;margin-bottom:4px;background:#fff;border-radius:6px;font-family:inherit;font-size:14px;line-height:1.8;color:#1a2238">${_pText}${_pImgs}</div>`;
     }
     const d=calcDiff(it.step,it.mem,it.con);
     const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
     const optEsc=applyRichMarks(esc(cleanQ)).replace(/\n/g,'<br>');
-    const imgs=(it.imgs||[]).map(imgHtml).join('');
+    const imgs=(it.imgs||[]).map(im=>imgHtml(im,true)).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=(it.sol&&!HIDE_SOL)?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=it.kp?`<span class="tag kp" style="white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(it.kp)}">${esc(it.kp)}</span>`:'';
@@ -3913,13 +3937,16 @@ function renderPage(list,shown,page){
         <button class="btn sm" onclick="toggleFlag('${it.id}')">${it.flag?'取消待確認':'標待確認'}</button>
         <button class="btn sm" onclick="delItem('${it.id}')">刪除</button>
       </div></div>`}).join('');
+  if(start){list.querySelector('.list-more')?.remove();list.insertAdjacentHTML('beforeend',html);}
+  else list.innerHTML=html;
   if(shown.length>_renderLimit){
     const more=document.createElement('div');
+    more.className='list-more';
     more.style.cssText='display:flex;justify-content:center;padding:16px 0;font-family:inherit';
-    more.innerHTML=`<button class="btn" onclick="_renderLimit+=RENDER_BATCH;renderPage(document.getElementById('list'),_lastShown,0)">顯示更多（已顯示 ${pageItems.length} / ${shown.length} 題，還有 ${shown.length-pageItems.length} 題）</button>`;
+    more.innerHTML=`<button class="btn" onclick="showMoreQuestions()">顯示更多（已顯示 ${Math.min(_renderLimit,shown.length)} / ${shown.length} 題，還有 ${shown.length-_renderLimit} 題）</button>`;
     list.appendChild(more);
   }
-  (window.requestIdleCallback||setTimeout)(()=>renderMath(list));
+  scheduleListMath(list);
   updateFloat();}
 // 貼上 AI 回傳內容時，若中間經過 JSON 之類的轉換，"\t"/"\f" 常被誤當跳脫字元吃掉：
 // \text{...} 的反斜線+t 被吃成一個實際 TAB 字元（\times 同理變成「⟨TAB⟩imes」）；
