@@ -1145,6 +1145,12 @@
         </div>
         <!-- 依學校 -->
         <div id="wzSchoolMode" hidden>
+          <div class="wz-sfilter" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <select id="wzSfGrade" onchange="wzSchoolFilterChange()"><option value="">全部年級</option></select>
+            <select id="wzSfYear" onchange="wzSchoolFilterChange()"><option value="">全部學年</option></select>
+            <select id="wzSfSem" onchange="wzSchoolFilterChange()"><option value="">全部學期</option></select>
+            <select id="wzSfRound" onchange="wzSchoolFilterChange()"><option value="">全部段考次</option></select>
+          </div>
           <div class="wz-tree-tools">
             <button type="button" onclick="wzSchoolAll(true)">全選</button>
             <button type="button" onclick="wzSchoolAll(false)">全部清除</button>
@@ -4538,9 +4544,48 @@ function wzSetMode(mode){
   wzUpdateFoot();
 }
 function _wzEscKey(k){return String(k).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+// 依學校模式的 年級／學年／學期／段考次 篩選
+function _wzItemGrade(it){return it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);}
+function _wzItemYear(it){return it._sylYear!==undefined?it._sylYear:parseSylYear(it.year);}
+function _wzItemSem(it){return it._sylSem!==undefined?it._sylSem:parseSylSem(it.year,it.exam);}
+function _wzItemRound(it){return it._examRoundNum!==undefined?it._examRoundNum:examRoundNum(it.exam);}
+function _wzSchoolFilters(){
+  const g=id=>{const el=document.getElementById(id);return el?el.value:'';};
+  return {grade:g('wzSfGrade'),year:g('wzSfYear'),sem:g('wzSfSem'),round:g('wzSfRound')};
+}
+function wzSchoolFilterPool(){
+  const f=_wzSchoolFilters();
+  return _wzPool().filter(it=>{
+    if(f.grade&&_wzItemGrade(it)!==f.grade)return false;
+    if(f.year&&_wzItemYear(it)!==f.year)return false;
+    if(f.sem&&_wzItemSem(it)!==f.sem)return false;
+    if(f.round&&_wzItemRound(it)!==f.round)return false;
+    return true;
+  });
+}
+function _wzFillSel(id,allLabel,vals){
+  const sel=document.getElementById(id);if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">'+allLabel+'</option>'+vals.map(v=>`<option${v===cur?' selected':''}>${esc(v)}</option>`).join('');
+  if(cur&&!vals.includes(cur))sel.value='';
+}
+function wzSchoolPopulateFilters(){
+  const pool=_wzPool();
+  const gOrd=['七年級','八年級','九年級','高一','高二','高三'];
+  const rOrd=['第一次','第二次','第三次','第四次','第五次'];
+  const byOrd=ord=>(a,b)=>{const ia=ord.indexOf(a),ib=ord.indexOf(b);return (ia<0?99:ia)-(ib<0?99:ib)||a.localeCompare(b,'zh-Hant');};
+  _wzFillSel('wzSfGrade','全部年級',[...new Set(pool.map(_wzItemGrade).filter(Boolean))].sort(byOrd(gOrd)));
+  _wzFillSel('wzSfYear','全部學年',[...new Set(pool.map(_wzItemYear).filter(Boolean))].sort((a,b)=>b.localeCompare(a)));
+  _wzFillSel('wzSfSem','全部學期',[...new Set(pool.map(_wzItemSem).filter(Boolean))].sort());
+  _wzFillSel('wzSfRound','全部段考次',[...new Set(pool.map(_wzItemRound).filter(Boolean))].sort(byOrd(rOrd)));
+}
+function wzSchoolFilterChange(){wzBuildSchoolTree();}
 function wzBuildSchoolTree(){
+  wzSchoolPopulateFilters();
+  const f=_wzSchoolFilters();
+  const anyFilter=!!(f.grade||f.year||f.sem||f.round);
   const by={};
-  _wzPool().forEach(it=>{
+  wzSchoolFilterPool().forEach(it=>{
     const sc=it.school||'（未填學校）',ex=it.exam||'（未填考試）';
     by[sc]=by[sc]||{school:sc,exams:{}};
     by[sc].exams[ex]=(by[sc].exams[ex]||0)+1;
@@ -4549,7 +4594,8 @@ function wzBuildSchoolTree(){
     const exams=Object.keys(g.exams).sort((a,b)=>b.localeCompare(a,'zh-Hant')).map(ex=>({exam:ex,count:g.exams[ex],key:g.school+WZ_SEP+ex}));
     return {school:g.school,count:exams.reduce((n,x)=>n+x.count,0),exams};
   }).sort((a,b)=>a.school.localeCompare(b.school,'zh-Hant'));
-  WZ_SCHOOLCOLLAPSED=new Set(WZ_SCHOOLTREE.map((_,i)=>'s'+i)); // 預設全收合
+  // 有套用篩選時自動全展開（結果較少，方便直接看到）；否則預設全收合
+  WZ_SCHOOLCOLLAPSED=anyFilter?new Set():new Set(WZ_SCHOOLTREE.map((_,i)=>'s'+i));
   wzRenderSchoolTree();
 }
 function wzRenderSchoolTree(){
