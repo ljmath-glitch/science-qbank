@@ -628,7 +628,14 @@ function precompute(r){
   return r;
 }
 
+// 【暫停開關】考題分析儀表板會一次抓取全部題目（含圖片）造成大量 Supabase 流量（egress），
+// 導致專案超出額度被限制。暫時停用，待舊圖片搬到雲端儲存、流量優化後，把 ANALYTICS_PAUSED 改回 false 即可恢復。
+const ANALYTICS_PAUSED=true;
 async function loadAll(){
+  if(ANALYTICS_PAUSED){
+    document.getElementById('content').innerHTML='<div class="loading" style="line-height:1.9">⏸ 考題分析暫時停用<br><span style="font-size:13px;color:#9a8f83">為了節省雲端流量、避免題庫系統被限制，本功能已暫時關閉。<br>待圖片搬到雲端儲存、流量優化完成後會重新開啟。</span></div>';
+    return;
+  }
   document.getElementById('content').innerHTML='<div class="loading">載入中…</div>';
   let rows=[],off=0;
   while(true){
