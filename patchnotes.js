@@ -61,7 +61,7 @@
   // ---- shell DOM ----
   var btn = document.createElement('button');
   btn.className = 'tzpn-btn'; btn.title = '近期功能更新'; btn.type = 'button';
-  btn.innerHTML = '🎁<span class="tzpn-badge"></span>';
+  btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="tzpn-badge"></span>';
   document.body.appendChild(btn);
 
   var mask = document.createElement('div'); mask.className = 'tzpn-mask';
