@@ -72,6 +72,7 @@
   <footer>茲茲文教・自然科題庫系統</footer>
   <script>const QBANK_LOCK_KEY='tzutzu_qbank_unlock_until',QBANK_LOCK_PW='LJ0970683519';function unlockQbank(){const input=document.getElementById('lockInput');if(input.value===QBANK_LOCK_PW){const until=Date.now()+7200000;sessionStorage.setItem(QBANK_LOCK_KEY,String(until));document.getElementById('lockScreen').style.display='none';setTimeout(()=>location.reload(),7200000);return}document.getElementById('lockError').textContent='密碼錯誤，請再試一次。';input.value='';input.focus()}(()=>{const until=+sessionStorage.getItem(QBANK_LOCK_KEY)||0;if(Date.now()<until){document.getElementById('lockScreen').style.display='none';setTimeout(()=>location.reload(),until-Date.now())}else{sessionStorage.removeItem(QBANK_LOCK_KEY);setTimeout(()=>document.getElementById('lockInput').focus(),80)}})();</script>
   <script src="announce.js"></script>
+  <script src="patchnotes.js" defer></script>
   <script>
     async function loadAnnAdmin(){try{const a=await QAnnounce.get();const cur=document.getElementById('annCur');if(a&&a.msg&&String(a.msg).trim()){document.getElementById('annMsg').value=a.msg;cur.textContent='目前公告：'+(a.msg.length>50?a.msg.slice(0,50)+'…':a.msg)+(a.ts?'（'+new Date(a.ts).toLocaleString('zh-TW',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+'）':'');}else{cur.textContent='目前沒有公告。';}}catch(e){document.getElementById('annCur').textContent='';}}
     async function publishAnn(clear){
