@@ -25,8 +25,11 @@
 
   // ---- CSS ----
   var css = ''
-    + '.tzpn-btn{position:fixed;left:16px;bottom:16px;z-index:9998;width:46px;height:46px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:20px;box-shadow:0 4px 14px rgba(133,1,3,.45);display:none;align-items:center;justify-content:center}'
+    + '.tzpn-btn{position:relative;flex:0 0 46px;margin-left:auto;z-index:1;width:46px;height:46px;border-radius:13px;border:1px solid #efe5df;cursor:pointer;background:#fff8f4;color:#7d1833;box-shadow:0 3px 12px rgba(45,48,56,.08);display:none;align-items:center;justify-content:center;font:inherit}'
     + '.tzpn-btn.ready{display:flex}'
+    + '.tzpn-btn:hover{background:#fff0e9;border-color:#e7d2c8}'
+    + '.tzpn-btn:focus-visible{outline:3px solid rgba(133,1,3,.28);outline-offset:2px}'
+    + '.tzpn-btn.tzpn-btn--absolute{position:absolute;top:50%;right:12px;transform:translateY(-50%);margin:0}'
     + '.tzpn-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ffcf33;color:#5e0102;font:800 11px/1 inherit;display:none;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}'
     + '.tzpn-mask{position:fixed;inset:0;z-index:10000;background:rgba(20,10,8,.55);display:none;align-items:center;justify-content:center;padding:16px}'
     + '.tzpn-mask.show{display:flex}'
@@ -61,8 +64,17 @@
   // ---- shell DOM ----
   var btn = document.createElement('button');
   btn.className = 'tzpn-btn'; btn.title = '近期功能更新'; btn.type = 'button';
-  btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="tzpn-badge"></span>';
-  document.body.appendChild(btn);
+  btn.setAttribute('aria-label', '近期功能更新');
+  btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="10" width="18" height="11" rx="1.5"/><path d="M2 7h20v4H2zM12 7v14M12 7H8.5a2.5 2.5 0 1 1 2.4-3.2L12 7Zm0 0h3.5a2.5 2.5 0 1 0-2.4-3.2L12 7Z"/></svg><span class="tzpn-badge"></span>';
+  var host = document.querySelector('header .daily-actions, header .header-actions, header .wrap, header .bar, header');
+  if (host) {
+    if (getComputedStyle(host).display.indexOf('flex') === -1) {
+      host.style.position = 'relative';
+      host.style.paddingRight = '70px';
+      btn.classList.add('tzpn-btn--absolute');
+    }
+    host.appendChild(btn);
+  }
 
   var mask = document.createElement('div'); mask.className = 'tzpn-mask';
   mask.innerHTML = '<div class="tzpn-card"><div class="tzpn-head">'
