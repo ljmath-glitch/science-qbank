@@ -929,7 +929,7 @@
         <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
           <button type="button" class="paper-doc-card on" id="paperDocQuestion" onclick="paperToggleDocument('question')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></button>
           <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・逐選項詳解</small></button>
-        </div><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
+        </div><label class="paper-qans-opt" style="display:flex;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span>題目卷顯示答案（<b style="color:#c0392b">紅字</b>，不含詳解）</span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
         <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
           <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
           <button type="button" class="paper-layout-card" id="paperLayoutDouble" onclick="paperSetLayout(true)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon double" aria-hidden="true"></span><b>橫書雙欄</b></button>
@@ -5043,11 +5043,17 @@ let _paperSettingsPreviewTimer=0,_paperSettingsPage=0,_paperSettingsPageCount=1;
 function paperAnsMode(){return (document.getElementById('pAns')||{}).value||'none';}
 function paperSyncDocuments(){
   const q=document.getElementById('pDocQuestion'),s=document.getElementById('pDocSolution');if(!q||!s)return;
-  const mode=q.checked&&s.checked?'both_full':q.checked?'none':'full';
+  const ansBox=document.getElementById('pQAns');
+  // 「題目卷顯示紅字答案」只在「只輸出題目卷」時有意義；要解析卷時答案走解析卷。
+  if(ansBox)ansBox.disabled=!(q.checked&&!s.checked);
+  const wantAns=!!(ansBox&&ansBox.checked&&!ansBox.disabled);
+  const mode=q.checked&&s.checked?'both_full':q.checked?(wantAns?'inline':'none'):'full';
   document.getElementById('pAns').value=mode;
   document.getElementById('paperDocQuestion').classList.toggle('on',q.checked);
   document.getElementById('paperDocSolution').classList.toggle('on',s.checked);
-  const note=document.getElementById('paperDocNote');if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷（解析卷不含題目，逐選項詳解）。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（不含題目：【答案】＋逐選項詳解）。';
+  const opt=ansBox?ansBox.closest('.paper-qans-opt'):null;if(opt)opt.style.opacity=ansBox.disabled?'.4':'1';
+  const note=document.getElementById('paperDocNote');
+  if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷（解析卷不含題目，逐選項詳解）。':mode==='inline'?'目前只輸出一張題目卷，並在每題顯示紅字答案（不含詳解）。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（不含題目：【答案】＋逐選項詳解）。';
 }
 function paperToggleDocument(which){
   const q=document.getElementById('pDocQuestion'),s=document.getElementById('pDocSolution');if(!q||!s)return;
@@ -8624,6 +8630,11 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
+  if(ansMode==='inline'){
+    // 題目卷＋紅字答案（不含詳解）：各種卷別都走簡潔題目卷版面，確保答案能以紅字顯示在每題。
+    await generateAndDownloadWord(title+'（含答案）',items,'inline',showMeta,showTag,showSource,hdr,showSourceFull);
+    return;
+  }
   if(['abk','pre','golden'].includes(paperKind)){
     // ABK：題目卷以「範本填入」產生（頁首/浮水印/卷頭/字型＝範本本體）；解析卷維持詳解模板。
     try{
