@@ -8557,6 +8557,26 @@ async function _tplResolveImgs(imgs){
   }
   return out;
 }
+// 教用版：把答案字母（被 … 包住）從題幹 run 拆出來，變成獨立的紅色 run；括弧維持原本顏色。
+function _redRpr(rpr){
+  const color='<w:color w:val="C00000"/>';
+  if(!rpr)return '<w:rPr>'+color+'</w:rPr>';
+  let r=rpr.replace(/<w:color\b[^>]*\/>/g,'').replace(/<w:color\b[^>]*>[\s\S]*?<\/w:color>/g,'');
+  if(/<w:sz\b/.test(r))return r.replace(/<w:sz\b/,color+'<w:sz');
+  return r.replace('</w:rPr>',color+'</w:rPr>');
+}
+function _tplRedAnswers(xml){
+  // 只在「單一 run 內」比對（rPr 不得跨越 </w:rPr>、內文不得含 <），避免 regex 回溯跨 run 造成重複/錯色。
+  const re=/(<w:r\b[^>]*>)(<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*?<\/w:rPr>)?(<w:t\b[^>]*>)([^<]*?)([^<]*?)([^<]*?)(<\/w:t><\/w:r>)/g;
+  let out=xml.replace(re,(m,rOpen,rPr,tOpen,before,ans,after,close)=>{
+    rPr=rPr||'';
+    return rOpen+rPr+tOpen+before+close
+      + rOpen+_redRpr(rPr)+tOpen+ans+close
+      + rOpen+rPr+tOpen+after+close;
+  });
+  // 保險：清掉任何沒配對到的殘留標記
+  return out.split('').join('').split('').join('');
+}
 async function downloadWordViaTemplate(kind,opts){
   opts=opts||{};
   await _ensureDocxTemplater();
@@ -8600,10 +8620,10 @@ async function downloadWordViaTemplate(kind,opts){
         }
       }
       qno++;
-      // 教用版：把答案填進題號後的括弧。數字/字母在範本 run 的 ascii 字型＝Times New Roman、sz=20（10pt），
-      // 純文字無底色無邊框。搭配下方 numbering 補丁（把清單格式的「(　　)」拿掉）避免雙重括弧。
+      // 教用版：把答案填進題號後的括弧。括弧與題號標題括弧同為 10pt（同一 run 繼承），
+      // 答案字母用 … 包起來，render 後在 document.xml 裡拆成獨立「紅色 run」。
       let qText=_tplQuestionText(it);
-      if(opts.teacher)qText='('+(it.ans||'　')+')'+qText;
+      if(opts.teacher)qText='('+(it.ans||'　')+')'+qText;
       items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
@@ -8647,7 +8667,9 @@ async function downloadWordViaTemplate(kind,opts){
     const xml=renderedZip.file('word/document.xml').asText().replace(/(<wp:docPr )id="9000001"( name="Group Passage")/g,(_m,start,end)=>`${start}id="${9000001+boxCount++}"${end}`);
     if(boxCount!==expected)throw new Error('題組文字方塊數量與題組文章不一致');
     // 配分已填進標題時，移除範本大題標題後方「  /每題＿＿分，共＿＿分」手填佔位（避免與配分重複）。
-    const xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
+    let xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
+    // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
+    if(opts.teacher)xml2=_tplRedAnswers(xml2);
     renderedZip.file('word/document.xml',xml2);
   }
   const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
