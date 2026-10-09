@@ -929,7 +929,7 @@
         <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
           <button type="button" class="paper-doc-card on" id="paperDocQuestion" onclick="paperToggleDocument('question')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></button>
           <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・逐選項詳解</small></button>
-        </div><label class="paper-qans-opt" style="display:flex;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span>題目卷顯示答案（<b style="color:#c0392b">紅字</b>，不含詳解）</span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
+        </div><label class="paper-qans-opt" style="display:flex;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span><b>教用版</b>：答案填在題號括弧中（不含詳解）；不勾為<b>學用版</b></span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
         <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
           <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
           <button type="button" class="paper-layout-card" id="paperLayoutDouble" onclick="paperSetLayout(true)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon double" aria-hidden="true"></span><b>橫書雙欄</b></button>
@@ -2027,8 +2027,9 @@ async function load(){
   SYL=parseSyl(SYL_RAW);
   // 考卷原稿 PDF 對應表（考試名稱 → 公開URL），存在 syllabus_doc id=4
   try{const {data:pdfRow}=await sb.from('syllabus_doc').select('content').eq('id',4).maybeSingle();EXAM_PDFS=pdfRow&&pdfRow.content?JSON.parse(pdfRow.content):{};}catch(e){EXAM_PDFS={};}
-  // 產生過的考卷紀錄（最近20份，供組卷精靈「過濾試卷」排除已出題），存 syllabus_doc id=5
-  try{const {data:phRow}=await sb.from('syllabus_doc').select('content').eq('id',5).maybeSingle();PAPER_HISTORY=phRow&&phRow.content?JSON.parse(phRow.content):[];}catch(e){PAPER_HISTORY=[];}
+  // 產生過的考卷紀錄（最近20份，供組卷精靈「過濾試卷」排除已出題），存 syllabus_doc id=6
+  // （注意：id=5 已被 announce.js 的管理員公告佔用，不可共用，否則會互相覆蓋）
+  try{const {data:phRow}=await sb.from('syllabus_doc').select('content').eq('id',6).maybeSingle();PAPER_HISTORY=phRow&&phRow.content?JSON.parse(phRow.content):[];}catch(e){PAPER_HISTORY=[];}
   if(!Array.isArray(PAPER_HISTORY))PAPER_HISTORY=[];
 }
 async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
@@ -2065,9 +2066,9 @@ async function _saveExamPdfsMap(){
   try{await sb.from('syllabus_doc').upsert({id:4,content:JSON.stringify(EXAM_PDFS)});}
   catch(e){console.error('儲存原稿對應表失敗',e);alert('原稿對應表儲存失敗：'+(e.message||e));}
 }
-/* ===== 產生過的考卷紀錄（過濾試卷用）：存 syllabus_doc id=5，保留最近 20 份 ===== */
+/* ===== 產生過的考卷紀錄（過濾試卷用）：存 syllabus_doc id=6，保留最近 20 份（id=5 為管理員公告，不可共用） ===== */
 async function _savePaperHistory(){
-  try{await sb.from('syllabus_doc').upsert({id:5,content:JSON.stringify(PAPER_HISTORY.slice(0,20))});}
+  try{await sb.from('syllabus_doc').upsert({id:6,content:JSON.stringify(PAPER_HISTORY.slice(0,20))});}
   catch(e){console.error('儲存考卷紀錄失敗',e);}
 }
 function _modeOf(arr){const m={};let best='',bn=0;arr.forEach(v=>{if(v==null||v==='')return;m[v]=(m[v]||0)+1;if(m[v]>bn){bn=m[v];best=v;}});return best;}
@@ -7764,7 +7765,30 @@ function normalizeWordLatex(text){
   s=s.replace(/\\+(?:mathrm|text)\s*\{\s*℃\s*\}/g,'℃');
   // 獨立的「數值＋℃」不需要 MathType；複合算式仍保留原本的 $...$。
   s=s.replace(/\$(\s*(?:[+−-]?\d+(?:\.\d+)?\s*)?℃\s*)\$/g,(_match,value)=>value.trim());
+  // 匯出規則：除了「分數／次方（上下標）／真正的數學指令」之外，不要用 LaTeX 包起來。
+  // 單純的數字、單位、可直接打出來的文字，一律還原成純文字，不丟給 MathType。
+  s=deLatexSimple(s);
   return s;
+}
+// 把「其實不需要 MathType」的 $...$ 還原成純文字；只有真正要排版的（分數、上下標、根號、
+// 希臘字母、特殊數學指令）才保留 $...$ 交給 MathType。單位（公尺/m/g…）與一般數字都純文字輸出。
+function deLatexSimple(text){
+  return String(text==null?'':text).replace(/\$([^$]+)\$/g,(m,inner)=>{
+    let t=inner;
+    // 先把「可直接打成純文字」的指令轉掉
+    t=t.replace(/\\(?:text|mathrm|mathit|mathbf|mathsf|operatorname)\s*\{([^{}]*)\}/g,'$1')
+       .replace(/\\(?:,|;|:|!|quad|qquad| )/g,' ')
+       .replace(/\\%/g,'%').replace(/\\#/g,'#').replace(/\\&/g,'&').replace(/\\_/g,'_')
+       .replace(/\\degree/g,'°')
+       .replace(/\\times(?![a-zA-Z])/g,'×').replace(/\\div(?![a-zA-Z])/g,'÷')
+       .replace(/\\cdot(?![a-zA-Z])/g,'·').replace(/\\pm(?![a-zA-Z])/g,'±')
+       .replace(/\\sim(?![a-zA-Z])/g,'～').replace(/\\approx(?![a-zA-Z])/g,'≈')
+       .replace(/~/g,' ');
+    // 仍含真正需要排版的東西（分數/根號/上下標/其他 LaTeX 指令/大括號）→ 保留原樣交給 MathType
+    if(/\\[a-zA-Z]/.test(t)||/[\^_{}]/.test(t))return '$'+inner+'$';
+    // 其餘（純數字、單位、一般符號）→ 純文字輸出
+    return t.replace(/\s+/g,' ').trim();
+  });
 }
 function latexToPlain(t){
   if(!t)return '';
@@ -8576,7 +8600,11 @@ async function downloadWordViaTemplate(kind,opts){
         }
       }
       qno++;
-      items.push({no:qno,text:_tplQuestionText(it),imgs:await _tplResolveImgs(it.imgs),passage});
+      // 教用版：把答案填進題號後的括弧。數字/字母在範本 run 的 ascii 字型＝Times New Roman、sz=20（10pt），
+      // 純文字無底色無邊框。搭配下方 numbering 補丁（把清單格式的「(　　)」拿掉）避免雙重括弧。
+      let qText=_tplQuestionText(it);
+      if(opts.teacher)qText='('+(it.ans||'　')+')'+qText;
+      items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
     // 組卷精靈設定了配分時，把「/每題X分，共Y分」直接帶進標題（取代範本的手填 ＿＿ 佔位）。
@@ -8597,6 +8625,15 @@ async function downloadWordViaTemplate(kind,opts){
   }};
   const zip=new PizZip(buf);
   if(kind==='abk')patchAbkTemplateCode(zip,metadata.code);
+  if(opts.teacher){
+    // 教用版：題號清單格式原本是「%1.(　　)」，括弧是清單自動產生、填不進答案。
+    // 這裡把清單的括弧拿掉（改成「%1.」且不加 tab），答案改由題幹前綴「(X)」顯示，避免雙括弧與跳格。
+    const nf=zip.file('word/numbering.xml');
+    if(nf){
+      const patched=nf.asText().split('<w:lvlText w:val="%1.(　　)"/>').join('<w:suff w:val="nothing"/><w:lvlText w:val="%1."/>');
+      zip.file('word/numbering.xml',patched);
+    }
+  }
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
   const preSubject=(document.getElementById('pSubject').value||chapter.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科');
   doc.render({chapter,book:kind==='pre'?PAPER_BOOK_NAMES[Number(book)-1]:book,unit:metadata.chapterRange,ver:metadata.variant,sections,
@@ -8630,17 +8667,14 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(ansMode==='inline'){
-    // 題目卷＋紅字答案（不含詳解）：各種卷別都走簡潔題目卷版面，確保答案能以紅字顯示在每題。
-    await generateAndDownloadWord(title+'（含答案）',items,'inline',showMeta,showTag,showSource,hdr,showSourceFull);
-    return;
-  }
   if(['abk','pre','golden'].includes(paperKind)){
-    // ABK：題目卷以「範本填入」產生（頁首/浮水印/卷頭/字型＝範本本體）；解析卷維持詳解模板。
+    // ABK/課前考/黃金模擬：一律用「範本填入」產生（頁首/浮水印/卷頭/字型/兩欄＝範本本體，與預覽一致）。
+    // 教用版＝題目卷＋答案填在題號括弧中（10pt Times New Roman，無底色無邊框）；學用版＝空括弧題目卷。
     try{
       if(ansMode==='full'){await downloadSolutionWord();}
-      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{suffix:'（題目卷）'});await downloadSolutionWord();}
-      else{await downloadWordViaTemplate(paperKind);}
+      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{suffix:'（學用版）'});await downloadSolutionWord();}
+      else if(ansMode==='inline'){await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});}
+      else{await downloadWordViaTemplate(paperKind,{suffix:'（學用版）'});}
     }catch(e){alert('範本匯出未完成：'+e.message);}
     return;
   }
