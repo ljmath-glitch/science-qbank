@@ -2033,6 +2033,12 @@ async function load(){
   if(!Array.isArray(PAPER_HISTORY))PAPER_HISTORY=[];
 }
 async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
+// 全站「重新整理」鈕（refresh.js）會呼叫這支：就地重抓雲端題庫、保留目前的篩選與捲動位置，不整頁重載。
+window.qbankRefresh=async function(){
+  var y=window.scrollY||window.pageYOffset||0;
+  try{ await reloadCloud(); }
+  finally{ setTimeout(function(){window.scrollTo(0,y);},30); }
+};
 
 /* ===== 圖片上傳 Storage：base64 換成公開 URL（舊 data: 圖片原樣保留仍可顯示） ===== */
 function dataURLtoBlob(d){const [h,b]=d.split(',');const mime=(h.match(/:(.*?);/)||[])[1]||'image/jpeg';
@@ -8831,5 +8837,6 @@ async function downloadWordDoc(){
   <script src="mt-embed-client.js"></script>
   <script src="announce.js"></script>
   <script src="patchnotes.js" defer></script>
+  <script src="refresh.js" defer></script>
 </body>
 </html>
