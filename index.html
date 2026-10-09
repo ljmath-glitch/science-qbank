@@ -8623,7 +8623,8 @@ async function downloadWordViaTemplate(kind,opts){
       // 教用版：把答案填進題號後的括弧。括弧與題號標題括弧同為 10pt（同一 run 繼承），
       // 答案字母用 … 包起來，render 後在 document.xml 裡拆成獨立「紅色 run」。
       let qText=_tplQuestionText(it);
-      if(opts.teacher)qText='('+(it.ans||'　')+')'+qText;
+      // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
+      if(opts.teacher)qText='(　'+(it.ans||'　')+'　)'+qText;
       items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
