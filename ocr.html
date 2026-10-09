@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OCR 機器（實驗）｜茲茲文教</title>
+<style>
+  :root{--ink:#2d3038;--muted:#6e6f74;--paper:#f6f5f2;--card:#fff;--line:#e6e4de;--red:#850103;--red2:#5e0102;--green:#1f6f5c;--gold:#af9a6b;--ui:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;--shadow:0 2px 0 #eceae4,0 8px 24px -12px rgba(45,48,56,.16)}
+  *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--ui);font-weight:500;line-height:1.6}
+  header{padding:18px 28px;background:#fffefb;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  header h1{font-size:18px;font-weight:800;margin:0;flex:1}
+  .tag-exp{font-size:11px;font-weight:800;color:#fff;background:var(--gold);border-radius:20px;padding:2px 10px;letter-spacing:1px}
+  a.back{font-size:13px;color:var(--ink);text-decoration:none;border:1px solid #e4d8c6;border-radius:9px;padding:7px 13px;background:linear-gradient(180deg,#fff,#faf4ea);font-weight:600}
+  a.back:hover{color:var(--red);border-color:#c58f89}
+  main{max-width:940px;margin:auto;padding:26px 18px 70px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px}
+  .card h2{font-size:15px;font-weight:800;margin:0 0 4px}.card .desc{font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.7}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+  label.fld{font-size:12px;font-weight:700}
+  input[type=text],input[type=password],select,textarea{font-family:inherit;font-size:13px;color:var(--ink);padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--red)}
+  textarea{width:100%;min-height:220px;resize:vertical;font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.6}
+  .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #e4d8c6;border-radius:10px;padding:9px 16px;background:linear-gradient(180deg,#fff,#faf4ea);color:var(--ink);font:600 13px var(--ui);cursor:pointer;transition:.15s}
+  .btn:hover{border-color:#c58f89;color:var(--red);transform:translateY(-1px)}
+  .btn.primary{background:linear-gradient(180deg,#960205,#6d0002);border-color:#5c0102;color:#fff}
+  .btn.primary:hover{background:linear-gradient(180deg,#a70a0e,#7c0104);color:#fff}
+  .btn.green{background:linear-gradient(180deg,#268a72,#19624f);border-color:#164a3c;color:#fff}
+  .btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+  .drop{border:2px dashed #c8b89a;border-radius:11px;padding:20px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;background:#fff}
+  .drop.drag{border-color:var(--red);background:#fff6f2}
+  .status{font-size:12.5px;color:var(--muted);margin-top:8px;line-height:1.7;white-space:pre-wrap}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:12px}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfaf7}
+  .kpi .n{font-size:20px;font-weight:800;color:var(--red)}.kpi .l{font-size:11px;color:var(--muted);margin-top:2px}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 10px}
+  .pill.digital{background:#e7f4ee;color:#177052}.pill.scan{background:#fff2df;color:#96610a}
+  .note{font-size:12px;color:var(--muted);background:#fff9ec;border:1px solid #f0e2bf;border-radius:9px;padding:9px 12px;line-height:1.7}
+  @media(max-width:640px){header{padding:15px 16px}main{padding:18px 12px 50px}.card{padding:16px 15px}}
+</style>
+</head>
+<body>
+  <header>
+    <h1>OCR 機器</h1><span class="tag-exp">實驗 / 分支測試</span>
+    <a class="back" href="home.html">← 首頁</a>
+  </header>
+  <main>
+    <div class="card">
+      <h2>這是什麼</h2>
+      <div class="desc">把考卷 PDF 直接在站內用 <b>Gemini</b> 轉成題庫可匯入的「題目 CSV」，取代目前「複製指令→貼到外部 AI→貼回」的流程。<br>
+      <b>省 token 策略：</b>數位 PDF（選得到文字）會<b>先抽文字層（免費、不花 token）</b>只把文字送給 Gemini；只有掃描檔才退回較貴的「視覺 OCR」。轉檔規則直接沿用題庫首頁的正式指令，輸出格式與匯入相容。</div>
+      <div class="note">⚠️ 這是分支實驗頁，尚未串進正式流程。請用你的 Gemini API 金鑰在此測試效果與花費，確認可行再決定是否整併。金鑰只留在此分頁記憶體。</div>
+    </div>
+
+    <div class="card">
+      <h2>1 · 上傳考卷 PDF</h2>
+      <input id="pdfFile" type="file" accept=".pdf,application/pdf" style="display:none" onchange="onPdf(this.files[0])">
+      <div class="drop" id="drop" onclick="pdfFile.click()">點此選擇 PDF，或拖放到這裡<br><span style="font-size:12px">（數位或掃描皆可；掃描檔較耗 token）</span></div>
+      <div class="status" id="pdfStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>2 · 設定</h2>
+      <div class="row">
+        <label class="fld">Gemini 金鑰</label>
+        <input id="key" type="password" placeholder="AIza…" style="flex:1;min-width:220px" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="row">
+        <label class="fld">學制</label>
+        <select id="stage"><option value="jh">國中</option><option value="hs">高中</option></select>
+        <label class="fld" style="margin-left:8px">模型</label>
+        <select id="model">
+          <option value="gemini-2.5-flash-lite">2.5 Flash-Lite（最省）</option>
+          <option value="gemini-2.5-flash">2.5 Flash（較準）</option>
+        </select>
+        <label class="fld" style="margin-left:8px"><input type="checkbox" id="forceVision"> 強制用視覺（測掃描檔）</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>3 · 開始 OCR → CSV</h2>
+      <div class="desc">按下後：數位 PDF 走「抽文字層」最省；掃描 PDF 走「視覺 OCR」。完成後可直接帶去題庫匯入。</div>
+      <div class="row">
+        <button class="btn primary" id="runBtn" onclick="runOcr()" disabled>▶ 開始轉檔</button>
+        <button class="btn" onclick="copyCsv()">📋 複製 CSV</button>
+        <button class="btn green" onclick="toImport()">⬆ 帶去題庫匯入</button>
+      </div>
+      <div class="status" id="runStatus"></div>
+      <div class="kpis" id="kpis" style="display:none">
+        <div class="kpi"><div class="n" id="kPages">–</div><div class="l">頁數</div></div>
+        <div class="kpi"><div class="n" id="kMode">–</div><div class="l">處理方式</div></div>
+        <div class="kpi"><div class="n" id="kIn">–</div><div class="l">輸入 tokens</div></div>
+        <div class="kpi"><div class="n" id="kOut">–</div><div class="l">輸出 tokens</div></div>
+        <div class="kpi"><div class="n" id="kCost">–</div><div class="l">估算花費</div></div>
+      </div>
+      <textarea id="csv" placeholder="轉檔後的題目 CSV 會出現在這裡…" style="margin-top:12px"></textarea>
+    </div>
+  </main>
+
+  <iframe id="promptSrc" src="index.html" style="display:none"></iframe>
+  <script>
+    let PDF=null, PAGES=[], DIGITAL=false;
+    const $=id=>document.getElementById(id);
+    // 每 1M token 的粗估單價（USD）— 只做參考，實際以 Google 帳單為準
+    const PRICE={'gemini-2.5-flash-lite':{in:0.10,out:0.40},'gemini-2.5-flash':{in:0.30,out:2.50}};
+
+    ['dragover','dragleave','drop'].forEach(ev=>$('drop').addEventListener(ev,e=>{e.preventDefault();$('drop').classList.toggle('drag',ev==='dragover');if(ev==='drop')onPdf(e.dataTransfer.files[0]);}));
+
+    async function loadPdfJs(){if(window.pdfjsLib)return window.pdfjsLib;const lib=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';window.pdfjsLib=lib;return lib;}
+    async function waitBuilder(name){for(let i=0;i<50;i++){const fn=promptSrc.contentWindow&&promptSrc.contentWindow[name];if(typeof fn==='function')return fn;await new Promise(r=>setTimeout(r,150));}throw new Error('題庫轉檔指令尚未載入，請稍後再試。');}
+
+    async function onPdf(file){
+      if(!file||!/\.pdf$/i.test(file.name)){$('pdfStatus').textContent='請選擇 PDF 檔。';return;}
+      PDF=file;$('runBtn').disabled=true;$('pdfStatus').textContent='正在讀取 PDF、判斷是數位還是掃描檔…';
+      try{
+        const pdfjs=await loadPdfJs();
+        const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+        PAGES=[];let textChars=0;
+        for(let n=1;n<=doc.numPages;n++){
+          const page=await doc.getPage(n);
+          const tc=await page.getTextContent();
+          const text=tc.items.map(it=>it.str).join(' ').replace(/\s+/g,' ').trim();
+          textChars+=text.length;
+          PAGES.push({n,text,page});
+        }
+        DIGITAL=textChars>doc.numPages*80; // 平均每頁 >80 字視為數位 PDF
+        $('kPages').textContent=doc.numPages;
+        $('pdfStatus').innerHTML=`已載入 ${doc.numPages} 頁，總文字 ${textChars} 字。判斷為：`+
+          (DIGITAL?'<span class="pill digital">數位 PDF（可抽文字層，最省 token）</span>':'<span class="pill scan">掃描 PDF（需視覺 OCR，較耗 token）</span>');
+        $('runBtn').disabled=false;
+      }catch(e){console.error(e);$('pdfStatus').textContent='讀取失敗：'+(e.message||e);}
+    }
+
+    function estCost(model,inTok,outTok){const p=PRICE[model]||PRICE['gemini-2.5-flash-lite'];const usd=(inTok/1e6)*p.in+(outTok/1e6)*p.out;return usd<0.01?('約 US$'+usd.toFixed(4)):('約 US$'+usd.toFixed(3));}
+
+    async function callGemini(model,key,parts,maxOut){
+      const body={contents:[{parts}],generationConfig:{temperature:0,maxOutputTokens:maxOut||8192,thinkingConfig:{thinkingBudget:0}}};
+      const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
+      if(!res.ok)throw new Error('Gemini '+res.status+'：'+(await res.text()).slice(0,200));
+      const j=await res.json();
+      const txt=j.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';
+      const u=j.usageMetadata||{};
+      return {txt,inTok:u.promptTokenCount||0,outTok:u.candidatesTokenCount||0};
+    }
+
+    async function runOcr(){
+      const key=$('key').value.trim();if(!key){alert('請先輸入 Gemini 金鑰');return;}
+      if(!PDF){alert('請先上傳 PDF');return;}
+      const model=$('model').value, stage=$('stage').value, forceVision=$('forceVision').checked;
+      const btn=$('runBtn');btn.disabled=true;$('runStatus').textContent='正在準備轉檔指令…';
+      try{
+        const builder=await waitBuilder(stage==='hs'?'buildPromptHS':'buildPrompt');
+        const promptText=builder.call(promptSrc.contentWindow);
+        const useVision=forceVision||!DIGITAL;
+        let parts, modeLabel;
+        if(!useVision){
+          // 省 token：只送文字層
+          modeLabel='文字層';
+          const examText=PAGES.map(p=>`—— 第 ${p.n} 頁 ——\n${p.text}`).join('\n\n');
+          parts=[{text:promptText+'\n\n【以下是這份考卷的文字內容（依頁分隔）。請完全依上述規則，直接輸出可匯入的 CSV，不要多加說明或程式碼框】：\n\n'+examText}];
+        }else{
+          // 掃描檔：送降解析度影像
+          modeLabel='視覺 OCR';
+          $('runStatus').textContent='掃描檔：正在把每頁轉成影像（已壓縮以省 token）…';
+          const pdfjs=await loadPdfJs();
+          parts=[{text:promptText+'\n\n【以下是這份考卷的每頁掃描影像。請完全依上述規則，直接輸出可匯入的 CSV，不要多加說明或程式碼框】：'}];
+          for(const p of PAGES){
+            const vp=p.page.getViewport({scale:1.35});
+            const c=document.createElement('canvas');c.width=Math.ceil(vp.width);c.height=Math.ceil(vp.height);
+            await p.page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+            const data=c.toDataURL('image/jpeg',.6);
+            parts.push({inline_data:{mime_type:'image/jpeg',data:data.slice(data.indexOf(',')+1)}});
+          }
+        }
+        $('runStatus').textContent='正在呼叫 Gemini（'+model+'，thinkingBudget=0）轉成 CSV…';
+        const {txt,inTok,outTok}=await callGemini(model,key,parts);
+        const csv=txt.replace(/^```(?:csv)?\s*|\s*```$/g,'').trim();
+        $('csv').value=csv;
+        $('kpis').style.display='grid';
+        $('kMode').textContent=modeLabel;$('kIn').textContent=inTok.toLocaleString();$('kOut').textContent=outTok.toLocaleString();
+        $('kCost').textContent=estCost(model,inTok,outTok);
+        const lines=csv.split('\n').filter(x=>x.trim()).length;
+        $('runStatus').textContent=`完成：約 ${Math.max(0,lines-1)} 列題目。請檢查 CSV 是否正確，再「帶去題庫匯入」。（${modeLabel}｜輸入 ${inTok} / 輸出 ${outTok} tokens）`;
+      }catch(e){console.error(e);$('runStatus').textContent='轉檔失敗：'+(e.message||e);}
+      finally{btn.disabled=false;}
+    }
+
+    function copyCsv(){const v=$('csv').value;if(!v)return;navigator.clipboard.writeText(v).then(()=>$('runStatus').textContent='已複製 CSV。');}
+    function toImport(){const v=$('csv').value.trim();if(!v){alert('還沒有 CSV');return;}localStorage.setItem('qbank_handoff_questions',v);window.open('index.html?handoff=questions','_blank');}
+  </script>
+</body>
+</html>
