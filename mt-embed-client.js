@@ -16,12 +16,12 @@
   var TOOL_ORIGINS = [
     'https://tzutzu-course-system.vercel.app', // 正式站
     'http://localhost:8766',                   // 本機開發用
-    'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app',   // 數學工具整合分支的 Vercel 預覽（測試用）
   ];
-  // 暫時連數學工具預覽版：使用者已確認要讓題庫 main 先使用此網址。
-  // 工具正式站的 /mt-embed.html 部署後，才將此值改為空字串；不要提前切換到目前不存在的正式嵌入頁。
+  // 空字串＝用正式站（工具正式站已有 /mt-embed.html，2026-10-10 起）。
+  // ⚠️ 不要再指向 Vercel 預覽網址（…-git-…vercel.app）：預覽版會被 Vercel 的保留期限自動刪掉，
+  //   題庫就會出現「410 GONE / This deployment was removed」（2026-10-10 發生過）。
   // 要改連本機開發版時，把這裡改成 'http://localhost:8766'（必須在上面清單內）。
-  var TOOL_ORIGIN_OVERRIDE = 'https://tzutzu-course-system-git-claude-1b1d83-ljmath-glitchs-projects.vercel.app';
+  var TOOL_ORIGIN_OVERRIDE = '';
   var TOOL_ORIGIN = (TOOL_ORIGIN_OVERRIDE && TOOL_ORIGINS.indexOf(TOOL_ORIGIN_OVERRIDE) >= 0) ? TOOL_ORIGIN_OVERRIDE : TOOL_ORIGINS[0];
 
   var PROTO = 1;                              // 訊息格式版本
