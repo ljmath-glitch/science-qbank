@@ -5393,14 +5393,14 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
     const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
-    const imgs=(it.imgs||[]).map((im,i)=>templateLayout?paperTemplateImage(im):forPreview?imgHtmlPreview(im,'q',it.id,i):imgHtml(im)).join('');
+    const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i):templateLayout?paperTemplateImage(im):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
     if(paperSections.groupIds.has(gid)&&!shownPassages.has(gid)){
       shownPassages.add(gid);
       const ps=PASSAGES[gid];
       if(ps){
-        const pImgs=(ps.imgs||[]).map((im,i)=>templateLayout?paperTemplateImage(im):forPreview?imgHtmlPreview(im,'p',gid,i):imgHtml(im)).join('');
+        const pImgs=(ps.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'p',gid,i):templateLayout?paperTemplateImage(im):imgHtml(im)).join('');
         const r=groupRanges[gid];
         const rangeStr=r?(r.min===r.max?`第${r.min}題`:`${r.min}～${r.max}題`):'';
         const hdrLine=rangeStr?`<div style="margin-bottom:6px">閱讀下列敘述後，回答${rangeStr}</div>`:'';
