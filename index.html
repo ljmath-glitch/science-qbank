@@ -7835,9 +7835,9 @@ function _preOptionLayout(text,hasImg){
   const opts=[];const tail=[];
   for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
   if(opts.length<2)return text;
+  // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
   let perLine;
-  if(hasImg)perLine=1;
-  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
   if(perLine>opts.length)perLine=opts.length;
   const lines=[];
   for(let i=0;i<opts.length;i+=perLine)lines.push(opts.slice(i,i+perLine).join(PRE_OPT_TAB));
@@ -7856,9 +7856,9 @@ function _prePackPreviewHtml(raw,hasImg){
   const opts=[];const tail=[];
   for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
   if(opts.length<2)return fmt(text);
+  // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
   let perLine;
-  if(hasImg)perLine=1;
-  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
   if(perLine>opts.length)perLine=opts.length;
   const colCls=perLine===4?'pre-col4':perLine===2?'pre-col2':'pre-col1';
   let html=fmt(stem);
