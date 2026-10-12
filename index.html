@@ -7825,8 +7825,11 @@ function deLatexSimple(text){
     return t.replace(/\s+/g,' ').trim();
   });
 }
-// 課前考（單欄）選項排版：依最長選項字數決定一行放幾個；該題有圖一律一行一個。
+// 課前考（單欄）選項排版：依最長選項字數決定一行放幾個。
+// 欄數哨兵讓 render 後能逐題設定真正的 Word 定位點；不能只改範本的共用段落，
+// 因為 docxtemplater 會把題目段落複製成各自帶有 pPr/tabs 的獨立段落。
 const PRE_OPT_TAB=''; // 選項間 tab 佔位，render 後換成 <w:tab/>
+const PRE_OPT_COL_OPEN='',PRE_OPT_COL_CLOSE='';
 function _preOptLen(s){let n=0;for(const ch of String(s)){n+=(ch.codePointAt(0)>0x2e80?1:0.5);}return n;}
 function _preOptionLayout(text,hasImg){
   const parts=String(text).split(/\n(?=\([A-Ea-e]\))/);
@@ -7838,10 +7841,66 @@ function _preOptionLayout(text,hasImg){
   // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
   let perLine;
   {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
-  if(perLine>opts.length)perLine=opts.length;
+  // 只有兩個選項時使用 2 欄；三個短選項仍沿用 4 欄的 25/50/75% 位置。
+  if(opts.length===2&&perLine===4)perLine=2;
   const lines=[];
   for(let i=0;i<opts.length;i+=perLine)lines.push(opts.slice(i,i+perLine).join(PRE_OPT_TAB));
-  return [stem].concat(lines,tail).join('\n');
+  const marker=perLine===2||perLine===4?PRE_OPT_COL_OPEN+perLine+PRE_OPT_COL_CLOSE:'';
+  return marker+[stem].concat(lines,tail).join('\n');
+}
+
+// render 後，依每題欄數哨兵逐題改該題段落的定位點。這一步必須在插入教用版答案框之前，
+// 否則答案框內的巢狀 <w:p> 會讓段落比對誤中。
+function _preApplyOptionTabs(xml){
+  const paragraphRe=/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
+  let out=String(xml||'').replace(paragraphRe,p=>{
+    const marker=p.match(/([24])/);
+    if(!marker)return p;
+    const cols=Number(marker[1]);
+    const positions=cols===2?[6565]:[3283,6565,9848];
+    const tabs='<w:tabs>'+positions.map(pos=>'<w:tab w:val="left" w:pos="'+pos+'"/>').join('')+'</w:tabs>';
+    let q=p.replace(marker[0],'');
+    if(!/<w:numId w:val="100"\/>/.test(q))throw new Error('課前考選項欄數記號未落在題目段落');
+    q=q.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/,(_m,inside)=>{
+      const next=/<w:tabs>[\s\S]*?<\/w:tabs>/.test(inside)
+        ?inside.replace(/<w:tabs>[\s\S]*?<\/w:tabs>/,tabs)
+        :inside+tabs;
+      return '<w:pPr>'+next+'</w:pPr>';
+    });
+    return q;
+  });
+  if(out.includes(PRE_OPT_COL_OPEN)||out.includes(PRE_OPT_COL_CLOSE))throw new Error('課前考選項欄數記號未完全清除');
+  return out.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
+}
+
+// image-module-free 只會產生 wp:inline。課前考的單題圖需與網頁預覽一致：靠右浮動、
+// 文字由左側繞排；題組文章的共用圖仍保留原樣。只處理 numId=100 的題目段落。
+function _preFloatQuestionImages(xml){
+  const paragraphRe=/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
+  return String(xml||'').replace(paragraphRe,p=>{
+    if(!/<w:numId w:val="100"\/>/.test(p)||!/<wp:inline\b/.test(p))return p;
+    let y=0,count=0;
+    let q=p.replace(/<wp:inline\b[^>]*>([\s\S]*?)<\/wp:inline>/g,(_m,inside)=>{
+      const extent=inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
+      if(!extent)throw new Error('課前考題內圖缺少尺寸資料');
+      const currentY=y;
+      y+=Number(extent[2])+90000;
+      count++;
+      const wrap='<wp:wrapSquare wrapText="left"/>';
+      const body=/<wp:effectExtent\b[^>]*\/>/.test(inside)
+        ?inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1'+wrap)
+        :inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1'+wrap);
+      return '<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
+        +'<wp:simplePos x="0" y="0"/>'
+        +'<wp:positionH relativeFrom="margin"><wp:align>right</wp:align></wp:positionH>'
+        +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'
+        +body+'</wp:anchor>';
+    });
+    if(!count)return p;
+    // inline 圖前原本有換行；浮動後移除該換行，並在段尾 clear，避免下一題繼續繞排。
+    q=q.replace(/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>(?=\s*<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:drawing>\s*<wp:anchor)/g,'');
+    return q.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
+  });
 }
 // 課前考預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
 // 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
@@ -7859,7 +7918,7 @@ function _prePackPreviewHtml(raw,hasImg){
   // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
   let perLine;
   {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
-  if(perLine>opts.length)perLine=opts.length;
+  if(opts.length===2&&perLine===4)perLine=2;
   const colCls=perLine===4?'pre-col4':perLine===2?'pre-col2':'pre-col1';
   let html=fmt(stem);
   opts.forEach((o,i)=>{
@@ -8660,7 +8719,9 @@ function _tplRedAnswers(xml){
 
 // 教用版「浮動答案文字方塊」：答案以可單獨移動/編輯的文字方塊疊在題號括弧「(　　)」上（無底色無邊框、紅字 10pt Times New Roman）。
 // 位置之後可依真 Word 微調 ANSBOX。
-const ANSBOX={offX:180000, offY:-12000, w:190000, h:200000, perDigit:108000}; // EMU
+// Word 的清單標籤採置中配置；進入兩位數題號後，括弧中心不會跟著多一位數右移。
+// perDigit 保持 0，避免第 10 題起答案框越過右括弧。
+const ANSBOX={offX:180000, offY:-12000, w:190000, h:200000, perDigit:0}; // EMU
 let _ansBoxId=990000001;
 function _answerBoxXml(ans, digits){
   const id=_ansBoxId++;
@@ -8762,16 +8823,6 @@ async function downloadWordViaTemplate(kind,opts){
   }};
   const zip=new PizZip(buf);
   if(kind==='abk')patchAbkTemplateCode(zip,metadata.code);
-  if(kind==='pre'){
-    // 課前考單欄：①選項段落 tab 停駐點加寬到 ~25/50/75%（原本 709/1843/2977/4111 太擠，4 個選項會擠在左側）
-    //            ②每題段落加 <w:keepLines/>（整題不跨頁；題組不同小題之間仍可分頁）
-    const df=zip.file('word/document.xml');
-    if(df){
-      zip.file('word/document.xml', df.asText()
-        .split('<w:tabs><w:tab w:val="left" w:pos="709"/><w:tab w:val="left" w:pos="1843"/><w:tab w:val="left" w:pos="2977"/><w:tab w:val="left" w:pos="4111"/></w:tabs>')
-        .join('<w:keepLines/><w:tabs><w:tab w:val="left" w:pos="3283"/><w:tab w:val="left" w:pos="6566"/><w:tab w:val="left" w:pos="9849"/></w:tabs>'));
-    }
-  }
   // 教用版：保留清單原本「(　　)」括弧（學用版/教用版版面一致），答案改用浮動文字方塊疊在括弧上（_tplAnswerBoxes）。
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
   const preSubject=(document.getElementById('pSubject').value||chapter.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科');
@@ -8787,10 +8838,14 @@ async function downloadWordViaTemplate(kind,opts){
     if(boxCount!==expected)throw new Error('題組文字方塊數量與題組文章不一致');
     // 配分已填進標題時，移除範本大題標題後方「  /每題＿＿分，共＿＿分」手填佔位（避免與配分重複）。
     let xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
+    // 課前考：先逐題設定 2/4 欄定位點，再把題內 inline 圖改成右浮動文繞圖。
+    // 兩步都要在答案框插入前完成，避免答案框內的巢狀段落干擾題目段落比對。
+    if(kind==='pre'){
+      xml2=_preApplyOptionTabs(xml2);
+      xml2=_preFloatQuestionImages(xml2);
+    }
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
-    // 課前考選項排版：把選項間的 tab 佔位換成真正的 <w:tab/>（對齊到加寬後的 25/50/75% 停駐點）。
-    if(kind==='pre')xml2=xml2.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
     renderedZip.file('word/document.xml',xml2);
   }
   const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
