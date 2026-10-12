@@ -8610,6 +8610,40 @@ function _tplRedAnswers(xml){
   // 保險：清掉任何沒配對到的殘留標記
   return out.split('').join('').split('').join('');
 }
+
+// 教用版「浮動答案文字方塊」：答案以可單獨移動/編輯的文字方塊疊在題號括弧「(　　)」上（無底色無邊框、紅字 10pt Times New Roman）。
+// 位置之後可依真 Word 微調 ANSBOX。
+const ANSBOX={offX:180000, offY:-12000, w:190000, h:200000, perDigit:108000}; // EMU
+let _ansBoxId=990000001;
+function _answerBoxXml(ans, digits){
+  const id=_ansBoxId++;
+  const offx=ANSBOX.offX + Math.max(0,(digits||1)-1)*ANSBOX.perDigit;
+  const a=String(ans==null?'':ans).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return '<w:r><w:rPr><w:noProof/></w:rPr><w:drawing>'
+   +'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251680000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
+   +'<wp:simplePos x="0" y="0"/>'
+   +'<wp:positionH relativeFrom="column"><wp:posOffset>'+offx+'</wp:posOffset></wp:positionH>'
+   +'<wp:positionV relativeFrom="line"><wp:posOffset>'+ANSBOX.offY+'</wp:posOffset></wp:positionV>'
+   +'<wp:extent cx="'+ANSBOX.w+'" cy="'+ANSBOX.h+'"/>'
+   +'<wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
+   +'<wp:docPr id="'+id+'" name="ans'+id+'"/><wp:cNvGraphicFramePr/>'
+   +'<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">'
+   +'<a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">'
+   +'<wps:wsp><wps:cNvSpPr txBox="1"/>'
+   +'<wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+ANSBOX.w+'" cy="'+ANSBOX.h+'"/></a:xfrm>'
+   +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr>'
+   +'<wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>'
+   +'<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:color w:val="C00000"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">'+a+'</w:t></w:r>'
+   +'</w:p></w:txbxContent></wps:txbx>'
+   +'<wps:bodyPr rot="0" spcFirstLastPara="0" vertOverflow="overflow" horzOverflow="overflow" vert="horz" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="ctr" anchorCtr="1"><a:noAutofit/></wps:bodyPr>'
+   +'</wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>';
+}
+function _tplAnswerBoxes(xml){
+  const re=/(<w:r\b[^>]*>)(<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*?<\/w:rPr>)?(<w:t\b[^>]*>)\uE013([^<\uE013\uE014]*)\uE014/g;
+  let n=0;
+  let out=xml.replace(re,(m,rOpen,rPr,tOpen,ans)=>{ n++; return _answerBoxXml(ans, (''+n).length)+rOpen+(rPr||'')+tOpen; });
+  return out.split('\uE013').join('').split('\uE014').join('');
+}
 async function downloadWordViaTemplate(kind,opts){
   opts=opts||{};
   await _ensureDocxTemplater();
@@ -8659,7 +8693,7 @@ async function downloadWordViaTemplate(kind,opts){
       // 課前考單欄：依選項字數自動排 1/2/4 個一行（該題有圖一律一行一個）。
       if(kind==='pre')qText=_preOptionLayout(qText,(it.imgs||[]).some(im=>im&&im.src));
       // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
-      if(opts.teacher)qText='(　'+(it.ans||'　')+'　)'+qText;
+      if(opts.teacher)qText=''+(it.ans||'')+''+qText;
       items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
@@ -8691,15 +8725,7 @@ async function downloadWordViaTemplate(kind,opts){
         .join('<w:keepLines/><w:tabs><w:tab w:val="left" w:pos="3283"/><w:tab w:val="left" w:pos="6566"/><w:tab w:val="left" w:pos="9849"/></w:tabs>'));
     }
   }
-  if(opts.teacher){
-    // 教用版：題號清單格式原本是「%1.(　　)」，括弧是清單自動產生、填不進答案。
-    // 這裡把清單的括弧拿掉（改成「%1.」且不加 tab），答案改由題幹前綴「(X)」顯示，避免雙括弧與跳格。
-    const nf=zip.file('word/numbering.xml');
-    if(nf){
-      const patched=nf.asText().split('<w:lvlText w:val="%1.(　　)"/>').join('<w:suff w:val="nothing"/><w:lvlText w:val="%1."/>');
-      zip.file('word/numbering.xml',patched);
-    }
-  }
+  // 教用版：保留清單原本「(　　)」括弧（學用版/教用版版面一致），答案改用浮動文字方塊疊在括弧上（_tplAnswerBoxes）。
   const doc=new Docxtemplater(zip,{modules:ImageModule?[new ImageModule(imageOpts)]:[],paragraphLoop:true,linebreaks:true});
   const preSubject=(document.getElementById('pSubject').value||chapter.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科');
   doc.render({chapter,book:kind==='pre'?PAPER_BOOK_NAMES[Number(book)-1]:book,unit:metadata.chapterRange,ver:metadata.variant,sections,
@@ -8715,7 +8741,7 @@ async function downloadWordViaTemplate(kind,opts){
     // 配分已填進標題時，移除範本大題標題後方「  /每題＿＿分，共＿＿分」手填佔位（避免與配分重複）。
     let xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
-    if(opts.teacher)xml2=_tplRedAnswers(xml2);
+    if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     // 課前考選項排版：把選項間的 tab 佔位換成真正的 <w:tab/>（對齊到加寬後的 25/50/75% 停駐點）。
     if(kind==='pre')xml2=xml2.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
     renderedZip.file('word/document.xml',xml2);
