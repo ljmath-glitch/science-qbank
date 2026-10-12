@@ -73,10 +73,10 @@
   }
 
   // ====== 畫面：iframe 視窗（dialog，才能蓋在其他已開啟的 dialog 上面） ======
-  var CSS = '#mtEmbedDlg{padding:0;border:0;border-radius:12px;width:min(1280px,96vw);height:min(880px,92vh);max-width:96vw;max-height:92vh;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35)}'
-    + '#mtEmbedDlg::backdrop{background:rgba(20,20,20,.45)}'
+  var CSS = '#mtEmbedDlg{padding:0;border:0;border-radius:12px;width:min(1280px,96vw);height:min(880px,92vh);max-width:96vw;max-height:92vh;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35);resize:both}'
+    + '#mtEmbedDlg::backdrop{background:rgba(20,20,20,.12)}' /* 淡背景：移開視窗時看得到後面的題目 */
     + '#mtEmbedDlg .mt-wrap{display:flex;flex-direction:column;height:100%}'
-    + '#mtEmbedDlg .mt-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#850103;color:#fff;font-size:14px;font-family:inherit}'
+    + '#mtEmbedDlg .mt-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#850103;color:#fff;font-size:14px;font-family:inherit;cursor:move;user-select:none}'
     + '#mtEmbedDlg .mt-head b{flex:1}'
     + '#mtEmbedDlg .mt-head button{font:inherit;font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;cursor:pointer}'
     + '#mtEmbedDlg .mt-head button:hover{background:rgba(255,255,255,.15)}'
@@ -99,7 +99,40 @@
     d.addEventListener('cancel', function (e) { e.preventDefault(); if (S) finish({ status: 'cancel', reason: 'user' }); });
     d.querySelector('#mtEmbedCloseBtn').onclick = function () { if (S) finish({ status: 'cancel', reason: 'user' }); };
     d.querySelector('#mtEmbedPopupBtn').onclick = function () { if (S) switchToPopup(); };
+    makeDraggable(d);
     return d;
+  }
+
+  // 讓視窗可用標題列拖曳移動（不遮住題目）；拖曳時 iframe 蓋一層透明罩避免吃掉滑鼠事件
+  function makeDraggable(d) {
+    var head = d.querySelector('.mt-head');
+    var drag = null, shield = null;
+    head.addEventListener('mousedown', function (e) {
+      if (e.target.closest('button')) return;      // 點標題列的按鈕不觸發拖曳
+      var r = d.getBoundingClientRect();
+      d.style.position = 'fixed'; d.style.margin = '0';
+      d.style.left = r.left + 'px'; d.style.top = r.top + 'px';
+      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
+      // 透明罩：拖過 iframe 時滑鼠事件才不會被 iframe 吃掉
+      shield = document.createElement('div');
+      shield.style.cssText = 'position:fixed;inset:0;z-index:2147483647;cursor:move';
+      document.body.appendChild(shield);
+      e.preventDefault();
+      document.addEventListener('mousemove', mv);
+      document.addEventListener('mouseup', up);
+    });
+    function mv(e) {
+      if (!drag) return;
+      var x = Math.max(0, Math.min(window.innerWidth - 80, e.clientX - drag.dx));
+      var y = Math.max(0, Math.min(window.innerHeight - 30, e.clientY - drag.dy));
+      d.style.left = x + 'px'; d.style.top = y + 'px';
+    }
+    function up() {
+      drag = null;
+      if (shield) { try { shield.remove(); } catch (e) {} shield = null; }
+      document.removeEventListener('mousemove', mv);
+      document.removeEventListener('mouseup', up);
+    }
   }
 
   // ====== 工作階段 ======
@@ -213,6 +246,8 @@
       S = { mode: mode, rid: newRid(), initData: init, initSent: false, resolve: resolve, win: null, frame: null, popup: null };
       document.getElementById('mtEmbedTitle').textContent = (mode === 'eq' ? (init.latex ? '編輯數學式' : '插入數學式') : (init.config ? '編輯繪圖' : '插入繪圖')) + '｜茲茲數學工具';
       document.getElementById('mtEmbedPopupBtn').style.display = '';
+      // 每次開啟都回到置中（清掉上次拖曳留下的定位；保留使用者調過的大小）
+      d.style.position = ''; d.style.left = ''; d.style.top = ''; d.style.margin = '';
       window.addEventListener('message', onMessage);
       d.showModal();
       mountIframe();
