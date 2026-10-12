@@ -7778,23 +7778,50 @@ function normalizeWordLatex(text){
 }
 // 把「其實不需要 MathType」的 $...$ 還原成純文字；只有真正要排版的（分數、上下標、根號、
 // 希臘字母、特殊數學指令）才保留 $...$ 交給 MathType。單位（公尺/m/g…）與一般數字都純文字輸出。
+const _DLS_SUP={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','n':'ⁿ'};
+const _DLS_SUB={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋'};
+function _dlsMap(g,map){let o='';for(const c of String(g)){if(!map[c])return null;o+=map[c];}return o;}
 function deLatexSimple(text){
   return String(text==null?'':text).replace(/\$([^$]+)\$/g,(m,inner)=>{
     let t=inner;
     // 先把「可直接打成純文字」的指令轉掉
     t=t.replace(/\\(?:text|mathrm|mathit|mathbf|mathsf|operatorname)\s*\{([^{}]*)\}/g,'$1')
        .replace(/\\(?:,|;|:|!|quad|qquad| )/g,' ')
-       .replace(/\\%/g,'%').replace(/\\#/g,'#').replace(/\\&/g,'&').replace(/\\_/g,'_')
+       .replace(/\\%/g,'%').replace(/\\#/g,'#').replace(/\\&/g,'&')
        .replace(/\\degree/g,'°')
        .replace(/\\times(?![a-zA-Z])/g,'×').replace(/\\div(?![a-zA-Z])/g,'÷')
        .replace(/\\cdot(?![a-zA-Z])/g,'·').replace(/\\pm(?![a-zA-Z])/g,'±')
        .replace(/\\sim(?![a-zA-Z])/g,'～').replace(/\\approx(?![a-zA-Z])/g,'≈')
        .replace(/~/g,' ');
-    // 仍含真正需要排版的東西（分數/根號/上下標/其他 LaTeX 指令/大括號）→ 保留原樣交給 MathType
+    // 「簡單上下標」（純數字／正負號／n，常見於單位 cm³、化學式 CO₂、科記 10⁻³）→ 轉 unicode 純文字；
+    // 複雜的（含變數、運算式）保留，交給 MathType。
+    t=t.replace(/\^\{([^{}]*)\}/g,(mm,g)=>{const u=_dlsMap(g,_DLS_SUP);return u!=null?u:mm;})
+       .replace(/\^(\S)/g,(mm,c)=>_DLS_SUP[c]||mm)
+       .replace(/_\{([^{}]*)\}/g,(mm,g)=>{const u=_dlsMap(g,_DLS_SUB);return u!=null?u:mm;})
+       .replace(/_(\S)/g,(mm,c)=>_DLS_SUB[c]||mm);
+    // 仍含真正需要排版的東西（分數 \frac、根號 \sqrt、其他 LaTeX 指令、剩餘上下標或大括號）→ 保留交給 MathType
     if(/\\[a-zA-Z]/.test(t)||/[\^_{}]/.test(t))return '$'+inner+'$';
     // 其餘（純數字、單位、一般符號）→ 純文字輸出
     return t.replace(/\s+/g,' ').trim();
   });
+}
+// 課前考（單欄）選項排版：依最長選項字數決定一行放幾個；該題有圖一律一行一個。
+const PRE_OPT_TAB=''; // 選項間 tab 佔位，render 後換成 <w:tab/>
+function _preOptLen(s){let n=0;for(const ch of String(s)){n+=(ch.codePointAt(0)>0x2e80?1:0.5);}return n;}
+function _preOptionLayout(text,hasImg){
+  const parts=String(text).split(/\n(?=\([A-Ea-e]\))/);
+  if(parts.length<3)return text;
+  const stem=parts[0];const rest=parts.slice(1);
+  const opts=[];const tail=[];
+  for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
+  if(opts.length<2)return text;
+  let perLine;
+  if(hasImg)perLine=1;
+  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  if(perLine>opts.length)perLine=opts.length;
+  const lines=[];
+  for(let i=0;i<opts.length;i+=perLine)lines.push(opts.slice(i,i+perLine).join(PRE_OPT_TAB));
+  return [stem].concat(lines,tail).join('\n');
 }
 function latexToPlain(t){
   if(!t)return '';
@@ -8629,6 +8656,8 @@ async function downloadWordViaTemplate(kind,opts){
       // 教用版：把答案填進題號後的括弧。括弧與題號標題括弧同為 10pt（同一 run 繼承），
       // 答案字母用 … 包起來，render 後在 document.xml 裡拆成獨立「紅色 run」。
       let qText=_tplQuestionText(it);
+      // 課前考單欄：依選項字數自動排 1/2/4 個一行（該題有圖一律一行一個）。
+      if(kind==='pre')qText=_preOptionLayout(qText,(it.imgs||[]).some(im=>im&&im.src));
       // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
       if(opts.teacher)qText='(　'+(it.ans||'　')+'　)'+qText;
       items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
@@ -8652,6 +8681,16 @@ async function downloadWordViaTemplate(kind,opts){
   }};
   const zip=new PizZip(buf);
   if(kind==='abk')patchAbkTemplateCode(zip,metadata.code);
+  if(kind==='pre'){
+    // 課前考單欄：①選項段落 tab 停駐點加寬到 ~25/50/75%（原本 709/1843/2977/4111 太擠，4 個選項會擠在左側）
+    //            ②每題段落加 <w:keepLines/>（整題不跨頁；題組不同小題之間仍可分頁）
+    const df=zip.file('word/document.xml');
+    if(df){
+      zip.file('word/document.xml', df.asText()
+        .split('<w:tabs><w:tab w:val="left" w:pos="709"/><w:tab w:val="left" w:pos="1843"/><w:tab w:val="left" w:pos="2977"/><w:tab w:val="left" w:pos="4111"/></w:tabs>')
+        .join('<w:keepLines/><w:tabs><w:tab w:val="left" w:pos="3283"/><w:tab w:val="left" w:pos="6566"/><w:tab w:val="left" w:pos="9849"/></w:tabs>'));
+    }
+  }
   if(opts.teacher){
     // 教用版：題號清單格式原本是「%1.(　　)」，括弧是清單自動產生、填不進答案。
     // 這裡把清單的括弧拿掉（改成「%1.」且不加 tab），答案改由題幹前綴「(X)」顯示，避免雙括弧與跳格。
@@ -8677,6 +8716,8 @@ async function downloadWordViaTemplate(kind,opts){
     let xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
     if(opts.teacher)xml2=_tplRedAnswers(xml2);
+    // 課前考選項排版：把選項間的 tab 佔位換成真正的 <w:tab/>（對齊到加寬後的 25/50/75% 停駐點）。
+    if(kind==='pre')xml2=xml2.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
     renderedZip.file('word/document.xml',xml2);
   }
   const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
