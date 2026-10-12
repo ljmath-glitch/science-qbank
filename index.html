@@ -325,6 +325,10 @@
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
   .pvq-answer-slot{display:inline-block;min-width:1.8em;text-align:center;white-space:nowrap;color:#c0392b;font-weight:700}
+  /* 課前考預覽：選項打包成 1/2/4 欄對齊（.pre-ojoin 是同列選項間的隱藏換行，僅供回存用） */
+  .pre-opt{display:inline-block;vertical-align:top;box-sizing:border-box;padding-right:8px}
+  .pre-col4{width:25%}.pre-col2{width:50%}.pre-col1{width:100%}
+  .pre-ojoin{display:none}
   .pv-sheet .q{position:relative}
   .pvq-ctrl{position:absolute;left:-34px;top:0;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s}
   .pv-sheet .q:hover .pvq-ctrl{opacity:1}
@@ -5429,7 +5433,8 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     if(it.ans)answers.push(`${qNum}.${esc(it.ans)}`);
     const rawQuestion=templateLayout?(it.q||it.summary||'').replace(/(\([A-E]\))[ \t　]+/g,'$1'):(it.q||it.summary||'');
     const plainQuestion=esc(fixLatex(rawQuestion)).replace(/\n/g,'<br>');
-    const qTextInner=applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
+    const packPre=forPreview&&paperKind==='pre';
+    const qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src)):applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
@@ -7822,6 +7827,33 @@ function _preOptionLayout(text,hasImg){
   const lines=[];
   for(let i=0;i<opts.length;i+=perLine)lines.push(opts.slice(i,i+perLine).join(PRE_OPT_TAB));
   return [stem].concat(lines,tail).join('\n');
+}
+// 課前考預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
+// 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
+// 為每個 <br> 產生 \n，所以回存時 it.q 與原本「一行一選項」完全相同、不會被污染。
+// 使用者一點擊編輯，_pvTextFocus 又會把內容換回原始 <br> 版本，編輯體驗不受影響。
+function _prePackPreviewHtml(raw,hasImg){
+  const fmt=s=>applyRichMarks(esc(fixLatex(String(s||''))).replace(/\n/g,'<br>'));
+  const text=String(raw||'');
+  const parts=text.split(/\n(?=\([A-Ea-e]\))/);
+  if(parts.length<3)return fmt(text);
+  const stem=parts[0];const rest=parts.slice(1);
+  const opts=[];const tail=[];
+  for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
+  if(opts.length<2)return fmt(text);
+  let perLine;
+  if(hasImg)perLine=1;
+  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  if(perLine>opts.length)perLine=opts.length;
+  const colCls=perLine===4?'pre-col4':perLine===2?'pre-col2':'pre-col1';
+  let html=fmt(stem);
+  opts.forEach((o,i)=>{
+    const joinPrev=i>0&&(i%perLine!==0); // 與前一個選項同列→隱藏這個分隔 <br>
+    html+='<br'+(joinPrev?' class="pre-ojoin"':'')+'>';
+    html+='<span class="pre-opt '+colCls+'">'+fmt(o)+'</span>';
+  });
+  tail.forEach(tl=>{html+='<br>'+fmt(tl);});
+  return html;
 }
 function latexToPlain(t){
   if(!t)return '';
