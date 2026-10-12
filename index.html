@@ -7838,9 +7838,10 @@ function _preOptionLayout(text,hasImg){
   const opts=[];const tail=[];
   for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
   if(opts.length<2)return text;
-  // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
+  // 有圖時選項固定一行一個，避免右側浮動圖片壓縮選項欄寬；無圖才依字數打包。
   let perLine;
-  {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  if(hasImg)perLine=1;
+  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
   // 只有兩個選項時使用 2 欄；三個短選項仍沿用 4 欄的 25/50/75% 位置。
   if(opts.length===2&&perLine===4)perLine=2;
   const lines=[];
@@ -7857,7 +7858,9 @@ function _preApplyOptionTabs(xml){
     const marker=p.match(/([24])/);
     if(!marker)return p;
     const cols=Number(marker[1]);
-    const positions=cols===2?[6565]:[3283,6565,9848];
+    // 題目續行（也就是第一個選項）從 567 twips 開始，不是從版心 0 開始。
+    // 因此要在 567～13130 的實際選項區域內均分，才能讓各欄等距且跨題對齊。
+    const positions=cols===2?[6849]:[3708,6849,9989];
     const tabs='<w:tabs>'+positions.map(pos=>'<w:tab w:val="left" w:pos="'+pos+'"/>').join('')+'</w:tabs>';
     let q=p.replace(marker[0],'');
     if(!/<w:numId w:val="100"\/>/.test(q))throw new Error('課前考選項欄數記號未落在題目段落');
@@ -7873,34 +7876,47 @@ function _preApplyOptionTabs(xml){
   return out.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
 }
 
-// image-module-free 只會產生 wp:inline。課前考的單題圖需與網頁預覽一致：靠右浮動、
-// 文字由左側繞排；題組文章的共用圖仍保留原樣。只處理 numId=100 的題目段落。
+// image-module-free 只會產生 wp:inline。課前考輸出的題目圖與題組共用圖都要靠右浮動、
+// 文字由左側繞排。範本本身的 Group Passage 外框也是 wp:inline，必須排除，不能誤轉。
 function _preFloatQuestionImages(xml){
-  const paragraphRe=/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
-  return String(xml||'').replace(paragraphRe,p=>{
-    if(!/<w:numId w:val="100"\/>/.test(p)||!/<wp:inline\b/.test(p))return p;
-    let y=0,count=0;
-    let q=p.replace(/<wp:inline\b[^>]*>([\s\S]*?)<\/wp:inline>/g,(_m,inside)=>{
-      const extent=inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
-      if(!extent)throw new Error('課前考題內圖缺少尺寸資料');
-      const currentY=y;
-      y+=Number(extent[2])+90000;
-      count++;
+  let out=String(xml||'');
+  const paragraphs=[];const pStack=[];const inlineStack=[];
+  const tagRe=/<w:p\b[^>]*>|<\/w:p>|<wp:inline\b[^>]*>|<\/wp:inline>/g;
+  let m;
+  while((m=tagRe.exec(out))){
+    if(m[0].startsWith('<w:p')){const p={start:m.index,end:0,images:[]};pStack.push(p);paragraphs.push(p);}
+    else if(m[0]==='</w:p>'){const p=pStack.pop();if(p)p.end=tagRe.lastIndex;}
+    else if(m[0].startsWith('<wp:inline'))inlineStack.push({start:m.index,bodyStart:tagRe.lastIndex,p:pStack[pStack.length-1]});
+    else{
+      const im=inlineStack.pop();if(!im||!im.p)continue;
+      const inside=out.slice(im.bodyStart,m.index);
+      // 這是題組文字方塊本體，不是使用者插入的圖片。
+      if(!/<wp:docPr\b[^>]*\bname="Group Passage"/.test(inside))im.p.images.push({...im,end:tagRe.lastIndex,inside});
+    }
+  }
+  // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
+  for(const p of paragraphs.filter(x=>x.end&&x.images.length).sort((a,b)=>b.start-a.start)){
+    let para=out.slice(p.start,p.end),y=0;
+    const replacements=p.images.sort((a,b)=>a.start-b.start).map(im=>{
+      const extent=im.inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
+      if(!extent)throw new Error('課前考輸出圖片缺少尺寸資料');
+      const currentY=y;y+=Number(extent[2])+90000;
       const wrap='<wp:wrapSquare wrapText="left"/>';
-      const body=/<wp:effectExtent\b[^>]*\/>/.test(inside)
-        ?inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1'+wrap)
-        :inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1'+wrap);
-      return '<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
-        +'<wp:simplePos x="0" y="0"/>'
-        +'<wp:positionH relativeFrom="margin"><wp:align>right</wp:align></wp:positionH>'
-        +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'
-        +body+'</wp:anchor>';
+      const body=/<wp:effectExtent\b[^>]*\/>/.test(im.inside)
+        ?im.inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1'+wrap)
+        :im.inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1'+wrap);
+      const anchor='<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
+        +'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="margin"><wp:align>right</wp:align></wp:positionH>'
+        +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'+body+'</wp:anchor>';
+      return {start:im.start-p.start,end:im.end-p.start,anchor};
     });
-    if(!count)return p;
-    // inline 圖前原本有換行；浮動後移除該換行，並在段尾 clear，避免下一題繼續繞排。
-    q=q.replace(/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>(?=\s*<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:drawing>\s*<wp:anchor)/g,'');
-    return q.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
-  });
+    for(const r of replacements.sort((a,b)=>b.start-a.start))para=para.slice(0,r.start)+r.anchor+para.slice(r.end);
+    // inline 圖前原本有換行；浮動後移除該換行，並在段尾 clear，避免下一段繼續繞排。
+    para=para.replace(/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>(?=\s*<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:drawing>\s*<wp:anchor)/g,'');
+    para=para.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
+    out=out.slice(0,p.start)+para+out.slice(p.end);
+  }
+  return out;
 }
 // 課前考預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
 // 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
@@ -7915,9 +7931,10 @@ function _prePackPreviewHtml(raw,hasImg){
   const opts=[];const tail=[];
   for(const p of rest){if(/^\s*\([A-Ea-e]\)/.test(p)&&tail.length===0)opts.push(p.trim());else tail.push(p);}
   if(opts.length<2)return fmt(text);
-  // 選項依「去掉 (A)(B) 標記後的字數」打包（短→4、中→2、長→1）；有圖也照長度排
+  // 有圖時選項固定一行一個；無圖才依「去掉 (A)(B)」後的字數打包。
   let perLine;
-  {const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
+  if(hasImg)perLine=1;
+  else{const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));perLine=maxLen<10?4:maxLen<25?2:1;}
   if(opts.length===2&&perLine===4)perLine=2;
   const colCls=perLine===4?'pre-col4':perLine===2?'pre-col2':'pre-col1';
   let html=fmt(stem);
