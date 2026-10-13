@@ -7876,37 +7876,67 @@ function _preApplyOptionTabs(xml){
   return out.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
 }
 
-// 每一道題目本身是一個 numId=100 的段落；將 keepLines 加在這個段落，Word 會把整題
-// 移到下一頁，而不是把題幹／選項拆開。題組的每個小題各有自己的 numId=100，因此小題間
-// 仍可自然換頁；超過一頁的單一長題則仍由 Word 依其正常例外規則分割。
-function _preKeepQuestionTogether(xml){
-  const paragraphRe=/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
-  return String(xml||'').replace(paragraphRe,p=>{
-    if(!/<w:numId w:val="100"\/>/.test(p))return p;
-    return p.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/,(_m,inside)=>{
-      // 範本或日後版本若已含 keepLines，也要維持只有一個標記。
-      const next=inside.replace(/<w:keepLines\b[^>]*\/>/g,'')+'<w:keepLines/>';
-      return '<w:pPr>'+next+'</w:pPr>';
-    });
-  });
+// 回傳 Group Passage 外框 inline 的完整範圍。題組圖片所在的 txbxContent 是外框 inline
+// 的巢狀內容；Word 不支援在文字方塊內放 wp:anchor，因此後續兩個處理都必須略過此範圍。
+function _preGroupPassageInlineRanges(xml){
+  const source=String(xml||'');const all=[];const stack=[];
+  const tagRe=/<wp:inline\b[^>]*>|<\/wp:inline>/g;let m;
+  while((m=tagRe.exec(source))){
+    if(m[0].startsWith('<wp:inline'))stack.push({start:m.index,bodyStart:tagRe.lastIndex,parent:stack[stack.length-1]});
+    else{
+      const inline=stack.pop();if(!inline)continue;
+      inline.end=tagRe.lastIndex;
+      inline.isGroupPassage=/<wp:docPr\b[^>]*\bname="Group Passage"/.test(source.slice(inline.bodyStart,m.index));
+      all.push(inline);
+    }
+  }
+  return all.filter(inline=>inline.isGroupPassage);
 }
 
-// image-module-free 只會產生 wp:inline。課前考輸出的題目圖與題組共用圖都要靠右浮動、
-// 文字由左側繞排。範本本身的 Group Passage 外框也是 wp:inline，必須排除，不能誤轉。
+// 每一道題目本身是一個 numId=100 的段落；將 keepLines 加在這個段落，Word 會把整題
+// 移到下一頁，而不是把題幹／選項拆開。題組文字方塊內的巢狀段落不參與此處理，避免其
+// numId=100 誤被外層段落的正則比對到；題組的小題仍可自然換頁。
+function _preKeepQuestionTogether(xml){
+  let out=String(xml||'');const groupRanges=_preGroupPassageInlineRanges(out);
+  const paragraphs=[];const stack=[];const pPrStack=[];
+  const tagRe=/<w:p\b[^>]*>|<\/w:p>|<w:pPr\b[^>]*>|<\/w:pPr>|<w:numId\b[^>]*>/g;let m;
+  while((m=tagRe.exec(out))){
+    if(m[0].startsWith('<w:p ')||m[0]==='<w:p>')stack.push({start:m.index});
+    else if(m[0]==='</w:p>'){const p=stack.pop();if(p){p.end=tagRe.lastIndex;paragraphs.push(p);}}
+    else if(m[0].startsWith('<w:pPr'))pPrStack.push(stack[stack.length-1]);
+    else if(m[0]==='</w:pPr>')pPrStack.pop();
+    else if(/\bw:val="100"/.test(m[0])){const p=pPrStack[pPrStack.length-1];if(p)p.numId100=true;}
+  }
+  for(const p of paragraphs.sort((a,b)=>b.start-a.start)){
+    if(groupRanges.some(group=>p.start>=group.start&&p.end<=group.end))continue;
+    const para=out.slice(p.start,p.end);
+    if(!p.numId100)continue;
+    const next=para.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/,(_m,inside)=>{
+      const props=inside.replace(/<w:keepLines\b[^>]*\/>/g,'')+'<w:keepLines/>';
+      return '<w:pPr>'+props+'</w:pPr>';
+    });
+    out=out.slice(0,p.start)+next+out.slice(p.end);
+  }
+  return out;
+}
+
+// image-module-free 只會產生 wp:inline。課前考的單題圖要改成靠右浮動、文字由左側繞排；
+// 題組共用圖必須維持在 Group Passage 文字方塊內的 wp:inline，不能轉成 wp:anchor。
 function _preFloatQuestionImages(xml){
   let out=String(xml||'');
+  const groupRanges=_preGroupPassageInlineRanges(out);
   const paragraphs=[];const pStack=[];const inlineStack=[];
   const tagRe=/<w:p\b[^>]*>|<\/w:p>|<wp:inline\b[^>]*>|<\/wp:inline>/g;
   let m;
   while((m=tagRe.exec(out))){
-    if(m[0].startsWith('<w:p')){const p={start:m.index,end:0,images:[]};pStack.push(p);paragraphs.push(p);}
+    if(m[0].startsWith('<w:p ')||m[0]==='<w:p>'){const p={start:m.index,end:0,images:[]};pStack.push(p);paragraphs.push(p);}
     else if(m[0]==='</w:p>'){const p=pStack.pop();if(p)p.end=tagRe.lastIndex;}
     else if(m[0].startsWith('<wp:inline'))inlineStack.push({start:m.index,bodyStart:tagRe.lastIndex,p:pStack[pStack.length-1]});
     else{
       const im=inlineStack.pop();if(!im||!im.p)continue;
       const inside=out.slice(im.bodyStart,m.index);
-      // 這是題組文字方塊本體，不是使用者插入的圖片。
-      if(!/<wp:docPr\b[^>]*\bname="Group Passage"/.test(inside))im.p.images.push({...im,end:tagRe.lastIndex,inside});
+      // 外框本身及其 txbxContent 內的共用圖都必須維持 inline；Word 會忽略文字方塊內的 anchor。
+      if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end))im.p.images.push({...im,end:tagRe.lastIndex,inside});
     }
   }
   // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
@@ -8750,11 +8780,13 @@ function _tplRedAnswers(xml){
 }
 
 // 教用版「浮動答案文字方塊」：答案以可單獨移動/編輯的文字方塊疊在題號括弧「(　　)」上（無底色無邊框、紅字 10pt Times New Roman）。
-// numId=100 的題號標籤區從 142 到 567 twips，中心為 354.5 twips＝225108 EMU。
-// 文字方塊寬 190000 EMU，故左緣 130000 EMU 時其幾何中心為 225000 EMU（誤差 108 EMU）。
+// numId=100 的實際標籤是置中的「%1.(　　)」；定位基準取兩個全形空格（U+3000）之間的中心，
+// 不取整個題號標籤區中心。數字雖由一位變兩位，這兩個全形空格的寬度與中心不變。
+// 文字方塊寬 190000 EMU，左緣 93000 EMU 時幾何中心為 188000 EMU；相對上一版左移 37000 EMU，
+// 對應 Mac Word 170% 截圖中答案中心比括弧中心偏右約 5 px（約 55～60 twips）的量測。
 // 行高是 240 twips＝152400 EMU；高 200000 EMU 的文字方塊以 -24000 EMU 起算，中心為
-// 76000 EMU，和行中心 76200 EMU 相差 200 EMU。清單標籤採置中，故一、兩位數共用同一位置。
-const ANSBOX={offX:130000, offY:-24000, w:190000, h:200000, perDigit:0}; // EMU；1 inch = 914400
+// 76000 EMU，和行中心 76200 EMU 相差 200 EMU。固定全形空格區使一、兩位數共用同一位置。
+const ANSBOX={offX:93000, offY:-24000, w:190000, h:200000, perDigit:0}; // EMU；1 inch = 914400
 let _ansBoxId=990000001;
 function _answerBoxXml(ans, digits){
   const id=_ansBoxId++;
