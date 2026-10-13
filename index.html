@@ -2866,7 +2866,7 @@ function onEditImgDrop(e){
   e.preventDefault();e.currentTarget.classList.remove('drag-over');
   addImageFiles(e.dataTransfer.files);
 }
-async function pasteImage(e){if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
+async function pasteImage(e){if(_routeImagePaste(e))return;if(!editDlg.open)return;const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0){const f=it.getAsFile();const d=await fileToDataURL(f);const c=await compress(d,IMG_MAXW);const toP=_imgTargetIsPassage();if(toP){curPassageImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderPassageImgPrev();}else{curImgs.push({src:c,width:IMG_DEFAULT_W,align:'center'});renderImgPrev();}e.preventDefault()}}}
 function renderImgPrev(){eImgPrev.innerHTML=curImgs.map((im,i)=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
   <img src="${im.src}" style="width:${im.width}%;display:block;margin:${im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0'};cursor:pointer" onclick="openImgAttrDlg('q',${i})">
   <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:6px;font-family:inherit;font-size:12px">
@@ -2905,7 +2905,7 @@ function openImgEraser(scope,i){
     <div class="ie-stage" id="ieStage"><canvas id="ieCanvas"></canvas><div class="ie-cursor" id="ieCursor"></div><div class="ie-sel" id="ieSel"></div></div>
     <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px" id="ieModeHint">在圖上按住拖曳，把不要的東西塗成白色。游標圓圈就是筆刷實際大小。</div>
     <div style="display:none;gap:8px;margin-top:8px" id="ieSelActions"><button class="btn sm" onclick="_ieFillSelection()">⬜ 把框內塗白</button><button class="btn sm" onclick="_ieCropToSelection()">✂ 只保留框內（其餘裁掉）</button><button class="btn sm" onclick="_ieClearSelection()">✕ 取消框選</button></div>
-    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:12px"><button class="btn primary" onclick="_ieSave()">儲存</button><button class="btn" onclick="imgEraserDlg.close()">取消</button></div>`;
+    <div style="display:flex;gap:9px;justify-content:flex-end;margin-top:12px"><button class="btn" title="貼上重製好的圖，取代目前畫布（可復原；也可直接按 ⌘V／Ctrl+V）" onclick="pasteImgBtn('eraser')" style="margin-right:auto">📋 貼上換圖</button><button class="btn primary" onclick="_ieSave()">儲存</button><button class="btn" onclick="imgEraserDlg.close()">取消</button></div>`;
   if(!dlg.open)dlg.showModal();
   const img=new Image();if(/^https?:/i.test(it.src))img.crossOrigin='anonymous';
   img.onload=()=>{const c=document.getElementById('ieCanvas');if(!c)return;c.width=img.naturalWidth;c.height=img.naturalHeight;c.getContext('2d').drawImage(img,0,0);_bindImgEraser(c);};
@@ -3032,6 +3032,7 @@ function renderImgAttrDlg(){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
       ${_mtHas(im)?`<button class="btn" onclick="imgAttrDlg.close();mtEditFig('${scope}',${i})">📐 編輯繪圖</button>`:''}
       <button class="btn" onclick="openImgEraser('${scope}',${i})">🧽 橡皮擦／裁切</button>
+      <button class="btn" title="把重製好的圖複製後貼上，取代這張圖（也可直接按 ⌘V／Ctrl+V）" onclick="pasteImgBtn('attr')">📋 貼上換圖</button>
       <button class="btn" onclick="removeImgFromAttrDlg('${scope}',${i})">刪除</button>
       <button class="btn" onclick="imgAttrDlg.close()">關閉</button>
     </div>`;
@@ -3775,7 +3776,7 @@ function _getPreviewImg(type,id,idx){
   if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.imgs[idx]||null):null;}
   const ps=PASSAGES[id];return ps?(ps.imgs[idx]||null):null;
 }
-let _pvScrollRestoreSeq=0,_pvPasteTarget=null;
+let _pvScrollRestoreSeq=0;
 // 分頁會先清空 pvSheet 再量測重建；以可見題目作錨點，等 rAF／圖片載入後再還原，避免 scrollTop 被短暫高度夾到第一頁底部。
 function _pvKeepScroll(redraw){
   const pv=document.getElementById('paperView');if(!pv||!pv.classList.contains('show')){redraw();return;}
@@ -3975,10 +3976,10 @@ function imgHtmlPreview(im,type,id,idx,floatRight){
   const tools=`<div class="pvimg-tools noprint" onmousedown="event.stopPropagation()"><button type="button" title="橡皮擦／裁切" onclick="event.stopPropagation();openImgEraser('${type==='p'?'pvp':'pvq'}',${idx},'${id}')">🧽</button><button type="button" title="換圖：選擇圖片檔" onclick="event.stopPropagation();pvSwapPreviewImage('${type}','${id}',${idx})">↺</button><button type="button" title="換圖：貼上剪貼簿圖片" onclick="event.stopPropagation();pvPastePreviewImage('${type}','${id}',${idx})">📋</button>${_mtHas(im)?`<button type="button" title="編輯繪圖" onclick="event.stopPropagation();pvMtEditPreviewFig('${type}','${id}',${idx})">📐</button>`:''}<button type="button" title="刪除圖片" onclick="event.stopPropagation();pvDeletePreviewImage('${type}','${id}',${idx})">✕</button></div>`;
   if(floatRight){
     // 靠右浮動：寬度仍可拉四角、可上下微調(translateY)，水平固定靠右（文字自動繞左）
-    return `<div class="pvimg-draggable pvimg-floatimg" style="width:${w}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div>`;
+    return `<div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div>`;
   }
   const x=_pvImgX(im);
-  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
 }
 function pvSwapPreviewImage(type,id,idx){
   const input=document.createElement('input');input.type='file';input.accept='image/*';
@@ -3988,10 +3989,47 @@ async function _pvReplacePreviewImage(type,id,idx,file){
   const im=_getPreviewImg(type,id,idx);if(!im)return;
   try{im.src=await fileToDataURL(file);await _pvSave(type,id,true);}catch(e){alert('圖片讀取失敗：'+(e.message||e));}
 }
-async function pvPastePreviewImage(type,id,idx){
-  if(!navigator.clipboard||!navigator.clipboard.read){alert('此瀏覽器不支援讀取剪貼簿圖片，請改用換圖選檔。');return;}
-  try{const items=await navigator.clipboard.read();for(const item of items){const mime=item.types.find(t=>t.indexOf('image/')===0);if(mime){await _pvReplacePreviewImage(type,id,idx,await item.getType(mime));return;}}alert('剪貼簿裡沒有圖片。');}catch(e){alert('無法讀取剪貼簿圖片，請允許權限後再試。');}
+// ── 貼上換圖：統一入口（按鈕走 clipboard.read；Safari／無權限時退回「按 ⌘V／Ctrl+V」，由 paste 事件接手）──
+let _pvPasteTarget=null; // 預覽中最後點選或滑鼠停留的圖：{type,id,idx}
+document.addEventListener('mouseover',e=>{const d=e.target.closest&&e.target.closest('[data-pvimg]');if(d){const a=d.dataset.pvimg.split('|');_pvPasteTarget={type:a[0],id:a[1],idx:+a[2]};}});
+function _clipImageFile(e){const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0)return it.getAsFile();}return null;}
+function ieLoadPastedImage(url){
+  const c=document.getElementById('ieCanvas');if(!c)return;
+  const img=new Image();img.onload=()=>{const ctx=c.getContext('2d');_iePush(ctx,c);c.width=img.naturalWidth;c.height=img.naturalHeight;ctx.drawImage(img,0,0);_ieClearSelection();};img.src=url;
 }
+async function _applyPastedImage(kind,blob){
+  try{
+    if(kind==='eraser'){ieLoadPastedImage(await compress(await fileToDataURL(blob),IMG_MAXW));return;}
+    if(kind==='attr'){
+      if(!_iaTarget)return;const {scope,i}=_iaTarget,arr=scope==='p'?curPassageImgs:curImgs;if(!arr[i])return;
+      arr[i].src=await compress(await fileToDataURL(blob),IMG_MAXW);delete arr[i].mt;
+      renderImgAttrDlg();if(scope==='p')renderPassageImgPrev();else renderImgPrev();return;
+    }
+    if(kind==='pv'&&_pvPasteTarget){await _pvReplacePreviewImage(_pvPasteTarget.type,_pvPasteTarget.id,_pvPasteTarget.idx,blob);}
+  }catch(err){alert('貼上圖片失敗：'+(err.message||err));}
+}
+// 回傳 true＝這次貼上已交給圖片替換處理（呼叫端不要再當「新增圖片」）；同步判斷，避免 clipboardData 過期
+function _routeImagePaste(e){
+  const f=_clipImageFile(e);if(!f)return false;
+  const open=id=>{const d=document.getElementById(id);return !!(d&&d.open);};
+  let kind='';
+  if(open('imgEraserDlg')&&document.getElementById('ieCanvas'))kind='eraser';
+  else if(open('imgAttrDlg')&&_iaTarget)kind='attr';
+  else if(!open('editDlg')){const pv=document.getElementById('paperView');const ae=document.activeElement;if(pv&&pv.classList.contains('show')&&_pvPasteTarget&&!(ae&&ae.isContentEditable))kind='pv';}
+  if(!kind)return false;
+  e.preventDefault();_applyPastedImage(kind,f);return true;
+}
+// 按鈕：優先讀剪貼簿；不行就提示用快捷鍵
+async function pasteImgBtn(kind){
+  const hint=()=>{if(typeof showToast==='function')showToast('請直接按 ⌘V / Ctrl+V 貼上圖片');else alert('請直接按 ⌘V / Ctrl+V 貼上圖片');};
+  if(!navigator.clipboard||!navigator.clipboard.read){hint();return;}
+  try{
+    const items=await navigator.clipboard.read();
+    for(const item of items){const mime=item.types.find(t=>t.indexOf('image/')===0);if(mime){await _applyPastedImage(kind,await item.getType(mime));return;}}
+    alert('剪貼簿裡沒有圖片。');
+  }catch(err){hint();}
+}
+async function pvPastePreviewImage(type,id,idx){_pvPasteTarget={type,id,idx};await pasteImgBtn('pv');}
 async function pvDeletePreviewImage(type,id,idx){
   const rec=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);if(!rec||!rec.imgs||!rec.imgs[idx])return;
   if(!confirm('確定要刪除這張圖片？'))return;rec.imgs.splice(idx,1);await _pvSave(type,id);
