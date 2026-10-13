@@ -73,17 +73,21 @@
   }
 
   // ====== 畫面：iframe 視窗（dialog，才能蓋在其他已開啟的 dialog 上面） ======
-  var CSS = '#mtEmbedDlg{padding:0;border:0;border-radius:12px;width:min(1280px,96vw);height:min(880px,92vh);max-width:96vw;max-height:92vh;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35);resize:both}'
+  var CSS = '#mtEmbedDlg{padding:0;border:0;border-radius:12px;width:min(1000px,70vw);height:min(680px,78vh);max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);min-width:min(480px,calc(100vw - 16px));min-height:min(360px,calc(100vh - 16px));overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.35);resize:none}'
     + '#mtEmbedDlg::backdrop{background:rgba(20,20,20,.12)}' /* 淡背景：移開視窗時看得到後面的題目 */
     + '#mtEmbedDlg .mt-wrap{display:flex;flex-direction:column;height:100%}'
-    + '#mtEmbedDlg .mt-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#850103;color:#fff;font-size:14px;font-family:inherit;cursor:move;user-select:none}'
+    + '#mtEmbedDlg .mt-head{display:flex;align-items:center;gap:8px;padding:8px 12px;background:#850103;color:#fff;font-size:14px;font-family:inherit;cursor:move;user-select:none;touch-action:none}'
     + '#mtEmbedDlg .mt-head b{flex:1}'
     + '#mtEmbedDlg .mt-head button{font:inherit;font-size:12px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;cursor:pointer}'
     + '#mtEmbedDlg .mt-head button:hover{background:rgba(255,255,255,.15)}'
+    + '#mtEmbedDlg.mt-moving,#mtEmbedDlg.mt-resizing{will-change:transform;box-shadow:0 2px 10px rgba(0,0,0,.18)}'
+    + '#mtEmbedDlg.mt-moving iframe,#mtEmbedDlg.mt-resizing iframe{pointer-events:none}'
     + '#mtEmbedDlg .mt-body{flex:1;position:relative;background:#f6f5f2}'
     + '#mtEmbedDlg iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}'
     + '#mtEmbedDlg .mt-wait{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;font-size:14px;color:#444;text-align:center;padding:20px}'
-    + '#mtEmbedDlg .mt-wait button{font:inherit;padding:6px 14px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}';
+    + '#mtEmbedDlg .mt-wait button{font:inherit;padding:6px 14px;border-radius:6px;border:1px solid #bbb;background:#fff;cursor:pointer}'
+    + '#mtEmbedDlg .mt-resize{position:absolute;right:0;bottom:0;width:22px;height:22px;cursor:nwse-resize;z-index:2;touch-action:none}'
+    + '#mtEmbedDlg .mt-resize::after{content:"";position:absolute;right:5px;bottom:5px;width:9px;height:9px;border-right:2px solid #999;border-bottom:2px solid #999}';
 
   function ensureDlg() {
     var d = document.getElementById('mtEmbedDlg');
@@ -93,7 +97,7 @@
     d.innerHTML = '<div class="mt-wrap"><div class="mt-head"><b id="mtEmbedTitle">茲茲數學工具</b>'
       + '<button type="button" id="mtEmbedPopupBtn" title="iframe 內無法登入（例如 Safari）時使用">在新視窗開啟</button>'
       + '<button type="button" id="mtEmbedCloseBtn">關閉（不插入）</button></div>'
-      + '<div class="mt-body" id="mtEmbedBody"></div></div>';
+      + '<div class="mt-body" id="mtEmbedBody"></div><div class="mt-resize" aria-label="調整視窗大小" title="調整視窗大小"></div></div>';
     document.body.appendChild(d);
     // Esc 關閉＝取消
     d.addEventListener('cancel', function (e) { e.preventDefault(); if (S) finish({ status: 'cancel', reason: 'user' }); });
@@ -103,36 +107,87 @@
     return d;
   }
 
-  // 讓視窗可用標題列拖曳移動（不遮住題目）；拖曳時 iframe 蓋一層透明罩避免吃掉滑鼠事件
+  // 以 transform 移動，避免每個 pointermove 都讓含 iframe 的 dialog 重排。
   function makeDraggable(d) {
     var head = d.querySelector('.mt-head');
-    var drag = null, shield = null;
-    head.addEventListener('mousedown', function (e) {
-      if (e.target.closest('button')) return;      // 點標題列的按鈕不觸發拖曳
+    var handle = d.querySelector('.mt-resize');
+    var action = null, frame = 0, normal = null;
+    var KEY = 'tzutzu.mtEmbed.geometry.v1', MIN_W = 480, MIN_H = 360, TITLE_W = 100, TITLE_H = 36;
+
+    function load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+    function save(g) { try { localStorage.setItem(KEY, JSON.stringify(g)); } catch (e) {} }
+    function clamp(g) {
+      var maxW = Math.max(1, window.innerWidth - 16), maxH = Math.max(1, window.innerHeight - 16);
+      g.w = Math.min(Math.max(MIN_W, g.w), maxW); g.h = Math.min(Math.max(MIN_H, g.h), maxH);
+      g.x = Math.min(window.innerWidth - TITLE_W, Math.max(TITLE_W - g.w, g.x));
+      g.y = Math.min(window.innerHeight - TITLE_H, Math.max(0, g.y));
+      return g;
+    }
+    function apply(g) {
+      clamp(g);
+      d.style.position = 'fixed'; d.style.left = '0'; d.style.top = '0'; d.style.margin = '0';
+      d.style.width = g.w + 'px'; d.style.height = g.h + 'px';
+      d.style.transform = 'translate3d(' + g.x + 'px,' + g.y + 'px,0)';
+    }
+    function defaultGeometry() {
       var r = d.getBoundingClientRect();
-      d.style.position = 'fixed'; d.style.margin = '0';
-      d.style.left = r.left + 'px'; d.style.top = r.top + 'px';
-      drag = { dx: e.clientX - r.left, dy: e.clientY - r.top };
-      // 透明罩：拖過 iframe 時滑鼠事件才不會被 iframe 吃掉
-      shield = document.createElement('div');
-      shield.style.cssText = 'position:fixed;inset:0;z-index:2147483647;cursor:move';
-      document.body.appendChild(shield);
-      e.preventDefault();
-      document.addEventListener('mousemove', mv);
-      document.addEventListener('mouseup', up);
-    });
-    function mv(e) {
-      if (!drag) return;
-      var x = Math.max(0, Math.min(window.innerWidth - 80, e.clientX - drag.dx));
-      var y = Math.max(0, Math.min(window.innerHeight - 30, e.clientY - drag.dy));
-      d.style.left = x + 'px'; d.style.top = y + 'px';
+      return { x: Math.round((window.innerWidth - r.width) / 2), y: Math.round((window.innerHeight - r.height) / 2), w: Math.round(r.width), h: Math.round(r.height) };
     }
-    function up() {
-      drag = null;
-      if (shield) { try { shield.remove(); } catch (e) {} shield = null; }
-      document.removeEventListener('mousemove', mv);
-      document.removeEventListener('mouseup', up);
+    function currentGeometry() {
+      var r = d.getBoundingClientRect();
+      return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
     }
+    function flush() {
+      frame = 0;
+      if (!action) return;
+      var g = action.next;
+      if (action.kind === 'resize') { g.w = action.start.w + action.dx; g.h = action.start.h + action.dy; }
+      else { g.x = action.start.x + action.dx; g.y = action.start.y + action.dy; }
+      apply(g);
+    }
+    function end(e) {
+      if (!action || (e && e.pointerId !== action.pointerId)) return;
+      if (frame) { cancelAnimationFrame(frame); frame = 0; flush(); }
+      try { action.target.releasePointerCapture(action.pointerId); } catch (ignore) {}
+      d.classList.remove('mt-moving', 'mt-resizing');
+      var g = currentGeometry();
+      d.style.left = g.x + 'px'; d.style.top = g.y + 'px'; d.style.transform = 'translate3d(0,0,0)';
+      save(g); normal = g; action = null;
+    }
+    function move(e) {
+      if (!action || e.pointerId !== action.pointerId) return;
+      action.dx = e.clientX - action.startClientX; action.dy = e.clientY - action.startClientY;
+      if (!frame) frame = requestAnimationFrame(flush);
+    }
+    function begin(kind, e) {
+      if (kind === 'move' && e.target.closest('button')) return;
+      if (e.button !== 0) return;
+      var g = currentGeometry();
+      action = { kind: kind, target: e.currentTarget, pointerId: e.pointerId, startClientX: e.clientX, startClientY: e.clientY, start: g, next: { x: g.x, y: g.y, w: g.w, h: g.h }, dx: 0, dy: 0 };
+      d.classList.add(kind === 'move' ? 'mt-moving' : 'mt-resizing');
+      e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault();
+    }
+    function restore() {
+      var g = load();
+      if (!g || !isFinite(g.x) || !isFinite(g.y) || !isFinite(g.w) || !isFinite(g.h)) g = defaultGeometry();
+      d.classList.remove('mt-maximized'); apply(g); normal = currentGeometry();
+    }
+    function maximize() {
+      if (d.classList.contains('mt-maximized')) {
+        d.classList.remove('mt-maximized'); apply(normal || defaultGeometry());
+      } else {
+        normal = currentGeometry(); d.classList.add('mt-maximized');
+        apply({ x: 8, y: 8, w: window.innerWidth - 16, h: window.innerHeight - 16 });
+      }
+      save(currentGeometry());
+    }
+    head.addEventListener('pointerdown', function (e) { begin('move', e); });
+    handle.addEventListener('pointerdown', function (e) { begin('resize', e); });
+    d.addEventListener('pointermove', move);
+    d.addEventListener('pointerup', end); d.addEventListener('pointercancel', end);
+    head.addEventListener('dblclick', function (e) { if (!e.target.closest('button')) maximize(); });
+    window.addEventListener('resize', function () { if (!d.open || action) return; apply(currentGeometry()); save(currentGeometry()); });
+    d._mtRestoreGeometry = restore;
   }
 
   // ====== 工作階段 ======
@@ -246,10 +301,9 @@
       S = { mode: mode, rid: newRid(), initData: init, initSent: false, resolve: resolve, win: null, frame: null, popup: null };
       document.getElementById('mtEmbedTitle').textContent = (mode === 'eq' ? (init.latex ? '編輯數學式' : '插入數學式') : (init.config ? '編輯繪圖' : '插入繪圖')) + '｜茲茲數學工具';
       document.getElementById('mtEmbedPopupBtn').style.display = '';
-      // 每次開啟都回到置中（清掉上次拖曳留下的定位；保留使用者調過的大小）
-      d.style.position = ''; d.style.left = ''; d.style.top = ''; d.style.margin = '';
       window.addEventListener('message', onMessage);
       d.showModal();
+      d._mtRestoreGeometry();
       mountIframe();
       armTimers();
     });

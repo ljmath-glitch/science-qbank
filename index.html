@@ -316,6 +316,10 @@
   .pvimg-draggable img{display:block;width:100%;}
   .pvimg-corner{position:absolute;width:12px;height:12px;background:#2e75b6;border:2px solid #fff;border-radius:2px;opacity:0;transition:opacity .15s;z-index:10;}
   .pvimg-draggable:hover .pvimg-corner,.pvimg-draggable.pv-active .pvimg-corner{opacity:1;}
+  .pvimg-tools{position:absolute;top:18px;left:4px;z-index:12;display:flex;gap:3px;opacity:0;transition:opacity .15s;line-height:1}
+  .pvimg-draggable:hover .pvimg-tools,.pvimg-draggable.pv-active .pvimg-tools{opacity:1}
+  .pvimg-tools button{border:1px solid #cfd6e2;border-radius:4px;background:#fff;color:#344054;padding:3px 5px;font:12px/1 var(--ui-font);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .pvimg-tools button:hover{background:#fbece7;color:var(--red);border-color:#e7bbb5}
   /* 課前考單題圖：靠右浮動，文字繞排在左（不再整塊佔一列留下大片空白） */
   .pvimg-floatimg{float:right;clear:right;margin:2px 0 6px 14px;line-height:0;}
   .template-question{display:flow-root;} /* 讓浮動圖被題目方塊包住，分頁量測才準 */
@@ -323,14 +327,14 @@
   .pvimg-ne{top:-6px;right:-6px;cursor:ne-resize;}
   .pvimg-sw{bottom:-6px;left:-6px;cursor:sw-resize;}
   .pvimg-se{bottom:-6px;right:-6px;cursor:se-resize;}
-  @media print{.pvimg-corner{display:none!important}}
+  @media print{.pvimg-corner,.pvimg-tools{display:none!important}}
   .pvq-text{cursor:text;border-radius:4px;transition:box-shadow .15s}
   .pvq-text:hover{box-shadow:0 0 0 1px #cfd6e2}
   .pvq-text:focus{outline:none;box-shadow:0 0 0 2px #2e75b6;background:#f5f9ff}
   .pvq-answer-slot{display:inline-block;min-width:1.8em;text-align:center;white-space:nowrap;color:#c0392b;font-weight:700}
   /* 課前考預覽：選項打包成 1/2/4 欄對齊（.pre-ojoin 是同列選項間的隱藏換行，僅供回存用） */
   .pre-opt{display:inline-block;vertical-align:top;box-sizing:border-box;padding-right:8px}
-  .pre-col4{width:25%}.pre-col2{width:50%}.pre-col1{width:100%}
+  .pre-col4{width:25%}.pre-col2{width:50%}.pre-col1{display:inline;width:auto}
   .pre-ojoin{display:none}
   .pv-sheet .q{position:relative}
   .pvq-ctrl{position:absolute;left:-34px;top:0;display:flex;flex-direction:column;gap:3px;opacity:0;transition:opacity .15s}
@@ -2885,8 +2889,12 @@ function applyImgStyleAll(i){var w=curImgs[i].width,a=curImgs[i].align;curImgs.f
 let _ieBrush=24,_ieHist=[],_ieRedo=[],_ieDraw=false,_ieLast=null,_ieTarget=null,_ieToolMode='brush',_ieSelRect=null;
 const _IE_ARROWS={undo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>',redo:'<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>'};
 function openImgEraser(scope,i){
-  const arr=scope==='p'?curPassageImgs:curImgs;const it=arr[i];if(!it)return;
-  _ieTarget={scope,i};_ieHist=[];_ieRedo=[];_ieDraw=false;_ieLast=null;_ieToolMode='brush';_ieSelRect=null;
+  let it,id='';
+  if(scope==='pvq'||scope==='pvp'){
+    id=arguments[2]||'';const rec=scope==='pvp'?PASSAGES[id]:DB.find(x=>x.id===id);it=rec&&rec.imgs&&rec.imgs[i];
+  }else{const arr=scope==='p'?curPassageImgs:curImgs;it=arr[i];}
+  if(!it)return;
+  _ieTarget={scope,i,id};_ieHist=[];_ieRedo=[];_ieDraw=false;_ieLast=null;_ieToolMode='brush';_ieSelRect=null;
   const dlg=document.getElementById('imgEraserDlg');
   document.getElementById('imgEraserBody').innerHTML=`
     <div class="ie-tools"><div class="ie-left">
@@ -2973,7 +2981,16 @@ function _ieClearSelection(){
 function _iePush(ctx,canvas){try{_ieHist.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});if(_ieHist.length>20)_ieHist.shift();_ieRedo=[];}catch(e){}}
 function _ieUndo(){const c=document.getElementById('ieCanvas');if(!c||!_ieHist.length)return;const ctx=c.getContext('2d');try{_ieRedo.push({img:ctx.getImageData(0,0,c.width,c.height),w:c.width,h:c.height});}catch(e){}const entry=_ieHist.pop();if(entry){c.width=entry.w;c.height=entry.h;ctx.putImageData(entry.img,0,0);}}
 function _ieRedoFn(){const c=document.getElementById('ieCanvas');if(!c||!_ieRedo.length)return;const ctx=c.getContext('2d');try{_ieHist.push({img:ctx.getImageData(0,0,c.width,c.height),w:c.width,h:c.height});}catch(e){}const entry=_ieRedo.pop();if(entry){c.width=entry.w;c.height=entry.h;ctx.putImageData(entry.img,0,0);}}
-function _ieSave(){const c=document.getElementById('ieCanvas');if(!c||!_ieTarget)return;let url;try{url=c.toDataURL('image/png');}catch(e){alert('這張圖來自雲端，瀏覽器基於安全限制無法直接存回。請改用「移除」後重新上傳原圖再編輯。');return;}const arr=_ieTarget.scope==='p'?curPassageImgs:curImgs;const it=arr[_ieTarget.i];if(it)it.src=url;document.getElementById('imgEraserDlg').close();if(_ieTarget.scope==='p')renderPassageImgPrev();else renderImgPrev();if(_iaTarget)renderImgAttrDlg();}
+async function _ieSave(){
+  const c=document.getElementById('ieCanvas');if(!c||!_ieTarget)return;let url;
+  try{url=c.toDataURL('image/png');}catch(e){alert('這張圖來自雲端，瀏覽器基於安全限制無法直接存回。請改用「移除」後重新上傳原圖再編輯。');return;}
+  const t=_ieTarget;
+  if(t.scope==='pvq'||t.scope==='pvp'){
+    const type=t.scope==='pvp'?'p':'q',rec=type==='p'?PASSAGES[t.id]:DB.find(x=>x.id===t.id),it=rec&&rec.imgs&&rec.imgs[t.i];
+    if(!it)return;it.src=url;document.getElementById('imgEraserDlg').close();await _pvSave(type,t.id,true);return;
+  }
+  const arr=t.scope==='p'?curPassageImgs:curImgs,it=arr[t.i];if(it)it.src=url;document.getElementById('imgEraserDlg').close();if(t.scope==='p')renderPassageImgPrev();else renderImgPrev();if(_iaTarget)renderImgAttrDlg();
+}
 
 function renderPassageImgPrev(){
   const el=document.getElementById('ePassageImgPrev');if(!el)return;
@@ -3759,10 +3776,10 @@ function _getPreviewImg(type,id,idx){
   if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.imgs[idx]||null):null;}
   const ps=PASSAGES[id];return ps?(ps.imgs[idx]||null):null;
 }
-async function _pvSave(type,id){
+async function _pvSave(type,id,uploadImages){
   if(!requireCloud())return;
-  if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(it)await sb.from('questions').upsert(toRow(it));}
-  else{const ps=PASSAGES[id];if(ps)await sb.from('questions').upsert(toRow(ps));}
+  if(type==='q'||type==='ans'||type==='sol'){const it=DB.find(x=>x.id===id);if(it){if(uploadImages)it.imgs=await uploadImgs(it.imgs||[],it.id);await sb.from('questions').upsert(toRow(it));}}
+  else{const ps=PASSAGES[id];if(ps){if(uploadImages)ps.imgs=await uploadImgs(ps.imgs||[],ps.id);await sb.from('questions').upsert(toRow(ps));}}
   const pv=document.getElementById('paperView');const sy=pv?pv.scrollTop:0;
   _pvRenderPaged();
   if(pv)pv.scrollTop=sy;
@@ -3925,7 +3942,7 @@ function pvInlineImageChange(input){
   const reader=new FileReader();reader.onload=async()=>{
     const target=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);if(!target)return;
     target.imgs=target.imgs||[];target.imgs.push({src:reader.result,width:65,align:'center',x:17.5,y:0});
-    await _pvSave(type,id);
+    await _pvSave(type,id,true);
   };reader.readAsDataURL(file);
 }
 function _pvRebuild(){const pv=document.getElementById('paperView'),sy=pv?pv.scrollTop:0,selectedKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';_pvRenderPaged();if(pv)pv.scrollTop=sy;const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;}
@@ -3938,12 +3955,37 @@ function imgHtmlPreview(im,type,id,idx,floatRight){
   const w=im.width||65;
   const y=im.y||0;
   const corners=`<div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div>`;
+  const tools=`<div class="pvimg-tools noprint" onmousedown="event.stopPropagation()"><button type="button" title="橡皮擦／裁切" onclick="event.stopPropagation();openImgEraser('${type==='p'?'pvp':'pvq'}',${idx},'${id}')">🧽</button><button type="button" title="換圖：選擇圖片檔" onclick="event.stopPropagation();pvSwapPreviewImage('${type}','${id}',${idx})">↺</button><button type="button" title="換圖：貼上剪貼簿圖片" onclick="event.stopPropagation();pvPastePreviewImage('${type}','${id}',${idx})">📋</button>${_mtHas(im)?`<button type="button" title="編輯繪圖" onclick="event.stopPropagation();pvMtEditPreviewFig('${type}','${id}',${idx})">📐</button>`:''}<button type="button" title="刪除圖片" onclick="event.stopPropagation();pvDeletePreviewImage('${type}','${id}',${idx})">✕</button></div>`;
   if(floatRight){
     // 靠右浮動：寬度仍可拉四角、可上下微調(translateY)，水平固定靠右（文字自動繞左）
-    return `<div class="pvimg-draggable pvimg-floatimg" style="width:${w}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${corners}</div>`;
+    return `<div class="pvimg-draggable pvimg-floatimg" style="width:${w}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div>`;
   }
   const x=_pvImgX(im);
-  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${corners}</div></div>`;
+  return `<div class="pvimg-wrap"><div class="pvimg-draggable" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
+}
+function pvSwapPreviewImage(type,id,idx){
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{const f=input.files&&input.files[0];if(f)_pvReplacePreviewImage(type,id,idx,f);};input.click();
+}
+async function _pvReplacePreviewImage(type,id,idx,file){
+  const im=_getPreviewImg(type,id,idx);if(!im)return;
+  try{im.src=await fileToDataURL(file);await _pvSave(type,id,true);}catch(e){alert('圖片讀取失敗：'+(e.message||e));}
+}
+async function pvPastePreviewImage(type,id,idx){
+  if(!navigator.clipboard||!navigator.clipboard.read){alert('此瀏覽器不支援讀取剪貼簿圖片，請改用換圖選檔。');return;}
+  try{const items=await navigator.clipboard.read();for(const item of items){const mime=item.types.find(t=>t.indexOf('image/')===0);if(mime){await _pvReplacePreviewImage(type,id,idx,await item.getType(mime));return;}}alert('剪貼簿裡沒有圖片。');}catch(e){alert('無法讀取剪貼簿圖片，請允許權限後再試。');}
+}
+async function pvDeletePreviewImage(type,id,idx){
+  const rec=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);if(!rec||!rec.imgs||!rec.imgs[idx])return;
+  if(!confirm('確定要刪除這張圖片？'))return;rec.imgs.splice(idx,1);await _pvSave(type,id);
+}
+async function pvMtEditPreviewFig(type,id,idx){
+  if(!_mtReady())return;
+  const rec=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id),im=rec&&rec.imgs&&rec.imgs[idx];if(!im||!_mtHas(im))return;
+  const r=await MTEmbed.open('fig',{config:im.mt.config,figureId:im.mt.figureId});if(r.status!=='done'){_mtNotify(r);return;}
+  if(!(rec.imgs||[]).includes(im)){alert('題目在數學工具開啟期間已變動，未更新這張圖。');return;}
+  const up=await _uploadImgDataURL(r.png,rec.id,idx);if(up.error){alert('圖片上傳失敗：'+(up.error.message||up.error)+'\n（題庫資料未變更）');return;}
+  im.src=up.url;im.mt=_mtMeta(r);await _pvSave(type,id);
 }
 // drag to reposition (horizontal + vertical)
 function pvDragStart(e,type,id,idx){
