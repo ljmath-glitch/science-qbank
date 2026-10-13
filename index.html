@@ -7876,6 +7876,21 @@ function _preApplyOptionTabs(xml){
   return out.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
 }
 
+// 每一道題目本身是一個 numId=100 的段落；將 keepLines 加在這個段落，Word 會把整題
+// 移到下一頁，而不是把題幹／選項拆開。題組的每個小題各有自己的 numId=100，因此小題間
+// 仍可自然換頁；超過一頁的單一長題則仍由 Word 依其正常例外規則分割。
+function _preKeepQuestionTogether(xml){
+  const paragraphRe=/<w:p\b[^>]*>(?:(?!<\/w:p>)[\s\S])*?<\/w:p>/g;
+  return String(xml||'').replace(paragraphRe,p=>{
+    if(!/<w:numId w:val="100"\/>/.test(p))return p;
+    return p.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/,(_m,inside)=>{
+      // 範本或日後版本若已含 keepLines，也要維持只有一個標記。
+      const next=inside.replace(/<w:keepLines\b[^>]*\/>/g,'')+'<w:keepLines/>';
+      return '<w:pPr>'+next+'</w:pPr>';
+    });
+  });
+}
+
 // image-module-free 只會產生 wp:inline。課前考輸出的題目圖與題組共用圖都要靠右浮動、
 // 文字由左側繞排。範本本身的 Group Passage 外框也是 wp:inline，必須排除，不能誤轉。
 function _preFloatQuestionImages(xml){
@@ -8735,10 +8750,11 @@ function _tplRedAnswers(xml){
 }
 
 // 教用版「浮動答案文字方塊」：答案以可單獨移動/編輯的文字方塊疊在題號括弧「(　　)」上（無底色無邊框、紅字 10pt Times New Roman）。
-// 位置之後可依真 Word 微調 ANSBOX。
-// Word 的清單標籤採置中配置；進入兩位數題號後，括弧中心不會跟著多一位數右移。
-// perDigit 保持 0，避免第 10 題起答案框越過右括弧。
-const ANSBOX={offX:180000, offY:-12000, w:190000, h:200000, perDigit:0}; // EMU
+// numId=100 的題號標籤區從 142 到 567 twips，中心為 354.5 twips＝225108 EMU。
+// 文字方塊寬 190000 EMU，故左緣 130000 EMU 時其幾何中心為 225000 EMU（誤差 108 EMU）。
+// 行高是 240 twips＝152400 EMU；高 200000 EMU 的文字方塊以 -24000 EMU 起算，中心為
+// 76000 EMU，和行中心 76200 EMU 相差 200 EMU。清單標籤採置中，故一、兩位數共用同一位置。
+const ANSBOX={offX:130000, offY:-24000, w:190000, h:200000, perDigit:0}; // EMU；1 inch = 914400
 let _ansBoxId=990000001;
 function _answerBoxXml(ans, digits){
   const id=_ansBoxId++;
@@ -8859,6 +8875,7 @@ async function downloadWordViaTemplate(kind,opts){
     // 兩步都要在答案框插入前完成，避免答案框內的巢狀段落干擾題目段落比對。
     if(kind==='pre'){
       xml2=_preApplyOptionTabs(xml2);
+      xml2=_preKeepQuestionTogether(xml2);
       xml2=_preFloatQuestionImages(xml2);
     }
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
