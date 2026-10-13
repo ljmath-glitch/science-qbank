@@ -3776,25 +3776,34 @@ function _getPreviewImg(type,id,idx){
   if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.imgs[idx]||null):null;}
   const ps=PASSAGES[id];return ps?(ps.imgs[idx]||null):null;
 }
-let _pvScrollRestoreSeq=0;
+let _pvScrollRestoreSeq=0,_pvScrollRestoreCleanup=null;
 // 分頁會先清空 pvSheet 再量測重建；以可見題目作錨點，等 rAF／圖片載入後再還原，避免 scrollTop 被短暫高度夾到第一頁底部。
 function _pvKeepScroll(redraw){
   const pv=document.getElementById('paperView');if(!pv||!pv.classList.contains('show')){redraw();return;}
+  if(_pvScrollRestoreCleanup)_pvScrollRestoreCleanup();
   const box=pv.getBoundingClientRect(),qs=[...pv.querySelectorAll('.q[data-qid]')];
   const q=qs.find(el=>{const r=el.getBoundingClientRect();return r.bottom>box.top&&r.top<box.bottom;});
   const anchor=q?{id:q.dataset.qid,offset:q.getBoundingClientRect().top-box.top}:null,sy=pv.scrollTop;
   const sheet=document.getElementById('pvSheet'),oldH=sheet?sheet.offsetHeight:0,seq=++_pvScrollRestoreSeq;
   if(sheet&&oldH)sheet.style.minHeight=oldH+'px';
   redraw();
+  let programmatic=false,programmaticFrame=0,timer=0,done=false;
+  const remove=()=>{pv.removeEventListener('wheel',cancel);pv.removeEventListener('touchmove',cancel);pv.removeEventListener('keydown',cancel);pv.removeEventListener('scroll',onScroll);if(programmaticFrame)cancelAnimationFrame(programmaticFrame);if(timer)clearTimeout(timer);if(sheet)sheet.style.minHeight='';if(_pvScrollRestoreCleanup===remove)_pvScrollRestoreCleanup=null;};
+  const cancel=()=>{if(done)return;done=true;if(seq===_pvScrollRestoreSeq)_pvScrollRestoreSeq++;remove();};
+  const onScroll=()=>{if(!programmatic)cancel();};
+  _pvScrollRestoreCleanup=remove;
+  pv.addEventListener('wheel',cancel,{passive:true});pv.addEventListener('touchmove',cancel,{passive:true});pv.addEventListener('keydown',cancel);pv.addEventListener('scroll',onScroll);
   const restore=()=>{
-    if(seq!==_pvScrollRestoreSeq)return;
+    if(done||seq!==_pvScrollRestoreSeq)return;
     const next=anchor&&pv.querySelector('.q[data-qid="'+CSS.escape(anchor.id)+'"]');
+    programmatic=true;
     if(next)pv.scrollTop+=next.getBoundingClientRect().top-pv.getBoundingClientRect().top-anchor.offset;
     else pv.scrollTop=sy;
+    if(programmaticFrame)cancelAnimationFrame(programmaticFrame);programmaticFrame=requestAnimationFrame(()=>{programmatic=false;programmaticFrame=0;});
   };
   requestAnimationFrame(()=>requestAnimationFrame(restore));
   pv.querySelectorAll('img').forEach(img=>{if(!img.complete)img.addEventListener('load',()=>requestAnimationFrame(restore),{once:true});});
-  setTimeout(()=>{restore();if(seq===_pvScrollRestoreSeq&&sheet)sheet.style.minHeight='';},700);
+  timer=setTimeout(()=>{restore();if(!done&&seq===_pvScrollRestoreSeq)remove();},700);
 }
 async function _pvSave(type,id,uploadImages){
   if(!requireCloud())return;
@@ -3982,30 +3991,34 @@ function imgHtmlPreview(im,type,id,idx,floatRight){
   return `<div class="pvimg-wrap"><div class="pvimg-draggable" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
 }
 function pvSwapPreviewImage(type,id,idx){
-  const input=document.createElement('input');input.type='file';input.accept='image/*';
-  input.onchange=()=>{const f=input.files&&input.files[0];if(f)_pvReplacePreviewImage(type,id,idx,f);};input.click();
-}
-async function _pvReplacePreviewImage(type,id,idx,file){
   const im=_getPreviewImg(type,id,idx);if(!im)return;
+  const input=document.createElement('input');input.type='file';input.accept='image/*';
+  input.onchange=()=>{const f=input.files&&input.files[0];if(f)_pvReplacePreviewImage(type,id,idx,f,im);};input.click();
+}
+async function _pvReplacePreviewImage(type,id,idx,file,expectedIm){
+  const rec=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id),im=expectedIm||_getPreviewImg(type,id,idx);
+  if(!rec||!im||(rec.imgs||[]).indexOf(im)<0){alert('這張圖片已被刪除或更換，未套用貼上的圖片。');return;}
   try{im.src=await fileToDataURL(file);await _pvSave(type,id,true);}catch(e){alert('圖片讀取失敗：'+(e.message||e));}
 }
 // ── 貼上換圖：統一入口（按鈕走 clipboard.read；Safari／無權限時退回「按 ⌘V／Ctrl+V」，由 paste 事件接手）──
-let _pvPasteTarget=null; // 預覽中最後點選或滑鼠停留的圖：{type,id,idx}
-document.addEventListener('mouseover',e=>{const d=e.target.closest&&e.target.closest('[data-pvimg]');if(d){const a=d.dataset.pvimg.split('|');_pvPasteTarget={type:a[0],id:a[1],idx:+a[2]};}});
+let _pvPasteTarget=null; // 預覽中最後點選或滑鼠停留的圖：{type,id,im}
+document.addEventListener('mouseover',e=>{const d=e.target.closest&&e.target.closest('[data-pvimg]');if(d){const a=d.dataset.pvimg.split('|'),im=_getPreviewImg(a[0],a[1],+a[2]);if(im)_pvPasteTarget={type:a[0],id:a[1],im};}});
 function _clipImageFile(e){const items=(e.clipboardData||{}).items||[];for(const it of items){if(it.type&&it.type.indexOf('image')===0)return it.getAsFile();}return null;}
 function ieLoadPastedImage(url){
   const c=document.getElementById('ieCanvas');if(!c)return;
-  const img=new Image();img.onload=()=>{const ctx=c.getContext('2d');_iePush(ctx,c);c.width=img.naturalWidth;c.height=img.naturalHeight;ctx.drawImage(img,0,0);_ieClearSelection();};img.src=url;
+  const session=_ieTarget,img=new Image();img.onload=()=>{if(_ieTarget!==session)return;const ctx=c.getContext('2d');_iePush(ctx,c);c.width=img.naturalWidth;c.height=img.naturalHeight;ctx.drawImage(img,0,0);_ieClearSelection();};img.src=url;
 }
 async function _applyPastedImage(kind,blob){
   try{
     if(kind==='eraser'){ieLoadPastedImage(await compress(await fileToDataURL(blob),IMG_MAXW));return;}
     if(kind==='attr'){
-      if(!_iaTarget)return;const {scope,i}=_iaTarget,arr=scope==='p'?curPassageImgs:curImgs;if(!arr[i])return;
-      arr[i].src=await compress(await fileToDataURL(blob),IMG_MAXW);delete arr[i].mt;
+      if(!_iaTarget)return;const target=_iaTarget,{scope,i}=target,arr=scope==='p'?curPassageImgs:curImgs,im=arr[i];if(!im)return;
+      const src=await compress(await fileToDataURL(blob),IMG_MAXW);
+      if(_iaTarget!==target||arr[i]!==im)return;
+      im.src=src;delete im.mt;
       renderImgAttrDlg();if(scope==='p')renderPassageImgPrev();else renderImgPrev();return;
     }
-    if(kind==='pv'&&_pvPasteTarget){await _pvReplacePreviewImage(_pvPasteTarget.type,_pvPasteTarget.id,_pvPasteTarget.idx,blob);}
+    if(kind==='pv'&&_pvPasteTarget){const target=_pvPasteTarget;await _pvReplacePreviewImage(target.type,target.id,-1,blob,target.im);}
   }catch(err){alert('貼上圖片失敗：'+(err.message||err));}
 }
 // 回傳 true＝這次貼上已交給圖片替換處理（呼叫端不要再當「新增圖片」）；同步判斷，避免 clipboardData 過期
@@ -4015,7 +4028,7 @@ function _routeImagePaste(e){
   let kind='';
   if(open('imgEraserDlg')&&document.getElementById('ieCanvas'))kind='eraser';
   else if(open('imgAttrDlg')&&_iaTarget)kind='attr';
-  else if(!open('editDlg')){const pv=document.getElementById('paperView');const ae=document.activeElement;if(pv&&pv.classList.contains('show')&&_pvPasteTarget&&!(ae&&ae.isContentEditable))kind='pv';}
+  else if(!open('editDlg')){const pv=document.getElementById('paperView'),target=e.target,editing=target&&target.closest&&target.closest('input,textarea,select,[contenteditable]');if(pv&&pv.classList.contains('show')&&_pvPasteTarget&&target&&pv.contains(target)&&!editing)kind='pv';}
   if(!kind)return false;
   e.preventDefault();_applyPastedImage(kind,f);return true;
 }
@@ -4029,7 +4042,7 @@ async function pasteImgBtn(kind){
     alert('剪貼簿裡沒有圖片。');
   }catch(err){hint();}
 }
-async function pvPastePreviewImage(type,id,idx){_pvPasteTarget={type,id,idx};await pasteImgBtn('pv');}
+async function pvPastePreviewImage(type,id,idx){const im=_getPreviewImg(type,id,idx);if(!im)return;_pvPasteTarget={type,id,im};await pasteImgBtn('pv');}
 async function pvDeletePreviewImage(type,id,idx){
   const rec=type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);if(!rec||!rec.imgs||!rec.imgs[idx])return;
   if(!confirm('確定要刪除這張圖片？'))return;rec.imgs.splice(idx,1);await _pvSave(type,id);
