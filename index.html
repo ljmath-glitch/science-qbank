@@ -3986,6 +3986,7 @@ async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
 async function togglePvSolutions(){await _pvCommitActive();PV_SHOW_SOL=!PV_SHOW_SOL;_pvRebuild();}
 function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
+function _pvManualImageLayout(im){const w=Math.max(5,Math.min(100,Number(im&&im.width)||65)),def=100-w;return !!im&&(Math.abs(Number(im.y)||0)>=1||(im.x!==undefined&&Math.abs(Number(im.x)-def)>=.05));}
 function _pvFloatSide(x,w){return x+w/2>=50?'right':'left';}
 function _pvFloatStyle(x,w,y){
   x=Math.max(0,Math.min(100-w,Number(x)||0));
@@ -5608,7 +5609,8 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const answerSlot=answerInBracket?`<span style="color:#c0392b;font-weight:700;display:inline-block;min-width:3em;text-align:center">${esc(it.ans||'')}</span>`:answerInNumber?`<span class="pvq-text pvq-answer-slot" contenteditable="true" data-rtype="ans" data-rid="${it.id}" title="點擊修改答案" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'))}</span>`:'　　';
     const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
     // 課前考／ABK 單題圖靠右浮動時，圖要排在題號/題幹「之前」文字才會繞排在左。
-    const floatImgs=forPreview&&(paperKind==='pre'||paperKind==='abk')&&imgs;
+    // 預設圖留在題幹／選項後的 inline 區塊，避免從題號第一行就擠壓文字；手動搬過的圖才浮動。
+    const floatImgs=forPreview&&(paperKind==='pre'||paperKind==='abk')&&(it.imgs||[]).some(_pvManualImageLayout)&&imgs;
     const body=floatImgs?`${ctrl}${tag}${imgs}${numberHtml}${qText}${extra}${src}`:`${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}`;
     return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${body}</div>`;
   });
@@ -8049,7 +8051,9 @@ function _preApplyOptionTabs(xml,kind){
     if(!marker)return p;
     const cols=Number(marker[1]);
     const positions=profile.tabs[cols];
-    const tabs='<w:tabs>'+positions.map(pos=>'<w:tab w:val="left" w:pos="'+pos+'"/>').join('')+'</w:tabs>';
+    // 第一個 tab 是題號後的續行位置（left=567 / hanging=425）；沒有它時題號後的
+    // 原生 <w:tab/> 會跳到 4 欄的 1978，造成題號／括弧被拉開。後面才是選項欄位。
+    const tabs='<w:tabs><w:tab w:val="left" w:pos="567"/>'+positions.map(pos=>'<w:tab w:val="left" w:pos="'+pos+'"/>').join('')+'</w:tabs>';
     let q=p.replace(marker[0],'');
     if(!/<w:numId w:val="100"\/>/.test(q))throw new Error((kind==='abk'?'ABK':'課前考')+'選項欄數記號未落在題目段落');
     q=q.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/,(_m,inside)=>{
@@ -8119,6 +8123,7 @@ function _preFloatQuestionImages(xml,positionH,layouts){
   const contentWEmu=positionH==='column'?Math.round(6210.5*635):13130*635;
   let out=String(xml||'');
   const groupRanges=_preGroupPassageInlineRanges(out);
+  const manual=layout=>{const w=Math.max(5,Math.min(100,Number(layout&&layout.width)||65)),def=100-w;return !!layout&&(Math.abs(Number(layout.y)||0)>=1||(layout.x!==undefined&&Math.abs(Number(layout.x)-def)>=.05));};
   const paragraphs=[];const pStack=[];const inlineStack=[];
   const tagRe=/<w:p\b[^>]*>|<\/w:p>|<wp:inline\b[^>]*>|<\/wp:inline>/g;
   let m;
@@ -8131,7 +8136,11 @@ function _preFloatQuestionImages(xml,positionH,layouts){
       const inside=out.slice(im.bodyStart,m.index);
       // 外框本身及其 txbxContent 內的共用圖都必須維持 inline；Word 會忽略文字方塊內的 anchor。
       // 這裡（XML 原始順序）就綁定 layout，後續為了不讓字串索引失效會反向替換段落。
-      if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end))im.p.images.push({...im,end:tagRe.lastIndex,inside,layout:layouts[layoutIndex++]||{}});
+      if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end)){
+        const layout=layouts[layoutIndex++]||{};
+        // 預設圖保持範本 inline：不會擠壓題幹、不會跨 ABK 欄。只有使用者手動搬過才用 anchor。
+        if(manual(layout))im.p.images.push({...im,end:tagRe.lastIndex,inside,layout});
+      }
     }
   }
   // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
