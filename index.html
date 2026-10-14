@@ -313,15 +313,17 @@
   .paperview.show{display:block}
   .pvimg-wrap{margin:10px 0;line-height:0;}
   .pvimg-draggable{display:inline-block;position:relative;cursor:move;user-select:none;}
-  .pvimg-draggable img{display:block;width:100%;}
+  .pvimg-draggable img{display:block;width:100%;pointer-events:none;user-select:none;-webkit-user-drag:none;}
   .pvimg-corner{position:absolute;width:12px;height:12px;background:#2e75b6;border:2px solid #fff;border-radius:2px;opacity:0;transition:opacity .15s;z-index:10;}
   .pvimg-draggable:hover .pvimg-corner,.pvimg-draggable.pv-active .pvimg-corner{opacity:1;}
   .pvimg-tools{position:absolute;top:18px;left:4px;z-index:12;display:flex;gap:3px;opacity:0;transition:opacity .15s;line-height:1}
   .pvimg-draggable:hover .pvimg-tools,.pvimg-draggable.pv-active .pvimg-tools{opacity:1}
   .pvimg-tools button{border:1px solid #cfd6e2;border-radius:4px;background:#fff;color:#344054;padding:3px 5px;font:12px/1 var(--ui-font);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.18)}
   .pvimg-tools button:hover{background:#fbece7;color:var(--red);border-color:#e7bbb5}
-  /* 課前考／ABK 單題圖：靠右浮動，文字繞排在左（ABK 的 float 以 CSS 欄為邊界） */
-  .pvimg-floatimg{float:right;clear:right;margin:2px 0 6px 14px;line-height:0;}
+  /* 課前考／ABK 單題圖：依所在側浮動；ABK 的 float 以 CSS 欄為邊界。 */
+  .pvimg-floatimg{float:right;clear:right;margin:2px 0 6px 14px;line-height:0;contain:layout;}
+  /* 拖曳時不讓控制點反覆顯示／隱藏，避免 hover 樣式額外重繪。 */
+  .pvimg-draggable.pv-dragging .pvimg-corner,.pvimg-draggable.pv-dragging .pvimg-tools{display:none!important;}
   .template-question{display:flow-root;} /* 讓浮動圖被題目方塊包住，分頁量測才準 */
   .pvimg-nw{top:-6px;left:-6px;cursor:nw-resize;}
   .pvimg-ne{top:-6px;right:-6px;cursor:ne-resize;}
@@ -3978,14 +3980,26 @@ async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
 async function togglePvSolutions(){await _pvCommitActive();PV_SHOW_SOL=!PV_SHOW_SOL;_pvRebuild();}
 function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align==='right'?100-w:im.align==='left'?0:50-w/2);}
+function _pvFloatSide(x,w){return x+w/2>=50?'right':'left';}
+function _pvFloatStyle(x,w,y){
+  x=Math.max(0,Math.min(100-w,Number(x)||0));
+  const base=`width:${w}%;margin-top:calc(2px + ${y}px);margin-bottom:6px;`;
+  // CSS float 只能在其中一側繞排；選圖片中心較遠的一側，等同 Word wrapText="largest" 的結果。
+  return _pvFloatSide(x,w)==='right'?base+`float:right;margin-right:${100-x-w}%;margin-left:14px;`:base+`float:left;margin-left:${x}%;margin-right:14px;`;
+}
+function _pvApplyFloatLayout(el,x,w,y){el.style.cssText=_pvFloatStyle(x,w,y);}
 function imgHtmlPreview(im,type,id,idx,floatRight){
-  const w=im.width||65;
+  const rawW=im.width||65;
+  // 歷史資料曾允許一般圖片超過 100%；浮動圖必須留在課前考／ABK 欄內。
+  const w=floatRight?Math.max(5,Math.min(100,rawW)):rawW;
   const y=im.y||0;
   const corners=`<div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div>`;
   const tools=`<div class="pvimg-tools noprint" onmousedown="event.stopPropagation()"><button type="button" title="橡皮擦／裁切" onclick="event.stopPropagation();openImgEraser('${type==='p'?'pvp':'pvq'}',${idx},'${id}')">🧽</button><button type="button" title="換圖：選擇圖片檔" onclick="event.stopPropagation();pvSwapPreviewImage('${type}','${id}',${idx})">↺</button><button type="button" title="換圖：貼上剪貼簿圖片" onclick="event.stopPropagation();pvPastePreviewImage('${type}','${id}',${idx})">📋</button>${_mtHas(im)?`<button type="button" title="編輯繪圖" onclick="event.stopPropagation();pvMtEditPreviewFig('${type}','${id}',${idx})">📐</button>`:''}<button type="button" title="刪除圖片" onclick="event.stopPropagation();pvDeletePreviewImage('${type}','${id}',${idx})">✕</button></div>`;
   if(floatRight){
-    // 靠右浮動：寬度仍可拉四角、可上下微調(translateY)，水平固定靠右（文字自動繞左）
-    return `<div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div>`;
+    // margin-top 是文流的一部分；舊資料的 y 原本是 translateY，數值相同可維持圖片的垂直落點，
+    // 同時讓題幹與選項立刻依新位置繞排。
+    const x=Math.max(0,Math.min(100-w,_pvImgX(im)));
+    return `<div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="${_pvFloatStyle(x,w,y)}" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" draggable="false">${tools}${corners}</div>`;
   }
   const x=_pvImgX(im);
   return `<div class="pvimg-wrap"><div class="pvimg-draggable" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
@@ -4061,34 +4075,37 @@ function pvDragStart(e,type,id,idx){
   e.preventDefault();
   const im=_getPreviewImg(type,id,idx);if(!im)return;
   const el=e.currentTarget;
-  el.classList.add('pv-active');
-  _pvDrag={type,id,idx,startX:e.clientX,startY:e.clientY,startXPct:_pvImgX(im),startYPx:im.y||0,el,contentW:_pvContentW(),floating:el.classList.contains('pvimg-floatimg')};
+  el.classList.add('pv-active','pv-dragging');
+  // 只在開始時量一次；move 中只寫 style，避免同步 layout 導致拖曳卡頓。
+  const q=el.closest('.q'),qH=q?q.getBoundingClientRect().height:0,elH=el.getBoundingClientRect().height;
+  const startY=im.y||0;
+  _pvDrag={type,id,idx,startX:e.clientX,startY:e.clientY,startXPct:_pvImgX(im),startYPx:startY,curX:_pvImgX(im),curY:startY,el,contentW:_pvContentW(),floating:el.classList.contains('pvimg-floatimg'),maxY:Math.max(0,qH-elH),raf:0,pointer:null};
   document.addEventListener('mousemove',_pvDragMove);
   document.addEventListener('mouseup',_pvDragEnd);
 }
 function _pvDragMove(e){
-  if(!_pvDrag)return;
-  const dx=(e.clientX-_pvDrag.startX)/_pvDrag.contentW*100;
-  const dy=e.clientY-_pvDrag.startY;
-  const im=_getPreviewImg(_pvDrag.type,_pvDrag.id,_pvDrag.idx);
-  const w=im?im.width||65:65;
-  const newY=_pvDrag.startYPx+dy;
-  _pvDrag.curY=newY;
-  // 浮動圖固定靠右，只調垂直；一般圖可左右移動
-  if(!_pvDrag.floating){
-    const newX=Math.max(0,Math.min(100-w,_pvDrag.startXPct+dx));
-    _pvDrag.curX=newX;
-    _pvDrag.el.style.marginLeft=newX+'%';
-  }
-  _pvDrag.el.style.transform=`translateY(${newY}px)`;
+  if(!_pvDrag)return;_pvDrag.pointer={x:e.clientX,y:e.clientY};
+  if(!_pvDrag.raf)_pvDrag.raf=requestAnimationFrame(_pvApplyDragFrame);
+}
+function _pvApplyDragFrame(){
+  const d=_pvDrag;if(!d)return;d.raf=0;if(!d.pointer)return;
+  const dx=(d.pointer.x-d.startX)/d.contentW*100,dy=d.pointer.y-d.startY;
+  const im=_getPreviewImg(d.type,d.id,d.idx),rawW=im?im.width||65:65,w=d.floating?Math.max(5,Math.min(100,rawW)):rawW;
+  // 舊資料的負 y 保留原狀直到使用者拖動；新的拖曳不允許圖往上蓋住前一行。
+  const newY=d.floating?Math.max(0,Math.min(d.maxY,d.startYPx+dy)):d.startYPx+dy;
+  d.curY=newY;
+  const newX=Math.max(0,Math.min(100-w,d.startXPct+dx));d.curX=newX;
+  if(!d.floating){d.el.style.marginLeft=newX+'%';d.el.style.transform=`translateY(${newY}px)`;}
+  else _pvApplyFloatLayout(d.el,newX,w,newY);
 }
 async function _pvDragEnd(){
   if(!_pvDrag)return;
+  if(_pvDrag.raf){cancelAnimationFrame(_pvDrag.raf);_pvDrag.raf=0;_pvApplyDragFrame();}
   const {type,id,idx,el,curX,curY}=_pvDrag;
   const newX=Math.round((curX??_pvDrag.startXPct)*10)/10;
   const newY=Math.round(curY??_pvDrag.startYPx);
   const moved=newX!==Math.round(_pvDrag.startXPct*10)/10||newY!==Math.round(_pvDrag.startYPx);
-  el.classList.remove('pv-active');
+  el.classList.remove('pv-active','pv-dragging');
   _pvDrag=null;
   document.removeEventListener('mousemove',_pvDragMove);
   document.removeEventListener('mouseup',_pvDragEnd);
@@ -4101,32 +4118,44 @@ async function _pvDragEnd(){
 function pvResizeStart(e,type,id,idx,corner){
   e.preventDefault();e.stopPropagation();
   const im=_getPreviewImg(type,id,idx);if(!im)return;
-  const w=im.width||65;const x=_pvImgX(im);
+  const floating=e.currentTarget.parentElement.classList.contains('pvimg-floatimg');
+  const rawW=im.width||65,w=floating?Math.max(5,Math.min(100,rawW)):rawW;
+  const x=floating?Math.max(0,Math.min(100-w,_pvImgX(im))):_pvImgX(im);
   const el=e.currentTarget.parentElement;
-  el.classList.add('pv-active');
-  _pvResize={type,id,idx,corner,startMouseX:e.clientX,startW:w,startImgX:x,el,contentW:_pvContentW()};
+  el.classList.add('pv-active','pv-dragging');
+  _pvResize={type,id,idx,corner,startMouseX:e.clientX,startW:w,startImgX:x,curW:w,curX:x,el,contentW:_pvContentW(),floating,raf:0,pointer:null};
   document.addEventListener('mousemove',_pvResizeMove);
   document.addEventListener('mouseup',_pvResizeEnd);
 }
 function _pvResizeMove(e){
-  if(!_pvResize)return;
-  const {corner,startMouseX,startW,startImgX,el,contentW}=_pvResize;
-  const dx=(e.clientX-startMouseX)/contentW*100;
+  if(!_pvResize)return;_pvResize.pointer=e.clientX;
+  if(!_pvResize.raf)_pvResize.raf=requestAnimationFrame(_pvApplyResizeFrame);
+}
+function _pvApplyResizeFrame(){
+  const r=_pvResize;if(!r)return;r.raf=0;if(r.pointer==null)return;
+  const {corner,startMouseX,startW,startImgX,el,contentW}=r;
+  const dx=(r.pointer-startMouseX)/contentW*100;
   let newW,newX;
-  if(corner==='se'||corner==='ne'){newW=Math.max(5,Math.min(150,startW+dx));newX=startImgX;}
-  else{newW=Math.max(5,Math.min(150,startW-dx));newX=Math.max(0,startImgX+dx);}
-  el.style.width=newW+'%';
-  el.style.marginLeft=newX+'%';
+  const maxW=r.floating?100:150;
+  if(corner==='se'||corner==='ne'){newW=Math.max(5,Math.min(maxW-r.startImgX,startW+dx));newX=startImgX;}
+  else{newW=Math.max(5,Math.min(maxW,startW-dx));newX=Math.max(0,Math.min(100-newW,startImgX+dx));}
+  r.curW=newW;r.curX=newX;
+  // 浮動圖可任意水平定位，且縮放時仍留在題目／ABK 欄內。
+  if(r.floating)_pvApplyFloatLayout(el,newX,newW,(_getPreviewImg(r.type,r.id,r.idx)||{}).y||0);
+  else{el.style.width=newW+'%';el.style.marginLeft=newX+'%';}
 }
 async function _pvResizeEnd(){
   if(!_pvResize)return;
-  const {type,id,idx,el}=_pvResize;
-  const newW=Math.round(parseFloat(el.style.width)||65);
-  const newX=Math.round((parseFloat(el.style.marginLeft||'0'))*10)/10;
-  el.classList.remove('pv-active');
+  if(_pvResize.raf){cancelAnimationFrame(_pvResize.raf);_pvResize.raf=0;_pvApplyResizeFrame();}
+  const {type,id,idx,el,curW,curX}=_pvResize;
+  const newW=Math.round(curW||65);
+  const newX=Math.round(curX*10)/10;
+  const moved=newW!==Math.round(_pvResize.startW)||newX!==Math.round(_pvResize.startImgX*10)/10;
+  el.classList.remove('pv-active','pv-dragging');
   _pvResize=null;
   document.removeEventListener('mousemove',_pvResizeMove);
   document.removeEventListener('mouseup',_pvResizeEnd);
+  if(!moved)return;
   const im=_getPreviewImg(type,id,idx);if(!im)return;
   im.width=newW;im.x=newX;
   await _pvSave(type,id);
@@ -8071,8 +8100,12 @@ function _preKeepQuestionTogether(xml){
 // image-module-free 只會產生 wp:inline。單題圖改為靠右浮動、文字由左側繞排；
 // 題組共用圖必須維持在 Group Passage 文字方塊內的 wp:inline，不能轉成 wp:anchor。
 // ABK 的 positionH=column 讓左右兩欄各自以自己的右緣對齊；課前考維持原本 margin 基準。
-function _preFloatQuestionImages(xml,positionH){
+function _preFloatQuestionImages(xml,positionH,layouts){
   positionH=positionH||'margin';
+  layouts=Array.isArray(layouts)?layouts:[];
+  let layoutIndex=0;
+  // pre_tpl：B4 寬 14570、左右邊界各 720 twips；abk_tpl 每欄為 (13130-709)/2 twips。
+  const contentWEmu=positionH==='column'?Math.round(6210.5*635):13130*635;
   let out=String(xml||'');
   const groupRanges=_preGroupPassageInlineRanges(out);
   const paragraphs=[];const pStack=[];const inlineStack=[];
@@ -8086,7 +8119,8 @@ function _preFloatQuestionImages(xml,positionH){
       const im=inlineStack.pop();if(!im||!im.p)continue;
       const inside=out.slice(im.bodyStart,m.index);
       // 外框本身及其 txbxContent 內的共用圖都必須維持 inline；Word 會忽略文字方塊內的 anchor。
-      if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end))im.p.images.push({...im,end:tagRe.lastIndex,inside});
+      // 這裡（XML 原始順序）就綁定 layout，後續為了不讓字串索引失效會反向替換段落。
+      if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end))im.p.images.push({...im,end:tagRe.lastIndex,inside,layout:layouts[layoutIndex++]||{}});
     }
   }
   // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
@@ -8095,13 +8129,22 @@ function _preFloatQuestionImages(xml,positionH){
     const replacements=p.images.sort((a,b)=>a.start-b.start).map(im=>{
       const extent=im.inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
       if(!extent)throw new Error('範本輸出圖片缺少尺寸資料');
-      const currentY=y;y+=Number(extent[2])+90000;
-      const wrap='<wp:wrapSquare wrapText="left"/>';
+      const layout=im.layout||{},width=Math.max(5,Math.min(100,Number(layout.width)||65));
+      const defaultX=100-width,rawX=layout.x===undefined?defaultX:Number(layout.x);
+      const x=Math.max(0,Math.min(100-width,isFinite(rawX)?rawX:defaultX));
+      // 預覽儲存的 y 是 CSS px；Word anchor 用 EMU（1px = 9525 EMU）。
+      // 保留既有多圖堆疊距離，再加上該圖在預覽中調整的垂直位移。
+      const currentY=y+Math.round(Number(layout.y)||0)*9525;y+=Number(extent[2])+90000;
+      const wrap='<wp:wrapSquare wrapText="largest"/>';
       const body=/<wp:effectExtent\b[^>]*\/>/.test(im.inside)
         ?im.inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1'+wrap)
         :im.inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1'+wrap);
+      // 沒有 x（舊資料）或仍在預設右緣時，保留 align:right；其餘用內容／欄寬百分比定位左邊緣。
+      const hPos=layout.x===undefined||Math.abs(x-defaultX)<0.05
+        ?'<wp:align>right</wp:align>'
+        :'<wp:posOffset>'+Math.round(x/100*contentWEmu)+'</wp:posOffset>';
       const anchor='<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
-        +'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="'+positionH+'"><wp:align>right</wp:align></wp:positionH>'
+        +'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="'+positionH+'">'+hPos+'</wp:positionH>'
         +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'+body+'</wp:anchor>';
       return {start:im.start-p.start,end:im.end-p.start,anchor};
     });
@@ -8903,7 +8946,9 @@ async function _tplResolveImgs(imgs){
   for(const im of (imgs||[])){
     if(!im||!im.src)continue;
     const p=await _imgToBase64(im);
-    if(p&&p.b64)out.push(await _tplPrepareImage(p));
+    // layout 供 _preFloatQuestionImages 依輸出順序對應同一張 Word anchor；圖片模組只讀 src/width/height，
+    // 額外欄位不影響範本渲染。
+    if(p&&p.b64)out.push({...await _tplPrepareImage(p),layout:{x:im.x,y:Number(im.y)||0,width:Number(im.width)||65}});
   }
   return out;
 }
@@ -9054,17 +9099,19 @@ async function downloadWordViaTemplate(kind,opts){
     // 配分已填進標題時，移除範本大題標題後方「  /每題＿＿分，共＿＿分」手填佔位（避免與配分重複）。
     let xml2=scoringActive?xml.split('  /每題＿＿分，共＿＿分').join(''):xml;
     // 課前考／ABK：先逐題設定 2/4 欄定位點；必須在答案框插入前完成，避免巢狀段落誤中。
-    // 僅課前考再把題內 inline 圖改成右浮動文繞圖；ABK 維持範本原本的 inline 圖片。
+    // 課前考與 ABK 都把單題 inline 圖改成右浮動文繞圖；ABK 以各欄右緣為基準。
+    // 只有單題圖會被轉成浮動 anchor；題組共用圖留在文字方塊 inline，故不列入此序列。
+    const questionImageLayouts=sections.flatMap(section=>section.items.flatMap(item=>item.imgs.map(image=>image.layout||{})));
     if(kind==='pre'){
       xml2=_preApplyOptionTabs(xml2,kind);
       xml2=_preKeepQuestionTogether(xml2);
-      xml2=_preFloatQuestionImages(xml2);
+      xml2=_preFloatQuestionImages(xml2,undefined,questionImageLayouts);
     }
     if(kind==='abk'){
       xml2=_preApplyOptionTabs(xml2,kind);
       // ABK 與課前考的題目段落同為 numId=100、縮排同為 left=567/hanging=425；可安全 keepLines。
       xml2=_preKeepQuestionTogether(xml2);
-      xml2=_preFloatQuestionImages(xml2,'column');
+      xml2=_preFloatQuestionImages(xml2,'column',questionImageLayouts);
     }
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
