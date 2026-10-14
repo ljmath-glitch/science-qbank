@@ -3749,6 +3749,7 @@ function serializeRichText(container){
     node.childNodes.forEach(child=>{
       if(child.nodeType===Node.TEXT_NODE){out+=child.textContent;return;}
       if(child.nodeType!==Node.ELEMENT_NODE)return;
+      if(child.classList&&child.classList.contains('pvimg-beside'))return; // 選項旁的圖是預覽裝飾，不屬於文字
       const tag=child.tagName;
       if(tag==='BR'){out+='\n';return;}
       if(tag==='DIV'||tag==='P'){const t=walk(child);out+=(out?'\n':'')+t;return;}
@@ -3861,7 +3862,12 @@ function _pvRawText(type,id){
 }
 function _pvTextFocus(el){
   _pvActiveEdit=el;_pvSavedRange=null;el.dataset.editing='1';
+  const isl=el.querySelector('.pvimg-beside');if(isl)isl.remove();
   el.innerHTML=applyRichMarks(esc(_pvRawText(el.dataset.rtype,el.dataset.rid))).replace(/\n/g,'<br>');
+  if(isl){ // 編輯時仍把選項旁的圖放回第一個選項行前，版面不跳動
+    const at=[...el.childNodes].find((n,i)=>i>0&&n.nodeType===Node.TEXT_NODE&&/^\s*\([A-Ea-e]\)/.test(n.textContent));
+    if(at)el.insertBefore(isl,at);else el.appendChild(isl);
+  }
   const bar=document.getElementById('pvFmtBar');if(bar)bar.style.display='flex';
 }
 async function _pvTextBlur(el){
@@ -4000,7 +4006,7 @@ function _pvApplyFloatLayout(el,x,w,y){
   const side=_pvFloatSide(x,w);el.style.clear=side;
   const spacer=el.previousElementSibling;if(spacer&&spacer.classList.contains('pvimg-spacer'))spacer.style.cssText=_pvFloatSpacerStyle(x,w,y);
 }
-function imgHtmlPreview(im,type,id,idx,floatRight){
+function imgHtmlPreview(im,type,id,idx,floatRight,mode){
   const rawW=im.width||65;
   // 歷史資料曾允許一般圖片超過 100%；浮動圖必須留在課前考／ABK 欄內。
   const w=floatRight?Math.max(5,Math.min(100,rawW)):rawW;
@@ -4011,9 +4017,10 @@ function imgHtmlPreview(im,type,id,idx,floatRight){
     // 零寬 spacer 保留舊 y 的像素落點，但不會像 float margin-top 一樣讓圖片上方文字被擠窄。
     const x=Math.max(0,Math.min(100-w,_pvImgX(im)));
     const side=_pvFloatSide(x,w);
+    if(mode==='beside')return `<div class="pvimg-draggable pvimg-floatimg pvimg-beside" contenteditable="false" data-pvimg="${type}|${id}|${idx}" style="${_pvFloatStyle(100-w,w,0)}" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" draggable="false">${tools}${corners}</div>`;
     return `<span class="pvimg-spacer" aria-hidden="true" style="${_pvFloatSpacerStyle(x,w,y)}"></span><div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="${_pvFloatStyle(x,w,y)};clear:${side}" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" draggable="false">${tools}${corners}</div>`;
   }
-  const x=_pvImgX(im);
+  const x=mode==='block'?Math.max(0,100-Math.min(100,w)):_pvImgX(im);
   return `<div class="pvimg-wrap"><div class="pvimg-draggable" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
 }
 function pvSwapPreviewImage(type,id,idx){
@@ -5562,7 +5569,13 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const tag=showTag?`<div style="font-size:12px;color:#999;font-family:inherit">${esc(it.book)} ${esc(it.unit)}・${esc(it.sub)}${it.type?'・'+esc(typeName(it.type)):''}</div>`:'';
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
     const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
-    const imgs=(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i,paperKind==='pre'||paperKind==='abk'):templateLayout?paperTemplateImage(im):imgHtml(im)).join('');
+    // 課前考／ABK 預覽的預設圖位置（與 Word 同一個 _defaultImagePlacement）：手動調過→浮動；小圖→選項旁；大圖／多圖→文字下方靠右。
+    const _preKind=forPreview&&(paperKind==='pre'||paperKind==='abk');
+    const _manualImg=_preKind&&(it.imgs||[]).some(_pvManualImageLayout);
+    const _imgPlace=_preKind&&!_manualImg&&(it.imgs||[]).some(im=>im&&im.src)?_defaultImagePlacement((it.imgs||[]).filter(im=>im&&im.src).map(im=>({width:im.width})),it.q||it.summary||'',paperKind,null):'';
+    const _besideIdx=_imgPlace==='beside'?(it.imgs||[]).findIndex(im=>im&&im.src):-1;
+    const _besideHtml=_besideIdx>=0?imgHtmlPreview(it.imgs[_besideIdx],'q',it.id,_besideIdx,true,'beside'):'';
+    const imgs=_besideHtml?'':(it.imgs||[]).map((im,i)=>forPreview?imgHtmlPreview(im,'q',it.id,i,_preKind&&_manualImg,_preKind&&!_manualImg?'block':undefined):templateLayout?paperTemplateImage(im):imgHtml(im)).join('');
     let passageHtml='';
     const gid=it.groupId||'';
     if(paperSections.groupIds.has(gid)&&!shownPassages.has(gid)){
@@ -5601,7 +5614,8 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const rawQuestion=templateLayout?(it.q||it.summary||'').replace(/(\([A-E]\))[ \t　]+/g,'$1'):(it.q||it.summary||'');
     const plainQuestion=esc(fixLatex(rawQuestion)).replace(/\n/g,'<br>');
     const packPre=forPreview&&(paperKind==='pre'||paperKind==='abk');
-    const qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src),paperKind):applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
+    let qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src),paperKind,_besideHtml):applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
+    if(_besideHtml&&!qTextInner.includes('pvimg-beside'))qTextInner+=_besideHtml; // 選項不足以排版時，圖仍要顯示
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
@@ -5609,7 +5623,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const answerSlot=answerInBracket?`<span style="color:#c0392b;font-weight:700;display:inline-block;min-width:3em;text-align:center">${esc(it.ans||'')}</span>`:answerInNumber?`<span class="pvq-text pvq-answer-slot" contenteditable="true" data-rtype="ans" data-rid="${it.id}" title="點擊修改答案" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'))}</span>`:'　　';
     const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
     // 課前考／ABK 單題圖靠右浮動時，圖要排在題號/題幹「之前」文字才會繞排在左。
-    // 預設圖留在題幹／選項後的 inline 區塊，避免從題號第一行就擠壓文字；手動搬過的圖才浮動。
+    // 預設大圖／多圖在全部選項後靠右獨立一行，避免從題號第一行就擠壓文字；手動搬過的圖才浮動。
     const floatImgs=forPreview&&(paperKind==='pre'||paperKind==='abk')&&(it.imgs||[]).some(_pvManualImageLayout)&&imgs;
     const body=floatImgs?`${ctrl}${tag}${imgs}${numberHtml}${qText}${extra}${src}`:`${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}`;
     return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${body}</div>`;
@@ -7986,7 +8000,20 @@ function deLatexSimple(text){
 // 因為 docxtemplater 會把題目段落複製成各自帶有 pPr/tabs 的獨立段落。
 const PRE_OPT_TAB=''; // 選項間 tab 佔位，render 後換成 <w:tab/>
 const PRE_OPT_COL_OPEN='',PRE_OPT_COL_CLOSE='';
+const PRE_IMG_SENTINEL='';
 function _preOptLen(s){let n=0;for(const ch of String(s)){n+=(ch.codePointAt(0)>0x2e80?1:0.5);}return n;}
+// 預設圖的唯一決策點。圖寬 ≤42% 且扣掉 14px 間隙後，單行選項仍至少容得下最長選項
+// （標籤約 1.5em、再保留 1em）才可放在選項右側；否則一律在全部選項後靠右 inline。
+// 高度由 Word 的實際 extent 再確認（超過選項區 1.6 倍即退回 inline）。
+function _defaultImagePlacement(images,raw,kind,heights){
+  if(!images||images.length!==1)return 'block';
+  const im=images[0],w=Math.max(5,Math.min(100,Number(im.layout&&im.layout.width)||Number(im.width)||65));if(w>42)return 'block';
+  const opts=String(raw||'').split(/\n(?=\([A-Ea-e]\))/).slice(1).filter(x=>/^\([A-Ea-e]\)/.test(x.trim()));
+  if(opts.length<2)return 'block';
+  const profile=_templateOptionProfile(kind||'pre'),avail=(profile.W||65.65)*(100-w)/100-1;
+  const need=Math.max(...opts.map(x=>_preOptLen(x.replace(/^\([A-Ea-e]\)\s*/,''))+2.5));
+  const h=heights&&heights[0];return need<=avail&&(!h||h<=opts.length*20*1.6)?'beside':'block';
+}
 function _templateOptionProfile(kind){
   if(kind==='abk'){
     // abk_tpl.docx：B4 14570 twips，左右邊界各 720、欄距 709，故單欄 6210.5。
@@ -8065,6 +8092,7 @@ function _preApplyOptionTabs(xml,kind){
     return q;
   });
   if(out.includes(PRE_OPT_COL_OPEN)||out.includes(PRE_OPT_COL_CLOSE))throw new Error((kind==='abk'?'ABK':'課前考')+'選項欄數記號未完全清除');
+  // PRE_IMG_SENTINEL 要保留到 _preFloatQuestionImages（它負責把小圖搬到該處並清掉）。
   return out.split(PRE_OPT_TAB).join('</w:t><w:tab/><w:t xml:space="preserve">');
 }
 
@@ -8137,50 +8165,103 @@ function _preFloatQuestionImages(xml,positionH,layouts){
       // 外框本身及其 txbxContent 內的共用圖都必須維持 inline；Word 會忽略文字方塊內的 anchor。
       // 這裡（XML 原始順序）就綁定 layout，後續為了不讓字串索引失效會反向替換段落。
       if(!groupRanges.some(group=>im.start>=group.start&&tagRe.lastIndex<=group.end)){
-        const layout=layouts[layoutIndex++]||{};
-        // 預設圖保持範本 inline：不會擠壓題幹、不會跨 ABK 欄。只有使用者手動搬過才用 anchor。
-        if(manual(layout))im.p.images.push({...im,end:tagRe.lastIndex,inside,layout});
+        const entry=layouts[layoutIndex++]||{},layout=entry.layout||entry;
+        // block 維持 inline；beside 與手動圖才轉 anchor。
+        // 手動調過位置→自訂 anchor；beside→小圖旁 anchor；其餘（大圖／多圖）→移到題目後靠右的獨立段落。
+        im.p.images.push({...im,end:tagRe.lastIndex,inside,layout,placement:entry.placement||'block',manual:manual(layout)});
       }
     }
   }
   // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
+  const brRunRe=/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>$/;
+  const runBounds=(para,at,end)=>{
+    const rs=Math.max(para.lastIndexOf('<w:r>',at),para.lastIndexOf('<w:r ',at));
+    const re=para.indexOf('</w:r>',end);
+    if(rs<0||re<0)return null;
+    const run=para.slice(rs,re+6);
+    // 一個 run 內若有多張圖，就不抽出（維持原位），避免索引錯亂。
+    return (run.match(/<w:drawing>/g)||[]).length===1?{rs,re:re+6,run}:null;
+  };
   for(const p of paragraphs.filter(x=>x.end&&x.images.length).sort((a,b)=>b.start-a.start)){
     let para=out.slice(p.start,p.end),y=0;
-    const replacements=p.images.sort((a,b)=>a.start-b.start).map(im=>{
+    const ops=p.images.sort((a,b)=>a.start-b.start).map(im=>{
       const extent=im.inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
       if(!extent)throw new Error('範本輸出圖片缺少尺寸資料');
-      const layout=im.layout||{},width=Math.max(5,Math.min(100,Number(layout.width)||65));
+      const layout=im.layout||{},mode=im.manual?'anchor':im.placement==='beside'?'beside':'block';
+      const base={start:im.start-p.start,end:im.end-p.start,mode,cx:Number(extent[1]),cy:Number(extent[2])};
+      if(mode==='block')return base;
+      const beside=mode==='beside',width=Math.max(5,Math.min(100,Number(layout.width)||65));
       const defaultX=100-width,rawX=layout.x===undefined?defaultX:Number(layout.x);
       const x=Math.max(0,Math.min(100-width,isFinite(rawX)?rawX:defaultX));
       // 預覽儲存的 y 是 CSS px；Word anchor 用 EMU（1px = 9525 EMU）。
       // 保留既有多圖堆疊距離，再加上該圖在預覽中調整的垂直位移。
-      const currentY=y+Math.round(Number(layout.y)||0)*9525;y+=Number(extent[2])+90000;
-      const wrap='<wp:wrapSquare wrapText="largest"/>';
+      const currentY=beside?0:y+Math.round(Number(layout.y)||0)*9525;y+=Number(extent[2])+90000;
+      const wrap='<wp:wrapSquare wrapText="'+(beside?'left':'largest')+'"/>';
       const body=/<wp:effectExtent\b[^>]*\/>/.test(im.inside)
         ?im.inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1'+wrap)
         :im.inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1'+wrap);
       // 沒有 x（舊資料）或仍在預設右緣時，保留 align:right；其餘用內容／欄寬百分比定位左邊緣。
-      const hPos=layout.x===undefined||Math.abs(x-defaultX)<0.05
+      const hPos=beside||layout.x===undefined||Math.abs(x-defaultX)<0.05
         ?'<wp:align>right</wp:align>'
         :'<wp:posOffset>'+Math.round(x/100*contentWEmu)+'</wp:posOffset>';
-      const anchor='<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
+      base.anchor='<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
         +'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="'+positionH+'">'+hPos+'</wp:positionH>'
-        +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'+body+'</wp:anchor>';
-      return {start:im.start-p.start,end:im.end-p.start,anchor};
+        +'<wp:positionV relativeFrom="'+(beside?'line':'paragraph')+'"><wp:posOffset>'+currentY+'</wp:posOffset></wp:positionV>'+body+'</wp:anchor>';
+      return base;
     });
-    for(const r of replacements.sort((a,b)=>b.start-a.start))para=para.slice(0,r.start)+r.anchor+para.slice(r.end);
-    // inline 圖前原本有換行；浮動後移除該換行，並在段尾 clear，避免下一段繼續繞排。
+    const sideRuns=[],blockRuns=[];let anyAnchor=false;
+    for(const r of ops.slice().reverse()){
+      const rb=r.mode==='anchor'?null:runBounds(para,r.start,r.end);
+      if(r.mode==='anchor'||!rb){
+        // 手動位置，或抽不出獨立 run：就地把 inline 換成 anchor（block 抽不出時維持 inline）。
+        if(r.anchor){para=para.slice(0,r.start)+r.anchor+para.slice(r.end);anyAnchor=true;}
+        continue;
+      }
+      // 抽出圖片 run（連同它前面的「換行 run」），之後放到定位處。
+      let cut=rb.rs;const brm=para.slice(0,rb.rs).match(brRunRe);if(brm)cut=rb.rs-brm[0].length;
+      const off=r.start-rb.rs;
+      const run=r.mode==='beside'?rb.run.slice(0,off)+r.anchor+rb.run.slice(r.end-rb.rs):rb.run;
+      para=para.slice(0,cut)+para.slice(rb.re);
+      (r.mode==='beside'?sideRuns:blockRuns).unshift({run,cx:r.cx,cy:r.cy});
+      if(r.mode==='beside')anyAnchor=true;
+    }
+    let after='';
+    if(sideRuns.length){
+      const si=para.indexOf(PRE_IMG_SENTINEL);
+      if(si>=0){
+        // 小圖旁：anchor run 放在第一個選項行行首（關閉目前 run，插入圖 run，再開同樣格式的新 run）。
+        const rs=Math.max(para.lastIndexOf('<w:r>',si),para.lastIndexOf('<w:r ',si));
+        const rpr=(para.slice(rs,si).match(/^<w:r\b[^>]*>(<w:rPr>[\s\S]*?<\/w:rPr>)?/)||[])[1]||'';
+        para=para.slice(0,si)+'</w:t></w:r>'+sideRuns.map(x=>x.run).join('')+'<w:r>'+rpr+'<w:t xml:space="preserve">'+para.slice(si+PRE_IMG_SENTINEL.length);
+      }else para=para.replace(/<\/w:p>$/,sideRuns.map(x=>x.run).join('')+'</w:p>');
+    }
+    if(blockRuns.length){
+      // 大圖／多圖：整題只用一個靠右的獨立段落放在題目之後；題目段落 keepNext 讓兩者同頁。
+      const pPr=(para.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/)||[])[1]||'';
+      const left=(pPr.match(/<w:ind\b[^>]*\bw:left="(\d+)"/)||[])[1]||'567';
+      const spacing=(pPr.match(/<w:spacing\b[^>]*\/>/)||[''])[0];
+      const gap=100000,avail=Math.max(635*1000,contentWEmu-Number(left)*635-60000);
+      const total=blockRuns.reduce((s,x)=>s+x.cx,0)+gap*(blockRuns.length-1);
+      const k=total>avail?avail/total:1;
+      const scaled=blockRuns.map(x=>k===1?x.run:x.run.replace(/\b(cx|cy)="(\d+)"/g,(_m,a,n)=>a+'="'+Math.max(1,Math.floor(Number(n)*k))+'"'));
+      after='<w:p><w:pPr><w:keepLines/>'+spacing+'<w:ind w:left="'+left+'" w:firstLine="0"/><w:jc w:val="right"/></w:pPr>'
+        +scaled.join('<w:r><w:t xml:space="preserve">  </w:t></w:r>')+'</w:p>';
+      const kn=/<w:pStyle\b[^>]*\/>/.test(para)?para.replace(/(<w:pStyle\b[^>]*\/>)/,'$1<w:keepNext/>'):para.replace(/<w:pPr>/,'<w:pPr><w:keepNext/>');
+      para=kn;
+    }
+    // 浮動後（inline 圖前原本的）換行已移除；段尾 clear，避免下一題繼續繞排在圖旁。
+    // 就地轉成 anchor 的手動圖：移除它前面原本的換行 run。
     para=para.replace(/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>(?=\s*<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:drawing>\s*<wp:anchor)/g,'');
-    para=para.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
-    out=out.slice(0,p.start)+para+out.slice(p.end);
+    if(anyAnchor)para=para.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
+    out=out.slice(0,p.start)+para+after+out.slice(p.end);
   }
-  return out;
+  return out.split(PRE_IMG_SENTINEL).join('');
 }
 // 課前考／ABK 預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
 // 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
 // 為每個 <br> 產生 \n，所以回存時 it.q 與原本「一行一選項」完全相同、不會被污染。
 // 使用者一點擊編輯，_pvTextFocus 又會把內容換回原始 <br> 版本，編輯體驗不受影響。
-function _prePackPreviewHtml(raw,hasImg,kind){
+function _prePackPreviewHtml(raw,hasImg,kind,besideHtml){
   kind=kind||'pre';
   const fmt=s=>applyRichMarks(esc(fixLatex(String(s||''))).replace(/\n/g,'<br>'));
   const text=String(raw||'');
@@ -8197,6 +8278,7 @@ function _prePackPreviewHtml(raw,hasImg,kind){
   opts.forEach((o,i)=>{
     const joinPrev=i>0&&(i%perLine!==0); // 與前一個選項同列→隱藏這個分隔 <br>
     html+='<br'+(joinPrev?' class="pre-ojoin"':'')+'>';
+    if(i===0&&besideHtml)html+=besideHtml; // 小圖：浮動靠右，上緣對齊第一個選項行
     html+='<span class="pre-opt '+colCls+'">'+fmt(o)+'</span>';
   });
   tail.forEach(tl=>{html+='<br>'+fmt(tl);});
@@ -9082,7 +9164,11 @@ async function downloadWordViaTemplate(kind,opts){
       if(kind==='pre'||kind==='abk')qText=_preOptionLayout(qText,(it.imgs||[]).some(im=>im&&im.src),kind);
       // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
       if(opts.teacher)qText=''+(it.ans||'')+''+qText;
-      items.push({no:qno,text:qText,imgs:await _tplResolveImgs(it.imgs),passage});
+      const resolvedImgs=await _tplResolveImgs(it.imgs);
+      const placement=_defaultImagePlacement(resolvedImgs,qText,kind,resolvedImgs.map(x=>x.height));
+      // 圖片模組的 inline 原本在段尾；哨兵讓後處理能把小圖移到第一個選項行的開頭。
+      if(placement==='beside')qText=qText.replace(/\n(?=\([A-Ea-e]\))/, '\n'+PRE_IMG_SENTINEL);
+      items.push({no:qno,text:qText,imgs:resolvedImgs,placement,passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
     // 組卷精靈設定了配分時，把「/每題X分，共Y分」直接帶進標題（取代範本的手填 ＿＿ 佔位）。
@@ -9121,7 +9207,7 @@ async function downloadWordViaTemplate(kind,opts){
     // 課前考／ABK：先逐題設定 2/4 欄定位點；必須在答案框插入前完成，避免巢狀段落誤中。
     // 課前考與 ABK 都把單題 inline 圖改成右浮動文繞圖；ABK 以各欄右緣為基準。
     // 只有單題圖會被轉成浮動 anchor；題組共用圖留在文字方塊 inline，故不列入此序列。
-    const questionImageLayouts=sections.flatMap(section=>section.items.flatMap(item=>item.imgs.map(image=>image.layout||{})));
+    const questionImageLayouts=sections.flatMap(section=>section.items.flatMap(item=>item.imgs.map(image=>({layout:image.layout||{},placement:item.placement||'block'}))));
     if(kind==='pre'){
       xml2=_preApplyOptionTabs(xml2,kind);
       xml2=_preKeepQuestionTogether(xml2);
