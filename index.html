@@ -322,6 +322,8 @@
   .pvimg-tools button:hover{background:#fbece7;color:var(--red);border-color:#e7bbb5}
   /* 課前考／ABK 單題圖：依所在側浮動；ABK 的 float 以 CSS 欄為邊界。 */
   .pvimg-floatimg{float:right;clear:right;margin:2px 0 6px 14px;line-height:0;contain:layout;}
+  /* 垂直位移用零寬浮動 spacer：它只決定圖片開始的高度，不佔橫向繞排寬度。 */
+  .pvimg-spacer{display:block;width:0;height:0;margin:0;padding:0;pointer-events:none;}
   /* 拖曳時不讓控制點反覆顯示／隱藏，避免 hover 樣式額外重繪。 */
   .pvimg-draggable.pv-dragging .pvimg-corner,.pvimg-draggable.pv-dragging .pvimg-tools{display:none!important;}
   .template-question{display:flow-root;} /* 讓浮動圖被題目方塊包住，分頁量測才準 */
@@ -3773,7 +3775,11 @@ function serializeRichText(container){
 function imgHtml(im,lazy=false){const m=im.align==='center'?'0 auto':im.align==='right'?'0 0 0 auto':'0';return `<img class="qimg" src="${im.src}"${lazy?' loading="lazy" decoding="async"':''} style="width:${im.width}%;display:block;margin:${m}">`}
 // ── 預覽圖片：自訂%、拖曳移動、四角等比縮放 ──
 let _pvDrag=null,_pvResize=null;
-function _pvContentW(){const s=document.getElementById('pvSheet');return s?s.clientWidth-96:698;}
+function _pvContentW(el){
+  // 浮動圖的百分比以題目所在區塊為準；ABK 的 .q 在 CSS 欄內，這裡會量到單欄而非整頁。
+  const q=el&&el.closest&&el.closest('.q');if(q&&q.clientWidth)return q.clientWidth;
+  const s=document.getElementById('pvSheet');return s?s.clientWidth-96:698;
+}
 function _getPreviewImg(type,id,idx){
   if(type==='q'){const it=DB.find(x=>x.id===id);return it?(it.imgs[idx]||null):null;}
   const ps=PASSAGES[id];return ps?(ps.imgs[idx]||null):null;
@@ -3983,11 +3989,16 @@ function _pvImgX(im){const w=im.width||65;return im.x!==undefined?im.x:(im.align
 function _pvFloatSide(x,w){return x+w/2>=50?'right':'left';}
 function _pvFloatStyle(x,w,y){
   x=Math.max(0,Math.min(100-w,Number(x)||0));
-  const base=`width:${w}%;margin-top:calc(2px + ${y}px);margin-bottom:6px;`;
+  const base=`width:${w}%;margin-top:2px;margin-bottom:6px;`;
   // CSS float 只能在其中一側繞排；選圖片中心較遠的一側，等同 Word wrapText="largest" 的結果。
   return _pvFloatSide(x,w)==='right'?base+`float:right;margin-right:${100-x-w}%;margin-left:14px;`:base+`float:left;margin-left:${x}%;margin-right:14px;`;
 }
-function _pvApplyFloatLayout(el,x,w,y){el.style.cssText=_pvFloatStyle(x,w,y);}
+function _pvFloatSpacerStyle(x,w,y){return `float:${_pvFloatSide(x,w)};width:0;height:${Math.max(0,Number(y)||0)}px;clear:none;`;}
+function _pvApplyFloatLayout(el,x,w,y){
+  el.style.cssText=_pvFloatStyle(x,w,y);
+  const side=_pvFloatSide(x,w);el.style.clear=side;
+  const spacer=el.previousElementSibling;if(spacer&&spacer.classList.contains('pvimg-spacer'))spacer.style.cssText=_pvFloatSpacerStyle(x,w,y);
+}
 function imgHtmlPreview(im,type,id,idx,floatRight){
   const rawW=im.width||65;
   // 歷史資料曾允許一般圖片超過 100%；浮動圖必須留在課前考／ABK 欄內。
@@ -3996,10 +4007,10 @@ function imgHtmlPreview(im,type,id,idx,floatRight){
   const corners=`<div class="pvimg-corner pvimg-nw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'nw')"></div><div class="pvimg-corner pvimg-ne" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'ne')"></div><div class="pvimg-corner pvimg-sw" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'sw')"></div><div class="pvimg-corner pvimg-se" onmousedown="pvResizeStart(event,'${type}','${id}',${idx},'se')"></div>`;
   const tools=`<div class="pvimg-tools noprint" onmousedown="event.stopPropagation()"><button type="button" title="橡皮擦／裁切" onclick="event.stopPropagation();openImgEraser('${type==='p'?'pvp':'pvq'}',${idx},'${id}')">🧽</button><button type="button" title="換圖：選擇圖片檔" onclick="event.stopPropagation();pvSwapPreviewImage('${type}','${id}',${idx})">↺</button><button type="button" title="換圖：貼上剪貼簿圖片" onclick="event.stopPropagation();pvPastePreviewImage('${type}','${id}',${idx})">📋</button>${_mtHas(im)?`<button type="button" title="編輯繪圖" onclick="event.stopPropagation();pvMtEditPreviewFig('${type}','${id}',${idx})">📐</button>`:''}<button type="button" title="刪除圖片" onclick="event.stopPropagation();pvDeletePreviewImage('${type}','${id}',${idx})">✕</button></div>`;
   if(floatRight){
-    // margin-top 是文流的一部分；舊資料的 y 原本是 translateY，數值相同可維持圖片的垂直落點，
-    // 同時讓題幹與選項立刻依新位置繞排。
+    // 零寬 spacer 保留舊 y 的像素落點，但不會像 float margin-top 一樣讓圖片上方文字被擠窄。
     const x=Math.max(0,Math.min(100-w,_pvImgX(im)));
-    return `<div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="${_pvFloatStyle(x,w,y)}" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" draggable="false">${tools}${corners}</div>`;
+    const side=_pvFloatSide(x,w);
+    return `<span class="pvimg-spacer" aria-hidden="true" style="${_pvFloatSpacerStyle(x,w,y)}"></span><div class="pvimg-draggable pvimg-floatimg" data-pvimg="${type}|${id}|${idx}" style="${_pvFloatStyle(x,w,y)};clear:${side}" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" draggable="false">${tools}${corners}</div>`;
   }
   const x=_pvImgX(im);
   return `<div class="pvimg-wrap"><div class="pvimg-draggable" data-pvimg="${type}|${id}|${idx}" style="width:${w}%;margin-left:${x}%;transform:translateY(${y}px)" onmousedown="pvDragStart(event,'${type}','${id}',${idx})"><img src="${im.src}" style="pointer-events:none">${tools}${corners}</div></div>`;
@@ -4079,7 +4090,7 @@ function pvDragStart(e,type,id,idx){
   // 只在開始時量一次；move 中只寫 style，避免同步 layout 導致拖曳卡頓。
   const q=el.closest('.q'),qH=q?q.getBoundingClientRect().height:0,elH=el.getBoundingClientRect().height;
   const startY=im.y||0;
-  _pvDrag={type,id,idx,startX:e.clientX,startY:e.clientY,startXPct:_pvImgX(im),startYPx:startY,curX:_pvImgX(im),curY:startY,el,contentW:_pvContentW(),floating:el.classList.contains('pvimg-floatimg'),maxY:Math.max(0,qH-elH),raf:0,pointer:null};
+  _pvDrag={type,id,idx,startX:e.clientX,startY:e.clientY,startXPct:_pvImgX(im),startYPx:startY,curX:_pvImgX(im),curY:startY,el,contentW:_pvContentW(el),floating:el.classList.contains('pvimg-floatimg'),maxY:Math.max(0,qH-elH),raf:0,pointer:null};
   document.addEventListener('mousemove',_pvDragMove);
   document.addEventListener('mouseup',_pvDragEnd);
 }
@@ -4123,7 +4134,7 @@ function pvResizeStart(e,type,id,idx,corner){
   const x=floating?Math.max(0,Math.min(100-w,_pvImgX(im))):_pvImgX(im);
   const el=e.currentTarget.parentElement;
   el.classList.add('pv-active','pv-dragging');
-  _pvResize={type,id,idx,corner,startMouseX:e.clientX,startW:w,startImgX:x,curW:w,curX:x,el,contentW:_pvContentW(),floating,raf:0,pointer:null};
+  _pvResize={type,id,idx,corner,startMouseX:e.clientX,startW:w,startImgX:x,curW:w,curX:x,el,contentW:_pvContentW(el),floating,raf:0,pointer:null};
   document.addEventListener('mousemove',_pvResizeMove);
   document.addEventListener('mouseup',_pvResizeEnd);
 }
