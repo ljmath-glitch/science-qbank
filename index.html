@@ -8900,7 +8900,8 @@ function _tplRedAnswers(xml){
 // 對應 Mac Word 170% 截圖中答案中心比括弧中心偏右約 5 px（約 55～60 twips）的量測。
 // 行高是 240 twips＝152400 EMU；高 200000 EMU 的文字方塊以 -24000 EMU 起算，中心為
 // 76000 EMU，和行中心 76200 EMU 相差 200 EMU。固定全形空格區使一、兩位數共用同一位置。
-const ANSBOX={offX:93000, offY:-24000, w:190000, h:200000, perDigit:0}; // EMU；1 inch = 914400
+// 一位數題號已對準；兩位數題號實測括弧中心比一位數右移約 4px（170% 縮放、頁寬約 1285px≈14570 twips，1px≈7200 EMU），故每多一位數右移 30000 EMU。
+const ANSBOX={offX:93000, offY:-24000, w:190000, h:200000, perDigit:30000}; // EMU；1 inch = 914400
 let _ansBoxId=990000001;
 function _answerBoxXml(ans, digits){
   const id=_ansBoxId++;
