@@ -165,7 +165,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 | **Ollama（本機）** | 不需要 API Key | 見第 7 節，是這次新加的功能，細節最多 |
 
 固定的詳解撰寫規則（寫死在 `makeSolPrompt()`，`index.html:2551`）：
-- 標題固定用【解題關鍵】【詳解】【觀念補充】（全形括號，禁止 Markdown `##`/`**`）
+- 只輸出【詳解】與內容；完整規則見 `docs/詳解輸出規則.md`。
 - 選擇題每個選項要標「(X) 正確：」或「(X) 錯誤：」
 - LaTeX 一律只用單錢字號 `$...$`，絕對不能用 `$$...$$`
 - 如果原本沒有答案，AI 會先自行判斷正確答案，用「【AI 判斷答案】X」標示，程式會自動抓出來回填答案欄
@@ -181,7 +181,190 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 - 答案顯示模式：無答案 / 答案卷 / 兩者都要（分開下載）
 - 匯出成 Word（`.docx`，`downloadWordDoc()`）或 HTML
 - 「選題CSV」：把目前勾選的題目匯出成 CSV（跟匯入格式類似，多一個算好的「難度」欄）
-- **解析卷（新）＝不含題目**：勾「解析卷」時（`ansMode` `full` 或 `both_full`）走 `downloadSolutionWord()`／`solutionExportQuestion()`，依 `exam-answer-key-formatter` 交接文件的詳解模板輸出：無框線對齊表格＝題號｜【答案】｜【詳解】共用說明＋逐選項 `(A)~(E) 正確/錯誤：理由`，**不印題目**；開頭一列簡答速查（答案每 5 題以 `/` 分隔）。`solutionExportQuestion` 依區塊解析，略去 stored `sol` 的【解題關鍵】【觀念補充】，只留【詳解】；沒有選項行時退回純文字詳解。公式維持 `$$...$$` 純文字（便於 MathType Toggle TeX）。`both_full`＝題目卷（無答案）＋解析卷兩檔。
+- **解析卷（新）＝不含題目**：勾「解析卷」時（`ansMode` `full` 或 `both_full`）走 `downloadSolutionWord()`／`solutionExportQuestion()`，依 `exam-answer-key-formatter` 交接文件的詳解模板輸出：無框線對齊表格＝題號｜【答案】｜【詳解】共用說明＋逐選項 `(A)~(E) 正確/錯誤：理由`，**不印題目**；開頭一列簡答速查（答案每 5 題以 `/` 分隔）。`solutionExportQuestion` 依區塊解析，略去 stored `sol` 的【解題關鍵】【觀念補充】，只留【詳解】；沒有選項行時退回純文字詳解。公式維持 `$...# 茲茲文教自然科題庫系統 — 完整技術文件
+
+這份文件的目標讀者：**完全沒看過這個專案的人（包含另一個 Claude）**。看完這份文件應該要能：獨立修 bug、加新功能、部署上線、以及排解 Ollama／Tailscale 連線問題。
+
+---
+
+## 1. 專案是什麼
+
+一套給「茲茲文教」補習班內部使用的**國中自然科題庫管理系統**。核心用途：
+
+- 老師把段考卷拍照/掃描，用 AI（Claude / Gemini）把考卷轉成結構化 CSV，匯入題庫
+- 題庫依領域（生物/理化/地科）、單元、知識點、難度、題型分類，可篩選、搜尋
+- 從題庫挑題組卷，匯出成 Word/HTML 考卷（可選有無詳解、答案卷/題目卷）
+- 可用 AI（Claude / Gemini / ChatGPT / **Ollama 本機模型**）自動生成詳解
+- 全部資料存在雲端（Supabase），多人可同時使用，不會互相覆蓋掉別人電腦上的資料
+
+**正式網址**：https://science-qbank.vercel.app
+**GitHub repo**：https://github.com/ljmath-glitch/science-qbank （只有一個 `main` branch）
+**原始碼形式**：每一支頁面各是**一支獨立 HTML 檔案**（HTML/CSS/JS 全寫在同檔，無建置、無 npm/webpack）。主檔是 `index.html`（最大的那支）。系統目前有這幾個分頁：
+
+| 檔案 | 分頁 | 一句話 |
+|---|---|---|
+| `index.html` | 題庫主系統 | 篩選/編輯/匯入/AI詳解/組卷匯出的主戰場 |
+| `raw.html` | 考卷前處理 | 新考卷從 PDF/Word 洗成可匯入的題目＋圖（命名/轉檔/裁圖/批次貼圖） |
+| `analytics.html` | 題庫健檢儀表板 | 題型/難度/圖表/題源分布、章節缺口、資料品質診斷、年度總覽 |
+| `progress.html` | 共編進度表 | 每份考卷處理進度看板，跟主系統進度卡片雙向同步 |
+| `daily.html` | 每日一題 | 練習挑戰，等級/角色養成，答錯回報連動待確認 |
+| `guide.html` | 使用說明書 | 給人看的互動版操作手冊（改功能時記得一起更新！） |
+
+> 面向使用者的完整功能與使用方法：見 `guide.html`。改任何功能都要順手更新 `guide.html`（它長期落後過，V7.0 才補齊）。
+
+---
+
+## 2. 部署方式（非常重要，決定你怎麼改東西）
+
+1. `index.html` 改完直接 `git commit` + `git push` 到 GitHub `main` branch
+2. Vercel 已經接好 GitHub webhook，**push 到 main 會在幾十秒內自動重新部署**，不用手動操作 Vercel 後台
+3. 沒有任何 build step——Vercel 只是把整個 repo 當靜態檔案原樣發佈。改完 `index.html` 存檔、push，就是全部的部署流程
+4. 驗證部署是否上線：`curl -s https://science-qbank.vercel.app | grep "你剛加的某個字串"`
+
+**結論：不需要 `npm install`、不需要本機開發伺服器，改 HTML 檔案本身就是在改「原始碼」。**
+
+---
+
+## 3. 技術棧
+
+| 項目 | 用什麼 |
+|---|---|
+| 前端 | 純 HTML + inline `<script>` + inline `<style>`，無框架（無 React/Vue） |
+| 後端 | Supabase（Postgres + REST API + Storage），完全沒有自己的 server |
+| 部署 | Vercel，靜態託管，push 到 GitHub main 自動上線 |
+| 數學公式排版 | KaTeX（CDN 載入） |
+| Excel/CSV 解析 | SheetJS (xlsx.js，CDN 載入) |
+| 字型 | 華康中圓體 + GenSenRounded（Google 開源圓體，CDN） |
+| AI 詳解生成 | Claude API / Gemini API / OpenAI API / **本機 Ollama**（四選一，使用者自己在網頁上選） |
+
+Supabase 連線資訊寫死在 `index.html` 最上面（因為是 anon/publishable key，本來就設計給前端直接用，不是密鑰外洩）：
+
+```js
+const SUPABASE_URL      = 'https://esfepufqyeplafzbeeag.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
+```
+
+---
+
+## 4. 資料庫結構（Supabase）
+
+只有兩張表 + 一個 Storage bucket：
+
+### 4.1 `questions` 表（主表，題目與題組文章都存在這裡）
+
+程式內部用 JS 物件（欄位用 camelCase），存進 DB 前會做欄位名轉換（`toRow()`/`fromRow()`，程式碼約在 `index.html:949`）：
+
+| DB 欄位（snake_case） | 程式內欄位 | 說明 |
+|---|---|---|
+| `id` | `id` | 唯一值，格式 `q<timestamp36><random4>` |
+| `year` | `year` | 年度，例如 `114` |
+| `school` | `school` | 來源學校 |
+| `exam` | `exam` | 考試名稱（已正規化，如「114-八年級-下學期-第一次段考」或「114會考」） |
+| `no` | `no` | 題號 |
+| `ans` | `ans` | 答案 |
+| `book` | `book` | 冊數代碼：`B1`~`B6`（B1/B2=七年級，B3/B4=八年級，B5/B6=九年級） |
+| `book_name` | `bookName` | 冊名文字（如「南一/生物」） |
+| `field` | `field` | 領域：`生物` / `理化` / `地科` |
+| `unit` | `unit` | 大單元 |
+| `sub` | `sub` | 子單元 |
+| `kp` | `kp` | 知識點 |
+| `summary` | `summary` | 題目摘要 |
+| `type` | `type` | 題型代碼（見第 9 節 QTYPES），特殊值 `passage` 代表這筆是「題組閱讀文章」不是題目 |
+| `step`/`mem`/`con` | 同名 | 步驟分／記憶分／概念分（各 0~不限，用來算難度） |
+| `chart` | `chart` | 圖表類型 |
+| `basis` | `basis` | 判斷依據／備註；如果內容以 `[回報]` 開頭，代表這題被標記為有問題，會出現在鈴鐺通知 |
+| `flag` | `flag` | boolean，「待確認」標記（匯入時沒有答案，或人工標記回報問題時會是 true） |
+| `q` | `q` | 題目內容（可含 LaTeX，`$...$` 包住） |
+| `sol` | `sol` | AI 或人工寫的詳解 |
+| `group_id` | `groupId` | 題組 ID，同一組的子題與題組文章共用同一個值 |
+| `imgs` | `imgs` | **JSONB array**，格式：`[{src:"data:image/png;base64,..."或公開URL, width:數字(%), align, x?, y?, mt?}]`；`mt` 只在「茲茲數學工具」畫的圖才有（可回編資料，見 §6.15） |
+| `updated_at` | — | 每次 `toRow()` 都會自動蓋成 `new Date().toISOString()` |
+
+> 舊圖片可能還是 base64 直接存在 `imgs` 裡；新上傳的圖片會先丟到 Supabase Storage 拿到公開 URL 再存（省資料庫空間），見 `uploadImgs()`，`index.html:1002`。
+
+### 4.2 `syllabus_doc` 表（key-value 設定表，用 `id` 區分用途）
+
+這張表本來是存課綱大綱文字，後來被挪用當「共用設定」的 key-value store：
+
+| `id` | 用途 |
+|---|---|
+| `1` | 課綱大綱原始文字（`SYL_RAW`），沒有就 fallback 用內建的 `HANLIN_SYLLABUS` |
+| `2` | 已存在的「考試名稱」清單（`examKeys`，匯入 CSV 時用來記錄自訂命名，避免重複） |
+| `3` | `AI_CFG`，JSON 字串，存 Claude/Gemini/OpenAI 的 API Key、選用的模型、AI 供應商偏好。**這個是雲端共用的**，所以同事之間用同一顆 API Key 不用每個人各自輸入一次 |
+| `4` | `EXAM_PDFS`，JSON 字串，**考卷原稿 PDF 對應表**（`{考試名稱: 公開URL}`）。一份 PDF 對應一個考試名稱，該考卷所有題目共用。PDF 檔本身存 Storage bucket `question-images` 的 `_exam_pdfs/` 路徑。見 §6.9 |
+
+### 4.3 Storage bucket
+
+`question-images`：存題目圖片（png/jpg），路徑格式 `{題目id}/{時間戳記}_{index}_{隨機碼}.{副檔名}`。
+
+---
+
+## 5. 核心資料流
+
+1. 開頁面 → `load()`（`index.html:967`）分頁抓 `questions` 表全部資料（每次 1000 筆一批直到抓完）→ 拆成 `DB`（一般題目陣列）和 `PASSAGES`（`{groupId: 題組文章物件}`）
+2. 每筆題目做 `precompute()`：預先算好難度、學年、學期、考試類型、次別、年級（避免每次篩選都重算）
+3. 畫面篩選用 `matches(it)`（`index.html:1610`）：文字搜尋 + 各種下拉篩選（冊數/領域/單元/子單元/知識點/題型/難度/年度/學期/學校/考試類型/次別/年級/圖表類型/待確認），同題組的題目會自動一起展開顯示
+4. `render()` 分頁顯示（每頁 50 題）
+5. 使用者勾選題目（`PICKS` Set）→ 可以「匯出考卷」或「選題CSV」
+
+---
+
+## 6. 功能模組
+
+### 6.1 新增/編輯題目（`editDlg`）
+
+手動輸入或編輯單題，支援：貼上圖片（Ctrl+V）、上傳圖片、拖拉調整圖片大小與位置、LaTeX 數學公式（`$...$`，KaTeX 即時預覽）、設定題組 ID 把多題綁成同一組（例如閱讀測驗）。
+
+### 6.2 CSV / Excel 匯入（`doImport()`，`index.html:1047`）
+
+> 給工讀生的完整操作 SOP（掃描 →「試卷寶」洗筆跡 → 餵給 AI（連原始檔一起附上）→ AI 產出 Excel → 匯入 → 逐題檢查排版/方程式/題組編號/承上題 → 補圖（含題組文章與題組圖）→ 到共編進度表打勾回報主管）寫在 `guide.html` 第三節「考卷處理與匯入完整流程（工讀生 SOP）」，這裡只記程式邏輯本身。
+
+**目前正式欄位格式（23 欄，0-indexed）：**
+
+```
+0 年度, 1 來源學校, 2 考試名稱, 3 題號, 4 答案, 5 冊數, 6 冊名, 7 領域,
+8 大單元, 9 子單元, 10 知識點, 11 題目摘要, 12 題型,
+13 步驟分, 14 記憶分, 15 概念分, 16 圖表類型, 17 判斷依據,
+18 待確認(填Y代表待確認), 19 題目, 20 詳解, 21 題組文章, 22 題組ID
+```
+
+**舊格式相容（22 欄）**：沒有獨立的「題組文章」欄，題組文章改用 `【題幹】` 分隔符寫在「題目」欄開頭，第 21 欄直接是「題組ID」。程式會自動判斷欄位數 (`r.length>=23` vs `>=22`) 決定用哪套解析邏輯。
+
+匯入邏輯重點：
+- 沒有答案（第4欄空白）會自動打上 `flag=true`（待確認）
+- 匯入前會偵測「相同考試名稱」或「相同考試+題號」是否已存在，有重複會跳確認視窗
+- 「題組文章」是獨立存進 `questions` 表的一筆記錄（`type='passage'`），跟子題共用 `groupId`
+- 可用「📋 Claude 指令」按鈕複製一段預先寫好的 prompt，貼到任何 AI 對話視窗、附上考卷照片，AI 會回傳符合上述格式的 CSV，直接貼回匯入框即可（`copyPrompt()`，`index.html:2297`）
+
+### 6.3 AI 生成詳解（`generateSol()`，`index.html` 約 2600 行）
+
+四選一供應商，選單在「詳解」欄位旁邊：
+
+| 供應商 | Key 存放 | 備註 |
+|---|---|---|
+| Claude | 使用者輸入 API Key，存 localStorage + 雲端 `AI_CFG` | 預設供應商 |
+| Gemini | 同上 | 有模型選擇下拉選單，會動態抓 Google API 列出可用模型 |
+| ChatGPT (OpenAI) | 同上 | 會自動處理模型棄用/改名的情況並重試 |
+| **Ollama（本機）** | 不需要 API Key | 見第 7 節，是這次新加的功能，細節最多 |
+
+固定的詳解撰寫規則（寫死在 `makeSolPrompt()`，`index.html:2551`）：
+- 只輸出【詳解】與內容；完整規則見 `docs/詳解輸出規則.md`。
+- 選擇題每個選項要標「(X) 正確：」或「(X) 錯誤：」
+- LaTeX 一律只用單錢字號 `$...$`，絕對不能用 `$$...$$`
+- 如果原本沒有答案，AI 會先自行判斷正確答案，用「【AI 判斷答案】X」標示，程式會自動抓出來回填答案欄
+
+### 6.4 選題與配題
+
+- 手動勾選單題（`togglePick`），同題組的子題會一起勾選/取消
+- 「⚖ 依比例自動選」（`autoMix()`/`doAutoMix()`，`index.html:1728`）：在目前篩選條件下，依「簡單/中等/困難/極難」四個難度各設定要幾 % 比例、總題數，隨機抽題
+
+### 6.5 匯出考卷（`openPaperDlg()` 開始，`index.html:1759`）
+
+- 可自訂表頭（年級、科目、範圍、考試名稱），有 logo
+- 答案顯示模式：無答案 / 答案卷 / 兩者都要（分開下載）
+- 匯出成 Word（`.docx`，`downloadWordDoc()`）或 HTML
+- 「選題CSV」：把目前勾選的題目匯出成 CSV（跟匯入格式類似，多一個算好的「難度」欄）
+- **解析卷（新）＝不含題目**：勾「解析卷」時（`ansMode` `full` 或 `both_full`）走 `downloadSolutionWord()`／`solutionExportQuestion()`，依 `exam-answer-key-formatter` 交接文件的詳解模板輸出：無框線對齊表格＝題號｜【答案】｜【詳解】共用說明＋逐選項 `(A)~(E) 正確/錯誤：理由`，**不印題目**；開頭一列簡答速查（答案每 5 題以 `/` 分隔）。`solutionExportQuestion` 依區塊解析，略去 stored `sol` 的【解題關鍵】【觀念補充】，只留【詳解】；沒有選項行時退回純文字詳解。 純文字（便於 MathType Toggle TeX）。`both_full`＝題目卷（無答案）＋解析卷兩檔。
 - **ABK 淡灰浮水印（新）**：資產 `watermark.png`（由 `logo.png` 剪影烘焙成 960px 淡灰，印刷夠清晰；`_fetchWatermarkLogoBytes()` 直接取用、保留舊 canvas 後備）。Word 與預覽 CSS（`.pdoc-abk-watermark` / `.pv-sheet.abk-preview:before`）皆為**直立**（不再 skew）、置於頁面**左上、左緣出血**（只露閃電右半、由頂端往下約 40% 頁高），貼近實體 B4 範本。換 logo 時重跑烘焙即可。
 - **題目編輯預覽＝真分頁（新，像 Word）**：`_pvRenderPaged()` 以實際量測把題目切成一張張固定尺寸紙（B4/A4，√2 比例，超過頁高換下一張），取代原本無限延伸的單一長 sheet。每頁掛 `.pv-sheet` 沿用字型與浮水印；**第一頁完整卷頭、第二頁起只留精簡跑馬燈頁首**（`_pvRunningHeader`）；頁尾頁碼。雙欄（ABK）以欄平衡高度量測換頁。`buildPaperInner(forcedMode,forPreview,asParts)` 的 `asParts` 回傳 `{headHtml,blocks,ansBlock,twoCol,kind}` 給分頁器。踩過的坑：含段落標題的題目區塊有多個頂層節點，須整組搬移否則第一題會遺失。
 - **卷頭可即時編輯（新）**：預覽中卷頭文字可直接點擊修改，`_pvHdrEditable`/`_pvHdrBlur` 把「科目冊別→`pTitle`、考卷名稱/範圍→`pExamName`、ABK 章節標題→`pExamName`」寫回設定欄位（同步匯出）。
@@ -421,3 +604,7 @@ result=await callOllama(sys,msg,olUrl,olMdl,imgs);
 - `OLLAMA_PRESETS` 裡的 IP 是寫死的，換電腦或重新配 Tailscale 網段要記得回來改
 - 目前只有一個 Supabase 專案，沒有 dev/staging 環境區隔，改資料庫欄位要直接在正式環境上小心操作
 - **raw 第 III 區自動裁圖對「圖片型 PDF」抓不全**：試卷寶清稿／掃描的 PDF 是整頁一張圖（文字選不起來、圖表多為向量或掃描像素），`extractPdfEmbeddedImages()` 只抓得到少數內嵌 raster 圖，向量圖表與掃描頁無法可靠自動偵測，AI 猜座標也不準。這是本質限制——這種檔請走「手動框選裁切」，或用外部工具（如 MinerU：`pip install "mineru[core]"` → `mineru -p in.pdf -o out`）先抽圖，再回系統批次貼。若要接 MinerU，方向是讀它的 `content_list.json`（含每張圖在第幾頁、周圍文字）自動對題號。
+
+
+## 2026-10-15 詳解規則更新
+以 docs/詳解輸出規則.md 與 solutionWritingRules() 為準。單題、批次及對話修正共用規則；只寫【詳解】，不產出解題關鍵或觀念補充，限國中課綱，計算題統一解說，否定題依敘述真偽判斷。解析Word為12pt、單行間距、單一連續無框線四欄表格；公式保留單錢號。以上取代本文件舊的三標題、雙錢號說明。

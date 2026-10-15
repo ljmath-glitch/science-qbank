@@ -1962,7 +1962,7 @@ function uid(){return 'q'+Date.now().toString(36)+Math.random().toString(36).sli
 /* ===== 欄位對應：程式內用 bookName，資料表用 book_name；其餘欄位同名 ===== */
 function toRow(it){const r={...it};r.book_name=it.bookName;delete r.bookName;
   r.group_id=it.groupId||'';delete r.groupId;
-  ['_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ','_hadImgMarker'].forEach(k=>delete r[k]);
+  ['updatedAt','_diff','_sylYear','_sylSem','_examType','_examRoundNum','_grade','_fixedQ','_hadImgMarker'].forEach(k=>delete r[k]);
   r.updated_at=new Date().toISOString();return r;}
 function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;it.groupId=r.group_id||'';delete it.group_id;
   it.imgs=Array.isArray(it.imgs)?it.imgs:[];['step','mem','con'].forEach(k=>it[k]=it[k]||0);it.flag=!!it.flag;
@@ -2636,8 +2636,22 @@ async function doImportSol(){
     if(!ok)return;
   }
   const updates=[...toAdd,...toReplace];
-  const {error}=await sb.from('questions').upsert(updates.map(toRow));
-  if(error){alert('匯入失敗：'+error.message);return}
+  // 只寫入詳解，避免把前端暫存欄位或舊的題目內容送回資料庫。
+  let saved=0;
+  try{
+    for(const it of updates){
+      const {data,error}=await sb.from('questions')
+        .update({sol:it.sol,updated_at:new Date().toISOString()})
+        .eq('id',it.id).select('id');
+      if(error)throw error;
+      if(!data||!data.length)throw new Error('題目不存在或沒有更新權限：'+it.exam+' 第'+it.no+'題');
+      saved++;
+    }
+  }catch(error){
+    alert('匯入中止：已成功匯入 '+saved+'／'+total+' 題詳解。\n'+error.message+'\n請排除問題後重新匯入。');
+    if(saved){await load();buildFilters();render();}
+    return;
+  }
   solImportDlg.close();
   await load();buildFilters();render();
   let msg=`成功匯入 ${total} 題詳解（新增 ${toAdd.length} 題，取代 ${toReplace.length} 題）`;
@@ -5298,7 +5312,7 @@ function _solPreviewSheet(title,solItems){
     const ops=(q.options||[]).map(o=>line('','',`(${o.label})`,applyRichMarks(esc(fixLatex(o.text))))).join('');
     return `<div class="pdoc-sol-item">${ans}${det}${ops}</div>`;
   }).join('');
-  return `<section class="pdoc-sheet a4 solsheet"><style>.pdoc-sheet.solsheet .pdoc-sol-title{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 12px}.pdoc-sol-item{margin-bottom:10px;break-inside:avoid}.pdoc-sol-line{display:flex;align-items:flex-start;gap:3px;line-height:1.55}.pdoc-sol-no{flex:0 0 26px;font-weight:bold}.pdoc-sol-lbl{flex:0 0 56px;font-weight:bold;white-space:nowrap}.pdoc-sol-opt{flex:0 0 26px;text-align:center}.pdoc-sol-txt{flex:1;min-width:0}</style><div class="pdoc-sol-title">${esc(title)}　詳解</div>${body||'<div class="pdoc-meta">尚未選題</div>'}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
+  return `<section class="pdoc-sheet a4 solsheet"><style>.pdoc-sheet.solsheet .pdoc-sol-title{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 12px}.pdoc-sol-item{margin-bottom:10px;break-inside:avoid}.pdoc-sol-line{display:flex;align-items:flex-start;gap:3px;font-size:12pt;line-height:1}.pdoc-sol-no{flex:0 0 26px;font-weight:bold}.pdoc-sol-lbl{flex:0 0 56px;font-weight:bold;white-space:nowrap}.pdoc-sol-opt{flex:0 0 26px;text-align:center}.pdoc-sol-txt{flex:1;min-width:0}</style><div class="pdoc-sol-title">${esc(title)}　詳解</div><p style="text-align:center">${esc(solutionSummary(solItems||[]))}</p>${body||'<div class="pdoc-meta">尚未選題</div>'}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
 }
 function refreshPaperSettingsPreview(){
   const target=document.getElementById('paperSettingsPreview');if(!target)return;
@@ -5725,7 +5739,16 @@ function closePaper(){
   // 從獨立組卷頁完成預覽後，回到題庫管理，而不是露出 iframe 背後的題庫頁。
   if(WZ_EMBEDDED)top.location.href='index.html';
 }
-function downloadPaper(){download(lastPaperTitle+'_'+stamp()+'.html',lastPaperHTML,'text/html')}
+function downloadPaper(){
+ let html=lastPaperHTML;
+ if(['full','both_full'].includes(paperAnsMode())){
+  const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>solutionExportQuestion(it,i+1));
+  const solution=solutionHtml(lastPaperTitle,questions);
+  const question=paperAnsMode()==='both_full'?buildPaperInner('none'):'';
+  html='<!DOCTYPE html><html lang="zh-Hant"><meta charset="UTF-8"><title>'+esc(lastPaperTitle)+'</title><body>'+question+solution+'</body></html>';
+ }
+ download(lastPaperTitle+'_'+stamp()+'.html',html,'text/html');
+}
 
 /* ===== 備份/還原 ===== */
 function exportJSON(){
@@ -7242,11 +7265,12 @@ async function callOllama(sys,msg,baseUrl,model,imgs=[]){
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).choices[0].message.content.trim();
 }
+function solutionWritingRules(){return "你是臺灣國中自然科教師，使用繁體中文，只用國中課綱概念與講法，禁止高中公式或正式定義。整份考卷依題號一次處理。\n【詳解格式】\n只輸出【詳解】及其內容，不寫【解題關鍵】、【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。\n一般選擇題：必要時先寫多個選項共用的概念或計算，再逐選項寫 (A)正確：理由 或 (A)錯誤：理由，標籤後不留空格。每個選項約40～70字、1～2行，以學生能理解判斷原因為準，不只給結論，也不為湊字數冗長敘述。\n正確／錯誤指選項敘述本身的真偽。問何者錯誤、不正確、不是、不可能等否定題，答案應是標為錯誤的選項；一般題答案為標為正確的選項。多選核對全部答案字母。\n計算題（包括以數值作選項的題目）：只寫一段統一詳解，交代公式、代入、計算與單位，不逐選項解說。\n資訊不足、圖片不清或答案與推理衝突時，在相關內容標示「需人工確認」，不得捏造條件或硬湊理由。未提供答案且資訊充分時，先單獨一行寫【AI 判斷答案】X，再寫【詳解】；資訊不足時不猜答案。\n【公式規則】\n只對分數、根號、科學記號、上下標、希臘字母、特殊溫度符號或需排版的算式使用單錢號 $...$ 純文字 LaTeX。一般數字及單位如12、60g、5cm/s直接寫文字，不包錢號。只包需要排版的部分，如 $\\lambda$=2cm；含分數的算式可整段包住。禁止雙錢號、Markdown標題及粗體；不要產出OMML。公式括號對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。";}
 function makeSolPrompt(q,ans,meta,groupCtx){
-  const sys='你是一位臺灣自然科教師，為國中會考題目撰寫詳解。使用繁體中文與臺灣高中課綱術語。\n\n【LaTeX 數學符號規則——非常重要，必須嚴格遵守】\n所有數學式、化學式、物理量、單位，一律用單個錢號包住：$公式$\n✅ 正確：$v=\\frac{d}{t}$、$Cu^{2+}$、$H_2O$、$30\\text{ m/s}$\n⚠️ 不是只有明顯的算式才要包：內文裡任何測量值、數量、數據，即使只是單一個裸數字（沒有搭配運算符號），也一律要包 $...$，例如「共有 $12$ 顆分子」而不是「共有12顆分子」\n❌ 絕對禁止：$$公式$$、\\[公式\\]、\\(公式\\)、直接寫分數文字\n只有一種寫法：$...$，沒有例外；溫度一律用 $^\\circ\\mathrm{C}$、$^\\circ\\mathrm{F}$（如 $25^\\circ\\mathrm{C}$），禁止用裸字「℃」「℉」「°C」「°F」「度C」「度F」。\n\n【化學反應式箭頭規則】\n箭頭上下有條件（催化劑／加熱等）：用 \\xrightarrow[下方]{\\text{上方}}\n✅ 範例：$\\mathrm{CH_3COOH}+\\mathrm{C_2H_5OH}\\xrightarrow[\\Delta]{\\text{硫酸}}\\mathrm{CH_3COOC_2H_5}+\\mathrm{H_2O}$\n❌ 禁止用 \\overset/\\underset 搭配 \\longrightarrow（KaTeX 無法正確渲染）';
-  const example='【格式範例一：選擇題（氧化還原）】\n【解題關鍵】\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n【詳解】\n(A) 錯誤：Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) 正確：$Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) 錯誤：Cu 為還原後的產物，非氧化劑。\n\n【觀念補充】\n氧化劑自身被還原，還原劑自身被氧化。\n\n【格式範例二：計算題（速度）】\n【解題關鍵】\n代入速度公式 $v=\\frac{d}{t}$ 即可求解。\n\n【詳解】\n$v=\\frac{120\\text{ m}}{4\\text{ s}}=30\\text{ m/s}$\n【範例結束】';
+  const sys=solutionWritingRules();
+  const example="【格式範例：計算題】\n【詳解】\n先以路程除以所需時間求平均速率，代入得 $v=\\frac{120}{4}=30$cm/s，因此選擇數值為30cm/s的選項。";
   const noAns=!ans;
-  const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項格式固定為「(X) 正確：解析」或「(X) 錯誤：解析」，先標示正誤再接一句解析；計算題只保留關鍵代入步驟。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、出題範圍；不寫「故選(A)」等語句。\n6. LaTeX：只用 $...$，絕對不用 $$...$$、\\[...\\]、\\(...\\)。'+(noAns?'\n7. 答案未知：請先自行判斷正確選項，在【解題關鍵】前單獨一行寫「【AI 判斷答案】X」（X 為你認為的正確選項），再依此撰寫詳解。':'');
+  const rules='交付前逐題核對答案與選項真偽；否定題比對錯誤選項，計算題核對計算結果。';
   const msg=(noAns?'（答案未提供，請先自行判斷正確選項再寫詳解）\n':'正確答案是'+ans+'。\n')+meta+groupCtx+'\n【題目】\n'+q+'\n\n'+example+'\n\n'+rules;
   return {sys,msg};
 }
@@ -7353,7 +7377,7 @@ async function solChatSend(){
   const btn=document.getElementById('solChatSendBtn');
   btn.textContent='修正中…';btn.disabled=true;
   try{
-    const sys='你是一位臺灣自然科教師，正在修正國中會考題目的詳解。使用繁體中文。只輸出修改後的完整詳解（格式維持【解題關鍵】【詳解】【觀念補充】），不輸出其他說明。\nLaTeX規則：只用 $...$，不用 $$...$$、\\[...\\]、\\(...\\)。';
+    const sys=solutionWritingRules()+'\n只輸出修改後的完整詳解，不輸出其他說明。';
     let histCtx='';
     if(solChatHistory.length>0)histCtx='\n\n【本次已修正過的記錄】\n'+solChatHistory.filter(h=>h.role==='user').map((h,i)=>`第${i+1}次修正要求：${h.content}`).join('\n');
     const msg=`【題目】\n${q}\n\n【正確答案】\n${ans||'未提供'}\n\n【目前詳解（請以此為基礎修改）】\n${currentSol}${histCtx}\n\n【修正要求】\n${userMsg}\n\n請輸出修改後的完整詳解：`;
@@ -7905,10 +7929,10 @@ function showPromptJH(){
 // 國中／高中已合併為單一指令，此函式保留相容性，一律走合併版
 function showPromptHS(){showPromptJH();}
 function buildSolBatchPrompt(items){
-  const sys='你是一位臺灣自然科教師，負責為以下多道題目撰寫詳解。使用繁體中文與臺灣課綱術語。\n\n【LaTeX 數學符號規則——非常重要，必須嚴格遵守】\n所有數學式、化學式、物理量、單位，一律用單個錢號包住：$公式$\n✅ 正確：$v=\\frac{d}{t}$、$Cu^{2+}$、$H_2O$、$30\\text{ m/s}$\n⚠️ 不是只有明顯的算式才要包：內文裡任何測量值、數量、數據，即使只是單一個裸數字（沒有搭配運算符號），也一律要包 $...$，例如「共有 $12$ 顆分子」而不是「共有12顆分子」\n❌ 絕對禁止：$$公式$$、\\[公式\\]、\\(公式\\)、直接寫分數文字\n只有一種寫法：$...$，沒有例外；溫度一律用 $^\\circ\\mathrm{C}$、$^\\circ\\mathrm{F}$（如 $25^\\circ\\mathrm{C}$），禁止用裸字「℃」「℉」「°C」「°F」「度C」「度F」。\n\n【化學反應式箭頭規則】\n箭頭上下有條件（催化劑／加熱等）：用 \\xrightarrow[下方]{\\text{上方}}\n✅ 範例：$\\mathrm{CH_3COOH}+\\mathrm{C_2H_5OH}\\xrightarrow[\\Delta]{\\text{硫酸}}\\mathrm{CH_3COOC_2H_5}+\\mathrm{H_2O}$\n❌ 禁止用 \\overset/\\underset 搭配 \\longrightarrow（KaTeX 無法正確渲染）';
-  const example='【格式範例：選擇題（氧化還原）】\n【解題關鍵】\n氧化數下降代表得電子，得電子的物質即為氧化劑。\n\n【詳解】\n(A) 錯誤：Zn 氧化數 0 → +2，失電子，為還原劑。\n(B) 正確：$Cu^{2+}$ 氧化數 +2 → 0，得電子，為氧化劑。\n(C) 錯誤：$Zn^{2+}$ 為反應後產物，非氧化還原中的作用物。\n(D) 錯誤：Cu 為還原後的產物，非氧化劑。\n\n【觀念補充】\n氧化劑自身被還原，還原劑自身被氧化。\n【範例結束】';
-  const rules='【撰寫規則】\n1. 標題格式固定為【解題關鍵】【詳解】【觀念補充】，使用全形括號，禁止使用 ## 或 ** 等 Markdown 符號。\n2. 【解題關鍵】：一句話點出核心觀念或切入點。\n3. 【詳解】：選擇題每個選項格式固定為「(X) 正確：解析」或「(X) 錯誤：解析」，先標示正誤再接一句解析；計算題只保留關鍵代入步驟。\n4. 【觀念補充】：有教學價值時寫1～2句；無必要則整段省略。\n5. 不重複題號、出題範圍；不寫「故選(A)」等語句。\n6. LaTeX：只用 $...$，絕對不用 $$...$$、\\[...\\]、\\(...\\)。\n7. 若某題答案是「（未提供，請自行判斷）」，請先自行判斷正確選項，在該題【解題關鍵】前單獨一行寫「【AI 判斷答案】X」（X為你認為的正確選項），再依此撰寫詳解。';
-  const outputFormat='════════════════════════════════════════\n【輸出格式——非常重要，請務必嚴格遵守，這是拿來自動比對匯入用的】\n════════════════════════════════════════\n把以上每一題的詳解都寫完後，最後請額外整理成一份 CSV（用 ``` 包住方便複製），規則如下：\n1. 只要三個欄位，標題列（第一列）固定寫：考試名稱,題號,詳解\n2. 「考試名稱」「題號」必須跟我在下面提供的原始資料一字不差（這是系統拿來自動比對題目用的比對鍵，不可以自己重新命名、簡化、或調整格式），否則會比對失敗、匯入不進去\n3. 每個欄位都用雙引號包住；「詳解」欄位內部有換行、逗號都直接留在雙引號裡即可，不用額外處理\n4. 每道題目一列，不可以漏題，也不可以把多題合併成一列\n5. 除了這份 CSV，前面每一題正常撰寫的詳解內容也請保留，不要省略，我要兩者都能看到';
+  const sys=solutionWritingRules();
+  const example="【格式範例：計算題】\n【詳解】\n先以路程除以所需時間求平均速率，代入得 $v=\\frac{120}{4}=30$cm/s，因此選擇數值為30cm/s的選項。";
+  const rules='交付前逐題核對答案與選項真偽；否定題比對錯誤選項，計算題核對計算結果。';
+  const outputFormat='════════════════════════════════════════\n【輸出格式——非常重要，請務必嚴格遵守，這是拿來自動比對匯入用的】\n════════════════════════════════════════\n把以上每一題的詳解都寫完後，最後請額外整理成一份 CSV（用 ``` 包住方便複製），規則如下：\n1. 只要三個欄位，標題列（第一列）固定寫：考試名稱,題號,詳解\n2. 「考試名稱」「題號」必須跟我在下面提供的原始資料一字不差（這是系統拿來自動比對題目用的比對鍵，不可以自己重新命名、簡化、或調整格式），否則會比對失敗、匯入不進去\n3. 每個欄位都用雙引號包住；「詳解」欄位內部有換行、逗號都直接留在雙引號裡即可，欄位內若有雙引號，必須寫成兩個雙引號（CSV跳脫）\n4. 每道題目一列，不可以漏題，也不可以把多題合併成一列\n5. 除了這份 CSV，前面每一題正常撰寫的詳解內容也請保留，不要省略，我要兩者都能看到';
   const qList=items.length?items.map((it,i)=>{
     const gid=it.groupId||'';
     let ctx='';
@@ -8776,21 +8800,26 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
   finally{prog.remove();}
 }
 // 詳解講義：依「詳解＋簡答」模板輸出。公式維持 $...$ 純文字，方便在 Word 以 MathType Toggle TeX 轉換。
+function solutionSummary(questions){const groups=[];for(let i=0;i<questions.length;i+=5)groups.push(questions.slice(i,i+5).map(q=>q.answer).join(''));return groups.join('/');}
+function solutionHtml(title,questions){
+ const body=questions.map(q=>{const n=q.options.length+2;return '<tr><td rowspan="'+n+'">'+esc(q.no)+'</td><td>【答案】</td><td colspan="2">'+esc(q.answer)+'</td></tr><tr><td>【詳解】</td><td colspan="2">'+esc(q.detail).replace(/\n/g,'<br>')+'</td></tr>'+q.options.map(o=>'<tr><td></td><td>('+esc(o.label)+')</td><td>'+esc(o.text).replace(/\n/g,'<br>')+'</td></tr>').join('');}).join('');
+ return '<section class="solution-export"><style>@page{size:A4;margin:1.5cm}.solution-export{font-family:Times New Roman,DFPYuanMedium-B5,serif;font-size:12pt;line-height:1;color:#000}.solution-export h1,.solution-export p{text-align:center}.solution-export table{width:18cm;table-layout:fixed;border-collapse:collapse}.solution-export td{border:0;background:none;vertical-align:top;padding:2pt .5pt;white-space:pre-wrap}.solution-export tr{break-inside:avoid}</style><h1>'+esc(title)+' 詳解</h1><p>'+esc(solutionSummary(questions))+'</p><table><colgroup><col style="width:.7cm"><col style="width:2.2cm"><col style="width:.9cm"><col style="width:14.2cm"></colgroup>'+body+'</table></section>';
+}
 function solutionExportQuestion(it,no){
   // 依交接文件的詳解模板產出：只保留【詳解】區塊的共用說明＋逐選項判斷；
   // 略去【解題關鍵】【觀念補充】等其他欄位（模板不含解題關鍵）。
   const raw=String(it.sol||'').replace(/\r/g,'').trim();
   const lines=raw.split('\n').map(x=>x.trim());
   const options=[];const detail=[];
-  let section='';   // 'detail' = 目前在【詳解】區塊，其餘標題一律略過其內容
+  let section='detail';   // 'detail' = 目前在【詳解】區塊，其餘標題一律略過其內容
   lines.forEach(line=>{
     if(!line)return;
     if(/^【答案】/.test(line))return;
     if(/^【詳解】/.test(line)){section='detail';const rest=line.replace(/^【詳解】[:：]?\s*/,'');if(rest)detail.push(rest);return;}
     if(/^【[^】]+】/.test(line)){section='other';return;}   // 【解題關鍵】【觀念補充】…→ 略過整段
     const m=line.match(/^[（(]\s*([A-Ea-e])\s*[）)]\s*[:：]?\s*(.*)$/);
-    if(m){options.push({label:m[1].toUpperCase(),text:m[2]||'需人工確認'});return;}
-    if(section==='detail')detail.push(line);   // 只有【詳解】區塊的共用說明才保留
+    if(m&&section==='detail'){options.push({label:m[1].toUpperCase(),text:m[2]||'需人工確認'});return;}
+    if(section==='detail'){if(options.length)options[options.length-1].text+='\n'+line;else detail.push(line);}
   });
   const byLabel={};options.forEach(o=>{if(!(o.label in byLabel))byLabel[o.label]=o.text;});
   const labels=Object.keys(byLabel).sort();   // 依實際出現的選項字母（支援到 E、多選）
@@ -8805,24 +8834,24 @@ async function downloadSolutionWord(){
     await _ensureDocxLib();
     const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,VerticalAlign,VerticalMergeType,BorderStyle,TableLayoutType}=window.docx;
     const FONT={ascii:'Times New Roman',hAnsi:'Times New Roman',eastAsia:'DFPYuanMedium-B5',cs:'DFPYuanMedium-B5'};
-    const run=(text,bold=false)=>new TextRun({text:normalizeWordLatex(text),font:FONT,size:24,bold});
+    const run=(text,bold=false)=>new TextRun({text:String(text??''),font:FONT,size:24,bold});
     const dxa=cm=>Math.round(cm*566.9291339),COL_NUM=dxa(.7),COL_LABEL=dxa(2.2),COL_LETTER=dxa(.9),COL_CONTENT=dxa(14.2),COL_MERGED=COL_LETTER+COL_CONTENT;
     const none={style:BorderStyle.NONE,size:0,color:'FFFFFF'},borders={top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none};
-    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,spacing:{line:360,lineRule:'auto'},children:text?[run(text,bold)]:[]});
+    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,snapToGrid:false,adjustRightIndent:false,contextualSpacing:false,spacing:{before:0,after:0,line:240,lineRule:'auto'},children:text?[run(text,bold)]:[]});
     const cell=(text,opts={})=>new TableCell({width:{size:opts.width,type:WidthType.DXA},columnSpan:opts.span,borders:{top:none,bottom:none,left:none,right:none},verticalAlign:VerticalAlign.TOP,verticalMerge:opts.merge,margins:{top:40,bottom:40,left:opts.tight?10:60,right:opts.tight?10:60},children:[para(text,opts.bold,opts.keepNext,opts.center)]});
-    const table=q=>{
+    const questionRows=q=>{
       const rows=[
         new TableRow({cantSplit:true,children:[cell(String(q.no),{width:COL_NUM,merge:VerticalMergeType.RESTART,bold:true,keepNext:true,tight:true,center:true}),cell('【答案】',{width:COL_LABEL,bold:true,keepNext:true,tight:true}),cell(q.answer,{width:COL_MERGED,span:2,bold:true,keepNext:true})]}),
-        new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:true}),cell('【詳解】',{width:COL_LABEL,bold:true,keepNext:true,tight:true}),cell(q.detail,{width:COL_MERGED,span:2,keepNext:true})]})
+        new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:q.options.length>0}),cell('【詳解】',{width:COL_LABEL,bold:true,keepNext:q.options.length>0,tight:true}),cell(q.detail,{width:COL_MERGED,span:2,keepNext:q.options.length>0})]})
       ];
       q.options.forEach((o,i)=>rows.push(new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:i<q.options.length-1}),cell('',{width:COL_LABEL,keepNext:i<q.options.length-1}),cell(`(${o.label})`,{width:COL_LETTER,keepNext:i<q.options.length-1,tight:true,center:true}),cell(o.text,{width:COL_CONTENT,keepNext:i<q.options.length-1})]})));
-      return new Table({layout:TableLayoutType.FIXED,width:{size:COL_NUM+COL_LABEL+COL_MERGED,type:WidthType.DXA},columnWidths:[COL_NUM,COL_LABEL,COL_LETTER,COL_CONTENT],borders,rows});
+      return rows;
     };
     const title=(document.getElementById('pTitle').value||'自然科測驗卷').trim();
     const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>solutionExportQuestion(it,i+1));
-    const answers=questions.map(q=>q.answer).join('');const groups=[];for(let i=0;i<answers.length;i+=5)groups.push(answers.slice(i,i+5));
-    const children=[new Paragraph({alignment:'center',spacing:{after:120,line:360,lineRule:'auto'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:360,lineRule:'auto'},children:[run(groups.join('/'),true)]})];
-    questions.forEach((q,i)=>{children.push(table(q));if(i<questions.length-1)children.push(new Paragraph({spacing:{before:60,after:60},children:[]}));});
+    const summary=solutionSummary(questions);
+    const children=[new Paragraph({alignment:'center',spacing:{after:120,line:240,lineRule:'auto'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:240,lineRule:'auto'},children:[run(summary,true)]})];
+    if(questions.length)children.push(new Table({layout:TableLayoutType.FIXED,width:{size:COL_NUM+COL_LABEL+COL_MERGED,type:WidthType.DXA},columnWidths:[COL_NUM,COL_LABEL,COL_LETTER,COL_CONTENT],borders,rows:questions.flatMap(questionRows)}));
     const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:dxa(1.5),bottom:dxa(1.5),left:dxa(1.5),right:dxa(1.5)}}},children}]});
     const blob=await Packer.toBlob(doc),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'_詳解_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);paperDlg.close();
   }catch(e){alert('詳解 Word 匯出失敗：'+e.message);}
@@ -9252,7 +9281,9 @@ async function downloadWordFromDlg(){
     return;
   }
   if(paperKind==='mock'){
-    if(ansMode==='both'||ansMode==='both_full'){
+    if(ansMode==='full'){await downloadSolutionWord();return;}
+    if(ansMode==='both_full'){await generateMockWord(title+'（題目卷）',items,'none',hdr,showTag,showSource,showSourceFull);await downloadSolutionWord();return;}
+    if(ansMode==='both'){
       await generateMockWord(title+'（題目卷）',items,'none',hdr,showTag,showSource,showSourceFull);
       await generateMockWord(title+'（解析卷）',items,ansMode==='both_full'?'full':'inline',hdr,showTag,showSource,showSourceFull);
     }else await generateMockWord(title,items,ansMode,hdr,showTag,showSource,showSourceFull);
