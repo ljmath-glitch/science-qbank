@@ -20,6 +20,7 @@ const ctx={window:{docx},PICKS:new Set([1,2,3]),pickedItems:()=>items,paperQuest
  document:{createElement:element,body:{appendChild(){},removeChild(){}},getElementById:()=>({value:'詳解排版測試'})},
  esc:x=>String(x),applyRichMarks:x=>x,fixLatex:x=>x,_paperSettingsPage:0};
 vm.createContext(ctx);
+vm.runInContext(source.slice(source.indexOf('function normalizeSol('),source.indexOf('function parseSyl(')),ctx);
 vm.runInContext(source.slice(source.indexOf('function solutionSummary('),source.indexOf('// 模考／會考格式：')),ctx);
 vm.runInContext(source.slice(source.indexOf('function _solPreviewSheet('),source.indexOf('function refreshPaperSettingsPreview(')),ctx);
 vm.runInContext(source.match(/function solutionWritingRules\(\)\{[^\n]+/)[0],ctx);
@@ -55,5 +56,13 @@ vm.runInContext(source.match(/function solutionWritingRules\(\)\{[^\n]+/)[0],ctx
  const emptyOptions=ctx.solutionExportQuestion({ans:'B',sol:'【詳解】\n同一個概念即可判斷。\n(A)\n(B)\n(C)\n(D)'},5);
  assert.equal(emptyOptions.options.length,0,'Empty option markers must not manufacture explanation fields');
  assert.equal(ctx.solutionExplanationRows(emptyOptions).length,1);
+ const reference=ctx.normalizeSol('【詳解】\n(A)錯誤：理由甲。\n(B)錯誤：同(A)所述。');
+ assert.ok(reference.includes('同(A)所述。'),'Inline option references must remain intact');
+ const referenceQ=ctx.solutionExportQuestion({ans:'C',sol:reference},6);
+ assert.ok(referenceQ.options.find(o=>o.label==='B').text.includes('同(A)所述。'));
+ const legacy=ctx.solutionExportQuestion({ans:'C',sol:'【詳解】\n(A)錯誤：理由甲。\n(B)錯誤：同\n(A) 所述。'},7);
+ assert.ok(legacy.options.find(o=>o.label==='B').text.includes('同(A) 所述。'),'Preserve old split reference text');
+ const duplicate=ctx.solutionExportQuestion({ans:'C',sol:'【詳解】\n(A)錯誤：第一段。\n(A)錯誤：補充理由。'},8);
+ assert.ok(duplicate.options[0].text.includes('補充理由'),'Repeated labels cannot silently discard content');
  console.log('PASS: prompt, parsing, preview, HTML, and real DOCX export for unified/options-only/mixed explanations');
 })().catch(e=>{console.error(e);process.exitCode=1;});
