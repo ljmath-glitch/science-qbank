@@ -28,21 +28,23 @@
   function addCss() {
     if (document.getElementById('tzqrCss')) return;
     var s = ''
-      + '.tzqr-btn{width:46px;height:46px;border-radius:13px;border:1px solid #efe5df;cursor:pointer;background:#fff8f4;color:#7d1833;box-shadow:0 3px 12px rgba(45,48,56,.08);display:flex;align-items:center;justify-content:center;font:inherit;z-index:2;flex:0 0 auto}'
-      + '.tzqr-btn:hover{background:#fff0e9;border-color:#e7d2c8}'
-      + '.tzqr-btn:active{transform:scale(.94)}'
+      + '.tzqr-btn{width:36px;height:36px;padding:0;border-radius:9px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--ink,#303238);box-shadow:none;display:flex;align-items:center;justify-content:center;font:inherit;z-index:2;flex:0 0 auto;transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}'
+      + '.tzqr-btn:hover{background:var(--cream,#faf8f4);border-color:var(--line,#e6dfd5);color:var(--red,#850103)}'
+      + '.tzqr-btn:active{background:#f3e9e3;color:var(--red,#850103);transform:scale(.94)}'
       + '.tzqr-btn:focus-visible{outline:3px solid rgba(133,1,3,.28);outline-offset:2px}'
       + '.tzqr-btn--abs{position:absolute;top:50%;right:66px;transform:translateY(-50%)}'
-      + '.tzqr-btn.spin{pointer-events:none}'
+      + '.tzqr-btn--abs:active{transform:translateY(-50%) scale(.94)}'
+      + '.tzqr-btn.spin{pointer-events:none;color:var(--red,#850103);background:var(--cream,#faf8f4)}'
       + '.tzqr-btn.spin svg{animation:tzqrspin .7s linear infinite;transform-origin:50% 50%}'
       + '@keyframes tzqrspin{to{transform:rotate(360deg)}}'
-      + '@media(max-width:560px){.tzqr-btn{width:40px;height:40px;border-radius:11px}.tzqr-btn--abs{right:56px}}';
+      + '@media(max-width:560px){.tzqr-btn--abs{right:56px}}'
+      + '@media(prefers-reduced-motion:reduce){.tzqr-btn{transition:none}.tzqr-btn.spin svg{animation:none}}';
     var st = document.createElement('style'); st.id = 'tzqrCss'; st.textContent = s;
     document.head.appendChild(st);
   }
 
   function icon() {
-    return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.36"/><path d="M21 3v6h-6"/></svg>';
+    return '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.36"/><path d="M21 3v6h-6"/></svg>';
   }
 
   function doRefresh() {
