@@ -29,6 +29,12 @@
     if (document.getElementById('tzqrCss')) return;
     var s = ''
       + '.tzqr-btn{width:36px;height:36px;padding:0;border-radius:9px;border:1px solid transparent;cursor:pointer;background:transparent;color:var(--ink,#303238);box-shadow:none;display:flex;align-items:center;justify-content:center;font:inherit;z-index:2;flex:0 0 auto;transition:background .16s ease,color .16s ease,border-color .16s ease,transform .16s ease}'
+      + '.tzqr-header-aligned{align-items:center}'
+      + '.tzqr-header-aligned>.hdr-compose-btn{height:36px;display:inline-flex;align-items:center;justify-content:center;line-height:1}'
+      + '.tzqr-header-aligned>.bell-wrap{height:36px;display:flex;align-items:center;line-height:1}'
+      + '.tzqr-header-aligned>.index-home-link,.tzqr-header-aligned>button.bell-btn,.tzqr-header-aligned>.bell-wrap>.bell-btn{width:36px;height:36px;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;flex:0 0 36px}'
+      + '.tzqr-header-aligned>.tzpn-btn{width:36px;height:36px;flex:0 0 36px;border-radius:9px;align-self:center}'
+      + '.tzqr-header-aligned>.index-home-link svg,.tzqr-header-aligned>button.bell-btn svg,.tzqr-header-aligned>.bell-wrap>.bell-btn svg,.tzqr-header-aligned>.tzpn-btn svg{width:21px;height:21px;display:block}'
       + '.tzqr-btn:hover{background:var(--cream,#faf8f4);border-color:var(--line,#e6dfd5);color:var(--red,#850103)}'
       + '.tzqr-btn:active{background:#f3e9e3;color:var(--red,#850103);transform:scale(.94)}'
       + '.tzqr-btn:focus-visible{outline:3px solid rgba(133,1,3,.28);outline-offset:2px}'
@@ -88,10 +94,11 @@
       document.body.appendChild(btn);
       return;
     }
+    if (host.querySelector('.hdr-text')) host.classList.add('tzqr-header-aligned');
     var isFlex = (getComputedStyle(host).display || '').indexOf('flex') > -1;
     if (isFlex) {
       // 標頭是 flex：直接當 flex 子元素塞在最右邊（in-flow，一定點得到）。
-      btn.style.marginLeft = 'auto';
+      btn.style.marginLeft = host.classList.contains('tzqr-header-aligned') ? '0' : 'auto';
       host.appendChild(btn);
     } else {
       // 非 flex 標頭：絕對定位在右上，留在禮物鈕左側。
@@ -112,7 +119,7 @@
       // 絕對定位版：禮物在 right:12，重新整理在 right:66，本來就錯開，不用動。
       return;
     }
-    gift.style.marginLeft = '8px';
+    gift.style.marginLeft = btn.parentNode.classList.contains('tzqr-header-aligned') ? '0' : '8px';
     if (gift.previousElementSibling !== btn) btn.parentNode.insertBefore(btn, gift);
   }
 

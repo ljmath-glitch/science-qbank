@@ -66,7 +66,11 @@
   btn.className = 'tzpn-btn'; btn.title = '近期功能更新'; btn.type = 'button';
   btn.setAttribute('aria-label', '近期功能更新');
   btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="10" width="18" height="11" rx="1.5"/><path d="M2 7h20v4H2zM12 7v14M12 7H8.5a2.5 2.5 0 1 1 2.4-3.2L12 7Zm0 0h3.5a2.5 2.5 0 1 0-2.4-3.2L12 7Z"/></svg><span class="tzpn-badge"></span>';
-  var host = document.querySelector('header .daily-actions, header .header-actions, header .wrap, header .bar, header');
+  var host = document.querySelector('header .daily-actions')
+    || document.querySelector('header .header-actions')
+    || document.querySelector('header .wrap')
+    || document.querySelector('header .bar')
+    || document.querySelector('header');
   if (host) {
     if (getComputedStyle(host).display.indexOf('flex') === -1) {
       host.style.position = 'relative';
