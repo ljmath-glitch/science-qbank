@@ -8,13 +8,13 @@ const source=fs.readFileSync(path.join(__dirname,'../index.html'),'utf8');
 // Compile every inline script so changes to prompts and preview markup are checked too.
 for(const m of source.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g))new vm.Script(m[1]);
 const items=[
- {ans:'B',sol:'【詳解】\nW=FS=200×2=400J。'},
+ {ans:'B',sol:'【詳解】\nW=FS=200×2=400J。\n$v=\\frac{120}{4}=30$cm/s。'},
  {ans:'D',sol:'【詳解】\n(A)錯誤：力具有方向。\n(D)正確：功沒有方向。'},
  {ans:'B',sol:'【詳解】\n先比較施力方向與位移方向。\n(A)錯誤：沒有位移。\n(B)正確：沿施力方向移動。'},
 ];
 let blob,closed=false;
 const element=()=>({style:{},remove(){},click(){}});
-const ctx={window:{docx},PICKS:new Set([1,2,3]),pickedItems:()=>items,paperQuestionSections:x=>({ordered:x}),
+const ctx={JSZip,window:{docx},PICKS:new Set([1,2,3]),pickedItems:()=>items,paperQuestionSections:x=>({ordered:x}),
  _ensureDocxLib:async()=>{},stamp:()=> 'test',paperDlg:{close(){closed=true;}},
  alert:message=>{throw new Error(message);},URL:{createObjectURL:b=>{blob=b;return 'blob:test';},revokeObjectURL(){}},setTimeout(){},
  document:{createElement:element,body:{appendChild(){},removeChild(){}},getElementById:()=>({value:'詳解排版測試'})},
@@ -40,7 +40,9 @@ vm.runInContext(source.match(/function solutionWritingRules\(\)\{[^\n]+/)[0],ctx
  assert.equal((optionsPreview.match(/class="pdoc-sol-line"/g)||[]).length,3);
  assert.ok(optionsPreview.includes('【詳解】</span><span class="pdoc-sol-opt">(A)'));
  assert.ok(ctx.solutionWritingRules().includes('同一個概念、判斷或計算能在一段交代清楚'));
- assert.ok(!ctx.solutionWritingRules().includes('每個選項約40'));
+ assert.ok(ctx.solutionWritingRules().includes('需要逐選項判斷的題目'));
+ assert.ok(ctx.solutionWritingRules().includes('簡單理由可更短'));
+ assert.ok(ctx.solutionWritingRules().includes('不同觀念不過度合併'));
  await ctx.downloadSolutionWord();
  assert.ok(blob&&closed);
  const zip=await JSZip.loadAsync(Buffer.from(await blob.arrayBuffer()));
@@ -51,6 +53,21 @@ vm.runInContext(source.match(/function solutionWritingRules\(\)\{[^\n]+/)[0],ctx
  assert.ok(rows[1].includes('w:gridSpan w:val="2"'),'Unified detail spans option column');
  assert.ok(rows[3].includes('【詳解】')&&rows[3].includes('(A)'),'First option carries detail label');
  assert.ok(!rows[3].includes('w:gridSpan'),'Option explanations retain separate label and content');
+ assert.equal((xml.match(/<w:tbl>/g)||[]).length,1,'One continuous table');
+ assert.ok(xml.includes('w:w="11906" w:h="16838"'),'A4 portrait');
+ assert.ok(xml.includes('w:top="850" w:right="850" w:bottom="850" w:left="850"'),'1.5cm margins');
+ assert.ok(xml.includes('w:ascii="Times New Roman"')&&xml.includes('w:eastAsia="DFPYuanMedium-B5"'));
+ assert.ok(xml.includes('<w:sz w:val="24"/>'),'12pt body');
+ assert.equal((xml.match(/<w:cantSplit\/>/g)||[]).length,rows.length);
+ assert.ok(xml.includes('<w:keepNext/>'));
+ assert.ok( /<w:snapToGrid w:val="(?:false|0)"\/>/.test(xml));
+ assert.ok( /<w:adjustRightInd w:val="(?:false|0)"\/>/.test(xml));
+ assert.ok(xml.includes('<w:br/>'),'Multiline explanation retains actual Word line breaks');
+ assert.ok(xml.includes('$v=\\frac{120}{4}=30$'),'Preserve editable plain LaTeX');
+ assert.ok(!xml.includes('<m:oMath'),'Do not generate OMML');
+ assert.ok(!xml.includes('<w:shd'),'No background shading');
+ assert.ok(!/w:val="(?:single|double)"/.test(xml),'No visible borders');
+ assert.equal(ctx.solutionSummary(['AB','C','D','A','B','C'].map(answer=>({answer}))),'ABCDAB/C','Group by five questions, not five answer letters');
  const missing=ctx.solutionExportQuestion({ans:'A',sol:''},4);
  assert.ok(ctx.solutionExplanationRows(missing)[0].text.includes('尚未建立'));
  const emptyOptions=ctx.solutionExportQuestion({ans:'B',sol:'【詳解】\n同一個概念即可判斷。\n(A)\n(B)\n(C)\n(D)'},5);
@@ -64,5 +81,12 @@ vm.runInContext(source.match(/function solutionWritingRules\(\)\{[^\n]+/)[0],ctx
  assert.ok(legacy.options.find(o=>o.label==='B').text.includes('同(A) 所述。'),'Preserve old split reference text');
  const duplicate=ctx.solutionExportQuestion({ans:'C',sol:'【詳解】\n(A)錯誤：第一段。\n(A)錯誤：補充理由。'},8);
  assert.ok(duplicate.options[0].text.includes('補充理由'),'Repeated labels cannot silently discard content');
+ if(process.env.SOLUTION_EXPORT_ITEMS&&process.env.SOLUTION_EXPORT_DOCX){
+   const fixture=JSON.parse(fs.readFileSync(process.env.SOLUTION_EXPORT_ITEMS,'utf8'));
+   ctx.pickedItems=()=>fixture;
+   ctx.document.getElementById=()=>({value:process.env.SOLUTION_EXPORT_TITLE||'詳解排版測試'});
+   await ctx.downloadSolutionWord();
+   fs.writeFileSync(process.env.SOLUTION_EXPORT_DOCX,Buffer.from(await blob.arrayBuffer()));
+ }
  console.log('PASS: prompt, parsing, preview, HTML, and real DOCX export for unified/options-only/mixed explanations');
 })().catch(e=>{console.error(e);process.exitCode=1;});

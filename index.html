@@ -7265,7 +7265,7 @@ async function callOllama(sys,msg,baseUrl,model,imgs=[]){
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).choices[0].message.content.trim();
 }
-function solutionWritingRules(){return "你是臺灣國中自然科教師，使用繁體中文，只用國中課綱概念與講法，禁止高中公式或正式定義。整份考卷依題號一次處理。\n【詳解格式】\n只輸出【詳解】及其內容，不寫【解題關鍵】、【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。\n詳解以最精簡而完整的說明為原則：同一個概念、判斷或計算能在一段交代清楚時，只寫一段統一詳解，不逐一列出各選項的正確與否，也不把同一理由重複四次。一般觀念題與計算題均適用。例如「奈米是長度單位，毫克、公克、公斤都是質量單位」或「14.32秒的最後一位2為估計值」，一句即可說明，不得再拆成四個選項。大小排序、單位換算、同一圖表斜率比較也優先整段說明。\n只有各選項涉及不同觀念或不同情境、確實需要分別解釋時，才依實際需要寫 (A)正確：理由 或 (A)錯誤：理由；不強迫補齊所有選項、不訂每個選項字數。若有必要的共同說明，可先寫，再接分項；若沒有共同說明，就直接從選項解釋開始，不加空白段落、空標題或「無」等佔位內容。只有統一詳解時，不輸出任何選項欄位或選項標籤。\n正確／錯誤指選項敘述本身的真偽。問何者錯誤、不正確、不是、不可能等否定題，答案應對應錯誤敘述；一般題答案應對應正確敘述。逐項解釋時核對標籤真偽，多選核對全部答案字母。禁止把「被選為答案」當作「敘述正確」：否定題選出的錯誤敘述必須標為錯誤，其餘真實敘述標為正確；不得寫「正確：符合題目所問的有誤」。每段說明必須完整，不用「同(A)」「同上」取代理由，也不能只剩「同」等斷句。\n計算題（包括以數值作選項的題目）：用一段交代必要公式、代入、計算結果與單位，不逐選項重複計算或解說。\n資訊不足、圖片不清或答案與推理衝突時，在相關內容標示「需人工確認」，不得捏造條件或硬湊理由。未提供答案且資訊充分時，先單獨一行寫【AI 判斷答案】X，再寫【詳解】；資訊不足時不猜答案。\n【公式規則】\n只對分數、根號、科學記號、上下標、希臘字母、特殊溫度符號或需排版的算式使用單錢號 $...$ 純文字 LaTeX。一般數字及單位如12、60g、5cm/s直接寫文字，不包錢號。只包需要排版的部分，如 $\\lambda$=2cm；含分數的算式可整段包住。禁止雙錢號、Markdown標題及粗體；不要產出OMML。公式括號對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。";}
+function solutionWritingRules(){return "你是臺灣國中自然科教師。請使用繁體中文，依題號一次完成整份考卷的詳解。\n【內容原則】\n只使用國中課綱教過的概念與講法，不使用高中公式或正式定義。題幹、圖片、選項或條件不足時，在相關內容標示「需人工確認」，不得捏造。有提供答案時，先獨立核對題意、圖表與計算，確認詳解能支持答案；若有衝突，標示「需人工確認」，不可硬湊理由。未提供答案且資訊充分時，自行判斷，先寫「【AI 判斷答案】X」；資訊不足時不猜答案。\n【詳解格式與選擇原則】\n只保留【詳解】及其內容，不寫【解題關鍵】或【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。先判斷解題所需的說明形式，不因題目有四個選項就一律分項，也不一律合併：\n一、計算題：需要計算才能得到答案，包括數值選項題，只寫一段統一詳解，交代公式、代入、計算結果與單位，不逐一解說選項。\n二、同一觀念可完整判斷的題目：同一個概念、判斷或計算能在一段交代清楚時，整段說明，必要時直接指出關鍵差異，不重複列出各選項。例如質量與長度單位辨認、估計值位置、同一圖表的密度大小排序。\n三、需要逐選項判斷的題目：各選項涉及不同觀念、不同實驗操作或情境、不同錯誤原因，或只解釋答案會漏掉其他選項的重要迷思時，依原題實際選項數量逐項說明，不自行增加選項。不能為求簡短省略必要的判斷理由；也不能為了分項把同一理由重複多次。\n逐選項格式為 (A)正確：說明判斷原因。或 (B)錯誤：說明錯在哪裡及正確觀念。選項標籤與文字間不留空格。每個選項約40～70字、1～2行，以清楚解釋原因為準；簡單理由可更短，不只給結論，也不要為湊字數冗長敘述。\n四、共同說明加逐選項：確實有多個選項共用且能減少重複的概念或計算，才在分項前加入共同說明。沒有共同說明就直接從第一個選項開始，不輸出空白段落、空標題或「無」等佔位內容。只有統一詳解時，不輸出任何選項標籤或空白選項欄位。\n每段說明必須完整，不用「同(A)」「同上」取代理由，也不能只剩「同」等斷句。\n【否定問法】\n「正確／錯誤」表示選項敘述本身的真偽，不代表是否應選。問「何者錯誤、不正確、不是、不可能」等題目時，答案應對應標為「錯誤」的選項；一般問法答案對應標為「正確」的選項。禁止把「被選為答案」當作「敘述正確」，不得寫「正確：符合題目所問的有誤」。多選題必須核對全部答案字母。\n【公式規則】\n特殊公式使用單錢號 $...$ 純文字 LaTeX。分數、根號、科學記號、上下標、希臘字母、特殊溫度符號等需要排版時才使用。一般數字和單位直接寫文字，例如12、60g、5cm/s，不包錢號。只包需要排版的部分，例如 $\\lambda$=2cm。含分數的完整算式可整段包住，例如 $v=\\frac{120}{4}=30$cm/s。不使用雙錢號、Markdown標題或粗體，不產出Word內建方程式或OMML。LaTeX括號必須對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。\n【交付檢查】\n逐題確認答案、計算結果和選項判斷一致。否定題核對「錯誤」選項，一般題核對「正確」選項。所有資訊不足或推理衝突處均標示「需人工確認」。最後檢查說明形式：同一觀念不重複分項，不同觀念不過度合併，沒有內容的共同說明或選項欄位不要輸出。";}
 function makeSolPrompt(q,ans,meta,groupCtx){
   const sys=solutionWritingRules();
   const example="【格式範例：計算題】\n【詳解】\n先以路程除以所需時間求平均速率，代入得 $v=\\frac{120}{4}=30$cm/s，因此選擇數值為30cm/s的選項。";
@@ -8849,6 +8849,27 @@ function solutionExportQuestion(it,no){
     detail:detail.join('\n')||(labels.length?'':'需人工確認：題庫尚未建立詳解內容。'),
     options:labels.map(label=>({label,text:byLabel[label]}))};
 }
+// docx 套件未支援的 Word 段落旗標，直接寫入 OOXML，避免設定被靜默忽略。
+async function finalizeSolutionDocx(blob){
+  const zip=await JSZip.loadAsync(await blob.arrayBuffer());
+  let xml=await zip.file('word/document.xml').async('string');
+  xml=xml.replace(/<w:pPr>([\s\S]*?)<\/w:pPr>/g,(_m,body)=>{
+    body=body.replace(/<w:(?:snapToGrid|adjustRightInd)\b[^>]*\/>/g,'');
+    const flags='<w:adjustRightInd w:val="0"/><w:snapToGrid w:val="0"/>';
+    return '<w:pPr>'+(body.includes('<w:spacing')?body.replace('<w:spacing',flags+'<w:spacing'):body+flags)+'</w:pPr>';
+  });
+  xml=xml.replace(/<w:tc>([\s\S]*?)<\/w:tc>/g,(_m,body)=>{
+    const text=[...body.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g)].map(m=>m[1]).join('');
+    if(/^(?:\d+|【答案】|【詳解】|\([A-E]\))$/.test(text)){
+      body=body.replace(/<w:noWrap\b[^>]*\/>/g,'');
+      const anchor=body.match(/<w:(?:tcMar|textDirection|tcFitText|vAlign|hideMark)\b/);
+      body=anchor?body.replace(anchor[0],'<w:noWrap/>'+anchor[0]):body.replace('</w:tcPr>','<w:noWrap/></w:tcPr>');
+    }
+    return '<w:tc>'+body+'</w:tc>';
+  });
+  zip.file('word/document.xml',xml);
+  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+}
 async function downloadSolutionWord(){
   if(!PICKS.size){alert('尚未選題');return;}
   const prog=document.createElement('div');prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:inherit;font-size:14px;z-index:9999';prog.textContent='📝 正在產生詳解 Word…';document.body.appendChild(prog);
@@ -8859,7 +8880,7 @@ async function downloadSolutionWord(){
     const run=(text,bold=false)=>new TextRun({text:String(text??''),font:FONT,size:24,bold});
     const dxa=cm=>Math.round(cm*566.9291339),COL_NUM=dxa(.7),COL_LABEL=dxa(2.2),COL_LETTER=dxa(.9),COL_CONTENT=dxa(14.2),COL_MERGED=COL_LETTER+COL_CONTENT;
     const none={style:BorderStyle.NONE,size:0,color:'FFFFFF'},borders={top:none,bottom:none,left:none,right:none,insideHorizontal:none,insideVertical:none};
-    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,snapToGrid:false,adjustRightIndent:false,contextualSpacing:false,spacing:{before:0,after:0,line:240,lineRule:'auto'},children:text?[run(text,bold)]:[]});
+    const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,snapToGrid:false,adjustRightIndent:false,contextualSpacing:false,spacing:{before:0,after:0,line:240,lineRule:'auto'},children:text?String(text).split('\n').flatMap((line,i)=>i?[new TextRun({break:1,font:FONT,size:24}),run(line,bold)]:[run(line,bold)]):[]});
     const cell=(text,opts={})=>new TableCell({width:{size:opts.width,type:WidthType.DXA},columnSpan:opts.span,borders:{top:none,bottom:none,left:none,right:none},verticalAlign:VerticalAlign.TOP,verticalMerge:opts.merge,margins:{top:40,bottom:40,left:opts.tight?10:60,right:opts.tight?10:60},children:[para(text,opts.bold,opts.keepNext,opts.center)]});
     const questionRows=q=>{
       const explanation=solutionExplanationRows(q);
@@ -8879,7 +8900,7 @@ async function downloadSolutionWord(){
     const children=[new Paragraph({alignment:'center',spacing:{after:120,line:240,lineRule:'auto'},children:[run(`【${title} 詳解】`,true)]}),new Paragraph({alignment:'center',spacing:{after:180,line:240,lineRule:'auto'},children:[run(summary,true)]})];
     if(questions.length)children.push(new Table({layout:TableLayoutType.FIXED,width:{size:COL_NUM+COL_LABEL+COL_MERGED,type:WidthType.DXA},columnWidths:[COL_NUM,COL_LABEL,COL_LETTER,COL_CONTENT],borders,rows:questions.flatMap(questionRows)}));
     const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:dxa(1.5),bottom:dxa(1.5),left:dxa(1.5),right:dxa(1.5)}}},children}]});
-    const blob=await Packer.toBlob(doc),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'_詳解_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);paperDlg.close();
+    const blob=await finalizeSolutionDocx(await Packer.toBlob(doc)),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=title+'_詳解_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);paperDlg.close();
   }catch(e){alert('詳解 Word 匯出失敗：'+e.message);}
   finally{prog.remove();}
 }
