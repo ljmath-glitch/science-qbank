@@ -54,55 +54,17 @@
   <main>
     <div class="intro"><h2>考卷匯入工作單</h2><p>第 1 區先完成題目 CSV 匯入；詳解與圖表素材會在下一區逐步加入。</p></div>
     <section class="stage">
-      <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>試卷寶清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
+      <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>茲茲清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-          <div style="font-weight:700;font-size:13px">🅖 用 Gemini 直接辨識掃描卷 <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">開發中・請勿操作</span></div>
-          <button id="gvToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="gvPanel" onclick="toggleGvPanel()" style="font-size:11px;padding:3px 9px">主管／測試人員展開</button>
-        </div>
-        <div id="gvPanel" class="hide" style="margin-top:10px;border-top:1px solid #cfe0f7;padding-top:10px">
-        <p class="help" style="margin:0 0 10px">丟入試卷寶清稿後的 PDF，Gemini 會直接「看圖」辨識中文、數學公式與題號，產生可匯入的 23 欄 CSV，<b>免開本機 OCR 服務</b>。辨識後會顯示這份考卷用掉多少 Gemini token 與估算費用（供評估訂閱成本）。<br><span class="help">需先到題庫首頁「AI 設定」填好 Gemini 金鑰。圖表素材仍請到第 III 區用同一份 PDF 裁切。</span></p>
-        <input id="gvPdf" type="file" accept=".pdf" class="hide" onchange="runGeminiVisionOcr(this.files[0]);this.value=''">
-        <div class="drop" onclick="gvPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runGeminiVisionOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → Gemini 直接辨識</div>
-        <div class="status" id="gvStatus" style="margin-top:8px"></div>
-        <div id="gvTokens" class="hide" style="margin-top:8px;background:#fff;border:1px solid #1666d6;border-radius:8px;padding:8px 10px;font-size:12px"></div>
-        </div>
-      </div>
-      <div class="ocr-auto" style="border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:12px 0;background:#f6fbff">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-          <div style="font-weight:700;font-size:13px">🅐 MinerU 自建 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">開發中・請勿操作</span></div>
-          <button id="ocrToggleBtn" class="btn" type="button" aria-expanded="false" aria-controls="ocrDevPanel" onclick="toggleOcrPanel()" style="font-size:11px;padding:3px 9px">主管／測試人員展開</button>
-        </div>
-        <div id="ocrDevPanel" class="hide" style="margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
-        <p class="help" style="margin:0 0 10px">丟入清稿 PDF，MinerU 會辨識文字、數學公式與圖表，再產生可匯入的題目 CSV。此功能目前仍在開發與測試，結果請先人工核對；連不到服務時，仍可使用下方原本的手動流程。</p>
-        <div style="background:#fff7e6;border:1px dashed #f0b400;border-radius:8px;padding:10px;margin-bottom:10px">
-          <b>▶ MinerU 新功能開發中</b>　可以先用示範資料預覽完整流程，不用啟動 OCR 服務。
-          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrLoadDemo()">▶ 用示範資料試跑（免服務）</button></div>
-        </div>
-        <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="help">OCR 服務：</span>
-          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="company">大南路櫃2</option><option value="desk3">玉承87</option><option value="local">本機(localhost)</option><option value="custom">其他</option></select>
-          <input id="ocrUrl" placeholder="http://localhost:8000" oninput="localStorage.setItem('ocrUrl',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;width:200px;font-family:inherit">
-          <button class="btn" onclick="testOcrService()">測試連線</button>
-          <span class="help" style="margin-left:8px">分類引擎：</span>
-          <select id="ocrClassifier" onchange="localStorage.setItem('ocrClassifier',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="ollama">Ollama（本機）</option><option value="gemini">Gemini（雲端）</option></select>
-        </div>
-        <div class="status" id="ocrHealth" style="margin-top:8px"></div>
-        <input id="ocrPdf" type="file" accept=".pdf" class="hide" onchange="runAutoOcr(this.files[0])">
-        <div class="drop" style="margin-top:10px" onclick="ocrPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runAutoOcr(event.dataTransfer.files[0])">丟入或選擇清稿 PDF → 自動辨識</div>
-        <div class="status" id="ocrStatus" style="margin-top:8px"></div>
-        <div id="ocrResultWrap" class="hide" style="margin-top:10px">
-          <div class="help" id="ocrSummary" style="font-weight:600"></div>
-          <pre id="ocrMarkdown" style="max-height:220px;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px;margin:6px 0"></pre>
-          <div id="ocrFigures" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-          <div class="row" style="margin-top:8px"><button class="btn primary" onclick="ocrMakeCsv()">🅐 產生題目 CSV（自動填入下方第 4 步）</button><button class="btn green" onclick="ocrToBatch()">🖼 送圖到第 III 區批次貼圖（可修改）</button></div>
-        </div>
+          <div style="font-weight:700;font-size:13px">茲茲 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">測試中</span></div>
+          <a class="btn" href="https://tzutzu-ocr.vercel.app/" target="_blank" rel="noopener">↗ 開啟茲茲 OCR</a>
         </div>
       </div>
       <ol class="steps">
-        <li data-step="1"><b>清除筆跡</b>開啟試卷寶，登入帳號密碼請詢問主管；完成清稿後輸出乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><a class="btn tool-link" href="https://shijuanbao.aizuoye100.com/home" target="_blank" rel="noopener" onclick="return openAppOrWeb('shijuanbao://','https://shijuanbao.aizuoye100.com/home',event)">↗ 試卷寶</a><p class="help" style="margin-top:8px">輸出乾淨 Word 檔與 PDF 檔案。手機有裝試卷寶 App 會直接開 App，沒裝就開網頁版。</p></div>
+        <li data-step="1"><b>清除筆跡</b>開啟茲茲去除筆跡網站，完成清稿後下載乾淨 PDF。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+          <div class="step-detail"><a class="btn tool-link" href="https://tzutzu-course-system.vercel.app/eraser.html" target="_blank" rel="noopener">↗ 茲茲去除筆跡</a><p class="help" style="margin-top:8px">清除考卷筆跡後下載乾淨 PDF，接著進行題目辨識與匯入。</p></div>
         </li>
         <li data-step="2"><b>丟入考卷，自動校正名稱</b>拖入或選擇考卷檔案，系統會讀取檔名並整理成題庫命名格式；請人工確認結果一次。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
@@ -144,7 +106,7 @@
       <div class="head"><div class="no">II</div><div><h2>生成詳解</h2><p>題庫勾選題目 → AI 撰寫詳解 → 匯入詳解 CSV</p></div></div>
       <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
       <ol class="steps">
-        <li data-step="1"><b>確認清稿檔案</b>可只提供乾淨 PDF、只提供試卷寶 Word，或兩個都提供；此處與第 III 區的清稿檔案會自動同步。
+        <li data-step="1"><b>確認清稿檔案</b>可只提供乾淨 PDF、只提供Word 清稿檔，或兩個都提供；此處與第 III 區的清稿檔案會自動同步。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="solutionAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
@@ -167,7 +129,7 @@
       <div class="head"><div class="no">III</div><div><h2>批次貼圖</h2><p>清稿 PDF → 手動框選裁切 → 批次貼入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>每一張要保留的圖或表格都有正確題號，裁切範圍不含題幹、選項、題號與頁首頁尾。</div>
       <ol class="steps">
-        <li data-step="1"><b>選擇清稿檔案</b>可只提供乾淨 PDF、只提供試卷寶 Word，或兩個都提供；系統會自動辨識檔案類型後進入下一步。
+        <li data-step="1"><b>選擇清稿檔案</b>可只提供乾淨 PDF、只提供Word 清稿檔，或兩個都提供；系統會自動辨識檔案類型後進入下一步。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="cropAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
@@ -283,7 +245,7 @@
     function wordQuestionNo(text){const range=text.match(/第\s*(\d{1,3})\s*(?:[~～\-–]|至|到)\s*\d{1,3}\s*題/)||text.match(/第\s*(\d{1,3})\s*(?:、\d{1,3})+\s*題/);if(range)return Number(range[1]);const m=text.match(/(?:第\s*)?(\d{1,2})\s*(?:題|[\.、．])/);return m?Number(m[1]):null}
     async function extractWordCandidates(){
       const status=document.getElementById('cropReviewState');const file=cropFiles.word;if(!file)return false;
-      if(!/\.docx$/i.test(file.name)){status.textContent='只有舊版 .doc 時，請先用 Word 或試卷寶另存為 .docx；瀏覽器才能抽取原始圖片與表格。';return false}
+      if(!/\.docx$/i.test(file.name)){status.textContent='只有舊版 .doc 時，請先用 Word 另存為 .docx；瀏覽器才能抽取原始圖片與表格。';return false}
       cropCandidates=[];let imgCount=0,tblCount=0;
       try{
         status.textContent='正在從 Word 抽取原始圖片…';
@@ -723,12 +685,12 @@
       if(fixing)document.getElementById('cropReviewState').textContent='已完成手動修正，該張素材已更新。';
     }
     async function startCropReview(){
-      if(!cropFiles.pdf&&!cropFiles.word){alert('請先在第 1 步選擇乾淨 PDF 或試卷寶 Word。');return}
+      if(!cropFiles.pdf&&!cropFiles.word){alert('請先在第 1 步選擇乾淨 PDF 或Word 清稿檔。');return}
       const btn=document.getElementById('startCropReviewBtn'),status=document.getElementById('cropReviewState');
       btn.disabled=true;cropCandidates=[];document.getElementById('cropPreviewGrid').innerHTML='';
       try{
         let handled=false;
-        // 1) 有試卷寶 Word → 直接抽原始內嵌圖片＋原生表格（最精準，免 AI 猜座標）
+        // 1) 有Word 清稿檔 → 直接抽原始內嵌圖片＋原生表格（最精準，免 AI 猜座標）
         if(cropFiles.word){status.textContent='正在從 Word 抽取原始圖片與表格（最精準）…';handled=await extractWordCandidates();}
         if(cropFiles.pdf){
           // 2) 有 PDF → 再抽「PDF 內嵌圖片物件」（數位 PDF 精準，座標來自 PDF 本身），跟 Word 結果疊加，不互相取代
@@ -742,13 +704,13 @@
           }
           if(!handled){
             // 4) 完全抽不到（多半是掃描檔）→ 全面退回 AI 偵測
-            if(!transientGeminiKey){status.textContent='這份 PDF 抽不到內嵌圖，也還沒啟動 AI 二次檢查（多半是掃描檔）。建議改提供試卷寶 Word（.docx）以精準抽圖；或到第 2 步啟動 AI 二次檢查再試（掃描檔精準度較低）。';return;}
+            if(!transientGeminiKey){status.textContent='這份 PDF 抽不到內嵌圖，也還沒啟動 AI 二次檢查（多半是掃描檔）。建議改提供Word 清稿檔（.docx）以精準抽圖；或到第 2 步啟動 AI 二次檢查再試（掃描檔精準度較低）。';return;}
             status.textContent='這份 PDF 沒有內嵌圖（掃描檔），改用 AI 全面偵測；精準度較低，請務必逐張人工確認…';
             await _aiCropReview(status);handled=cropCandidates.length>0;
           }
         }
         if(handled){status.textContent=`已完成自動掃描，共 ${cropCandidates.length} 張候選素材；請逐張檢查，有問題的按「✂ 手動修正」。`;renderCropCandidates();}
-        else if(!cropCandidates.length){status.textContent='沒有偵測到可用的圖片或表格。建議改用試卷寶 Word 精準抽圖、啟動 AI 二次檢查，或直接用「手動框選裁切」。';}
+        else if(!cropCandidates.length){status.textContent='沒有偵測到可用的圖片或表格。建議改用Word 清稿檔 精準抽圖、啟動 AI 二次檢查，或直接用「手動框選裁切」。';}
       }catch(e){console.error(e);status.textContent='分析失敗：'+(e.message||e)+'。請確認檔案是否可讀取。';}
       finally{btn.disabled=false}
     }
@@ -843,7 +805,7 @@
         for(const asset of (result.assets||[])){const valid=Number.isFinite(asset.x)&&Number.isFinite(asset.y)&&Number.isFinite(asset.w)&&Number.isFinite(asset.h)&&asset.w>35&&asset.h>28&&asset.y>=70&&asset.x>=0&&asset.x+asset.w<=1010&&asset.y+asset.h<=1010;if(!valid)continue;const src=cropDataUrl(canvas,asset);if(!src)continue;const rect={x:asset.x/1000*canvas.width,y:asset.y/1000*canvas.height,w:asset.w/1000*canvas.width,h:asset.h/1000*canvas.height};const qno=Number.isInteger(asset.qno)&&asset.qno>0?asset.qno:null;const verdict=asset.verdict==='pass'&&qno!==null?'pass':'review';const label=safeCropLabel(asset.label||asset.kind);cropCandidates.push({src,page:pageNo,rect,renderScale:1.6,qno,kind:asset.kind||'圖表',label,verdict,reason:asset.reason||'',skip:false,filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`})}
       }
       const failNote=failedPages.length?`（第 ${failedPages.join('、')} 頁 AI 未完成）`:'';
-      if(!cropCandidates.length)status.textContent='沒有偵測到可裁切的圖或表格。建議改用試卷寶 Word 精準抽圖，或人工補圖。'+failNote;
+      if(!cropCandidates.length)status.textContent='沒有偵測到可裁切的圖或表格。建議改用Word 清稿檔 精準抽圖，或人工補圖。'+failNote;
       else{status.textContent='AI 分析完成（掃描檔精準度較低，請逐張確認題號與裁切範圍）。'+failNote;renderCropCandidates();}
     }
     // 數位 PDF 已用精準方式抽過圖片，但表格常是向量線條繪製，抽不到內嵌圖片物件；額外用 AI 只找表格來補齊
