@@ -943,7 +943,7 @@
         <input type="hidden" id="pAns" value="both_full"><input type="checkbox" id="pDocQuestion" checked hidden><input type="checkbox" id="pDocSolution" checked hidden>
         <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
           <button type="button" class="paper-doc-card on" id="paperDocQuestion" onclick="paperToggleDocument('question')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></button>
-          <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・逐選項詳解</small></button>
+          <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・依內容排版詳解</small></button>
         </div><label class="paper-qans-opt" style="display:flex;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span><b>教用版</b>：答案填在題號括弧中（不含詳解）；不勾為<b>學用版</b></span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
         <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
           <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
@@ -5250,7 +5250,7 @@ function paperSyncDocuments(){
   document.getElementById('paperDocSolution').classList.toggle('on',s.checked);
   const opt=ansBox?ansBox.closest('.paper-qans-opt'):null;if(opt)opt.style.opacity=ansBox.disabled?'.4':'1';
   const note=document.getElementById('paperDocNote');
-  if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷（解析卷不含題目，逐選項詳解）。':mode==='inline'?'目前只輸出一張題目卷，並在每題顯示紅字答案（不含詳解）。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（不含題目：【答案】＋逐選項詳解）。';
+  if(note)note.textContent=q.checked&&s.checked?'目前會同時輸出題目卷與解析卷（解析卷不含題目，依詳解內容排版）。':mode==='inline'?'目前只輸出一張題目卷，並在每題顯示紅字答案（不含詳解）。':q.checked?'目前只輸出題目卷。':'目前只輸出解析卷（不含題目：【答案】＋【詳解】）。';
 }
 function paperToggleDocument(which){
   const q=document.getElementById('pDocQuestion'),s=document.getElementById('pDocSolution');if(!q||!s)return;
@@ -5305,12 +5305,11 @@ function scalePaperSettingsPreview(){
 window.addEventListener('resize',scalePaperSettingsPreview);
 // 解析卷預覽紙：依交接文件詳解模板（題號｜【答案】｜【詳解】＋逐選項），無框線對齊。
 function _solPreviewSheet(title,solItems){
-  const line=(no,lbl,opt,txt)=>`<div class="pdoc-sol-line"><span class="pdoc-sol-no">${esc(no)}</span><span class="pdoc-sol-lbl">${lbl}</span><span class="pdoc-sol-opt">${esc(opt)}</span><span class="pdoc-sol-txt">${txt}</span></div>`;
+  const line=(no,lbl,opt,txt)=>`<div class="pdoc-sol-line"><span class="pdoc-sol-no">${esc(no)}</span><span class="pdoc-sol-lbl">${lbl}</span>${opt?`<span class="pdoc-sol-opt">${esc(opt)}</span>`:''}<span class="pdoc-sol-txt">${txt}</span></div>`;
   const body=(solItems||[]).map(q=>{
     const ans=line(q.no+'.','【答案】','',`<b>${esc(q.answer)}</b>`);
-    const det=q.detail?line('','【詳解】','',applyRichMarks(esc(fixLatex(q.detail)).replace(/\n/g,'<br>'))):'';
-    const ops=(q.options||[]).map(o=>line('','',`(${o.label})`,applyRichMarks(esc(fixLatex(o.text))))).join('');
-    return `<div class="pdoc-sol-item">${ans}${det}${ops}</div>`;
+    const explanation=solutionExplanationRows(q).map(r=>line('',r.label,r.option,applyRichMarks(esc(fixLatex(r.text)).replace(/\n/g,'<br>')))).join('');
+    return `<div class="pdoc-sol-item">${ans}${explanation}</div>`;
   }).join('');
   return `<section class="pdoc-sheet a4 solsheet"><style>.pdoc-sheet.solsheet .pdoc-sol-title{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 12px}.pdoc-sol-item{margin-bottom:10px;break-inside:avoid}.pdoc-sol-line{display:flex;align-items:flex-start;gap:3px;font-size:12pt;line-height:1}.pdoc-sol-no{flex:0 0 26px;font-weight:bold}.pdoc-sol-lbl{flex:0 0 56px;font-weight:bold;white-space:nowrap}.pdoc-sol-opt{flex:0 0 26px;text-align:center}.pdoc-sol-txt{flex:1;min-width:0}</style><div class="pdoc-sol-title">${esc(title)}　詳解</div><p style="text-align:center">${esc(solutionSummary(solItems||[]))}</p>${body||'<div class="pdoc-meta">尚未選題</div>'}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
 }
@@ -5369,7 +5368,7 @@ function refreshPaperSettingsPreview(){
   const abk=`<section class="pdoc-sheet b4 abk"><div class="pdoc-abk-watermark" aria-hidden="true"></div>${buildAbkPreviewHeader(false)}<div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
   const mockCover=`<section class="pdoc-sheet a4 mock-cover"><div class="pdoc-mock-cover-top"><img src="logo.png" alt="茲茲文教"><div class="boxes"><span>考試日期<br>　　年　月　日</span><span>考生姓名<br>____________</span><span>座號<br>______</span></div></div><div class="pdoc-mock-title">茲茲文教模考題本</div><div class="pdoc-mock-sub">${esc(subject||'自然科')}</div><div class="pdoc-mock-scope">${esc(examName||title)}<br>範圍：${esc(scope)}</div><div class="pdoc-mock-warning">請不要翻到次頁！</div><div class="pdoc-mock-instructions"><b>作答說明</b>請核對考卷名稱及個人資料。<br>本卷共 ${pickedItems().length} 題；請依題號順序作答。<br>答案請填寫於指定作答區。</div><div class="pdoc-mock-footer">TZUTZU EDUCATION</div></section>`;
   const mockBody=`<section class="pdoc-sheet a4 mock-body"><div class="pdoc-mock-body-top">茲茲文教　${esc(subject||'自然科')}　${esc(examName||title)}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage}</div></section>`;
-  const modeLabel=isSolPage?'解析卷（不含題目・逐選項詳解）':mode==='both_full'?'題目卷（另有解析卷）':mode==='full'?'解析卷':'題目卷';
+  const modeLabel=isSolPage?'解析卷（不含題目・依內容排版詳解）':mode==='both_full'?'題目卷（另有解析卷）':mode==='full'?'解析卷':'題目卷';
   const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${(isSolPage?'A4':(paperKind==='abk'?'B4':'A4'))} 等比縮圖・${modeLabel}</small>`;
   target.classList.remove('mock-thumbnails');
   if(isSolPage){target.innerHTML=_solPreviewSheet(title,solChunks[_paperSettingsPage-qEnd]||[]);}
@@ -7265,7 +7264,7 @@ async function callOllama(sys,msg,baseUrl,model,imgs=[]){
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).choices[0].message.content.trim();
 }
-function solutionWritingRules(){return "你是臺灣國中自然科教師，使用繁體中文，只用國中課綱概念與講法，禁止高中公式或正式定義。整份考卷依題號一次處理。\n【詳解格式】\n只輸出【詳解】及其內容，不寫【解題關鍵】、【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。\n一般選擇題：必要時先寫多個選項共用的概念或計算，再逐選項寫 (A)正確：理由 或 (A)錯誤：理由，標籤後不留空格。每個選項約40～70字、1～2行，以學生能理解判斷原因為準，不只給結論，也不為湊字數冗長敘述。\n正確／錯誤指選項敘述本身的真偽。問何者錯誤、不正確、不是、不可能等否定題，答案應是標為錯誤的選項；一般題答案為標為正確的選項。多選核對全部答案字母。\n計算題（包括以數值作選項的題目）：只寫一段統一詳解，交代公式、代入、計算與單位，不逐選項解說。\n資訊不足、圖片不清或答案與推理衝突時，在相關內容標示「需人工確認」，不得捏造條件或硬湊理由。未提供答案且資訊充分時，先單獨一行寫【AI 判斷答案】X，再寫【詳解】；資訊不足時不猜答案。\n【公式規則】\n只對分數、根號、科學記號、上下標、希臘字母、特殊溫度符號或需排版的算式使用單錢號 $...$ 純文字 LaTeX。一般數字及單位如12、60g、5cm/s直接寫文字，不包錢號。只包需要排版的部分，如 $\\lambda$=2cm；含分數的算式可整段包住。禁止雙錢號、Markdown標題及粗體；不要產出OMML。公式括號對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。";}
+function solutionWritingRules(){return "你是臺灣國中自然科教師，使用繁體中文，只用國中課綱概念與講法，禁止高中公式或正式定義。整份考卷依題號一次處理。\n【詳解格式】\n只輸出【詳解】及其內容，不寫【解題關鍵】、【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。\n詳解以最精簡而完整的說明為原則：同一個概念、判斷或計算能在一段交代清楚時，只寫一段統一詳解，不逐一列出各選項的正確與否，也不把同一理由重複四次。一般觀念題與計算題均適用。\n只有各選項涉及不同觀念或不同情境、確實需要分別解釋時，才依實際需要寫 (A)正確：理由 或 (A)錯誤：理由；不強迫補齊所有選項、不訂每個選項字數。若有必要的共同說明，可先寫，再接分項；若沒有共同說明，就直接從選項解釋開始，不加空白段落、空標題或「無」等佔位內容。只有統一詳解時，不輸出任何選項欄位或選項標籤。\n正確／錯誤指選項敘述本身的真偽。問何者錯誤、不正確、不是、不可能等否定題，答案應對應錯誤敘述；一般題答案應對應正確敘述。逐項解釋時核對標籤真偽，多選核對全部答案字母。\n計算題（包括以數值作選項的題目）：用一段交代必要公式、代入、計算結果與單位，不逐選項重複計算或解說。\n資訊不足、圖片不清或答案與推理衝突時，在相關內容標示「需人工確認」，不得捏造條件或硬湊理由。未提供答案且資訊充分時，先單獨一行寫【AI 判斷答案】X，再寫【詳解】；資訊不足時不猜答案。\n【公式規則】\n只對分數、根號、科學記號、上下標、希臘字母、特殊溫度符號或需排版的算式使用單錢號 $...$ 純文字 LaTeX。一般數字及單位如12、60g、5cm/s直接寫文字，不包錢號。只包需要排版的部分，如 $\\lambda$=2cm；含分數的算式可整段包住。禁止雙錢號、Markdown標題及粗體；不要產出OMML。公式括號對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。";}
 function makeSolPrompt(q,ans,meta,groupCtx){
   const sys=solutionWritingRules();
   const example="【格式範例：計算題】\n【詳解】\n先以路程除以所需時間求平均速率，代入得 $v=\\frac{120}{4}=30$cm/s，因此選擇數值為30cm/s的選項。";
@@ -8801,8 +8800,22 @@ async function generateAndDownloadWord(title,items,ansMode,showMeta,showTag,show
 }
 // 詳解講義：依「詳解＋簡答」模板輸出。公式維持 $...$ 純文字，方便在 Word 以 MathType Toggle TeX 轉換。
 function solutionSummary(questions){const groups=[];for(let i=0;i<questions.length;i+=5)groups.push(questions.slice(i,i+5).map(q=>q.answer).join(''));return groups.join('/');}
+// 三種內容共用相同列模型：統一說明、分項說明、統一說明加分項說明。
+function solutionExplanationRows(q){
+ const rows=[];
+ const detail=String(q.detail||'').trim();
+ if(detail)rows.push({label:'【詳解】',option:'',text:detail});
+ for(const o of q.options||[]){
+   const text=String(o.text||'').trim();
+   if(text)rows.push({label:rows.length?'':'【詳解】',option:'('+o.label+')',text});
+ }
+ return rows;
+}
 function solutionHtml(title,questions){
- const body=questions.map(q=>{const n=q.options.length+2;return '<tr><td rowspan="'+n+'">'+esc(q.no)+'</td><td>【答案】</td><td colspan="2">'+esc(q.answer)+'</td></tr><tr><td>【詳解】</td><td colspan="2">'+esc(q.detail).replace(/\n/g,'<br>')+'</td></tr>'+q.options.map(o=>'<tr><td></td><td>('+esc(o.label)+')</td><td>'+esc(o.text).replace(/\n/g,'<br>')+'</td></tr>').join('');}).join('');
+ const body=questions.map(q=>{
+   const rows=solutionExplanationRows(q),n=rows.length+1;
+   return '<tr><td rowspan="'+n+'">'+esc(q.no)+'</td><td>【答案】</td><td colspan="2">'+esc(q.answer)+'</td></tr>'+rows.map(r=>'<tr><td>'+r.label+'</td>'+(r.option?'<td>'+esc(r.option)+'</td><td>':'<td colspan="2">')+esc(r.text).replace(/\n/g,'<br>')+'</td></tr>').join('');
+ }).join('');
  return '<section class="solution-export"><style>@page{size:A4;margin:1.5cm}.solution-export{font-family:Times New Roman,DFPYuanMedium-B5,serif;font-size:12pt;line-height:1;color:#000}.solution-export h1,.solution-export p{text-align:center}.solution-export table{width:18cm;table-layout:fixed;border-collapse:collapse}.solution-export td{border:0;background:none;vertical-align:top;padding:2pt .5pt;white-space:pre-wrap}.solution-export tr{break-inside:avoid}</style><h1>'+esc(title)+' 詳解</h1><p>'+esc(solutionSummary(questions))+'</p><table><colgroup><col style="width:.7cm"><col style="width:2.2cm"><col style="width:.9cm"><col style="width:14.2cm"></colgroup>'+body+'</table></section>';
 }
 function solutionExportQuestion(it,no){
@@ -8818,13 +8831,13 @@ function solutionExportQuestion(it,no){
     if(/^【詳解】/.test(line)){section='detail';const rest=line.replace(/^【詳解】[:：]?\s*/,'');if(rest)detail.push(rest);return;}
     if(/^【[^】]+】/.test(line)){section='other';return;}   // 【解題關鍵】【觀念補充】…→ 略過整段
     const m=line.match(/^[（(]\s*([A-Ea-e])\s*[）)]\s*[:：]?\s*(.*)$/);
-    if(m&&section==='detail'){options.push({label:m[1].toUpperCase(),text:m[2]||'需人工確認'});return;}
+    if(m&&section==='detail'){options.push({label:m[1].toUpperCase(),text:m[2]||''});return;}
     if(section==='detail'){if(options.length)options[options.length-1].text+='\n'+line;else detail.push(line);}
   });
   const byLabel={};options.forEach(o=>{if(!(o.label in byLabel))byLabel[o.label]=o.text;});
-  const labels=Object.keys(byLabel).sort();   // 依實際出現的選項字母（支援到 E、多選）
+  const labels=Object.keys(byLabel).filter(label=>byLabel[label].trim()).sort();   // 只輸出實際有說明的選項
   return {no,answer:String(it.ans||'需人工確認').trim(),
-    detail:detail.join('\n')||(options.length?'':'需人工確認：題庫尚未建立詳解內容。'),
+    detail:detail.join('\n')||(labels.length?'':'需人工確認：題庫尚未建立詳解內容。'),
     options:labels.map(label=>({label,text:byLabel[label]}))};
 }
 async function downloadSolutionWord(){
@@ -8840,11 +8853,15 @@ async function downloadSolutionWord(){
     const para=(text,bold=false,keepNext=false,center=false)=>new Paragraph({keepNext,keepLines:true,alignment:center?'center':undefined,snapToGrid:false,adjustRightIndent:false,contextualSpacing:false,spacing:{before:0,after:0,line:240,lineRule:'auto'},children:text?[run(text,bold)]:[]});
     const cell=(text,opts={})=>new TableCell({width:{size:opts.width,type:WidthType.DXA},columnSpan:opts.span,borders:{top:none,bottom:none,left:none,right:none},verticalAlign:VerticalAlign.TOP,verticalMerge:opts.merge,margins:{top:40,bottom:40,left:opts.tight?10:60,right:opts.tight?10:60},children:[para(text,opts.bold,opts.keepNext,opts.center)]});
     const questionRows=q=>{
-      const rows=[
-        new TableRow({cantSplit:true,children:[cell(String(q.no),{width:COL_NUM,merge:VerticalMergeType.RESTART,bold:true,keepNext:true,tight:true,center:true}),cell('【答案】',{width:COL_LABEL,bold:true,keepNext:true,tight:true}),cell(q.answer,{width:COL_MERGED,span:2,bold:true,keepNext:true})]}),
-        new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:q.options.length>0}),cell('【詳解】',{width:COL_LABEL,bold:true,keepNext:q.options.length>0,tight:true}),cell(q.detail,{width:COL_MERGED,span:2,keepNext:q.options.length>0})]})
-      ];
-      q.options.forEach((o,i)=>rows.push(new TableRow({cantSplit:true,children:[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext:i<q.options.length-1}),cell('',{width:COL_LABEL,keepNext:i<q.options.length-1}),cell(`(${o.label})`,{width:COL_LETTER,keepNext:i<q.options.length-1,tight:true,center:true}),cell(o.text,{width:COL_CONTENT,keepNext:i<q.options.length-1})]})));
+      const explanation=solutionExplanationRows(q);
+      const rows=[new TableRow({cantSplit:true,children:[cell(String(q.no),{width:COL_NUM,merge:VerticalMergeType.RESTART,bold:true,keepNext:explanation.length>0,tight:true,center:true}),cell('【答案】',{width:COL_LABEL,bold:true,keepNext:explanation.length>0,tight:true}),cell(q.answer,{width:COL_MERGED,span:2,bold:true,keepNext:explanation.length>0})]})];
+      explanation.forEach((r,i)=>{
+        const keepNext=i<explanation.length-1;
+        const cells=[cell('',{width:COL_NUM,merge:VerticalMergeType.CONTINUE,keepNext}),cell(r.label,{width:COL_LABEL,bold:!!r.label,keepNext,tight:true})];
+        if(r.option)cells.push(cell(r.option,{width:COL_LETTER,keepNext,tight:true,center:true}),cell(r.text,{width:COL_CONTENT,keepNext}));
+        else cells.push(cell(r.text,{width:COL_MERGED,span:2,keepNext}));
+        rows.push(new TableRow({cantSplit:true,children:cells}));
+      });
       return rows;
     };
     const title=(document.getElementById('pTitle').value||'自然科測驗卷').trim();
