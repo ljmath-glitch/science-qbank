@@ -8173,7 +8173,8 @@ function _preFloatQuestionImages(xml,positionH,layouts){
     }
   }
   // 含圖片的段落彼此不重疊；由文件後方向前替換，避免位置索引失效。
-  const brRunRe=/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>$/;
+  // 只比對「只含 rPr＋一個換行」的獨立 run；rPr 內不得跨過 </w:rPr>，否則會從前面的文字 run 一路吃進來。
+  const brRunRe=/<w:r\b[^>]*>\s*(?:<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*<\/w:rPr>\s*|<w:rPr\/>\s*)?<w:br\/>\s*<\/w:r>$/;
   const runBounds=(para,at,end)=>{
     const rs=Math.max(para.lastIndexOf('<w:r>',at),para.lastIndexOf('<w:r ',at));
     const re=para.indexOf('</w:r>',end);
@@ -8184,12 +8185,36 @@ function _preFloatQuestionImages(xml,positionH,layouts){
   };
   for(const p of paragraphs.filter(x=>x.end&&x.images.length).sort((a,b)=>b.start-a.start)){
     let para=out.slice(p.start,p.end),y=0;
-    const ops=p.images.sort((a,b)=>a.start-b.start).map(im=>{
+    // 大圖／多圖：整題的圖放在選項之後的空行，靠該欄右緣並排；總寬超過欄寬就等比縮小。
+    // 一律輸出成浮動（文繞圖）而不是 inline，方便在 Word 直接拖曳調整。
+    const sortedImgs=p.images.sort((a,b)=>a.start-b.start);
+    const blockImgs=sortedImgs.filter(im=>!im.manual&&im.placement!=='beside');
+    const bLeft=Number(((para.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/)||[])[1]||'').match(/<w:ind\b[^>]*\bw:left="(\d+)"/)?.[1]||567);
+    const bGap=100000,bAvail=Math.max(635*1000,contentWEmu-bLeft*635-60000);
+    const bExt=im=>{const m=im.inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"/);return m?Number(m[1]):0;};
+    const bTotal=blockImgs.reduce((s,im)=>s+bExt(im),0)+bGap*Math.max(0,blockImgs.length-1);
+    const bK=bTotal>bAvail?bAvail/bTotal:1;
+    let bCursor=contentWEmu-Math.round(Math.min(bTotal,bAvail));
+    const ops=sortedImgs.map(im=>{
       const extent=im.inside.match(/<wp:extent\b[^>]*\bcx="(\d+)"[^>]*\bcy="(\d+)"[^>]*\/>/);
       if(!extent)throw new Error('範本輸出圖片缺少尺寸資料');
       const layout=im.layout||{},mode=im.manual?'anchor':im.placement==='beside'?'beside':'block';
       const base={start:im.start-p.start,end:im.end-p.start,mode,cx:Number(extent[1]),cy:Number(extent[2])};
-      if(mode==='block')return base;
+      if(mode==='block'){
+        let inside=im.inside;
+        if(bK!==1)inside=inside.replace(/\b(cx|cy)="(\d+)"/g,(_m,a,n)=>a+'="'+Math.max(1,Math.floor(Number(n)*bK))+'"');
+        const cxS=Math.max(1,Math.floor(base.cx*bK));
+        const hPosB=blockImgs.length===1?'<wp:align>right</wp:align>':'<wp:posOffset>'+Math.max(0,bCursor)+'</wp:posOffset>';
+        bCursor+=cxS+bGap;
+        const bodyB=/<wp:effectExtent\b[^>]*\/>/.test(inside)
+          ?inside.replace(/(<wp:effectExtent\b[^>]*\/>)/,'$1<wp:wrapSquare wrapText="left"/>')
+          :inside.replace(/(<wp:extent\b[^>]*\/>)/,'$1<wp:wrapSquare wrapText="left"/>');
+        base.anchor='<wp:anchor distT="0" distB="0" distL="114300" distR="0" simplePos="0" relativeHeight="251660000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="0">'
+          +'<wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="'+positionH+'">'+hPosB+'</wp:positionH>'
+          +'<wp:positionV relativeFrom="line"><wp:posOffset>0</wp:posOffset></wp:positionV>'+bodyB+'</wp:anchor>';
+        base.keepBr=true;
+        return base;
+      }
       const beside=mode==='beside',width=Math.max(5,Math.min(100,Number(layout.width)||65));
       const defaultX=100-width,rawX=layout.x===undefined?defaultX:Number(layout.x);
       const x=Math.max(0,Math.min(100-width,isFinite(rawX)?rawX:defaultX));
@@ -8211,10 +8236,13 @@ function _preFloatQuestionImages(xml,positionH,layouts){
     });
     const sideRuns=[],blockRuns=[];let anyAnchor=false;
     for(const r of ops.slice().reverse()){
-      const rb=r.mode==='anchor'?null:runBounds(para,r.start,r.end);
-      if(r.mode==='anchor'||!rb){
-        // 手動位置，或抽不出獨立 run：就地把 inline 換成 anchor（block 抽不出時維持 inline）。
+      const rb=(r.mode==='anchor'||r.mode==='block')?null:runBounds(para,r.start,r.end);
+      if(r.mode==='anchor'||r.mode==='block'||!rb){
+        // 手動位置／大圖（含多圖）：就地把 inline 換成 anchor。手動圖要移除它前面原本的換行；
+        // 大圖保留該換行，讓圖錨在選項之後的空行，圖才會在文字下方。
+        const rs0=Math.max(para.lastIndexOf('<w:r>',r.start),para.lastIndexOf('<w:r ',r.start));
         if(r.anchor){para=para.slice(0,r.start)+r.anchor+para.slice(r.end);anyAnchor=true;}
+        if(r.mode==='anchor'&&rs0>=0){const bm=para.slice(0,rs0).match(brRunRe);if(bm)para=para.slice(0,rs0-bm[0].length)+para.slice(rs0);}
         continue;
       }
       // 抽出圖片 run（連同它前面的「換行 run」），之後放到定位處。
@@ -8235,23 +8263,7 @@ function _preFloatQuestionImages(xml,positionH,layouts){
         para=para.slice(0,si)+'</w:t></w:r>'+sideRuns.map(x=>x.run).join('')+'<w:r>'+rpr+'<w:t xml:space="preserve">'+para.slice(si+PRE_IMG_SENTINEL.length);
       }else para=para.replace(/<\/w:p>$/,sideRuns.map(x=>x.run).join('')+'</w:p>');
     }
-    if(blockRuns.length){
-      // 大圖／多圖：整題只用一個靠右的獨立段落放在題目之後；題目段落 keepNext 讓兩者同頁。
-      const pPr=(para.match(/<w:pPr>([\s\S]*?)<\/w:pPr>/)||[])[1]||'';
-      const left=(pPr.match(/<w:ind\b[^>]*\bw:left="(\d+)"/)||[])[1]||'567';
-      const spacing=(pPr.match(/<w:spacing\b[^>]*\/>/)||[''])[0];
-      const gap=100000,avail=Math.max(635*1000,contentWEmu-Number(left)*635-60000);
-      const total=blockRuns.reduce((s,x)=>s+x.cx,0)+gap*(blockRuns.length-1);
-      const k=total>avail?avail/total:1;
-      const scaled=blockRuns.map(x=>k===1?x.run:x.run.replace(/\b(cx|cy)="(\d+)"/g,(_m,a,n)=>a+'="'+Math.max(1,Math.floor(Number(n)*k))+'"'));
-      after='<w:p><w:pPr><w:keepLines/>'+spacing+'<w:ind w:left="'+left+'" w:firstLine="0"/><w:jc w:val="right"/></w:pPr>'
-        +scaled.join('<w:r><w:t xml:space="preserve">  </w:t></w:r>')+'</w:p>';
-      const kn=/<w:pStyle\b[^>]*\/>/.test(para)?para.replace(/(<w:pStyle\b[^>]*\/>)/,'$1<w:keepNext/>'):para.replace(/<w:pPr>/,'<w:pPr><w:keepNext/>');
-      para=kn;
-    }
     // 浮動後（inline 圖前原本的）換行已移除；段尾 clear，避免下一題繼續繞排在圖旁。
-    // 就地轉成 anchor 的手動圖：移除它前面原本的換行 run。
-    para=para.replace(/<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:br\/>\s*<\/w:r>(?=\s*<w:r\b[^>]*>\s*(?:<w:rPr>[\s\S]*?<\/w:rPr>\s*)?<w:drawing>\s*<wp:anchor)/g,'');
     if(anyAnchor)para=para.replace(/<\/w:p>$/,'<w:r><w:br w:type="textWrapping" w:clear="all"/></w:r></w:p>');
     out=out.slice(0,p.start)+para+after+out.slice(p.end);
   }
