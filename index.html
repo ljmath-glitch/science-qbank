@@ -9181,6 +9181,7 @@ function _tplRedAnswers(xml){
   return out.split('').join('').split('').join('');
 }
 
+// 答案 run 設為隱藏文字（w:vanish）：Word 的「顯示／隱藏 ¶」(Show/Hide) 開啟時看得到答案，關閉時答案隱藏（列印也不會印出）。
 // 教用版「浮動答案文字方塊」：答案以可單獨移動/編輯的文字方塊疊在題號括弧「(　　)」上（無底色無邊框、紅字 10pt Times New Roman）。
 // numId=100 的實際標籤是置中的「%1.(　　)」；定位基準取兩個全形空格（U+3000）之間的中心，
 // 不取整個題號標籤區中心。數字雖由一位變兩位，這兩個全形空格的寬度與中心不變。
@@ -9209,7 +9210,7 @@ function _answerBoxXml(ans, digits){
    +'<wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+ANSBOX.w+'" cy="'+ANSBOX.h+'"/></a:xfrm>'
    +'<a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></wps:spPr>'
    +'<wps:txbx><w:txbxContent><w:p><w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>'
-   +'<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:color w:val="C00000"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">'+a+'</w:t></w:r>'
+   +'<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:color w:val="C00000"/><w:sz w:val="20"/><w:szCs w:val="20"/><w:vanish/></w:rPr><w:t xml:space="preserve">'+a+'</w:t></w:r>'
    +'</w:p></w:txbxContent></wps:txbx>'
    +'<wps:bodyPr rot="0" spcFirstLastPara="0" vertOverflow="overflow" horzOverflow="overflow" vert="horz" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="ctr" anchorCtr="1"><a:noAutofit/></wps:bodyPr>'
    +'</wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>';
