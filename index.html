@@ -5628,7 +5628,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const rawQuestion=templateLayout?(it.q||it.summary||'').replace(/(\([A-E]\))[ \t　]+/g,'$1'):(it.q||it.summary||'');
     const plainQuestion=esc(fixLatex(rawQuestion)).replace(/\n/g,'<br>');
     const packPre=forPreview&&(paperKind==='pre'||paperKind==='abk');
-    let qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src),paperKind,_besideHtml):applyRichMarks(templateLayout?plainQuestion:hlNames(hlKw(plainQuestion)));
+    let qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src),paperKind,_besideHtml):applyRichMarks(hlNames(hlKw(plainQuestion)));
     if(_besideHtml&&!qTextInner.includes('pvimg-beside'))qTextInner+=_besideHtml; // 選項不足以排版時，圖仍要顯示
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
     const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
@@ -8024,6 +8024,23 @@ function deLatexSimple(text){
 // 因為 docxtemplater 會把題目段落複製成各自帶有 pPr/tabs 的獨立段落。
 const PRE_OPT_TAB=''; // 選項間 tab 佔位，render 後換成 <w:tab/>
 const PRE_OPT_COL_OPEN='',PRE_OPT_COL_CLOSE='';
+// 底線規則（錯誤／不正確…雙底線、國名單底線）的 Word 標記：render 後拆成獨立帶底線的 run。
+const UL_DOUBLE_OPEN='\uE016',UL_SINGLE_OPEN='\uE017',UL_CLOSE='\uE018';
+function _markUnderlineKeywords(text){
+  return _textSegs(String(text||'')).map(s=>s.s==='d'?UL_DOUBLE_OPEN+s.t+UL_CLOSE:s.s==='s'?UL_SINGLE_OPEN+s.t+UL_CLOSE:s.t).join('');
+}
+// render 後：把標記處拆成獨立 run，rPr 沿用所在 run 並加上 <w:u>；最後清掉任何殘留標記。
+function _tplApplyUnderlines(xml){
+  const re=/(<w:r\b[^>]*>(?:\s*<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*<\/w:rPr>)?)|([\uE016\uE017\uE018])/g;
+  let base='<w:r>',baseRPr='';
+  const out=String(xml||'').replace(re,(m,runOpen,mark)=>{
+    if(runOpen){base=runOpen;baseRPr=(runOpen.match(/<w:rPr>[\s\S]*<\/w:rPr>/)||[''])[0];return m;}
+    const withU=val=>baseRPr?baseRPr.replace('</w:rPr>','<w:u w:val="'+val+'"/></w:rPr>'):'<w:rPr><w:u w:val="'+val+'"/></w:rPr>';
+    if(mark==='\uE018')return '</w:t></w:r><w:r>'+baseRPr+'<w:t xml:space="preserve">';
+    return '</w:t></w:r><w:r>'+withU(mark==='\uE016'?'double':'single')+'<w:t xml:space="preserve">';
+  });
+  return out;
+}
 const PRE_IMG_SENTINEL='';
 function _preOptLen(s){let n=0;for(const ch of String(s)){n+=(ch.codePointAt(0)>0x2e80?1:0.5);}return n;}
 // 預設圖的唯一決策點。圖寬 ≤42% 且扣掉 14px 間隙後，單行選項仍至少容得下最長選項
@@ -8299,7 +8316,8 @@ function _preFloatQuestionImages(xml,positionH,layouts){
 // 使用者一點擊編輯，_pvTextFocus 又會把內容換回原始 <br> 版本，編輯體驗不受影響。
 function _prePackPreviewHtml(raw,hasImg,kind,besideHtml){
   kind=kind||'pre';
-  const fmt=s=>applyRichMarks(esc(fixLatex(String(s||''))).replace(/\n/g,'<br>'));
+  // 「錯誤／不正確／不恰當…」雙底線、國名單底線：與主預覽相同規則（編輯時回到純文字，不會寫進資料）。
+  const fmt=s=>applyRichMarks(hlNames(hlKw(esc(fixLatex(String(s||''))))).replace(/\n/g,'<br>'));
   const text=String(raw||'');
   const parts=text.split(/\n(?=\([A-Ea-e]\))/);
   if(parts.length<3)return fmt(text);
@@ -9256,6 +9274,8 @@ async function downloadWordViaTemplate(kind,opts){
       const placement=_defaultImagePlacement(resolvedImgs,qText,kind,resolvedImgs.map(x=>x.height));
       // 圖片模組的 inline 原本在段尾；哨兵讓後處理能把小圖移到第一個選項行的開頭。
       if(placement==='beside')qText=qText.replace(/\n(?=\([A-Ea-e]\))/, '\n'+PRE_IMG_SENTINEL);
+      // 版面判定（選項字數、圖片位置）都用純文字；底線標記最後才加，避免私用字元被當成字數。
+      qText=_markUnderlineKeywords(qText);
       items.push({no:qno,text:qText,imgs:resolvedImgs,placement,passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
@@ -9296,6 +9316,8 @@ async function downloadWordViaTemplate(kind,opts){
     // 課前考與 ABK 都把單題 inline 圖改成右浮動文繞圖；ABK 以各欄右緣為基準。
     // 只有單題圖會被轉成浮動 anchor；題組共用圖留在文字方塊 inline，故不列入此序列。
     const questionImageLayouts=sections.flatMap(section=>section.items.flatMap(item=>item.imgs.map(image=>({layout:image.layout||{},placement:item.placement||'block'}))));
+    // 先套底線規則（只拆 run，不動段落結構），後面的選項定位點／圖片處理照舊。
+    xml2=_tplApplyUnderlines(xml2);
     if(kind==='pre'){
       xml2=_preApplyOptionTabs(xml2,kind);
       xml2=_preKeepQuestionTogether(xml2);
