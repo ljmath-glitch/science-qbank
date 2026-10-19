@@ -45,6 +45,21 @@ test('題型代碼、代碼加中文與純中文歸一',()=>{eq(core.normType('A
 test('圖表真實原值對照皆有粗分類，other 比例不過高',()=>{const values=['三態轉換圖','保溫瓶降溫曲線','光學圖','冷熱水混合曲線選項圖','函數關係圖','力學示意圖','升溫曲線','場線／等值線圖','實驗裝置圖','微觀模型圖','折線圖','波動圖','無','物質加熱曲線','示意圖','統計圖','表格','電路圖','運動圖'];const classes=values.map(core.chartClass);eq(classes,[ 'function','function','diagram','function','function','diagram','function','field','diagram','diagram','function','function','none','function','diagram','statistic','table','circuit','function']);const other=classes.filter(x=>x==='other').length/values.length;ok(other<=.1,'other ratio: '+other);});
 test('來源別名、會考與出版社正規化',()=>{eq(core.canonicalSource('桃園市新興高中附設國中部','112段考'),{name:'新興高中附設國中部',kind:'school'});eq(core.canonicalSource('新興高中附設國中部','112段考'),{name:'新興高中附設國中部',kind:'school'});eq(core.canonicalSource('會考','112會考'),{name:'教育部會考',kind:'exam-board'});eq(core.canonicalSource('南一','南一模擬考'),{name:'南一',kind:'publisher'});});
 test('normalizeQuestion 後題型顯示寫法的篩選結果相同',()=>{const rows=[q('a','甲國中-八年級-112上-第一次段考','甲國中','Ba-Ⅳ-1',{type:'A2 概念推論'}),q('b','甲國中-八年級-112上-第一次段考','甲國中','Ba-Ⅳ-1',{type:'A2'})],ex=core.buildExams(rows,{minQuestions:1}),n=core.normalizeQuestion(rows[0]);eq(n._type,'A2');eq(n._chartClass,null);eq(core.filterQuestions(rows,ex,{qtype:'A2'}).map(x=>x.id),core.filterQuestions(rows,ex,{qtype:'A2 概念推論'}).map(x=>x.id));});
+test('學段判定：冊別、科目、學測、會考與九年級依序正確',()=>{
+  eq(core.levelOf(q('a','甲國中-八年級-112上-段考','甲','Ba-Ⅳ-1',{book:'JB5',field:'理化'})),'國中');
+  eq(core.levelOf(q('b','高中段考','甲','Ba-Ⅳ-1',{book:'必修地科',field:'地科'})),'高中');
+  eq(core.levelOf(q('c','113學測','','Ba-Ⅳ-1',{book:'',field:'地科'})),'高中');
+  eq(core.levelOf(q('d','113會考','','Ba-Ⅳ-1',{book:'',field:'生物'})),'國中');
+  eq(core.levelOf(q('e','甲國中-九年級-113模擬考','甲','Ba-Ⅳ-1',{book:'',field:'生物'})),'國中');
+});
+test('facetOptions：學測只留高中科目、國中不含物理化學，且同維多選不自我限縮',()=>{
+  const rows=[q('a','113學測','','Ba-Ⅳ-1',{field:'物理',book:'必修物理'}),q('b','113學測','','Ba-Ⅳ-1',{field:'化學',book:'必修化學'}),q('c','甲國中-八年級-113上-第一次段考','甲國中','Ba-Ⅳ-1',{field:'理化'}),q('d','乙國中-八年級-113上-第一次段考','乙國中','Ba-Ⅳ-1',{field:'生物'})],ex=core.buildExams(rows,{minQuestions:1});
+  eq(core.facetOptions(rows,ex,{category:['學測']},null,{includeIncomplete:true}).field.map(x=>x.value),['物理','化學']);
+  eq(core.facetOptions(rows,ex,{level:['國中']},null,{includeIncomplete:true}).field.map(x=>x.value),['理化','生物']);
+  const sourceValues=core.facetOptions(rows,ex,{source:['甲國中','乙國中']},null,{includeIncomplete:true}).source.map(x=>x.value);ok(sourceValues.includes('甲國中')&&sourceValues.includes('乙國中'));
+  eq(core.facetOptions(rows,ex,{category:['段考']},null,{includeIncomplete:true}).source.map(x=>x.value),['乙國中','甲國中']);
+});
+test('reconcileFilters：移除目前選項中不存在的值',()=>{const r=core.reconcileFilters({level:['國中'],field:['理化','物理'],school:['甲']},{level:[{value:'國中'}],field:[{value:'理化'}],source:[{value:'乙'}]});eq(r.filters,{level:['國中'],field:['理化']});eq(r.removed,[{dim:'field',value:'物理'},{dim:'source',value:'甲'}]);});
 test('題庫實際 33 種圖表原值：分類結果與 other 比例（2026-10 實測）',()=>{
   const real={'無':4151,'表格':656,'實驗裝置圖':536,'微觀模型圖':355,'光學圖':291,'函數關係圖':234,'統計圖':218,'波動圖':146,'運動圖':139,'力學示意圖':100,'電路圖':81,'場線／等值線圖':63,'示意圖':26,'折線圖':6,'其他':3,'物質加熱曲線':3,'金屬比熱表':2,'物體資料表':2,'水與A物體溫度表':2,'金屬比熱表與升溫曲線':1,'粒子圖與加熱曲線':1,'保溫瓶降溫曲線':1,'錐形瓶玻璃管示意圖':1,'原子結構圖與資料表':1,'自製溫度計選項圖':1,'溫度時間選項圖':1,'微觀粒子圖':1,'自製溫度計裝置圖':1,'試管加熱示意圖':1,'升溫曲線':1,'三態轉換圖':1,'升溫曲線與質量選項圖':1,'冷熱水混合曲線選項圖':1};
   const total=Object.values(real).reduce((a,b)=>a+b,0),other=Object.entries(real).filter(([k])=>core.chartClass(k)==='other').reduce((a,[,n])=>a+n,0);
