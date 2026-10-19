@@ -7822,7 +7822,7 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
     updateBell();
   }
   if(entryMode==='compose'){
-    // 課程規劃儀表板交接：只在明確 cp=1 時取用，避免影響既有組卷精靈。
+    // 分析頁交接（保留供考題分析中心的「加入選題並到組卷」使用）：只在明確 cp=1 時取用 localStorage['cp_picks']，避免影響既有組卷精靈。
     try{
       const qp=new URLSearchParams(location.search);
       if(qp.get('cp')==='1'){
