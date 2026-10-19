@@ -109,6 +109,7 @@
     <a href="#filter">篩選</a>
     <a href="#pick">選題出卷</a>
     <a href="#analytics">健檢儀表板</a>
+    <a href="#course-plan">課程規劃</a>
     <a href="#progress">共編進度</a>
     <a href="#daily">每日一題</a>
     <a href="#backup">備份</a>
@@ -133,6 +134,7 @@
     <li><a href="#filter">篩選與搜尋題目</a></li>
     <li><a href="#pick">選題、組卷精靈與匯出考卷</a></li>
     <li><a href="#analytics">題庫健檢儀表板</a></li>
+    <li><a href="#course-plan">學測地科課程規劃儀表板</a></li>
     <li><a href="#progress">共編進度表</a></li>
     <li><a href="#daily">每日一題系統</a></li>
     <li><a href="#backup">備份與還原</a></li>
@@ -202,6 +204,7 @@
   <tr><td><b>題庫主系統</b></td><td><code>/index.html</code></td><td>篩選、編輯、匯入、AI 詳解、組卷匯出的主戰場</td></tr>
   <tr><td><b>考卷前處理</b></td><td><code>/raw.html</code></td><td>把新考卷從 PDF/Word 洗成可匯入的題目＋圖</td></tr>
   <tr><td><b>題庫健檢儀表板</b></td><td><code>/analytics.html</code></td><td>一眼看題庫全貌與缺口</td></tr>
+  <tr><td><b>課程規劃儀表板</b></td><td><code>/course-plan.html</code></td><td>依學測地科趨勢規劃 9 堂課與挑課前考題</td></tr>
   <tr><td><b>共編進度表</b></td><td><code>/progress.html</code></td><td>每份考卷處理到哪一步的協作看板</td></tr>
   <tr><td><b>每日一題</b></td><td><code>/daily.html</code></td><td>每日練習，有等級與角色養成</td></tr>
   <tr><td><b>使用說明</b>（本頁）</td><td><code>/guide.html</code></td><td>操作手冊</td></tr>
@@ -842,6 +845,11 @@
 
 
 <!-- ===== 共編進度表 ===== -->
+<!-- ===== 課程規劃儀表板 ===== -->
+<h2 id="course-plan">十一之一、學測地科課程規劃儀表板（course-plan.html）</h2>
+<p>從首頁「題庫出題」開啟。它只讀取學測／北模地科的必要欄位，以近五年學測為預設範圍，顯示單元熱度、年度趨勢與 9 堂課安排；北模尚未入庫時會明確顯示空狀態。</p>
+<p>在「題目池」選擇堂次後可勾選課前考／作業題，按「加入選題並到組卷」會開啟組卷精靈並帶入勾選題目。課程日期、主題分鐘數和影片備註可直接修改並儲存；也可列印給主任或匯出 CSV。</p>
+
 <h2 id="progress">十二、共編進度表（progress.html）</h2>
 
 <p>多人協作的考卷處理看板：每份考卷處理到哪一步、誰卡住，一目了然。入口：<code>/progress.html</code>。</p>

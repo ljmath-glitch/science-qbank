@@ -7822,6 +7822,15 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
     updateBell();
   }
   if(entryMode==='compose'){
+    // 課程規劃儀表板交接：只在明確 cp=1 時取用，避免影響既有組卷精靈。
+    try{
+      const qp=new URLSearchParams(location.search);
+      if(qp.get('cp')==='1'){
+        const ids=JSON.parse(localStorage.getItem('cp_picks')||'[]');
+        if(Array.isArray(ids))ids.forEach(id=>{if(DB.some(q=>q.id===id)&&!PICKS.has(id))togglePick(id,true);}); // togglePick 是切換；題組會連動，已選過的不能再切換
+        localStorage.removeItem('cp_picks');
+      }
+    }catch(e){console.warn('課程規劃選題交接失敗',e);}
     history.replaceState(null,'',location.pathname);
     setTimeout(()=>{try{wzOpen();}catch(e){console.warn(e);}},150);
   }
