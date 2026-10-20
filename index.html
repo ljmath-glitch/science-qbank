@@ -1953,7 +1953,25 @@ async function applyGroupIdTool(){
   render();
 }
 
-let DB=[], PASSAGES={}, PICKS=new Set(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[];
+/* 選題自動存在瀏覽器（localStorage）：重新整理頁面不會洗掉已選題目。同步寫入有 400ms 防抖，離開頁面時立即存。 */
+let _picksTimer=0,_picksRestoring=false;
+function _picksFlush(){
+  clearTimeout(_picksTimer);_picksTimer=0;
+  if(_picksRestoring)return;
+  try{
+    if(PICKS.size)localStorage.setItem('qbank_picks_v1',JSON.stringify({ids:[...PICKS],t:Date.now()}));
+    else localStorage.removeItem('qbank_picks_v1');
+  }catch(e){}
+}
+function _picksSaveLater(){if(_picksRestoring)return;clearTimeout(_picksTimer);_picksTimer=setTimeout(_picksFlush,400);}
+class PersistPickSet extends Set{
+  add(v){super.add(v);_picksSaveLater();return this;}
+  delete(v){const r=super.delete(v);_picksSaveLater();return r;}
+  clear(){super.clear();_picksSaveLater();}
+}
+window.addEventListener('pagehide',_picksFlush);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_picksFlush();});
+let DB=[], PASSAGES={}, PICKS=new PersistPickSet(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[];
 window.__qbankDataReady=false;
 // 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
 window.getExamNames=function(){try{return [...new Set(DB.map(function(x){return x&&x.exam}).filter(Boolean))].sort();}catch(e){return [];}};
@@ -2046,6 +2064,23 @@ async function load(){
   // （注意：id=5 已被 announce.js 的管理員公告佔用，不可共用，否則會互相覆蓋）
   try{const {data:phRow}=await sb.from('syllabus_doc').select('content').eq('id',6).maybeSingle();PAPER_HISTORY=phRow&&phRow.content?JSON.parse(phRow.content):[];}catch(e){PAPER_HISTORY=[];}
   if(!Array.isArray(PAPER_HISTORY))PAPER_HISTORY=[];
+}
+function restorePicks(){
+  try{
+    const o=JSON.parse(localStorage.getItem('qbank_picks_v1')||'null');
+    if(!o||!Array.isArray(o.ids)||!o.ids.length||Date.now()-(o.t||0)>14*864e5)return;
+    const have=new Set(DB.map(q=>q.id)),ids=o.ids.filter(id=>have.has(id));
+    if(!ids.length)return;
+    _picksRestoring=true;ids.forEach(id=>PICKS.add(id));_picksRestoring=false;
+    _picksFlush();
+    const bar=document.createElement('div');
+    bar.style.cssText='position:fixed;left:50%;bottom:78px;transform:translateX(-50%);z-index:99999;background:#2d3038;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.28);font:14px system-ui,"PingFang TC","Microsoft JhengHei",sans-serif;display:flex;gap:12px;align-items:center;max-width:92vw';
+    bar.innerHTML='<span>已還原上次的選題 <b>'+ids.length+'</b> 題</span><button style="font:inherit;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;border-radius:8px;padding:3px 10px;cursor:pointer">清除選題</button><button aria-label="關閉" style="font:inherit;border:0;background:transparent;color:#fff;cursor:pointer;font-size:18px;line-height:1">×</button>';
+    const [,clearBtn,closeBtn]=[...bar.childNodes];
+    clearBtn.onclick=()=>{PICKS.clear();_picksFlush();try{if(typeof updateFloat==='function')updateFloat();if(typeof render==='function')render();}catch(e){}bar.remove();};
+    closeBtn.onclick=()=>bar.remove();
+    document.body.appendChild(bar);setTimeout(()=>bar.remove(),15000);
+  }catch(e){console.warn('還原選題失敗',e);}
 }
 async function reloadCloud(){if(!requireCloud())return;await load();buildFiltersKeep();render();}
 // 全站「重新整理」鈕（refresh.js）會呼叫這支：就地重抓雲端題庫、保留目前的篩選與捲動位置，不整頁重載。
@@ -7873,7 +7908,7 @@ if(document.getElementById('fHideSol'))fHideSol.checked=HIDE_SOL;
       <span style="font-size:12px">（取得方式：Supabase → Project Settings → API）</span></div>`;
     return;
   }
-  await loadAIConfig();await load();window.__qbankDataReady=true;buildFilters();
+  await loadAIConfig();await load();window.__qbankDataReady=true;restorePicks();buildFilters();
   let rawHandoff='';
   let entryMode='';
   try{
