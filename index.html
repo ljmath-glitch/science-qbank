@@ -261,6 +261,7 @@
   .paper-doc-grid{display:grid;grid-template-columns:repeat(2,minmax(190px,1fr));gap:14px}
   .paper-doc-card{position:relative;min-height:132px;padding:16px;border:2px solid #dfd6c9;border-radius:11px;background:#faf7f1;color:#5b5148;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:7px;font-family:inherit;cursor:pointer}
   .paper-doc-card.on{border-color:var(--red);background:linear-gradient(180deg,#fff9f5,#f9e8e4);box-shadow:0 0 0 3px rgba(133,1,3,.09)}
+  .paper-doc-card:not(.on) .paper-doc-check{display:none}
   .paper-doc-check{position:absolute;left:11px;top:10px;width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:14px;font-weight:900}
   .paper-doc-icon{width:40px;height:50px;border:2px solid currentColor;border-radius:3px;position:relative;background:#fff}.paper-doc-icon:before,.paper-doc-icon:after{content:'';position:absolute;left:8px;right:8px;height:2px;background:currentColor;opacity:.55}.paper-doc-icon:before{top:17px;box-shadow:0 8px 0 currentColor,0 16px 0 currentColor}.paper-doc-icon:after{display:none}
   .paper-doc-card b{font-size:15px;color:var(--ink)}.paper-doc-card small{font-size:12px;color:#746b62;line-height:1.45}
@@ -944,7 +945,7 @@
         <div class="field"><label>輸出文件</label><div class="paper-doc-grid">
           <button type="button" class="paper-doc-card on" id="paperDocQuestion" onclick="paperToggleDocument('question')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>題目卷</b><small>題目與作答欄</small></button>
           <button type="button" class="paper-doc-card on" id="paperDocSolution" onclick="paperToggleDocument('solution')"><span class="paper-doc-check">✓</span><span class="paper-doc-icon" aria-hidden="true"></span><b>解析卷</b><small>不含題目・依內容排版詳解</small></button>
-        </div><label class="paper-qans-opt" style="display:flex;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span><b>教用版</b>：答案填在題號括弧中（不含詳解）；不勾為<b>學用版</b></span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
+        </div><label class="paper-qans-opt" style="display:none;align-items:center;gap:7px;margin:9px 2px 2px;font-size:13px;cursor:pointer"><input type="checkbox" id="pQAns" checked onchange="paperSyncDocuments();paperSettingsPreviewLater()"><span><b>教用版</b>：答案填在題號括弧中（不含詳解）；不勾為<b>學用版</b></span></label><p class="paper-setting-note" id="paperDocNote">目前會同時輸出題目卷與解析卷。</p></div>
         <div class="field"><label>排版方式</label><input type="checkbox" id="pTwoCol" hidden><div class="paper-layout-grid">
           <button type="button" class="paper-layout-card on" id="paperLayoutSingle" onclick="paperSetLayout(false)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon" aria-hidden="true"></span><b>橫書單欄</b></button>
           <button type="button" class="paper-layout-card" id="paperLayoutDouble" onclick="paperSetLayout(true)"><span class="paper-layout-check">✓</span><span class="paper-layout-icon double" aria-hidden="true"></span><b>橫書雙欄</b></button>
@@ -9513,9 +9514,9 @@ async function downloadWordFromDlg(){
     // 教用版＝題目卷＋答案填在題號括弧中（10pt Times New Roman，無底色無邊框）；學用版＝空括弧題目卷。
     try{
       if(ansMode==='full'){await downloadSolutionWord();}
-      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{suffix:'（學用版）'});await downloadSolutionWord();}
+      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});await downloadSolutionWord();}
       else if(ansMode==='inline'){await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});}
-      else{await downloadWordViaTemplate(paperKind,{suffix:'（學用版）'});}
+      else{await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});}   // 一律輸出教用版：答案是隱藏文字，Word 關掉 ¶ 即為學生版
     }catch(e){alert('範本匯出未完成：'+e.message);}
     return;
   }
