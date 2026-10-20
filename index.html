@@ -1237,6 +1237,7 @@
   .wz-score-tbl th,.wz-score-tbl td{border:1px solid #e9e0d2;padding:6px 8px;text-align:center}
   .wz-score-tbl thead th{background:#f4ece0;color:#6e5a3c;font-weight:700}
   .wz-score-tbl .wz-sc-name{text-align:left;font-weight:700;color:#5b4a30}
+  .wz-score-tbl .wz-sc-in.sm{width:48px;padding:2px}.wz-sc-split{font-size:12px;color:#6e5a3c;margin-top:5px;white-space:nowrap}.wz-sc-split a{color:var(--red);margin-left:4px}
   .wz-score-tbl .wz-sc-in{width:64px;text-align:center;padding:4px;border:1px solid #d8cbb6;border-radius:6px;font-family:inherit}
   .wz-score-tbl .wz-sc-sum{font-weight:700;color:var(--red)}
   .wz-score-tbl tfoot td{background:#faf4ea;font-weight:800}
@@ -4645,6 +4646,7 @@ let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收�
 let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（field|book|unit|sub）
 let WZ_TREEDATA=[];              // [{field,book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
+let WZ_SCORE_TARGET=100;     // 自動配分的目標總分
 let WZ_SCORE_MANUAL=false;   // 使用者手動改過配分後，不再自動配成 100 分
 let WZ_SCORE={};                 // 配分：{題型kind: 每題配分}
 let WZ_EXCLUDE=new Set();        // 過濾試卷：已勾選排除的考卷 id（對應 PAPER_HISTORY）
@@ -4693,7 +4695,7 @@ function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
-  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_EXCLUDE=new Set();WZ_FMT=new Set();document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
+  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_SCORE_TARGET=100;WZ_EXCLUDE=new Set();WZ_FMT=new Set();document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
   WZ_MODE='chapter';WZ_SCHOOLSCOPE=new Set();WZ_SCHOOLCOLLAPSED=new Set();  // 重置選題方式
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
@@ -4959,49 +4961,97 @@ function wzScoreData(){
   });
   return rows;
 }
+/* ===== 配分邏輯 =====
+   WZ_SCORE[kind] = {base:每題配分, n:前 n 題另計（0＝不分段）, first:前 n 題的每題配分}
+   - 題組題不分段（同一份題組分數要相同）；其他題型可把「前 n 題」設成另一種分數。
+   - 自動配分：以 0.5 分為單位，目標總分預設 100；各題型分數盡量接近，湊不到時才用分段補差。 */
+function wzKindScore(kind,count){
+  const sc=(typeof WZ_SCORE!=='undefined'&&WZ_SCORE)?WZ_SCORE[kind]:null;
+  if(!sc||!count)return null;
+  const base=+sc.base||0,n=(kind!=='group'&&sc.n>0&&sc.n<count)?sc.n:0,first=+sc.first||0;
+  if(!n){if(!base)return null;const total=base*count;return {total,text:`每題 ${base} 分，共 ${total} 分`};}
+  const total=first*n+base*(count-n);
+  return {total,text:`前 ${n} 題每題 ${first} 分，其餘每題 ${base} 分，共 ${total} 分`};
+}
+function _wzFmt(x){return Math.round(x*100)/100;}
+function wzFitScores(rows,target){
+  const N=rows.reduce((a,r)=>a+r.count,0);if(!N)return;
+  const avg=target/N,c0=Math.round(avg*2)/2;
+  const cand=[];for(let v=Math.max(0.5,c0-3);v<=c0+3;v+=0.5)cand.push(v);
+  let best=null;const cur=[];
+  const consider=(sum)=>{
+    const rem=Math.round((target-sum)*100)/100;
+    const spreadOf=(vals)=>Math.max(...vals)-Math.min(...vals);
+    const dev=cur.reduce((a,v)=>a+Math.abs(v-avg),0);
+    if(rem===0){const c=spreadOf(cur)*10+dev;if(!best||c<best.c)best={c,v:cur.slice(),split:null};return;}
+    let hit=false;
+    rows.forEach((r,k)=>{
+      if(r.kind==='group'||r.count<2)return;
+      for(const step of [0.5,1]){
+        const m=Math.abs(rem)/step;
+        if(m!==Math.floor(m)||m<1||m>r.count-1)continue;
+        const first=cur[k]+(rem>0?step:-step);if(first<=0)continue;
+        const c=spreadOf(cur.concat([first]))*10+dev+1-r.count*0.001;
+        hit=true;
+        if(!best||c<best.c)best={c,v:cur.slice(),split:{k,n:m,first}};
+      }
+    });
+    if(!hit){const c=1e6+Math.abs(rem)*100+spreadOf(cur);if(!best||c<best.c)best={c,v:cur.slice(),split:null};}
+  };
+  (function rec(i,sum){
+    if(i===rows.length){consider(sum);return;}
+    for(const v of cand){cur[i]=v;rec(i+1,sum+v*rows[i].count);}
+  })(0,0);
+  rows.forEach((r,i)=>{
+    WZ_SCORE[r.kind]={base:best.v[i],n:0,first:best.v[i]};
+    if(best.split&&best.split.k===i){WZ_SCORE[r.kind].n=best.split.n;WZ_SCORE[r.kind].first=best.split.first;}
+  });
+}
 function wzRenderScoreTable(){
   const box=document.getElementById('wzScoreTable');if(!box)return;
   const rows=wzScoreData();
   if(!rows.length){box.innerHTML='<div class="wz-score-empty">尚未選題，回上一步挑題後這裡會出現配分表。</div>';return;}
-  if(!WZ_SCORE_MANUAL)wzFitScores(rows,100);
-  rows.forEach(r=>{if(WZ_SCORE[r.kind]==null)WZ_SCORE[r.kind]=5;});
+  if(!WZ_SCORE_MANUAL)wzFitScores(rows,WZ_SCORE_TARGET);
+  rows.forEach(r=>{if(!WZ_SCORE[r.kind]||typeof WZ_SCORE[r.kind]!=='object')WZ_SCORE[r.kind]={base:5,n:0,first:5};});
   let total=0,totalQ=0;
   let h='<table class="wz-score-tbl"><thead><tr><th>題型</th><th>簡單</th><th>中等</th><th>困難</th><th>極難</th><th>總題數</th><th>每題配分</th><th>共計</th></tr></thead><tbody>';
   rows.forEach(r=>{
-    const per=+WZ_SCORE[r.kind]||0;const sub=per*r.count;total+=sub;totalQ+=r.count;
+    const sc=WZ_SCORE[r.kind],ks=wzKindScore(r.kind,r.count)||{total:0};
+    total+=ks.total;totalQ+=r.count;
+    const split=r.kind!=='group'&&r.count>=2;
+    const on=split&&sc.n>0&&sc.n<r.count;
+    let cell=`<input type="number" min="0" step="0.5" class="wz-sc-in" value="${_wzFmt(sc.base)}" onchange="wzScoreSet('${r.kind}','base',this.value)">`;
+    if(split){
+      cell+=on
+        ?`<div class="wz-sc-split">前 <input type="number" min="1" max="${r.count-1}" class="wz-sc-in sm" value="${sc.n}" onchange="wzScoreSet('${r.kind}','n',this.value)"> 題每題 <input type="number" min="0" step="0.5" class="wz-sc-in sm" value="${_wzFmt(sc.first)}" onchange="wzScoreSet('${r.kind}','first',this.value)"> 分，其餘每題如上 <a href="#" onclick="wzScoreSplit('${r.kind}',false);return false">取消分段</a></div>`
+        :`<div class="wz-sc-split"><a href="#" onclick="wzScoreSplit('${r.kind}',true);return false">＋ 分段（前幾題另計）</a></div>`;
+    }else if(r.kind==='group'){cell+=`<div class="wz-sc-split" style="color:#9a8f83">題組分數一律相同</div>`;}
     h+=`<tr><td class="wz-sc-name">${r.label}</td><td>${r.diff.簡單||''}</td><td>${r.diff.中等||''}</td><td>${r.diff.困難||''}</td><td>${r.diff.極難||''}</td><td>${r.count}</td>`
-      +`<td><input type="number" min="0" class="wz-sc-in" value="${per}" onchange="wzScoreInput('${r.kind}',this.value)"></td>`
-      +`<td class="wz-sc-sum">${sub}</td></tr>`;
+      +`<td>${cell}</td><td class="wz-sc-sum">${_wzFmt(ks.total)}</td></tr>`;
   });
-  h+=`</tbody><tfoot><tr><td>總計</td><td></td><td></td><td></td><td></td><td>${totalQ}</td><td></td><td class="wz-sc-total">${total}</td></tr></tfoot></table>`;
-  if(!WZ_SCORE_MANUAL&&total!==100)h+=`<div class="wz-set-note" style="margin-top:6px">此題數無法剛好湊成 100 分（目前 ${total} 分）；可直接改「每題配分」微調。</div>`;
+  h+=`</tbody><tfoot><tr><td>總計</td><td></td><td></td><td></td><td></td><td>${totalQ}</td><td></td><td class="wz-sc-total">${_wzFmt(total)}</td></tr></tfoot></table>`;
+  if(_wzFmt(total)!==WZ_SCORE_TARGET)h+=`<div class="wz-set-note" style="margin-top:6px">目前共 ${_wzFmt(total)} 分（目標 ${WZ_SCORE_TARGET} 分）${WZ_SCORE_MANUAL?'；可調整每題配分，或按「重新配分」自動湊分。':'；此題數無法湊成剛好，可用「分段」或手動微調。'}</div>`;
   box.innerHTML=h;
 }
-function wzScoreInput(kind,val){WZ_SCORE_MANUAL=true;WZ_SCORE[kind]=Math.max(0,parseFloat(val)||0);wzRenderScoreTable();}
-// 自動配分：各題型每題配分（可到 0.5）湊成目標總分，且各題型分數盡量接近。
-function wzFitScores(rows,target){
-  const N=rows.reduce((a,r)=>a+r.count,0);if(!N)return;
-  const base=target/N,c0=Math.round(base*2)/2;
-  const cand=[];for(let v=Math.max(0.5,c0-3);v<=c0+3;v+=0.5)cand.push(v);
-  let best=null;
-  const cur=[];
-  (function rec(i,sum){
-    if(i===rows.length){
-      const mx=Math.max(...cur),mn=Math.min(...cur);
-      const sc=Math.abs(sum-target)*1000+(mx-mn)*10+cur.reduce((a,v)=>a+Math.abs(v-base),0);
-      if(!best||sc<best.sc)best={sc,v:cur.slice()};
-      return;
-    }
-    for(const v of cand){cur[i]=v;rec(i+1,sum+v*rows[i].count);}
-  })(0,0);
-  rows.forEach((r,i)=>{WZ_SCORE[r.kind]=best.v[i];});
+function wzScoreSet(kind,field,val){
+  WZ_SCORE_MANUAL=true;
+  const sc=WZ_SCORE[kind]||(WZ_SCORE[kind]={base:5,n:0,first:5});
+  let v=parseFloat(val);if(!(v>=0))v=0;
+  if(field==='n')v=Math.max(0,Math.floor(v));
+  sc[field]=v;
+  wzRenderScoreTable();
+}
+function wzScoreSplit(kind,on){
+  WZ_SCORE_MANUAL=true;
+  const sc=WZ_SCORE[kind]||(WZ_SCORE[kind]={base:5,n:0,first:5});
+  if(on){sc.n=1;sc.first=sc.base+0.5;}else{sc.n=0;}
+  wzRenderScoreTable();
 }
 function wzAutoScore(){
   const rows=wzScoreData();const totalQ=rows.reduce((a,r)=>a+r.count,0);if(!totalQ){alert('尚未選題');return;}
-  const t=prompt('目標總分？（各題型每題配分會盡量接近）','100');if(t==null)return;
+  const t=prompt('目標總分？（各題型每題配分盡量接近；湊不到時用「前幾題另計」補差）',String(WZ_SCORE_TARGET));if(t==null)return;
   const target=parseFloat(t);if(!target||target<=0)return;
-  WZ_SCORE_MANUAL=true;
-  wzFitScores(rows,target);
+  WZ_SCORE_TARGET=target;WZ_SCORE_MANUAL=false;
   wzRenderScoreTable();
 }
 /* ===== Step 3：過濾試卷（排除已出過的考卷題目） ===== */
@@ -5541,9 +5591,9 @@ function paperSectionLabel(kind,sections){
   const i=pres.indexOf(kind);
   let s=`${_PAPER_CN[i]||''}、${_PAPER_SECTION_LABEL[kind]||kind}`;
   // 組卷精靈配分：預覽標題同步顯示「/每題X分，共Y分」（與 Word 匯出一致）
-  if(document.querySelector('input[name=pPaperKind]:checked')?.value!=='golden'&&typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[kind]!=null&&sections&&sections.ordered){
-    const per=+WZ_SCORE[kind]||0,cnt=sections.ordered.filter(it=>sections.kindOf(it)===kind).length;
-    if(per&&cnt)s+=`  /每題 ${per} 分，共 ${per*cnt} 分`;
+  if(document.querySelector('input[name=pPaperKind]:checked')?.value!=='golden'&&sections&&sections.ordered){
+    const ks=wzKindScore(kind,sections.ordered.filter(it=>sections.kindOf(it)===kind).length);
+    if(ks)s+='  /'+ks.text;
   }
   return s;
 }
@@ -9464,8 +9514,8 @@ async function downloadWordViaTemplate(kind,opts){
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
     // 組卷精靈設定了配分時，把「/每題X分，共Y分」直接帶進標題（取代範本的手填 ＿＿ 佔位）。
     let secTitle=_PAPER_SECTION_LABEL[k];
-    const _per=(kind!=='golden'&&typeof WZ_SCORE!=='undefined'&&WZ_SCORE&&WZ_SCORE[k]!=null)?(+WZ_SCORE[k]||0):null;
-    if(_per!=null){secTitle+='  /每題 '+_per+' 分，共 '+(_per*items.length)+' 分';scoringActive=true;}
+    const _ks=kind!=='golden'?wzKindScore(k,items.length):null;
+    if(_ks){secTitle+='  /'+_ks.text;scoringActive=true;}
     sections.push({title:secTitle,items});
   }
   const imageSizes=new Map();
