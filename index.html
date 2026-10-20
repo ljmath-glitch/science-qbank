@@ -1242,7 +1242,7 @@
   .wz-score-tbl tfoot td{background:#faf4ea;font-weight:800}
   .wz-score-tbl .wz-sc-total{color:var(--red);font-size:15px}
   .wz-score-empty{color:#9a8f83;font-size:13px;padding:10px 4px}
-  #wzFilterPapersDlg{border:0;border-radius:14px;padding:0;width:min(900px,94vw);max-height:88vh;box-shadow:0 30px 80px -20px rgba(45,48,56,.5)}
+  #wzFilterPapersDlg{border:0;border-radius:14px;padding:0;width:min(1000px,94vw);max-height:88vh;box-shadow:0 30px 80px -20px rgba(45,48,56,.5)}
   #wzFilterPapersDlg::backdrop{background:rgba(45,48,56,.45)}
   .wz-fp-head{background:var(--red);color:#fff;padding:14px 20px;font-size:16px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
   .wz-fp-head .wz-fp-x{background:transparent;border:0;color:#fff;font-size:20px;cursor:pointer}
@@ -1253,8 +1253,10 @@
   .wz-fp-frow label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
   .wz-fp-frow input[type=text]{flex:1;min-width:160px;padding:5px 9px;border:1px solid #d8cbb6;border-radius:7px;font-family:inherit}
   .wz-fp-tbl{width:100%;border-collapse:collapse;font-size:13px}
-  .wz-fp-tbl th,.wz-fp-tbl td{border-bottom:1px solid #eee;padding:8px 8px;text-align:center}
+  .wz-fp-tbl th,.wz-fp-tbl td{border-bottom:1px solid #eee;padding:11px 10px;text-align:center;white-space:nowrap}
+  .wz-fp-tbl td.nm{white-space:normal}
   .wz-fp-tbl thead th{color:#6e5a3c;font-weight:700;border-bottom:2px solid #e9e0d2}
+  .wz-fp-tbl td.nw{white-space:nowrap}.wz-fp-tbl td.nm{text-align:left;font-weight:700;min-width:180px}
   .wz-fp-tbl tbody tr{cursor:pointer}
   .wz-fp-tbl tbody tr:hover{background:#faf4ea}
   .wz-fp-empty{color:#9a8f83;font-size:13px;padding:24px 4px;text-align:center}
@@ -5014,10 +5016,11 @@ function wzRenderFilterPapers(){
   h+=`<div class="wz-fp-frow"><span>搜尋</span><input type="text" value="${esc(f.q)}" oninput="wzFpSearch(this.value)" placeholder="輸入考卷名稱…"></div></div>`;
   if(!rows.length){h+='<div class="wz-fp-empty">'+(hist.length?'沒有符合條件的考卷':'目前沒有產生過的考卷紀錄。<br>從題庫匯出考卷後會自動記錄（最多保留 20 份），即可在此勾選排除。')+'</div>';}
   else{
-    h+='<table class="wz-fp-tbl"><thead><tr><th></th><th>科目</th><th>版本</th><th>冊次</th><th>名稱</th><th>卷別</th><th>難易度</th><th>出卷日</th><th>題數</th><th></th></tr></thead><tbody>';
+    h+='<table class="wz-fp-tbl"><thead><tr><th></th><th style="text-align:left">名稱</th><th>科目・版本・冊次</th><th>卷別</th><th>難易度</th><th>出卷時間</th><th>題數</th><th></th></tr></thead><tbody>';
     rows.forEach(p=>{
+      const meta=[p.field,p.version,p.bookLabel].filter(Boolean).map(esc).join('・');
       h+=`<tr onclick="wzFpToggle('${p.id}')"><td><input type="checkbox" ${_wzFpTmp.has(p.id)?'checked':''} onclick="event.stopPropagation();wzFpToggle('${p.id}')"></td>`
-        +`<td>${esc(p.field||'')}</td><td>${esc(p.version||'')}</td><td>${esc(p.bookLabel||'')}</td><td style="text-align:left">${esc(p.name||'')}</td><td>${esc(p.kindLabel||'')}</td><td>${esc(p.diff||'')}</td><td>${_wzFmtDate(p.date)}</td><td>${(p.qids||[]).length}</td><td><button type="button" class="btn sm" onclick="event.stopPropagation();wzFpLoad('${p.id}')">📂 載入此卷</button></td></tr>`;
+        +`<td class="nm">${esc(p.name||'')}</td><td class="nw">${meta}</td><td class="nw">${esc(p.kindLabel||'')}</td><td class="nw">${esc(p.diff||'')}</td><td class="nw">${_wzFmtDate(p.date)}</td><td class="nw">${(p.qids||[]).length}</td><td class="nw"><button type="button" class="btn sm" onclick="event.stopPropagation();wzFpLoad('${p.id}')">載入此卷</button></td></tr>`;
     });
     h+='</tbody></table>';
   }
