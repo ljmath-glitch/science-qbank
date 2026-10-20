@@ -9419,7 +9419,7 @@ async function downloadWordViaTemplate(kind,opts){
         shownG.add(it.groupId);const ps=PASSAGES[it.groupId];
         if(ps&&(ps.q||(ps.imgs||[]).length)){
           const range=groupRanges.get(it.groupId);
-          let text=_tplQuestionText(ps,false);
+          let text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'');   // 範本段落自帶「◎ 」開頭
           if(range&&!/根據.{0,12}回答以下/.test(text))text+='\n根據文章內容，請回答以下'+range.first+'～'+range.last+'題。';
           passage={text,imgs:await _tplResolveImgs(ps.imgs)};
         }
