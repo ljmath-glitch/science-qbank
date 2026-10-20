@@ -9354,7 +9354,7 @@ function _answerBoxXml(ans, digits){
   const id=_ansBoxId++;
   const offx=ANSBOX.offX + Math.max(0,(digits||1)-1)*ANSBOX.perDigit;
   const a=String(ans==null?'':ans).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  return '<w:r><w:rPr><w:noProof/></w:rPr><w:drawing>'
+  return '<w:r><w:rPr><w:noProof/><w:vanish/></w:rPr><w:drawing>'   // 整個文字方塊所在的 run 也設隱藏：Word 在「顯示／隱藏 ¶」關閉時連方塊一起隱藏
    +'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251680000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
    +'<wp:simplePos x="0" y="0"/>'
    +'<wp:positionH relativeFrom="column"><wp:posOffset>'+offx+'</wp:posOffset></wp:positionH>'
