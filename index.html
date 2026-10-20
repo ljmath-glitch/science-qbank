@@ -1141,6 +1141,14 @@
           <button type="button" class="wz-chip" id="wzModeSchool" onclick="wzSetMode('school')">依學校</button>
           <span id="wzModeHint" style="font-size:12px;color:#9a8f83;margin-left:4px">依課綱章節選題，適合組新卷</span>
         </div>
+        <div class="wz-chips" id="wzFmtChips" style="margin-bottom:10px">
+          <span style="font-weight:700;color:#6e6f74">題型：</span>
+          <button type="button" class="wz-chip" data-fmt="單選題" onclick="wzToggleFmt(this)">單選題</button>
+          <button type="button" class="wz-chip" data-fmt="多選題" onclick="wzToggleFmt(this)">多選題</button>
+          <button type="button" class="wz-chip" data-fmt="題組題" onclick="wzToggleFmt(this)">題組題</button>
+          <button type="button" class="wz-chip" data-fmt="非選題" onclick="wzToggleFmt(this)">非選題</button>
+          <span style="font-size:12px;color:#9a8f83">不勾＝全部；可複選，只留下符合的題目</span>
+        </div>
         <!-- 依章節 -->
         <div id="wzChapterMode">
           <div class="wz-chips" style="margin-bottom:10px">
@@ -4660,12 +4668,30 @@ function _wzExcludedQids(){
 }
 function _wzPool(){const ex=_wzExcludedQids();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id));}
 function _wzSchoolKey(it){return (it.school||'（未填學校）')+WZ_SEP+(it.exam||'（未填考試）');}
-function wzInScope(it){return WZ_MODE==='school'?WZ_SCHOOLSCOPE.has(_wzSchoolKey(it)):WZ_SCOPE.has(_wzLeafKey(it));}
+let WZ_FMT=new Set();   // 題型篩選（單選題／多選題／題組題／非選題）；空＝不限
+function _wzFormat(it){
+  if(it.groupId)return '題組題';
+  const t=normType(it.type);
+  if(t==='填'||t==='計')return '非選題';
+  const a=String(it.ans||'').replace(/[^A-Ea-e]/g,'');
+  return a.length>=2?'多選題':'單選題';
+}
+function wzToggleFmt(btn){
+  const f=btn.dataset.fmt;
+  if(WZ_FMT.has(f))WZ_FMT.delete(f);else WZ_FMT.add(f);
+  btn.classList.toggle('on',WZ_FMT.has(f));
+  if(typeof wzRenderTree==='function'&&WZ_MODE!=='school')wzRenderTree();
+  wzRenderList();wzUpdateFoot();
+}
+function wzInScope(it){
+  if(WZ_FMT.size&&!WZ_FMT.has(_wzFormat(it)))return false;
+  return WZ_MODE==='school'?WZ_SCHOOLSCOPE.has(_wzSchoolKey(it)):WZ_SCOPE.has(_wzLeafKey(it));
+}
 function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
-  WZ_SCORE={};WZ_EXCLUDE=new Set();   // 每次開精靈重置配分與過濾
+  WZ_SCORE={};WZ_EXCLUDE=new Set();WZ_FMT=new Set();document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
   WZ_MODE='chapter';WZ_SCHOOLSCOPE=new Set();WZ_SCHOOLCOLLAPSED=new Set();  // 重置選題方式
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
@@ -4989,15 +5015,28 @@ function wzRenderFilterPapers(){
   h+=`<div class="wz-fp-frow"><span>搜尋</span><input type="text" value="${esc(f.q)}" oninput="wzFpSearch(this.value)" placeholder="輸入考卷名稱…"></div></div>`;
   if(!rows.length){h+='<div class="wz-fp-empty">'+(hist.length?'沒有符合條件的考卷':'目前沒有產生過的考卷紀錄。<br>從題庫匯出考卷後會自動記錄（最多保留 20 份），即可在此勾選排除。')+'</div>';}
   else{
-    h+='<table class="wz-fp-tbl"><thead><tr><th></th><th>科目</th><th>版本</th><th>冊次</th><th>名稱</th><th>卷別</th><th>難易度</th><th>出卷日</th></tr></thead><tbody>';
+    h+='<table class="wz-fp-tbl"><thead><tr><th></th><th>科目</th><th>版本</th><th>冊次</th><th>名稱</th><th>卷別</th><th>難易度</th><th>出卷日</th><th>題數</th><th></th></tr></thead><tbody>';
     rows.forEach(p=>{
       h+=`<tr onclick="wzFpToggle('${p.id}')"><td><input type="checkbox" ${_wzFpTmp.has(p.id)?'checked':''} onclick="event.stopPropagation();wzFpToggle('${p.id}')"></td>`
-        +`<td>${esc(p.field||'')}</td><td>${esc(p.version||'')}</td><td>${esc(p.bookLabel||'')}</td><td style="text-align:left">${esc(p.name||'')}</td><td>${esc(p.kindLabel||'')}</td><td>${esc(p.diff||'')}</td><td>${_wzFmtDate(p.date)}</td></tr>`;
+        +`<td>${esc(p.field||'')}</td><td>${esc(p.version||'')}</td><td>${esc(p.bookLabel||'')}</td><td style="text-align:left">${esc(p.name||'')}</td><td>${esc(p.kindLabel||'')}</td><td>${esc(p.diff||'')}</td><td>${_wzFmtDate(p.date)}</td><td>${(p.qids||[]).length}</td><td><button type="button" class="btn sm" onclick="event.stopPropagation();wzFpLoad('${p.id}')">📂 載入此卷</button></td></tr>`;
     });
     h+='</tbody></table>';
   }
   box.innerHTML=h;
   const n=document.getElementById('wzFpCount');if(n)n.textContent=_wzFpTmp.size;
+}
+// 把紀錄裡的考卷整份載回「已選題目」（匯出失敗或想重看／重出時用）
+function wzFpLoad(id){
+  const p=(PAPER_HISTORY||[]).find(x=>x&&x.id===id);if(!p)return;
+  const have=new Set(DB.map(x=>x.id)),ids=(p.qids||[]).filter(q=>have.has(q));
+  if(!ids.length){alert('這份考卷的題目已不在題庫中');return;}
+  if(PICKS.size&&!confirm('目前已選 '+PICKS.size+' 題，載入會取代它們，確定嗎？'))return;
+  PICKS.clear();ids.forEach(q=>PICKS.add(q));
+  document.getElementById('wzFilterPapersDlg').close();
+  document.getElementById('wzStep3N').textContent=PICKS.size;
+  if(typeof wzRenderScoreTable==='function')wzRenderScoreTable();
+  wzUpdateFoot();
+  if(ids.length<(p.qids||[]).length)alert('有 '+((p.qids||[]).length-ids.length)+' 題已不在題庫，已略過。');
 }
 function wzApplyFilterPapers(){
   WZ_EXCLUDE=new Set(_wzFpTmp);
