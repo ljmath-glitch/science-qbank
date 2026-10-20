@@ -8108,19 +8108,20 @@ function deLatexSimple(text){
 const PRE_OPT_TAB=''; // 選項間 tab 佔位，render 後換成 <w:tab/>
 const PRE_OPT_COL_OPEN='',PRE_OPT_COL_CLOSE='';
 // 底線規則（錯誤／不正確…雙底線、國名單底線）的 Word 標記：render 後拆成獨立帶底線的 run。
-const UL_DOUBLE_OPEN='\uE016',UL_SINGLE_OPEN='\uE017',UL_CLOSE='\uE018';
+// 注意：不可與既有的私用字元哨兵重複（選項 tab \uE012、答案 \uE013/\uE014、欄數 \uE015/\uE016、圖錨點 \uE017），否則會被誤當底線標記吃掉。
+const UL_DOUBLE_OPEN='\uE020',UL_SINGLE_OPEN='\uE021',UL_CLOSE='\uE022';
 function _markUnderlineKeywords(text){
   return _textSegs(String(text||'')).map(s=>s.s==='d'?UL_DOUBLE_OPEN+s.t+UL_CLOSE:s.s==='s'?UL_SINGLE_OPEN+s.t+UL_CLOSE:s.t).join('');
 }
 // render 後：把標記處拆成獨立 run，rPr 沿用所在 run 並加上 <w:u>；最後清掉任何殘留標記。
 function _tplApplyUnderlines(xml){
-  const re=/(<w:r\b[^>]*>(?:\s*<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*<\/w:rPr>)?)|([\uE016\uE017\uE018])/g;
+  const re=/(<w:r\b[^>]*>(?:\s*<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*<\/w:rPr>)?)|([\uE020\uE021\uE022])/g;
   let base='<w:r>',baseRPr='';
   const out=String(xml||'').replace(re,(m,runOpen,mark)=>{
     if(runOpen){base=runOpen;baseRPr=(runOpen.match(/<w:rPr>[\s\S]*<\/w:rPr>/)||[''])[0];return m;}
     const withU=val=>baseRPr?baseRPr.replace('</w:rPr>','<w:u w:val="'+val+'"/></w:rPr>'):'<w:rPr><w:u w:val="'+val+'"/></w:rPr>';
-    if(mark==='\uE018')return '</w:t></w:r><w:r>'+baseRPr+'<w:t xml:space="preserve">';
-    return '</w:t></w:r><w:r>'+withU(mark==='\uE016'?'double':'single')+'<w:t xml:space="preserve">';
+    if(mark==='\uE022')return '</w:t></w:r><w:r>'+baseRPr+'<w:t xml:space="preserve">';
+    return '</w:t></w:r><w:r>'+withU(mark==='\uE020'?'double':'single')+'<w:t xml:space="preserve">';
   });
   return out;
 }
