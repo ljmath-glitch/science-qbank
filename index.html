@@ -4403,6 +4403,16 @@ function fixLatex(text){
     return '$'+fixed+'$';
   });
 }
+const _mathCache=new Map();
+// 排版預覽用：沒有 $ 的區塊完全不掃 KaTeX；相同區塊（內容沒變）直接重用上次算好的 HTML。
+function renderMathCached(n){
+  if(!window.renderMathInElement||!n||!/\$/.test(n.textContent))return;
+  const key=n.innerHTML,hit=_mathCache.get(key);
+  if(hit!==undefined){n.innerHTML=hit;return;}
+  renderMath(n);
+  if(_mathCache.size>800)_mathCache.clear();
+  _mathCache.set(key,n.innerHTML);
+}
 function renderMath(el){if(window.renderMathInElement){try{renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}}
 
 /* ===== 選題/配題 ===== */
@@ -5082,15 +5092,15 @@ function wzToggleExpand(id){
   }else{clearTimeout(full._wzBuildTimer);full.hidden=true;}
 }
 function wzEdit(id){if(typeof openEdit==='function')openEdit(id);else alert('找不到編輯功能');}
-function wzSyncPickStates(){
+function wzSyncPickStates(scoped){
   document.querySelectorAll('#wzList .wz-q').forEach(el=>{const id=el.dataset.id;const on=PICKS.has(id);el.classList.toggle('picked',on);const cb=el.querySelector('input[type=checkbox]');if(cb)cb.checked=on;});
-  const poolAll=_wzPool().filter(wzInScope);
+  const poolAll=scoped||_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
   document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
 }
-function wzRenderMonitor(){
+function wzRenderMonitor(scoped){
   const el=document.getElementById('wzMonitor');if(!el)return;
-  const pool=_wzPool().filter(wzInScope);
+  const pool=scoped||_wzPool().filter(wzInScope);
   const picked=pool.filter(it=>PICKS.has(it.id));
   const total=picked.length;
   // 難易度分布（總已選）
@@ -5153,7 +5163,7 @@ function wzSetUnitFilter(enc){
 function wzPick(id){
   // 精靈內勾選不重畫背景題庫的數千張題目卡片，只更新精靈自己的清單／監控。
   togglePick(id,true);
-  if(WZ_TAB==='pick')wzRenderList();else{wzSyncPickStates();wzRenderMonitor();}
+  if(WZ_TAB==='pick')wzRenderList();else{const sp=_wzPool().filter(wzInScope);wzSyncPickStates(sp);wzRenderMonitor(sp);} // 範圍清單只算一次
   wzUpdateFoot();
 }
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
@@ -5267,7 +5277,7 @@ function paperSetLayout(twoCol){
   if(double)double.classList.toggle('on',two);
   paperSettingsPreviewLater();
 }
-function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_paperSettingsPreviewTimer=setTimeout(refreshPaperSettingsPreview,90);}
+function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_paperSettingsPreviewTimer=setTimeout(refreshPaperSettingsPreview,300);}
 function paperPreviewGo(page){_paperSettingsPage=Math.min(Math.max(0,page),_paperSettingsPageCount-1);refreshPaperSettingsPreview();}
 function paperPreviewTurn(delta){paperPreviewGo(_paperSettingsPage+delta);}
 function paperPreviewChunks(items,kind){
@@ -5551,8 +5561,13 @@ function pvSetPaperKind(kind){
   _paperSettingsPage=0;
   paperSetLayout(kind==='abk');
   if(typeof syncPaperMetadataControls==='function')syncPaperMetadataControls();
-  _pvRebuild();_rebuildLastPaperHTML();paperSettingsPreviewLater();
+  // 匯出設定視窗開著時，後方的編輯預覽看不到，先標記待重建（視窗關閉時才重排），避免每次切換都排兩次。
+  if(typeof paperDlg!=='undefined'&&paperDlg.open)_pvDirty=true;else _pvRebuild();
+  _rebuildLastPaperHTML();paperSettingsPreviewLater();
 }
+let _pvDirty=false;
+function _pvFlushDirty(){if(_pvDirty){_pvDirty=false;try{_pvRebuild();}catch(e){console.warn(e);}}}
+if(typeof paperDlg!=='undefined')paperDlg.addEventListener('close',_pvFlushDirty);
 function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=pickedItems();
   const paperSections=paperQuestionSections(items),sorted=paperSections.ordered;
   let ansMode=forcedMode||paperAnsMode();
@@ -5715,16 +5730,75 @@ function _pvRenderPaged(outputHost,editable=true){
   }
   newPage();
   const cap=()=>PAGE_H-PAD-FOOT-cur.head.offsetHeight;
+  // 快速排版：所有題目一次丟進量測容器、只強制排版一次，用數字算出分頁，最後再整體驗證一次。
+  // 舊做法每放一題就強制排版一次（80 題＝80 次，每次連整份文件一起重算），是匯出設定與預覽卡頓的主因。
+  // 驗證失敗（任何一頁超出）就退回舊做法，所以結果不會比舊版差。
+  let fastDone=false;
+  if(!narrow&&!window.__PV_NO_FAST&&parts.blocks.length>=4){
+    try{fastDone=_pvPaginateFast();}catch(e){console.warn('快速排版失敗，改用逐題排版',e);fastDone=false;}
+    if(!fastDone){host.innerHTML='';pageIdx=0;newPage();}
+  }
+  function _pvPaginateFast(){
+    const groups=parts.blocks.map(html=>{const tmp=document.createElement('div');tmp.innerHTML=html;return [].slice.call(tmp.children);}).filter(g=>g.length);
+    if(groups.length<4)return false;
+    groups.forEach(g=>g.forEach(n=>renderMathCached(n)));
+    const body0=cur.bodyWrap,twoCol=!!parts.twoCol;
+    const bodyW=body0.clientWidth,gap=twoCol?(parseFloat(getComputedStyle(body0).columnGap)||26):0;
+    if(!bodyW)return false;
+    const colW=twoCol?(bodyW-gap)/2:bodyW;
+    // 量測用頁面（單欄、欄寬），與正式頁面套用同樣的 class 與樣式，卷頭用來量「後續頁」的頁首高度
+    const mp=document.createElement('div');mp.className=cur.pg.className;mp.style.cssText=cur.pg.style.cssText+';position:fixed;left:-20000px;top:0;height:auto;overflow:visible;visibility:hidden';
+    const mh=document.createElement('div');mh.className='pv-page-head';mh.innerHTML=_pvRunningHeader();
+    const mb=document.createElement('div');mb.className='pv-page-body';mb.style.cssText='position:relative;width:'+colW+'px';
+    mp.appendChild(mh);mp.appendChild(mb);document.body.appendChild(mp);
+    groups.forEach(g=>g.forEach(n=>mb.appendChild(n)));
+    const cap0=PAGE_H-PAD-FOOT-cur.head.offsetHeight,capN=PAGE_H-PAD-FOOT-mh.offsetHeight;
+    const top=[],bot=[];
+    groups.forEach(g=>{top.push(g[0].offsetTop);const l=g[g.length-1];bot.push(l.offsetTop+l.offsetHeight);});
+    mp.remove();
+    const H=(s,e)=>{ // 第 s 到第 e 組放在同一頁時，頁面主體的高度
+      if(!twoCol)return bot[e]-top[s];
+      let best=Infinity;
+      for(let m=s-1;m<=e;m++){ // 左欄放 s..m、右欄放 m+1..e（題目不跨欄），取較高欄的最小值
+        const left=m>=s?bot[m]-top[s]:0,right=m<e?bot[e]-top[m+1]:0;
+        const v=Math.max(left,right);if(v<best)best=v;
+      }
+      return best;
+    };
+    const plan=[];let s=0;
+    while(s<groups.length){
+      const limit=(plan.length?capN:cap0)-1;let e=s;
+      while(e+1<groups.length&&H(s,e+1)<=limit)e++;
+      plan.push([s,e]);s=e+1;
+    }
+    // 照規劃把原本的節點搬進正式頁面
+    const pagesMade=[{pg:cur,cap:cap0}];
+    plan.forEach((r,i)=>{
+      if(i>0){newPage();pagesMade.push({pg:cur,cap:capN});}
+      for(let k=r[0];k<=r[1];k++)groups[k].forEach(n=>cur.bodyWrap.appendChild(n));
+    });
+    if(parts.ansBlock){const d=document.createElement('div');d.innerHTML=parts.ansBlock;const n=d.firstElementChild;if(n)cur.bodyWrap.appendChild(n);}
+    // 整體驗證：強制排版一次，任何一頁超出就放棄（呼叫端會改用逐題排版）
+    for(const pm of pagesMade){
+      const limit=PAGE_H-PAD-FOOT-pm.pg.head.offsetHeight;
+      if(pm.pg.bodyWrap.offsetHeight>limit+1)return false;
+    }
+    return true;
+  }
+  if(!fastDone){
   parts.blocks.forEach(html=>{
     const tmp=document.createElement('div');tmp.innerHTML=html;const nodes=[].slice.call(tmp.children);if(!nodes.length)return;
     nodes.forEach(n=>cur.bodyWrap.appendChild(n));
-    nodes.forEach(n=>renderMath(n));
+    nodes.forEach(n=>renderMathCached(n));
     if(!narrow&&cur.bodyWrap.offsetHeight>cap()&&cur.bodyWrap.children.length>nodes.length){
       nodes.forEach(n=>cur.bodyWrap.removeChild(n));newPage();nodes.forEach(n=>cur.bodyWrap.appendChild(n));
     }
   });
   if(parts.ansBlock){const d=document.createElement('div');d.innerHTML=parts.ansBlock;const n=d.firstElementChild;if(n)cur.bodyWrap.appendChild(n);}
-  renderMath(host);
+  }
+  // 題目區塊在上面已逐一排版；這裡只補第一頁卷頭與答案區塊，不再整頁重掃一次 KaTeX。
+  if(host.firstElementChild){const h0=host.firstElementChild.querySelector('.pv-page-head');if(h0)renderMathCached(h0);}
+  if(parts.ansBlock){const an=host.querySelector('.ans');if(an)renderMathCached(an);}
   if(!outputHost&&templateLayout&&typeof scalePaperEditorPages==='function')scalePaperEditorPages();
 }
 function showPaperPreview(){if(!PICKS.size)return;

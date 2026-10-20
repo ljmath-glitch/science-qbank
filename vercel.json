@@ -1,8 +1,26 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/home.html", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/home.html",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/daily-qcard", "destination": "/daily.html" }
+    {
+      "source": "/daily-qcard",
+      "destination": "/daily.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/fonts/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=2592000"
+        }
+      ]
+    }
   ]
 }

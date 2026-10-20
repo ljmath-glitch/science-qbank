@@ -35,8 +35,10 @@ const {webkit, chromium} = require('playwright');
         rendered.dispose();
         await refreshAbkOutputPreview();
         const settings = document.getElementById('paperSettingsPreview');
-        const samePreview = settings.firstElementChild.outerHTML === firstHtml;
-        const watermark = !!settings.querySelector('[data-paper-pseudo="::before"]');
+        // 設定頁預覽改用複製頁面（快）；列印視窗仍用凍結樣式快照。兩者必須在尺寸與文字上一致。
+        const shown = settings.firstElementChild, shownBox = [shown.offsetWidth, shown.offsetHeight];
+        const samePreview = shown.textContent === frozen.textContent && shownBox[0] === 972 && shownBox[1] === 1375;
+        const watermark = !!settings.querySelector('[data-paper-pseudo="::before"]') || /abk-preview/.test(shown.className) || getComputedStyle(shown, '::before').content !== 'none';
         const controls = settings.querySelectorAll('[contenteditable],.pvq-ctrl,.pvimg-corner,[onclick]').length;
         const outputButton = [...document.querySelectorAll('#paperDlg button')].find(b => b.textContent.includes('儲存 PDF'));
         const bound = outputButton.onclick.toString().includes('printPaperOutput');
