@@ -9373,10 +9373,16 @@ function _answerBoxXml(ans, digits){
    +'<wps:bodyPr rot="0" spcFirstLastPara="0" vertOverflow="overflow" horzOverflow="overflow" vert="horz" wrap="none" lIns="0" tIns="0" rIns="0" bIns="0" anchor="ctr" anchorCtr="1"><a:noAutofit/></wps:bodyPr>'
    +'</wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>';
 }
+// 教用版答案：行內隱藏文字（w:vanish）。Word 不會隱藏浮動文字方塊，所以改用一般行內紅字；
+// 「顯示／隱藏 ¶」開＝看得到答案，關＝答案消失（列印也不印）。
+function _answerInlineXml(ans){
+  const a=String(ans==null?'':ans).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return '<w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:b/><w:color w:val="C00000"/><w:vanish/></w:rPr><w:t xml:space="preserve">【'+a+'】</w:t></w:r>';
+}
 function _tplAnswerBoxes(xml){
   const re=/(<w:r\b[^>]*>)(<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*?<\/w:rPr>)?(<w:t\b[^>]*>)\uE013([^<\uE013\uE014]*)\uE014/g;
   let n=0;
-  let out=xml.replace(re,(m,rOpen,rPr,tOpen,ans)=>{ n++; return _answerBoxXml(ans, (''+n).length)+rOpen+(rPr||'')+tOpen; });
+  let out=xml.replace(re,(m,rOpen,rPr,tOpen,ans)=>{ n++; return _answerInlineXml(ans)+rOpen+(rPr||'')+tOpen; });
   return out.split('\uE013').join('').split('\uE014').join('');
 }
 async function downloadWordViaTemplate(kind,opts){
