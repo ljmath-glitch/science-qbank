@@ -1141,14 +1141,6 @@
           <button type="button" class="wz-chip" id="wzModeSchool" onclick="wzSetMode('school')">依學校</button>
           <span id="wzModeHint" style="font-size:12px;color:#9a8f83;margin-left:4px">依課綱章節選題，適合組新卷</span>
         </div>
-        <div class="wz-chips" id="wzFmtChips" style="margin-bottom:10px">
-          <span style="font-weight:700;color:#6e6f74">題型：</span>
-          <button type="button" class="wz-chip" data-fmt="單選題" onclick="wzToggleFmt(this)">單選題</button>
-          <button type="button" class="wz-chip" data-fmt="多選題" onclick="wzToggleFmt(this)">多選題</button>
-          <button type="button" class="wz-chip" data-fmt="題組題" onclick="wzToggleFmt(this)">題組題</button>
-          <button type="button" class="wz-chip" data-fmt="非選題" onclick="wzToggleFmt(this)">非選題</button>
-          <span style="font-size:12px;color:#9a8f83">不勾＝全部；可複選，只留下符合的題目</span>
-        </div>
         <!-- 依章節 -->
         <div id="wzChapterMode">
           <div class="wz-chips" style="margin-bottom:10px">
@@ -1197,6 +1189,14 @@
               <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
               <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
               <button type="button" class="btn" onclick="wzOpenMix()">⚖ 智慧組卷</button>
+            </div>
+            <div class="wz-chips" id="wzFmtChips" style="margin:8px 0">
+              <span style="font-weight:700;color:#6e6f74;font-size:13px">格式：</span>
+              <button type="button" class="wz-chip" data-fmt="單選題" onclick="wzToggleFmt(this)">單選題</button>
+              <button type="button" class="wz-chip" data-fmt="多選題" onclick="wzToggleFmt(this)">多選題</button>
+              <button type="button" class="wz-chip" data-fmt="題組題" onclick="wzToggleFmt(this)">題組題</button>
+              <button type="button" class="wz-chip" data-fmt="非選題" onclick="wzToggleFmt(this)">非選題</button>
+              <span style="font-size:12px;color:#9a8f83">不勾＝全部，可複選</span>
             </div>
             <div id="wzList" class="wz-qlist"></div>
           </div>
@@ -4680,11 +4680,9 @@ function wzToggleFmt(btn){
   const f=btn.dataset.fmt;
   if(WZ_FMT.has(f))WZ_FMT.delete(f);else WZ_FMT.add(f);
   btn.classList.toggle('on',WZ_FMT.has(f));
-  if(typeof wzRenderTree==='function'&&WZ_MODE!=='school')wzRenderTree();
-  wzRenderList();wzUpdateFoot();
+  wzRenderList();
 }
 function wzInScope(it){
-  if(WZ_FMT.size&&!WZ_FMT.has(_wzFormat(it)))return false;
   return WZ_MODE==='school'?WZ_SCHOOLSCOPE.has(_wzSchoolKey(it)):WZ_SCOPE.has(_wzLeafKey(it));
 }
 function wzOpen(){
@@ -5101,6 +5099,7 @@ function wzRenderList(){
   if(WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
   if(WZ_UNITFILTER)items=items.filter(it=>{const fp=_wzPath(it);return fp===WZ_UNITFILTER||fp.indexOf(WZ_UNITFILTER+'\u0001')===0;});
   if(ft)items=items.filter(it=>it.type===ft);
+  if(WZ_FMT.size)items=items.filter(it=>WZ_FMT.has(_wzFormat(it)));
   if(fd)items=items.filter(it=>(calcDiff(it.step,it.mem,it.con).lvl||'未評分')===fd);
   if(fs)items=items.filter(it=>stripRichMarks((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
   const poolAll=_wzPool().filter(wzInScope);
