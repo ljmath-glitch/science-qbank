@@ -4933,14 +4933,14 @@ function wzGo(dir){
 function wzJump(n){
   if(n===WZ_STEP)return;
   if(n>WZ_STEP){
-    if(WZ_STEP===1&&wzScopeCount()===0){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
+    if(WZ_STEP===1&&wzScopeCount()===0&&!(n>=3&&PICKS.size>0)){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
     if(n>=3&&PICKS.size===0){alert('請先選擇至少一題');return;}
   }
   wzSetStep(n);
 }
 function wzUpdateFoot(){
   const info=document.getElementById('wzFootInfo');
-  if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`;
+  if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`+(PICKS.size?`　｜　已選 <b>${PICKS.size}</b> 題（已還原）<button type="button" class="btn sm" style="margin-left:6px" onclick="wzJump(3)">直接看已選題目並輸出 →</button>`:'');
   else info.innerHTML=`已選 <b>${PICKS.size}</b> 題`;
 }
 /* ===== Step 3：配分設定（TESTGO 式總分調整表） ===== */
