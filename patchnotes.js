@@ -11,6 +11,7 @@
   var SEEN_KEY = 'tz_patchnotes_seen_id';
   var SYS_NAME = window.TZ_PATCHNOTES_TITLE || '茲茲題庫系統';
   var TAGC = { '新功能': '#1f8f4e', '修正': '#d98324', '優化': '#2563c9', '公告': '#850103' };
+  var TAGICON = { '新功能': '＋', '修正': '✓', '優化': '↑', '公告': '！' };
   var LOADED_BUILD = '', entries = [], notified = false, autoOpened = false;
 
   function esc(s) {
@@ -34,17 +35,21 @@
     + '.tzpn-mask{position:fixed;inset:0;z-index:10000;background:rgba(20,10,8,.55);display:none;align-items:center;justify-content:center;padding:16px}'
     + '.tzpn-mask.show{display:flex}'
     + '.tzpn-card{width:100%;max-width:460px;max-height:86vh;background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:inherit}'
-    + '.tzpn-head{background:linear-gradient(135deg,#8a0f12,#d7832f);color:#fff;padding:18px 20px;position:relative}'
+    + '.tzpn-head{background:linear-gradient(135deg,#7f0a0d 0%,#b1291e 55%,#c7492b 100%);color:#fff;padding:18px 20px;position:relative}'
     + '.tzpn-kicker{font-size:11px;letter-spacing:3px;opacity:.85;font-weight:700}'
     + '.tzpn-title{font-size:22px;font-weight:800;margin:3px 0}'
-    + '.tzpn-sub{font-size:12px;opacity:.92}'
-    + '.tzpn-x{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,.18);color:#fff;font-size:15px;cursor:pointer}'
+    + '.tzpn-sub{font-size:12px;opacity:.92;max-width:calc(100% - 56px)}'
+    + '.tzpn-gift{position:absolute;top:15px;right:16px;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:23px;pointer-events:none}'
+    + '.tzpn-x{position:absolute;top:66px;right:20px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.22);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
     + '.tzpn-body{overflow:auto;padding:14px 16px;background:#faf7f4}'
     + '.tzpn-row{margin-bottom:14px}'
-    + '.tzpn-date{display:inline-block;background:#1d2433;color:#fff;font:700 12px/1 inherit;border-radius:8px;padding:4px 9px;margin-bottom:6px}'
-    + '.tzpn-date .u{color:#ffcf33;margin-left:6px}'
-    + '.tzpn-item{background:#fff;border:1px solid #ece6df;border-radius:12px;padding:12px 14px}'
-    + '.tzpn-item.new{border-color:#f0c67a;box-shadow:0 0 0 2px rgba(240,198,122,.25)}'
+    + '.tzpn-daterow{display:flex;align-items:center;gap:6px;margin-bottom:7px}'
+    + '.tzpn-date{display:inline-block;background:#1d2433;color:#fff;font:700 12px/1 inherit;border-radius:8px;padding:5px 10px}'
+    + '.tzpn-new{background:#e4352b;color:#fff;font:800 10px/1 inherit;border-radius:999px;padding:4px 8px;letter-spacing:.5px}'
+    + '.tzpn-item{display:flex;gap:10px;background:#fff;border:1px solid #ece6df;border-radius:14px;padding:12px 14px}'
+    + '.tzpn-item.new{border-color:#f3b0ab;box-shadow:0 0 0 2px rgba(228,53,43,.14)}'
+    + '.tzpn-ic{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;line-height:1}'
+    + '.tzpn-main{flex:1;min-width:0}'
     + '.tzpn-ih{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}'
     + '.tzpn-it{font-size:15px;font-weight:800;color:#20160f}'
     + '.tzpn-tag{font:800 11px/1 inherit;color:#fff;border-radius:6px;padding:3px 7px}'
@@ -82,10 +87,11 @@
 
   var mask = document.createElement('div'); mask.className = 'tzpn-mask';
   mask.innerHTML = '<div class="tzpn-card"><div class="tzpn-head">'
+    + '<div class="tzpn-gift" aria-hidden="true">🎁</div>'
     + '<div class="tzpn-kicker">PATCH NOTES</div><div class="tzpn-title">近期功能更新</div>'
     + '<div class="tzpn-sub" id="tzpnSub"></div><button class="tzpn-x" type="button" aria-label="關閉">✕</button></div>'
     + '<div class="tzpn-body" id="tzpnBody"></div>'
-    + '<div class="tzpn-foot"><button class="tzpn-ok" type="button">好的</button></div></div>';
+    + '<div class="tzpn-foot"><button class="tzpn-ok" type="button">收到，開始使用！</button></div></div>';
   document.body.appendChild(mask);
 
   var toast = document.createElement('div'); toast.className = 'tzpn-toast';
@@ -100,10 +106,13 @@
     var html = entries.map(function (e) {
       var isNew = (e.id || 0) > s0;
       var tagc = TAGC[e.tag] || '#850103';
-      return '<div class="tzpn-row"><span class="tzpn-date">' + esc(e.date) + ' 更新' + (isNew ? '<span class="u">NEW</span>' : '') + '</span>'
-        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ih"><span class="tzpn-it">' + esc(e.title) + '</span>'
+      var ic = TAGICON[e.tag] || '•';
+      return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + ' 更新</span>'
+        + (isNew ? '<span class="tzpn-new">NEW</span>' : '') + '</div>'
+        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic" style="background:' + tagc + '">' + ic + '</div>'
+        + '<div class="tzpn-main"><div class="tzpn-ih"><span class="tzpn-it">' + esc(e.title) + '</span>'
         + (e.tag ? '<span class="tzpn-tag" style="background:' + tagc + '">' + esc(e.tag) + '</span>' : '') + '</div>'
-        + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div>';
+        + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div></div>';
     }).join('');
     mask.querySelector('#tzpnBody').innerHTML = html || '<div style="padding:20px;text-align:center;color:#888">目前沒有更新紀錄</div>';
     refreshBadge();
@@ -113,7 +122,7 @@
     if (n > 0) { b.style.display = 'flex'; b.textContent = n > 9 ? '9+' : String(n); }
     else { b.style.display = 'none'; }
     var sub = mask.querySelector('#tzpnSub');
-    if (sub) sub.textContent = SYS_NAME + ' · ' + (n > 0 ? ('有 ' + n + ' 項新更新') : '都看過了');
+    if (sub) sub.textContent = SYS_NAME + ' · ' + (n > 0 ? ('有 ' + n + ' 項新東西等你解鎖') : '都看過了');
   }
   function open() { renderBody(); mask.classList.add('show'); }
   function close() {
