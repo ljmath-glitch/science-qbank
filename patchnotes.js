@@ -12,8 +12,16 @@
   var SYS_NAME = window.TZ_PATCHNOTES_TITLE || '茲茲題庫系統';
   var TAGC = { '新功能': '#1f8f4e', '修正': '#c06a12', '優化': '#2563c9', '公告': '#850103' };
   var TAGBG = { '新功能': '#e4f4ea', '修正': '#fbeedd', '優化': '#e7effb', '公告': '#f7e4e4' };
-  // 統一的白色線條圖示（放在品牌紅方塊裡，每筆更新都一樣，不再用多色符號）
-  var ITEM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>';
+  // 白色線條圖示（放在品牌紅方塊裡，顏色統一、但「依功能類型換不同圖案」）
+  var IW = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">';
+  var ICONS = {
+    '新功能': IW + '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>',        // 星星
+    '優化':   IW + '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',                   // 向上趨勢
+    '修正':   IW + '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>', // 扳手
+    '公告':   IW + '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'           // 鈴鐺
+  };
+  var DEFAULT_ICON = IW + '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>';
+  function iconFor(tag) { return ICONS[tag] || DEFAULT_ICON; }
   var GIFT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8S10.8 4.5 8.5 4.5a2 2 0 1 0 0 3.5H12Zm0 0s1.2-3.5 3.5-3.5a2 2 0 1 1 0 3.5H12Z"/></svg>';
   var LOADED_BUILD = '', entries = [], notified = false, autoOpened = false;
 
@@ -48,8 +56,8 @@
     + '.tzpn-body{overflow:auto;padding:14px 16px;background:#faf7f4}'
     + '.tzpn-row{margin-bottom:14px}'
     + '.tzpn-daterow{display:flex;align-items:center;gap:7px;margin-bottom:8px}'
-    + '.tzpn-date{display:inline-block;background:#1d2433;color:#fff;font:700 13px/1 inherit;border-radius:8px;padding:6px 11px}'
-    + '.tzpn-new{background:#e4352b;color:#fff;font:800 11px/1 inherit;border-radius:999px;padding:4px 9px;letter-spacing:.5px}'
+    + '.tzpn-date{display:inline-block;background:#fff0f1;color:#ff2d3a;font:800 14px/1 inherit;border-radius:999px;padding:6px 12px;border:1px solid #ffd0d4;text-shadow:0 0 6px rgba(255,45,58,.5);box-shadow:0 0 8px rgba(255,45,58,.22)}'
+    + '.tzpn-new{background:#e4352b;color:#fff;font:800 14px/1 inherit;border-radius:999px;padding:5px 10px;letter-spacing:.5px;box-shadow:0 0 8px rgba(228,53,43,.4)}'
     + '.tzpn-item{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #ece6df;border-radius:14px;padding:14px}'
     + '.tzpn-item.new{border-color:#f0c67a;box-shadow:0 0 0 2px rgba(240,198,122,.3)}'
     + '.tzpn-ic{flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:#9a1115;display:flex;align-items:center;justify-content:center}'
@@ -57,7 +65,7 @@
     + '.tzpn-main{flex:1;min-width:0}'
     + '.tzpn-it{display:block;font-size:16px;font-weight:800;color:#20160f;line-height:1.5;margin-bottom:8px}'
     + '.tzpn-tag{display:inline-block;font:800 12px/1 inherit;border-radius:999px;padding:5px 11px;margin-bottom:9px}'
-    + '.tzpn-ib{font-size:13.5px;line-height:1.8;color:#52463c}'
+    + '.tzpn-ib{font-size:14px;line-height:1.85;color:#52463c}'
     + '.tzpn-foot{padding:12px 16px;border-top:1px solid #eee;background:#fff}'
     + '.tzpn-ok{width:100%;border:none;border-radius:12px;padding:13px;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:15px;font-weight:800;cursor:pointer}'
     + '.tzpn-toast{position:fixed;right:16px;bottom:16px;z-index:10001;max-width:300px;background:#fff;border:1px solid #e3d9cf;border-left:4px solid #960205;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 14px;display:none;font-family:inherit}'
@@ -113,7 +121,7 @@
       var tagbg = TAGBG[e.tag] || '#f1eae4';
       return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + ' 更新</span>'
         + (isNew ? '<span class="tzpn-new">NEW</span>' : '') + '</div>'
-        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic">' + ITEM_ICON + '</div>'
+        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic">' + iconFor(e.tag) + '</div>'
         + '<div class="tzpn-main"><span class="tzpn-it">' + esc(e.title) + '</span>'
         + (e.tag ? '<span class="tzpn-tag" style="background:' + tagbg + ';color:' + tagc + '">' + esc(e.tag) + '</span>' : '')
         + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div></div>';
