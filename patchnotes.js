@@ -10,7 +10,8 @@
 
   var SEEN_KEY = 'tz_patchnotes_seen_id';
   var SYS_NAME = window.TZ_PATCHNOTES_TITLE || '茲茲題庫系統';
-  var TAGC = { '新功能': '#1f8f4e', '修正': '#d98324', '優化': '#2563c9', '公告': '#850103' };
+  var TAGC = { '新功能': '#1f8f4e', '修正': '#c06a12', '優化': '#2563c9', '公告': '#850103' };
+  var TAGBG = { '新功能': '#e4f4ea', '修正': '#fbeedd', '優化': '#e7effb', '公告': '#f7e4e4' };
   // 統一的白色線條圖示（放在品牌紅方塊裡，每筆更新都一樣，不再用多色符號）
   var ITEM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>';
   var GIFT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8S10.8 4.5 8.5 4.5a2 2 0 1 0 0 3.5H12Zm0 0s1.2-3.5 3.5-3.5a2 2 0 1 1 0 3.5H12Z"/></svg>';
@@ -55,7 +56,7 @@
     + '.tzpn-ic svg{width:22px;height:22px}'
     + '.tzpn-main{flex:1;min-width:0}'
     + '.tzpn-it{display:block;font-size:16px;font-weight:800;color:#20160f;line-height:1.5;margin-bottom:8px}'
-    + '.tzpn-tag{display:inline-block;font:800 12px/1 inherit;color:#fff;border-radius:7px;padding:5px 9px;margin-bottom:9px}'
+    + '.tzpn-tag{display:inline-block;font:800 12px/1 inherit;border-radius:999px;padding:5px 11px;margin-bottom:9px}'
     + '.tzpn-ib{font-size:13.5px;line-height:1.8;color:#52463c}'
     + '.tzpn-foot{padding:12px 16px;border-top:1px solid #eee;background:#fff}'
     + '.tzpn-ok{width:100%;border:none;border-radius:12px;padding:13px;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:15px;font-weight:800;cursor:pointer}'
@@ -109,11 +110,12 @@
     var html = entries.map(function (e) {
       var isNew = (e.id || 0) > s0;
       var tagc = TAGC[e.tag] || '#850103';
+      var tagbg = TAGBG[e.tag] || '#f1eae4';
       return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + ' 更新</span>'
         + (isNew ? '<span class="tzpn-new">NEW</span>' : '') + '</div>'
         + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic">' + ITEM_ICON + '</div>'
         + '<div class="tzpn-main"><span class="tzpn-it">' + esc(e.title) + '</span>'
-        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagc + '">' + esc(e.tag) + '</span>' : '')
+        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagbg + ';color:' + tagc + '">' + esc(e.tag) + '</span>' : '')
         + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div></div>';
     }).join('');
     mask.querySelector('#tzpnBody').innerHTML = html || '<div style="padding:20px;text-align:center;color:#888">目前沒有更新紀錄</div>';
