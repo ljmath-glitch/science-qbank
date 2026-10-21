@@ -11,7 +11,9 @@
   var SEEN_KEY = 'tz_patchnotes_seen_id';
   var SYS_NAME = window.TZ_PATCHNOTES_TITLE || '茲茲題庫系統';
   var TAGC = { '新功能': '#1f8f4e', '修正': '#d98324', '優化': '#2563c9', '公告': '#850103' };
-  var TAGICON = { '新功能': '＋', '修正': '✓', '優化': '↑', '公告': '！' };
+  // 統一的白色線條圖示（放在品牌紅方塊裡，每筆更新都一樣，不再用多色符號）
+  var ITEM_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>';
+  var GIFT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M12 8S10.8 4.5 8.5 4.5a2 2 0 1 0 0 3.5H12Zm0 0s1.2-3.5 3.5-3.5a2 2 0 1 1 0 3.5H12Z"/></svg>';
   var LOADED_BUILD = '', entries = [], notified = false, autoOpened = false;
 
   function esc(s) {
@@ -39,21 +41,22 @@
     + '.tzpn-kicker{font-size:11px;letter-spacing:3px;opacity:.85;font-weight:700}'
     + '.tzpn-title{font-size:22px;font-weight:800;margin:3px 0}'
     + '.tzpn-sub{font-size:12px;opacity:.92;max-width:calc(100% - 56px)}'
-    + '.tzpn-gift{position:absolute;top:15px;right:16px;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:23px;pointer-events:none}'
-    + '.tzpn-x{position:absolute;top:66px;right:20px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.22);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
+    + '.tzpn-gift{position:absolute;top:15px;right:16px;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;pointer-events:none}'
+    + '.tzpn-gift svg{width:26px;height:26px}'
+    + '.tzpn-x{position:absolute;top:68px;right:21px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(0,0,0,.22);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
     + '.tzpn-body{overflow:auto;padding:14px 16px;background:#faf7f4}'
     + '.tzpn-row{margin-bottom:14px}'
-    + '.tzpn-daterow{display:flex;align-items:center;gap:6px;margin-bottom:7px}'
-    + '.tzpn-date{display:inline-block;background:#1d2433;color:#fff;font:700 12px/1 inherit;border-radius:8px;padding:5px 10px}'
-    + '.tzpn-new{background:#e4352b;color:#fff;font:800 10px/1 inherit;border-radius:999px;padding:4px 8px;letter-spacing:.5px}'
-    + '.tzpn-item{display:flex;gap:10px;background:#fff;border:1px solid #ece6df;border-radius:14px;padding:12px 14px}'
-    + '.tzpn-item.new{border-color:#f3b0ab;box-shadow:0 0 0 2px rgba(228,53,43,.14)}'
-    + '.tzpn-ic{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;line-height:1}'
+    + '.tzpn-daterow{display:flex;align-items:center;gap:7px;margin-bottom:8px}'
+    + '.tzpn-date{display:inline-block;background:#1d2433;color:#fff;font:700 13px/1 inherit;border-radius:8px;padding:6px 11px}'
+    + '.tzpn-new{background:#e4352b;color:#fff;font:800 11px/1 inherit;border-radius:999px;padding:4px 9px;letter-spacing:.5px}'
+    + '.tzpn-item{display:flex;align-items:flex-start;gap:12px;background:#fff;border:1px solid #ece6df;border-radius:14px;padding:14px}'
+    + '.tzpn-item.new{border-color:#f0c67a;box-shadow:0 0 0 2px rgba(240,198,122,.3)}'
+    + '.tzpn-ic{flex:0 0 42px;width:42px;height:42px;border-radius:12px;background:#9a1115;display:flex;align-items:center;justify-content:center}'
+    + '.tzpn-ic svg{width:22px;height:22px}'
     + '.tzpn-main{flex:1;min-width:0}'
-    + '.tzpn-ih{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}'
-    + '.tzpn-it{font-size:15px;font-weight:800;color:#20160f}'
-    + '.tzpn-tag{font:800 11px/1 inherit;color:#fff;border-radius:6px;padding:3px 7px}'
-    + '.tzpn-ib{font-size:13px;line-height:1.75;color:#52463c}'
+    + '.tzpn-it{display:block;font-size:16px;font-weight:800;color:#20160f;line-height:1.5;margin-bottom:8px}'
+    + '.tzpn-tag{display:inline-block;font:800 12px/1 inherit;color:#fff;border-radius:7px;padding:5px 9px;margin-bottom:9px}'
+    + '.tzpn-ib{font-size:13.5px;line-height:1.8;color:#52463c}'
     + '.tzpn-foot{padding:12px 16px;border-top:1px solid #eee;background:#fff}'
     + '.tzpn-ok{width:100%;border:none;border-radius:12px;padding:13px;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:15px;font-weight:800;cursor:pointer}'
     + '.tzpn-toast{position:fixed;right:16px;bottom:16px;z-index:10001;max-width:300px;background:#fff;border:1px solid #e3d9cf;border-left:4px solid #960205;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 14px;display:none;font-family:inherit}'
@@ -87,7 +90,7 @@
 
   var mask = document.createElement('div'); mask.className = 'tzpn-mask';
   mask.innerHTML = '<div class="tzpn-card"><div class="tzpn-head">'
-    + '<div class="tzpn-gift" aria-hidden="true">🎁</div>'
+    + '<div class="tzpn-gift" aria-hidden="true">' + GIFT_ICON + '</div>'
     + '<div class="tzpn-kicker">PATCH NOTES</div><div class="tzpn-title">近期功能更新</div>'
     + '<div class="tzpn-sub" id="tzpnSub"></div><button class="tzpn-x" type="button" aria-label="關閉">✕</button></div>'
     + '<div class="tzpn-body" id="tzpnBody"></div>'
@@ -106,12 +109,11 @@
     var html = entries.map(function (e) {
       var isNew = (e.id || 0) > s0;
       var tagc = TAGC[e.tag] || '#850103';
-      var ic = TAGICON[e.tag] || '•';
       return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + ' 更新</span>'
         + (isNew ? '<span class="tzpn-new">NEW</span>' : '') + '</div>'
-        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic" style="background:' + tagc + '">' + ic + '</div>'
-        + '<div class="tzpn-main"><div class="tzpn-ih"><span class="tzpn-it">' + esc(e.title) + '</span>'
-        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagc + '">' + esc(e.tag) + '</span>' : '') + '</div>'
+        + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic">' + ITEM_ICON + '</div>'
+        + '<div class="tzpn-main"><span class="tzpn-it">' + esc(e.title) + '</span>'
+        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagc + '">' + esc(e.tag) + '</span>' : '')
         + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div></div>';
     }).join('');
     mask.querySelector('#tzpnBody').innerHTML = html || '<div style="padding:20px;text-align:center;color:#888">目前沒有更新紀錄</div>';
