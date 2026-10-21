@@ -225,22 +225,32 @@
       await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';s.onload=ok;s.onerror=()=>bad(new Error('OCR 工具載入失敗，請確認網路後重試。'));document.head.appendChild(s)});
       return window.Tesseract;
     }
-    // 考卷標題常分散在多行（校名一行、學年度一行、年級科目段考一行）。把「含關鍵字或年度」的行
-    // 由上而下串起來組成完整標題，順便濾掉班級／座號／姓名／得分這類行政欄位。
-    function _pickExamTitleLine(text){
-      const kw=/(國中|國小|中學|高中|高職|附中|年級|學年|學期|段考|會考|學測|分科|模擬|自然|理化|生物|地科|物理|化學)/;
-      const drop=/^(班級|座號|姓名|得分|分數|成績|准考證|考場|日期|作答|說明|注意)/;
-      const lines=String(text||'').split(/\n+/).map(s=>s.replace(/\s+/g,'').trim()).filter(s=>s.length>=3&&!drop.test(s));
-      const keep=lines.filter(s=>kw.test(s)||/1\d{2}/.test(s));
-      const joined=keep.join('');
-      return joined.length>=4?joined.slice(0,80):'';
-    }
-    // 把 OCR 標題轉成 normalizeName() 容易解析的字串（全形數字轉半形、學期與校名用語正規化）。
-    function _ocrTitleToHint(t){
-      let s=String(t||'').replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0));
-      s=s.replace(/國民中學/g,'國中').replace(/國民小學/g,'國小').replace(/高級中學/g,'高中');
-      s=s.replace(/第一學期|上學期/g,'上').replace(/第二學期|下學期/g,'下');
-      return s;
+    // 從 OCR 全文「依題庫命名規則」逐欄抽取、再組成名稱，而不是把辨識字串原樣塞進欄位。
+    // 認得真實考卷用語：第2學期＝下學期、第1次定期評量＝第一次段考、八年X班＝八年級、國民中學＝國中…
+    // 段考格式：學校-年級-年度-上/下學期-第N次段考-科目；大考：年度+會考/學測/分科測驗。
+    function _buildExamNameFromOcr(raw){
+      let s=String(raw||'').replace(/\s+/g,'').replace(/[０-９]/g,d=>String.fromCharCode(d.charCodeAt(0)-0xFEE0));
+      const cn={'1':'一','2':'二','3':'三','一':'一','二':'二','三':'三'};
+      const year=((s.match(/(1\d{2})\s*(?:學年度|年度|學年|年)/)||s.match(/(1\d{2})/))||[])[1]||'';
+      const big=/會考/.test(s)?'會考':/學測/.test(s)?'學測':/(分科|指考)/.test(s)?'分科測驗':'';
+      if(big)return year?year+big:'';
+      let school=((s.match(/([一-鿿]{2,10}?(?:國民中學|國民小學|國中|國小|高級中學|完全中學|實驗中學|高中|高職|中學|國小))/)||[])[1]||'')
+        .replace(/國民中學/,'國中').replace(/國民小學/,'國小').replace(/高級中學/,'高中')
+        .replace(/^[一-鿿]{2,3}(?:市立|縣立|市|縣)/,'').replace(/^(?:國立|私立|市立|縣立)/,'');
+      let g=((s.match(/([七八九])\s*年級/)||s.match(/([七八九])\s*年[一-鿿]?班/)||s.match(/國\s*([一二三])/)||[])[1])||'';
+      if(!g){const m=s.match(/[Gg]?([789])\s*年/);if(m)g=m[1];}
+      const grade=g?(({'7':'七','8':'八','9':'九','一':'七','二':'八','三':'九'}[g])||g)+'年級':'';
+      const term=/下學期|第[2二]學期/.test(s)?'下學期':(/上學期|第[1一]學期/.test(s)?'上學期':'');
+      const mock=/模擬/.test(s);
+      let round='';
+      const rm=s.match(/第?([一二三123])次(?:段考|定期評量|定期考查|定期考|評量|測驗|考試|模擬考?)/);
+      if(rm)round='第'+cn[rm[1]]+(mock?'次模擬考':'次段考');
+      else if(/期中考/.test(s))round='第二次段考';
+      else if(/期末考/.test(s))round='第三次段考';
+      const subj=(s.match(/理化|物理|化學|生物|地球科學|地科/)||[])[0]||(/自然/.test(s)?'自然':'');
+      const subject=subj==='地球科學'?'地科':subj;
+      const parts=mock?[school,grade,year,round,subject||'自然']:[school,grade,year,term,round,subject];
+      return parts.filter(Boolean).join('-');
     }
     async function ocrExamTitle(){
       const btn=document.getElementById('ocrTitleBtn'),st=document.getElementById('ocrTitleStatus');
@@ -255,21 +265,20 @@
         const doc=await pdfjs.getDocument({data:new Uint8Array(await cropFiles.pdf.arrayBuffer())}).promise;
         const page=await doc.getPage(1);
         const base=page.getViewport({scale:1});
-        const scale=Math.min(4,Math.max(1.6,1600/base.width));
+        const scale=Math.min(4.5,Math.max(2.2,2200/base.width)); // 拉高解析度，中文辨識較準
         const viewport=page.getViewport({scale});
         const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
         await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-        // 取最上方約 22% 當標題區，減少雜訊、加快辨識
+        // 取最上方約 22% 當標題區（含校名、學年度、年級列），減少雜訊、加快辨識
         const band=document.createElement('canvas');band.width=canvas.width;band.height=Math.round(canvas.height*0.22);
         band.getContext('2d').drawImage(canvas,0,0,canvas.width,band.height,0,0,band.width,band.height);
         setS('辨識中…');
         const {data}=await T.recognize(band,'chi_tra+eng',{logger:m=>{if(m.status==='recognizing text')setS('辨識中… '+Math.round((m.progress||0)*100)+'%');}});
-        const title=_pickExamTitleLine(data&&data.text);
-        if(!title){setS('⚠ 沒辨識到明顯的考卷標題；可改用有意義的檔名，或直接在上面手動輸入名稱。');return;}
-        rawName.value=_ocrTitleToHint(title);
-        normalizeName();
+        const name=_buildExamNameFromOcr(data&&data.text);
+        if(!name){setS('⚠ 沒辨識到足夠的考卷資訊；可改用有意義的檔名，或直接在上面手動輸入名稱。');return;}
+        examName.value=name;rawName.value=name;
         autoMatchExamName();
-        setS('✓ 已辨識標題：「'+title+'」→ 已帶入上方名稱欄（請確認、可再修改）。');
+        setS('✓ 已依命名規則辨識：「'+name+'」（請確認、可再修改）。');
       }catch(e){console.error(e);setS('⚠ 辨識失敗：'+(e&&e.message||e));}
       finally{if(btn)btn.disabled=false;}
     }
