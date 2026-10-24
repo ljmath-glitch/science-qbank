@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/skills/qbank-selftest/scripts/syntax_check.mjs || true"
+          }
+        ]
+      }
+    ]
+  }
+}
