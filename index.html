@@ -1181,6 +1181,10 @@
       <div class="wz-step2">
         <div class="wz-step2-main">
           <div class="wz-card">
+            <div class="wz-set-row" style="margin-bottom:10px;padding:10px 12px;background:#fff6ee;border:1px solid #f0d9c4;border-radius:10px;align-items:center">
+              <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 避免重複考卷（排除已出過的題目）</button>
+              <span class="wz-set-note wz-exclude-info" style="margin-left:4px">尚未排除任何考卷</span>
+            </div>
             <div class="wz-tabs">
               <div class="wz-tab on" id="wzTabPool" onclick="wzSetTab('pool')">待選題目（<span id="wzPoolN">0</span>）</div>
               <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
@@ -1212,7 +1216,7 @@
         <p style="font-size:13.5px;color:#6e6f74;line-height:1.8">已選 <b id="wzStep3N" style="color:var(--red)">0</b> 題。設定配分與過濾後，按「開啟預覽與輸出」進入考卷預覽（可線上編輯題目、加卷頭），確認即可輸出 Word／HTML。</p>
         <div class="wz-set-row">
           <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 過濾試卷（排除已出過的題目）</button>
-          <span id="wzExcludeInfo" class="wz-set-note"></span>
+          <span id="wzExcludeInfo" class="wz-set-note wz-exclude-info"></span>
         </div>
         <div class="wz-score-wrap">
           <div class="wz-score-head"><b>配分設定</b><span class="wz-set-note">各題型每題配分可調，共計即時計算</span><button type="button" class="btn sm" style="margin-left:auto" onclick="wzAutoScore()">↻ 重新配分</button></div>
@@ -5125,9 +5129,10 @@ function wzApplyFilterPapers(){
   wzUpdateFoot();
 }
 function wzUpdateExcludeInfo(){
-  const el=document.getElementById('wzExcludeInfo');if(!el)return;
+  const els=document.querySelectorAll('.wz-exclude-info');if(!els.length)return;
   const n=WZ_EXCLUDE.size,q=_wzExcludedQids().size;
-  el.textContent=n?`已排除 ${n} 份考卷（${q} 題不再出現）`:'尚未排除任何考卷';
+  const txt=n?`已排除 ${n} 份考卷（${q} 題不再出現）`:'尚未排除任何考卷';
+  els.forEach(el=>{el.textContent=txt;el.style.color=n?'var(--red)':'';el.style.fontWeight=n?'700':'';});
 }
 // Step 2 清單
 function wzSetTab(t){WZ_TAB=t;document.getElementById('wzTabPool').classList.toggle('on',t==='pool');document.getElementById('wzTabPick').classList.toggle('on',t==='pick');wzRenderList();}
@@ -5180,6 +5185,7 @@ function wzRenderList(){
   const poolAll=_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
   document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
+  wzUpdateExcludeInfo();
   const html=items.slice(0,400).map(it=>{
     const d=calcDiff(it.step,it.mem,it.con).lvl||'未評分';const picked=PICKS.has(it.id);
     const meta=`${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}`;
