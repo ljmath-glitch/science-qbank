@@ -1136,6 +1136,10 @@
     <section class="wz-pane" data-s="1">
       <div class="wz-card">
         <h3>① 選擇出題範圍</h3>
+        <div class="wz-set-row" style="margin-bottom:12px;padding:10px 12px;background:#fff6ee;border:1px solid #f0d9c4;border-radius:10px;align-items:center">
+          <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 避免重複考卷（排除已出過的題目）</button>
+          <span class="wz-set-note wz-exclude-info" style="margin-left:4px">尚未排除任何考卷</span>
+        </div>
         <div class="wz-chips" style="margin-bottom:12px">
           <span style="font-weight:700;color:#6e6f74">選題方式：</span>
           <button type="button" class="wz-chip on" id="wzModeChapter" onclick="wzSetMode('chapter')">依章節</button>
@@ -1181,10 +1185,6 @@
       <div class="wz-step2">
         <div class="wz-step2-main">
           <div class="wz-card">
-            <div class="wz-set-row" style="margin-bottom:10px;padding:10px 12px;background:#fff6ee;border:1px solid #f0d9c4;border-radius:10px;align-items:center">
-              <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 避免重複考卷（排除已出過的題目）</button>
-              <span class="wz-set-note wz-exclude-info" style="margin-left:4px">尚未排除任何考卷</span>
-            </div>
             <div class="wz-tabs">
               <div class="wz-tab on" id="wzTabPool" onclick="wzSetTab('pool')">待選題目（<span id="wzPoolN">0</span>）</div>
               <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
@@ -5122,7 +5122,10 @@ function wzApplyFilterPapers(){
   const ex=_wzExcludedQids();
   [...PICKS].forEach(id=>{if(ex.has(id))PICKS.delete(id);});
   wzUpdateExcludeInfo();
-  if(typeof wzRenderTree==='function')wzRenderTree();
+  // 重建第 1 步範圍樹，讓各章節／考試題數立即反映排除後的數量
+  if(WZ_MODE==='school'){if(typeof wzRenderSchoolTree==='function')wzRenderSchoolTree();}
+  else if(WZ_LEVEL&&typeof wzBuildTree==='function')wzBuildTree();
+  else if(typeof wzRenderTree==='function')wzRenderTree();
   if(typeof wzRenderList==='function')wzRenderList();
   if(typeof wzRenderScoreTable==='function')wzRenderScoreTable();
   document.getElementById('wzStep3N').textContent=PICKS.size;
