@@ -1193,6 +1193,8 @@
               <select id="wzfType" onchange="wzRenderList()"><option value="">全部題型</option></select>
               <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
               <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
+              <button type="button" class="btn" onclick="wzSelectAllFiltered()" title="把目前篩選／範圍內的待選題目全部選入">✓ 全選</button>
+              <button type="button" class="btn" onclick="wzDeselectAllFiltered()" title="取消目前篩選／範圍內已選的題目">✗ 全不選</button>
               <button type="button" class="btn" onclick="wzOpenMix()">⚖ 智慧組卷</button>
             </div>
             <div class="wz-chips" id="wzFmtChips" style="margin:8px 0">
@@ -5176,15 +5178,20 @@ function _wzFullHtml(it){
   const sol=(it.sol&&it.sol.trim())?`<div class="wz-sol">${_wzMathHtml(it.sol,false)}</div>`:'';
   return ph+`<div>${qh}</div>${imgs}${ans}${sol}`;
 }
-function wzRenderList(){
+// 目前篩選條件下的題目（forSelect=true 時忽略「已選分頁」限制，供全選用）
+function _wzFilteredItems(forSelect){
   const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
   let items=_wzPool().filter(wzInScope);
-  if(WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
+  if(!forSelect&&WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
   if(WZ_UNITFILTER)items=items.filter(it=>{const fp=_wzPath(it);return fp===WZ_UNITFILTER||fp.indexOf(WZ_UNITFILTER+'\u0001')===0;});
   if(ft)items=items.filter(it=>it.type===ft);
   if(WZ_FMT.size)items=items.filter(it=>WZ_FMT.has(_wzFormat(it)));
   if(fd)items=items.filter(it=>(calcDiff(it.step,it.mem,it.con).lvl||'未評分')===fd);
   if(fs)items=items.filter(it=>stripRichMarks((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
+  return items;
+}
+function wzRenderList(){
+  let items=_wzFilteredItems(false);
   const poolAll=_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
   document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
@@ -5322,6 +5329,27 @@ function wzPick(id){
   togglePick(id,true);
   if(WZ_TAB==='pick')wzRenderList();else{const sp=_wzPool().filter(wzInScope);wzSyncPickStates(sp);wzRenderMonitor(sp);} // 範圍清單只算一次
   wzUpdateFoot();
+}
+// 全選：把目前篩選／範圍內的待選題目全部選入（題組會整組一起選）。
+function wzSelectAllFiltered(){
+  const items=_wzFilteredItems(true);
+  const todo=items.filter(it=>!PICKS.has(it.id));
+  if(!todo.length){alert('目前篩選範圍內的題目都已經選過了。');return;}
+  if(todo.length>60&&!confirm('確定把目前篩選範圍內的 '+todo.length+' 題全部選入？（題組會整組一起選）'))return;
+  todo.forEach(it=>{if(!PICKS.has(it.id))togglePick(it.id,true);});
+  wzAfterBulkPick();
+}
+// 全不選：把目前篩選／範圍內「已選的」題目取消（只動符合目前條件的，不影響其他範圍已選的題）。
+function wzDeselectAllFiltered(){
+  const items=_wzFilteredItems(true);
+  const todo=items.filter(it=>PICKS.has(it.id));
+  if(!todo.length){alert('目前篩選範圍內沒有已選的題目。');return;}
+  todo.forEach(it=>{if(PICKS.has(it.id))togglePick(it.id,true);});
+  wzAfterBulkPick();
+}
+function wzAfterBulkPick(){
+  const sp=_wzPool().filter(wzInScope);
+  wzRenderList();wzSyncPickStates(sp);wzRenderMonitor(sp);wzUpdateFoot();
 }
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
 function wzToExport(){
