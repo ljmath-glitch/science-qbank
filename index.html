@@ -9805,7 +9805,15 @@ function _answerBoxXml(ans, digits){
 function _tplAnswerBoxes(xml){
   const re=/(<w:r\b[^>]*>)(<w:rPr>(?:(?!<\/w:rPr>)[\s\S])*?<\/w:rPr>)?(<w:t\b[^>]*>)\uE013([^<\uE013\uE014]*)\uE014/g;
   let n=0;
-  let out=xml.replace(re,(m,rOpen,rPr,tOpen,ans)=>{ n++; return _answerBoxXml(ans, (''+n).length)+rOpen+(rPr||'')+tOpen; });
+  let out='',pos=0,depth=0;
+  const mark=/<w:txbxContent\b[^>]*>|<\/w:txbxContent>/g;let m;
+  while((m=mark.exec(xml))){
+    const part=xml.slice(pos,m.index);
+    out+=depth===0?part.replace(re,(_m,rOpen,rPr,tOpen,ans)=>{n++;return _answerBoxXml(ans,(''+n).length)+rOpen+(rPr||'')+tOpen;}):part;
+    out+=m[0];depth+=m[0].startsWith('<w:txbxContent')?1:-1;pos=mark.lastIndex;
+  }
+  const tail=xml.slice(pos);
+  out+=depth===0?tail.replace(re,(_m,rOpen,rPr,tOpen,ans)=>{n++;return _answerBoxXml(ans,(''+n).length)+rOpen+(rPr||'')+tOpen;}):tail;
   return out.split('\uE013').join('').split('\uE014').join('');
 }
 async function downloadWordViaTemplate(kind,opts){
@@ -9857,7 +9865,7 @@ async function downloadWordViaTemplate(kind,opts){
       // 課前考與 ABK：依各自欄寬的門檻自動排 1/2/4 個一行（該題有圖一律一行一個）。
       if(kind==='pre'||kind==='abk')qText=_preOptionLayout(qText,(it.imgs||[]).some(im=>im&&im.src),kind);
       // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
-      if(opts.teacher)qText=kind==='abk'?''+(it.ans||'')+''+qText:''+(it.ans||'')+''+qText;
+      if(opts.teacher)qText=''+(it.ans||'')+''+qText;
       const resolvedImgs=await _tplResolveImgs(it.imgs);
       const placement=_defaultImagePlacement(resolvedImgs,qText,kind,resolvedImgs.map(x=>x.height));
       // 圖片模組的 inline 原本在段尾；哨兵讓後處理能把小圖移到第一個選項行的開頭。
@@ -9915,15 +9923,14 @@ async function downloadWordViaTemplate(kind,opts){
       xml2=_preApplyOptionTabs(xml2,kind);
       // ABK 與課前考的題目段落同為 numId=100、縮排同為 left=567/hanging=425；可安全 keepLines。
       xml2=_preKeepQuestionTogether(xml2);
-      // 先把圖片 inline 移回同一題的題幹與第一個選項之間，再拆成獨立段落置中。
-      // 題組文字方塊會被 _preMoveInlineImagesBeforeOptions 略過。
-      xml2=_preMoveInlineImagesBeforeOptions(xml2);
+      // 不跨段落搬移圖片：範本的題目清單與答案標記共用段落結構，
+      // 強行搬移會讓下一題的文字／答案跑到上一題圖片後面。保留原生 inline 順序，
+      // 只做安全的圖片段落置中。
       xml2=_preCenterInlineImages(xml2);
       xml2=_abkFitMultilineTitle(xml2);
     }
-    // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
-    // ABK 題目可能位於範本文字方塊；不要插入浮動答案 drawing，改用紅色行內答案。
-    if(opts.teacher&&kind!=='abk')xml2=_tplAnswerBoxes(xml2);
+    // 教用版答案使用紅色文字方塊；題組文章內的文字方塊會被 _tplAnswerBoxes 略過。
+    if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     renderedZip.file('word/document.xml',xml2);
   }
   const out=renderedZip.generate({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
