@@ -41,5 +41,14 @@ http.createServer((req,res)=>{
   });
 }).listen(PORT,'127.0.0.1',()=>{
   console.log('agy 橋接已啟動：http://127.0.0.1:'+PORT);
-  console.log('Token（貼到網頁設定）：'+token);
+  // 組出「連線碼」（網址＋token）並複製到剪貼簿，網頁貼一次就完成設定
+  const TS='/Applications/Tailscale.app/Contents/MacOS/Tailscale';
+  require('child_process').execFile(TS,['status','--json'],(e,out)=>{
+    let url='';try{const dns=JSON.parse(out).Self.DNSName.replace(/\.$/,'');url='https://'+dns;}catch(x){}
+    if(!url){console.log('\n抓不到 Tailscale 網址（Tailscale 有登入嗎？）。Token：'+token);return;}
+    const code=Buffer.from(JSON.stringify({url,token})).toString('base64');
+    console.log('\n連線碼（已複製到剪貼簿，回網頁貼上即可）：\n'+code+'\n');
+    try{const c=require('child_process').spawn('pbcopy');c.stdin.end(code);}catch(x){}
+    console.log('這個視窗請保持開著；要關閉橋接就關掉視窗。');
+  });
 });

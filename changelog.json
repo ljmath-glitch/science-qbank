@@ -1,12 +1,12 @@
 {
-  "build": "2026-10-28.5",
+  "build": "2026-10-28.6",
   "entries": [
     {
       "id": 58,
       "date": "10/28",
       "tag": "新功能",
       "title": "AI 健檢可改用本機 Antigravity（經 Tailscale，不耗 API token）",
-      "body": "組卷精靈第 3 步新增「⚙ 本機橋接」：在你的 Mac 啟動橋接程式並用 Tailscale 開放後，AI 健檢改由本機 agy（Google AI Pro 訂閱）執行，不再消耗 Gemini API token。限制：只檢查文字、不看圖片；沒設定橋接時照舊用 Gemini API。設定步驟見 docs/AGY_BRIDGE.md。"
+      "body": "組卷精靈第 3 步新增「⚙ 本機橋接」：在 Mac 雙擊桌面「啟動AI橋接」，把顯示的連線碼貼進網頁（只需一次），AI 健檢就改由本機 Antigravity（Google AI Pro 訂閱，經 Tailscale）執行，不再消耗 Gemini API token。限制：只檢查文字、不看圖片；沒設定橋接時照舊用 Gemini API。"
     },
     {
       "id": 57,

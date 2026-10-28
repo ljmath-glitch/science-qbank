@@ -5420,14 +5420,16 @@ function _wzHasGeminiKey(){if(_wzBridge())return true;try{return !!(AI_CFG&&AI_C
 function _wzBridge(){try{const o=JSON.parse(localStorage.getItem('qbank_agy_bridge')||'null');return o&&o.url&&o.token?o:null;}catch(e){return null;}}
 function wzBridgeSetup(){
   const cur=_wzBridge();
-  const url=prompt('本機 agy 橋接網址（tailscale serve 給的 https 網址，例如 https://chias-macbook-pro.xxx.ts.net）\n留空並確定＝停用橋接、改用 Gemini API',cur?cur.url:'');
-  if(url==null)return;
-  if(!url.trim()){localStorage.removeItem('qbank_agy_bridge');alert('已停用橋接，之後健檢改用 Gemini API。');wzBridgeInfo();return;}
-  const token=prompt('橋接 Token（在你的 Mac 終端機執行  cat ~/.science-qbank-bridge-token  取得）',cur?cur.token:'');
-  if(!token||!token.trim())return;
-  localStorage.setItem('qbank_agy_bridge',JSON.stringify({url:url.trim().replace(/\/+$/,''),token:token.trim()}));
-  fetch(url.trim().replace(/\/+$/,'')+'/ping',{headers:{'x-bridge-token':token.trim()}}).then(r=>r.ok?alert('橋接連線成功！之後 AI 健檢會用你本機的 agy（只檢查文字，不看圖片）。'):alert('連得到但被拒絕（token 不對？）')).catch(()=>alert('連不到橋接。請確認 Mac 上橋接程式有在跑、tailscale serve 已開，且這台裝置在同一個 tailnet。設定已儲存。'));
+  const code=prompt('請貼上「連線碼」（在 Mac 上雙擊「啟動AI橋接」後，視窗會顯示並已複製到剪貼簿）\n留空並按確定＝停用橋接、改用 Gemini API',cur?'（目前已設定，貼新的連線碼可更換）':'');
+  if(code==null)return;
+  const c=code.trim();
+  if(!c){localStorage.removeItem('qbank_agy_bridge');alert('已停用橋接，之後健檢改用 Gemini API。');wzBridgeInfo();return;}
+  if(c.startsWith('（'))return;
+  let o=null;try{o=JSON.parse(atob(c));}catch(e){}
+  if(!o||!o.url||!o.token){alert('連線碼看起來不對，請重新複製。');return;}
+  localStorage.setItem('qbank_agy_bridge',JSON.stringify({url:String(o.url).replace(/\/+$/,''),token:o.token}));
   wzBridgeInfo();
+  fetch(String(o.url).replace(/\/+$/,'')+'/ping',{headers:{'x-bridge-token':o.token}}).then(r=>r.ok?alert('橋接連線成功！之後 AI 健檢會用你本機的 agy（只檢查文字，不看圖片）。'):alert('連得到但被拒絕，請重新複製連線碼。')).catch(()=>alert('已儲存，但現在連不到橋接。請確認 Mac 上「啟動AI橋接」視窗開著，且這台裝置有登入同一個 Tailscale。'));
 }
 function wzBridgeInfo(){const i=document.getElementById('wzBridgeInfo');if(i)i.textContent=_wzBridge()?'目前：本機 agy 橋接（免 API、只檢查文字）':'目前：Gemini API（含圖片）';}
 async function _wzAiCall(sys,msg,key,imgs){
