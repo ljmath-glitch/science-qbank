@@ -8576,8 +8576,6 @@ function _abkOptionVisibleLen(option){
   return _preOptLen(plain)+extra;
 }
 function _templateOptionColumns(opts,hasImg,kind){
-  // ABK 有圖題永遠單欄：右浮動圖會縮小同一欄當下的實際文字區，不能安全打包。
-  if(hasImg)return 1;
   if(kind==='abk'){
     const profile=_templateOptionProfile(kind);
     const need=Math.max.apply(null,opts.map(o=>_abkOptionVisibleLen(o)+1.5+1));
@@ -8588,6 +8586,20 @@ function _templateOptionColumns(opts,hasImg,kind){
   const profile=_templateOptionProfile(kind);
   const maxLen=Math.max.apply(null,opts.map(o=>_preOptLen(o.replace(/^\([A-Ea-e]\)\s*/,''))));
   return maxLen<profile.shortMax?4:maxLen<profile.mediumMax?2:1;
+}
+// ABK 題內圖在 render 後仍是 wp:inline；把圖片 run 移到第一個選項 (A) 前，
+// 讓版面固定為「題幹 → 圖片 → 選項」，不依賴範本圖片佔位符的位置。
+function _preMoveInlineImagesBeforeOptions(xml){
+  return String(xml||'').replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g,p=>{
+    if(!/<wp:inline\b/.test(p)||!/<w:t[^>]*>\s*\(A\)/.test(p))return p;
+    const runs=[];const re=/<w:r\b[^>]*>[\s\S]*?<\/w:r>/g;let m;
+    while((m=re.exec(p))){if(/<wp:inline\b/.test(m[0]))runs.push(m[0]);}
+    if(!runs.length)return p;
+    let out=p;for(const run of runs)out=out.replace(run,'');
+    const at=out.search(/<w:r\b[^>]*>[\s\S]*?<w:t[^>]*>\s*\(A\)/);
+    if(at<0)return p;
+    const end=out.indexOf('<w:r',at);return out.slice(0,end)+runs.join('')+out.slice(end);
+  });
 }
 function _preOptionLayout(text,hasImg,kind){
   kind=kind||'pre';
@@ -9839,6 +9851,7 @@ async function downloadWordViaTemplate(kind,opts){
       // ABK 與課前考的題目段落同為 numId=100、縮排同為 left=567/hanging=425；可安全 keepLines。
       xml2=_preKeepQuestionTogether(xml2);
       // ABK 圖片保持 ImageModule 產生的 wp:inline（Inline with Text），並將圖片段落置中。
+      xml2=_preMoveInlineImagesBeforeOptions(xml2);
       xml2=_preCenterInlineImages(xml2);
     }
     // … 同時用於 AI 健檢警示與教用版答案：先把內容轉成紅色 run，再插入答案框。
