@@ -1088,7 +1088,7 @@
 #composer .wz-ai-btn:disabled{opacity:.55;cursor:wait}
 #composer .wz-admin-status{margin-top:10px;font-size:12.5px;color:#7a6f62;display:flex;flex-direction:column;gap:2px}
 #composer .wz-q.wz-aibad .wz-qtext,#composer .wz-q.wz-aibad .wz-qfull,#composer .wz-q.wz-aibad .wz-qmeta{color:#d32020!important}
-#composer .wz-q.wz-aibad .wz-qtext *,#composer .wz-q.wz-aibad .wz-qfull *{color:#d32020!important}
+#composer .wz-q.wz-aibad .wz-qtext *,#composer .wz-q.wz-aibad .wz-qfull *{color:#d32020!important}.wz-ai-reason{margin:5px 0 2px;padding:5px 8px;border-left:3px solid #d32020;background:#fff1f0;color:#b51f1f;font-size:12px;line-height:1.55}
 #composer .wz-q.picked{border-color:var(--red);background:#fdf5f4}
 #composer .wz-q input{margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--red)}
 #composer .wz-q .wz-qmeta{font-size:11px;color:#9a8f83;margin-bottom:2px}
@@ -2177,7 +2177,7 @@ async function _savePaperHistory(){
 }
 function _modeOf(arr){const m={};let best='',bn=0;arr.forEach(v=>{if(v==null||v==='')return;m[v]=(m[v]||0)+1;if(m[v]>bn){bn=m[v];best=v;}});return best;}
 function _publisherOf(bookName){const s=String(bookName||'');const m=s.match(/^([^\/／]+)/);return m?m[1].trim():'';}
-function _bookLabel(code){const map={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};return map[code]||code||'';}
+function _bookLabel(code){const map={JB1:'第一冊', 'JB1-LY':'第一冊（賴妍講義）',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};return map[code]||code||'';}
 function _paperOverallDiff(items){
   const cnt={簡單:0,中等:0,困難:0,極難:0};
   items.forEach(it=>{const l=calcDiff(it.step,it.mem,it.con).lvl;if(cnt[l]!=null)cnt[l]++;});
@@ -2275,6 +2275,26 @@ function mergeSyllabusProfiles(raw){
   const lai=typeof LAIYAN_BIO_SYLLABUS==='string'?LAIYAN_BIO_SYLLABUS.trim():'';
   return lai&& !base.split('\n').some(line=>line.startsWith('JB1-LY|')) ? base+'\n'+lai : base;
 }
+// 七上生物的題目資料仍沿用原本代碼；以下只提供講義化顯示名稱。
+// 一個講義小節可能涵蓋數個舊版小節，因此值與顯示文字刻意分開保存。
+const LAIYAN_BIO_UNIT_LABEL={
+  'C1 生命世界與科學方法':'C1 生命的特性',
+  'C2 生物體的組成':'C1 生命的特性',
+  'C3 生物體的營養':'C2 生物體與營養',
+  'C4 生物體的運輸作用':'C3 生物體的運輸作用',
+  'C5 生物體的協調作用':'C4 生物體的協調作用',
+  'C6 生物體的恆定':'C5 動物體內的恆定與調節'
+};
+const LAIYAN_BIO_SUB_LABEL={
+  '1-1 多采多姿的生命世界':'1-1 生命現象與生物圈','1-2 探究自然的科學方法':'實驗活動一 探究自然的方法','1-3 進入實驗室':'實驗活動二 顯微鏡',
+  '2-1 生物體的基本單位':'1-2 生物的基本構造－細胞','2-2 細胞的構造':'1-2 生物的基本構造－細胞','2-3 物質進出細胞的方式':'1-3 細胞所需的物質',
+  '3-1 食物中的養分與能量':'2-1 食物中的養分與能量','3-2 酵素':'2-2 酵素','3-3 植物如何製造養分':'2-3 植物如何製造養分','3-4 人體如何獲得養分':'2-4 動物如何獲得養分','3-5 生物獲得能量的方式':'2-4 動物如何獲得養分',
+  '4-1 植物的運輸構造':'3-1 植物的運輸構造','4-2 植物體內物質的運輸':'3-2 植物體內物質的運輸','4-3 人體心血管系統的組成':'3-3 動物體內的血液循環','4-4 人體的循環系統':'3-3 動物體內的血液循環',
+  '5-1 刺激與反應':'4-1 植物對環境的感應','5-2 神經系統':'4-2 神經系統','5-3 內分泌系統':'4-3 內分泌系統與恆定','5-4 行為與感應':'4-4 動物的行為',
+  '6-1 呼吸與氣體的恆定':'5-2 呼吸作用與呼吸運動','6-2 排泄與水分的恆定':'5-6 廢物的排泄與調節','6-3 體溫的恆定與血糖的恆定':'5-3 體溫的調節／5-5 血糖的恆定'
+};
+function laiYanUnitLabel(row){return row&&row.book==='JB1'&&row.field==='生物'?LAIYAN_BIO_UNIT_LABEL[row.unit]||row.unit:(row&&row.unit)||'';}
+function laiYanSubLabel(row){return row&&row.book==='JB1'&&row.field==='生物'?LAIYAN_BIO_SUB_LABEL[row.sub]||row.sub:(row&&row.sub)||'';}
 
 /* ===== 難度計算 ===== */
 function calcDiff(s,m,c){const t=s+m+c;if(!s||!m||!c)return{lvl:'',score:0};
@@ -2900,6 +2920,11 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
 
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
+function optSylTags(rows,key,sel){
+  const seen=new Set(),out=['<option value="">—</option>'];
+  rows.forEach(r=>{const value=r[key];if(!value||seen.has(value))return;seen.add(value);const label=key==='unit'?laiYanUnitLabel(r):laiYanSubLabel(r);out.push(`<option value="${esc(value)}" ${value===sel?'selected':''}>${esc(label)}</option>`);});
+  return out.join('');
+}
 function fillBook(sel,grade){
   const allowed=booksForGrade(grade);
   const books=SYL.map(k=>k.book).filter(b=>!allowed||allowed.includes(b));
@@ -2932,8 +2957,8 @@ function composeExam(){
   if(typeof renderExamPdfBar==='function'&&document.getElementById('examPdfBar'))renderExamPdfBar();
 }
 function syncByBook(){const b=eBook.value;const rec=SYL.find(k=>k.book===b);eBookName.value=rec?rec.bookName+' / '+rec.field:'';
-  eUnit.innerHTML=optTags(SYL.filter(k=>k.book===b).map(k=>k.unit),'');syncBySub()}
-function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optTags(SYL.filter(k=>k.book===b&&k.unit===u).map(k=>k.sub),'');syncKp();showKpSuggest(eSub.value);}
+  eUnit.innerHTML=optSylTags(SYL.filter(k=>k.book===b),'unit','');syncBySub()}
+function syncBySub(){const b=eBook.value,u=eUnit.value;eSub.innerHTML=optSylTags(SYL.filter(k=>k.book===b&&k.unit===u),'sub','');syncKp();showKpSuggest(eSub.value);}
 function syncKp(){kpList.innerHTML=[...new Set(DB.map(x=>x.kp).filter(Boolean))].map(v=>`<option>${esc(v)}</option>`).join('')}
 
 /* ===== 題型/難度 UI ===== */
@@ -3684,9 +3709,9 @@ function parseSylSem(y,exam){
   }
   return '';}
 const HS_BOOKS=['必修物理','選修物理一','選修物理二','選修物理三','選修物理四','選修物理五','必修化學','選修化學一','選修化學二','選修化學三','選修化學四','選修化學五','必修生物','選修生物一','選修生物二','選修生物三','選修生物四','必修地科'];
-const JH_BOOKS=['JB1','JB2','JB3','JB4','JB5','JB6'];
+const JH_BOOKS=['JB1','JB1-LY','JB2','JB3','JB4','JB5','JB6'];
 /* 高中年級（高一/高二/高三）只是分類標籤，不限制冊數選單——因為各校選修課排課進度不同 */
-const GRADE_BOOKS={'七年級':['JB1','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高一':HS_BOOKS,'高二':HS_BOOKS,'高三':HS_BOOKS,'高中':HS_BOOKS};
+const GRADE_BOOKS={'七年級':['JB1','JB1-LY','JB2'],'八年級':['JB3','JB4'],'九年級':['JB5','JB6'],'高一':HS_BOOKS,'高二':HS_BOOKS,'高三':HS_BOOKS,'高中':HS_BOOKS};
 function booksForGrade(grade){return grade?GRADE_BOOKS[grade]:null;}
 /* 學制→冊數：沒選特定年級時，至少用學制把冊數限制在國中六冊／高中十八科 */
 function allowedBooksForFilter(){
@@ -3698,7 +3723,7 @@ function allowedBooksForFilter(){
   return null;
 }
 function bookToGrade(book){
-  if(book==='JB1'||book==='JB2'||book==='B1'||book==='B2')return '七年級';
+  if(book==='JB1'||book==='JB1-LY'||book==='JB2'||book==='B1'||book==='B2')return '七年級';
   if(book==='JB3'||book==='JB4'||book==='B3'||book==='B4')return '八年級';
   if(book==='JB5'||book==='JB6'||book==='B5'||book==='B6')return '九年級';
   if(HS_BOOKS.includes(book))return '高中';
@@ -4722,9 +4747,9 @@ let WZ_SCHOOLSCOPE=new Set();    // 依學校模式已勾選的考試葉 key（s
 let WZ_SCHOOLTREE=[];            // [{school,count,exams:[{exam,count,key}]}]
 let WZ_SCHOOLCOLLAPSED=new Set();// 依學校樹收合的學校節點 id
 const WZ_SEP='\u0001';
-const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
-function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
-function _wzBookOrder(b){const i=['JB1','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
+const _WZ_BOOKLABEL={JB1:'第一冊', 'JB1-LY':'第一冊（賴妍講義）',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
+function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b)||b==='JB1-LY')return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
+function _wzBookOrder(b){const i=['JB1','JB1-LY','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
 function _wzFieldFor(it){
   // 第五、六冊同時含理化與地科，不能僅用冊數或題目舊欄位判斷；以課綱的「冊＋單元＋子單元」為準。
   const rec=SYL.find(k=>k.book===it.book&&k.unit===it.unit&&k.sub===it.sub)
@@ -5293,6 +5318,7 @@ function wzRenderList(){
       +`<div class="wz-qbody" onclick="wzToggleExpand('${it.id}')">`
       +`<div class="wz-qmeta"><span class="wz-qbadge" style="background:${WZ_DIFFCOLOR[d]}">${d}</span>${meta}<span class="wz-expand-hint">▸ 點展開完整題目</span></div>`
       +`<div class="wz-qtext" id="wzq-${it.id}">${_wzSimple(it)||'（無題幹摘要）'}</div>`
+      +(WZ_AICHECK_WHY[it.id]?`<div class="wz-ai-reason">⚠ AI健檢：${esc(WZ_AICHECK_WHY[it.id])}</div>`:'')
       +`<div class="wz-qfull" id="wzfull-${it.id}" hidden></div>`
       +`</div>`
       +`<button type="button" class="wz-editbtn" onclick="event.stopPropagation();wzEdit('${it.id}')">✎ 編輯</button>`
@@ -5539,23 +5565,19 @@ async function wzAiCheck(){
   if(btn)btn.disabled=true;
   WZ_AICHECK_BAD=new Set();WZ_AICHECK_WHY={};
   let done=0,fail=0,bad=0;
-  for(let i=0;i<items.length;i++){
-    const it=items[i];
-    if(info)info.textContent='檢查中 '+(i+1)+'/'+items.length+'…';
-    try{
-      const r=await _wzAiCheckOne(it,i+1,key);
-      if(!r){fail++;continue;}
-      done++;
-      if(r.bad){
-        bad++;WZ_AICHECK_BAD.add(it.id);WZ_AICHECK_WHY[it.id]=r.issues.join('；');
-        it.flag=true;
-        const old=String(it.basis||'');
-        const rest=/^\[回報\] AI健檢：/.test(old)?(old.indexOf('　')>=0?old.slice(old.indexOf('　')+1):''):old;
-        it.basis='[回報] AI健檢：'+r.issues.join('；')+(rest&&!/^\[回報\]/.test(rest)?'　'+rest:'');
-        try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)console.warn('AI 健檢標記存檔失敗',it.id,error);}catch(e){console.warn('AI 健檢標記存檔失敗',it.id,e);}
-      }
-    }catch(e){fail++;console.warn('AI 健檢失敗',it.id,e);}
-  }
+  // 橋接／API 請求採固定併發，避免逐題等待造成整批健檢被放大成數十分鐘。
+  // 併發 4 可兼顧 Antigravity 穩定性與 Gemini rate limit；每題仍保留獨立錯誤結果。
+  const concurrency=Math.min(4,items.length);
+  let next=0;
+  const worker=async()=>{while(true){const i=next++;if(i>=items.length)return;const it=items[i];
+    if(info)info.textContent='檢查中 '+Math.min(next,items.length)+'/'+items.length+'（完成 '+done+'）…';
+    try{const r=await _wzAiCheckOne(it,i+1,key);if(!r){fail++;continue;}done++;if(r.bad){bad++;WZ_AICHECK_BAD.add(it.id);WZ_AICHECK_WHY[it.id]=r.issues.join('；');it.flag=true;
+      const old=String(it.basis||'');const rest=/^\[回報\] AI健檢：/.test(old)?(old.indexOf('　')>=0?old.slice(old.indexOf('　')+1):''):old;
+      it.basis='[回報] AI健檢：'+r.issues.join('；')+(rest&&!/^\[回報\]/.test(rest)?'　'+rest:'');
+      try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)console.warn('AI 健檢標記存檔失敗',it.id,error);}catch(e){console.warn('AI 健檢標記存檔失敗',it.id,e);}
+    }}catch(e){fail++;console.warn('AI 健檢失敗',it.id,e);}
+  }};
+  await Promise.all(Array.from({length:concurrency},worker));
   wzAiCheckBusy=false;if(btn)btn.disabled=false;
   WZ_AICHECK_SIG=_wzPickSig();
   const msg='檢查 '+items.length+' 題'+(bad?'，發現 '+bad+' 題可能有問題，已標記為待確認並以紅字標示':'，未發現問題')+(fail?'；另有 '+fail+' 題檢查失敗或無法判定':'')+'。仍可直接匯出。';
@@ -9741,6 +9763,9 @@ async function downloadWordViaTemplate(kind,opts){
       // 教用版：把答案填進題號後的括弧。括弧與題號標題括弧同為 10pt（同一 run 繼承），
       // 答案字母用 … 包起來，render 後在 document.xml 裡拆成獨立「紅色 run」。
       let qText=_tplQuestionText(it);
+      // AI 健檢結果也帶進匯出內容：以私用標記包住，render 後轉為紅字，讓教用版與匯入預覽看到同一個具體原因。
+      const aiWhy=String(it.basis||'').match(/^\[回報\] AI健檢：(.+)/);
+      if(aiWhy&&aiWhy[1])qText='【AI健檢】'+aiWhy[1]+'\n'+qText;
       // 課前考與 ABK：依各自欄寬的門檻自動排 1/2/4 個一行（該題有圖一律一行一個）。
       if(kind==='pre'||kind==='abk')qText=_preOptionLayout(qText,(it.imgs||[]).some(im=>im&&im.src),kind);
       // 括弧維持與題號「(　　)」相同的寬度：左右各補一個全形空格，答案（紅字）置中。
@@ -9804,7 +9829,8 @@ async function downloadWordViaTemplate(kind,opts){
       xml2=_preKeepQuestionTogether(xml2);
       xml2=_preFloatQuestionImages(xml2,'column',questionImageLayouts);
     }
-    // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
+    // … 同時用於 AI 健檢警示與教用版答案：先把內容轉成紅色 run，再插入答案框。
+    xml2=_tplRedAnswers(xml2);
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     renderedZip.file('word/document.xml',xml2);
   }
