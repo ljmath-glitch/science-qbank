@@ -1190,8 +1190,8 @@
               <div class="wz-tab" id="wzTabPick" onclick="wzSetTab('pick')">已選題目（<span id="wzPickN">0</span>）</div>
             </div>
             <div class="wz-filterbar">
-              <select id="wzfType" onchange="wzRenderList()"><option value="">全部題型</option></select>
-              <select id="wzfDiff" onchange="wzRenderList()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
+              <select id="wzfType" onchange="wzFilterChange()"><option value="">全部題型</option></select>
+              <select id="wzfDiff" onchange="wzFilterChange()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
               <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
               <button type="button" class="btn" onclick="wzSelectAllFiltered()" title="把目前篩選／範圍內的待選題目全部選入">✓ 全選</button>
               <button type="button" class="btn" onclick="wzDeselectAllFiltered()" title="取消目前篩選／範圍內已選的題目">✗ 全不選</button>
@@ -4715,6 +4715,20 @@ function wzToggleFmt(btn){
   const f=btn.dataset.fmt;
   if(WZ_FMT.has(f))WZ_FMT.delete(f);else WZ_FMT.add(f);
   btn.classList.toggle('on',WZ_FMT.has(f));
+  wzFilterChange();
+}
+// 更換篩選條件（題型／難易度／格式）時，若已先選了題，提醒是否清掉先前已選的，
+// 避免不同篩選條件下累積一堆非目前範圍的題。選「保留」後本輪不再提醒，直到再勾新題。
+let WZ_CLEARPROMPT_OFF=false;
+function wzFilterChange(){
+  if(PICKS.size>0&&!WZ_CLEARPROMPT_OFF){
+    if(confirm('你更換了篩選條件，先前已選了 '+PICKS.size+' 題。\n要清除先前已選的題、重新選嗎？\n\n【確定】清除先前已選的題　　【取消】保留（之後不再提醒，直到你再勾新題）')){
+      PICKS.clear();
+    }else{
+      WZ_CLEARPROMPT_OFF=true;
+    }
+    const sp=_wzPool().filter(wzInScope);wzSyncPickStates(sp);wzUpdateFoot();
+  }
   wzRenderList();
 }
 function wzInScope(it){
@@ -4724,7 +4738,7 @@ function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
-  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_SCORE_TARGET=100;WZ_EXCLUDE=new Set();WZ_FMT=new Set();document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
+  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_SCORE_TARGET=100;WZ_EXCLUDE=new Set();WZ_FMT=new Set();WZ_CLEARPROMPT_OFF=false;document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
   WZ_MODE='chapter';WZ_SCHOOLSCOPE=new Set();WZ_SCHOOLCOLLAPSED=new Set();  // 重置選題方式
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
@@ -5349,6 +5363,7 @@ function wzSetUnitFilter(enc){
 }
 function wzPick(id){
   // 精靈內勾選不重畫背景題庫的數千張題目卡片，只更新精靈自己的清單／監控。
+  if(!PICKS.has(id))WZ_CLEARPROMPT_OFF=false; // 又勾了新題→下次換篩選再提醒一次
   togglePick(id,true);
   if(WZ_TAB==='pick')wzRenderList();else{const sp=_wzPool().filter(wzInScope);wzSyncPickStates(sp);wzRenderMonitor(sp);} // 範圍清單只算一次
   wzUpdateFoot();
