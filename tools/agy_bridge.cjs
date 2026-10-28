@@ -13,14 +13,33 @@ let token='';
 try{token=fs.readFileSync(TOKEN_FILE,'utf8').trim();}catch(e){}
 if(!token){token=crypto.randomBytes(18).toString('hex');fs.writeFileSync(TOKEN_FILE,token,{mode:0o600});}
 let chain=Promise.resolve();   // 一次只跑一題，避免同時開一堆 agy
-function runAgy(prompt){
+function runAgy(prompt,dir){
   return new Promise((resolve,reject)=>{
-    const p=spawn(AGY,['-p',prompt],{cwd:WORKDIR,stdio:['ignore','pipe','pipe']});
+    const args=['-p',prompt];if(dir)args.push('--add-dir',dir);
+    const p=spawn(AGY,args,{cwd:WORKDIR,stdio:['ignore','pipe','pipe']});
     let out='',err='';const to=setTimeout(()=>{p.kill();reject(new Error('agy 逾時'));},150000);
     p.stdout.on('data',d=>out+=d);p.stderr.on('data',d=>err+=d);
     p.on('error',e=>{clearTimeout(to);reject(e);});
     p.on('close',c=>{clearTimeout(to);c===0||out?resolve(out.trim()):reject(new Error('agy 失敗：'+err.slice(0,200)));});
   });
+}
+// 把題目附圖存成暫存檔，讓 agy 用讀檔的方式看圖（data: 直接解碼，http(s) 由橋接下載）
+async function saveImgs(srcs){
+  if(!srcs||!srcs.length)return {dir:'',files:[]};
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'agy-img-'));const files=[];
+  let n=0;
+  for(const src of srcs.slice(0,6)){
+    try{
+      let buf,ext='png';
+      const m=/^data:image\/(\w+);base64,(.*)$/s.exec(src);
+      if(m){ext=m[1]==='jpeg'?'jpg':m[1];buf=Buffer.from(m[2],'base64');}
+      else if(/^https?:\/\//.test(src)){const r=await fetch(src);if(!r.ok)continue;buf=Buffer.from(await r.arrayBuffer());const t=(r.headers.get('content-type')||'');ext=/jpeg|jpg/.test(t)?'jpg':/gif/.test(t)?'gif':/webp/.test(t)?'webp':'png';}
+      else continue;
+      if(buf.length>8e6)continue;
+      const f=path.join(dir,'img'+(++n)+'.'+ext);fs.writeFileSync(f,buf);files.push(f);
+    }catch(e){}
+  }
+  return {dir,files};
 }
 http.createServer((req,res)=>{
   const origin=req.headers.origin||'';
@@ -32,12 +51,19 @@ http.createServer((req,res)=>{
   if(req.headers['x-bridge-token']!==token)return send(401,{error:'token 不對'});
   if(req.method==='GET'&&req.url==='/ping')return send(200,{ok:true});
   if(req.method!=='POST'||req.url!=='/ai')return send(404,{error:'not found'});
-  let body='';req.on('data',d=>{body+=d;if(body.length>400000)req.destroy();});
+  let body='';req.on('data',d=>{body+=d;if(body.length>30e6)req.destroy();});
   req.on('end',()=>{
     let j;try{j=JSON.parse(body);}catch(e){return send(400,{error:'JSON 格式錯誤'});}
     const prompt=String(j.prompt||'').slice(0,60000);if(!prompt)return send(400,{error:'缺 prompt'});
-    const full=prompt+'\n\n（只根據上面內容回答，不要使用任何工具、不要讀寫檔案或執行指令。）';
-    chain=chain.then(()=>runAgy(full)).then(text=>send(200,{text}),e=>send(500,{error:String(e.message||e)}));
+    const imgs=Array.isArray(j.imgs)?j.imgs.filter(x=>typeof x==='string'):[];
+    chain=chain.then(async()=>{
+      const {dir,files}=await saveImgs(imgs);
+      try{
+        const full=prompt+(files.length?'\n\n題目附圖檔案（請用讀檔方式實際查看這些圖片再判斷）：\n'+files.join('\n'):'')
+          +'\n\n（只根據上面內容回答。只可讀取上面列出的圖片檔，不要讀其他檔案、不要寫檔或執行任何指令。）';
+        return await runAgy(full,dir);
+      }finally{if(dir)fs.rmSync(dir,{recursive:true,force:true});}
+    }).then(text=>send(200,{text}),e=>send(500,{error:String(e.message||e)}));
   });
 }).listen(PORT,'127.0.0.1',()=>{
   console.log('agy 橋接已啟動：http://127.0.0.1:'+PORT);
