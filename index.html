@@ -8808,6 +8808,15 @@ function _preFloatQuestionImages(xml,positionH,layouts){
   }
   return out.split(PRE_IMG_SENTINEL).join('');
 }
+// ABK 圖片採 Word 原生 Inline with Text；圖片所在段落獨立置中，不改動題幹或選項段落。
+function _preCenterInlineImages(xml){
+  return xml.replace(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g,p=>{
+    if(!/<wp:inline\b/.test(p))return p;
+    if(/<w:jc\b/.test(p))return p.replace(/<w:jc\b[^>]*\/>/, '<w:jc w:val="center"/>');
+    if(/<w:pPr\b[^>]*>/.test(p))return p.replace(/<w:pPr\b[^>]*>/,'$&<w:jc w:val="center"/>');
+    return p.replace(/(<w:p\b[^>]*>)/,'$1<w:pPr><w:jc w:val="center"/></w:pPr>');
+  });
+}
 // 課前考／ABK 預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
 // 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
 // 為每個 <br> 產生 \n，所以回存時 it.q 與原本「一行一選項」完全相同、不會被污染。
@@ -9829,7 +9838,8 @@ async function downloadWordViaTemplate(kind,opts){
       xml2=_preApplyOptionTabs(xml2,kind);
       // ABK 與課前考的題目段落同為 numId=100、縮排同為 left=567/hanging=425；可安全 keepLines。
       xml2=_preKeepQuestionTogether(xml2);
-      xml2=_preFloatQuestionImages(xml2,'column',questionImageLayouts);
+      // ABK 圖片保持 ImageModule 產生的 wp:inline（Inline with Text），並將圖片段落置中。
+      xml2=_preCenterInlineImages(xml2);
     }
     // … 同時用於 AI 健檢警示與教用版答案：先把內容轉成紅色 run，再插入答案框。
     xml2=_tplRedAnswers(xml2);
