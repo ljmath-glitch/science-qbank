@@ -8594,10 +8594,16 @@ function _preMoveInlineImagesBeforeOptions(xml){
   // 中間的主因。將它移回前一個含有 (A) 的題目段落，並補上上下換行。
   const paras=[];const pRe=/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g;let pm;
   while((pm=pRe.exec(source)))paras.push({start:pm.index,end:pRe.lastIndex,text:pm[0]});
+  const inTextBox=pos=>{
+    const before=source.slice(0,pos);
+    return (before.match(/<w:txbxContent\b/g)||[]).length>(before.match(/<\/w:txbxContent>/g)||[]).length;
+  };
   const ops=[];
   paras.forEach((cur,i)=>{
+    if(inTextBox(cur.start))return;
     if(!/<wp:inline\b/.test(cur.text)||/<w:t[^>]*>\s*\(A\)/.test(cur.text))return;
     const prev=paras[i-1];if(!prev||!/<w:t[\s\S]*\(A\)/.test(prev.text))return;
+    if(inTextBox(prev.start))return;
     const run=(cur.text.match(/<w:r\b[^>]*>[\s\S]*?<wp:inline\b[\s\S]*?<\/w:r>/g)||[]).join('');
     if(!run)return;
     const moved='<w:r><w:br/></w:r>'+run+'<w:r><w:br/></w:r>';
