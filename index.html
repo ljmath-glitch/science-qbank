@@ -843,7 +843,7 @@
         <li>上標／下標（右上、右下）：<code>$x^{2}$</code>、<code>$x_{2}$</code></li>
         <li>左上／左下／右上／右下四角標：<code>${}^{左上}_{左下}\mathrm{X}^{右上}_{右下}$</code>　例：同位素 <code>${}^{14}_{6}\mathrm{C}$</code></li>
         <li>單位表示法：<code>$30\,\mathrm{m/s}$</code>（數字與單位間用 <code>\,</code> 空一小格）</li>
-        <li>溫度：<code>$25^\circ\mathrm{C}$</code>、<code>$100^\circ\mathrm{F}$</code></li>
+        <li>溫度：<code>$25\,{}^\circ\mathrm{C}$</code>、<code>$100\,{}^\circ\mathrm{F}$</code></li>
         <li>化學式：<code>$\mathrm{Cu^{2+}}$</code>、<code>$\mathrm{H_2O}$</code></li>
         <li>化學式箭頭：<code>$A\rightarrow B$</code>（可逆 <code>$\rightleftharpoons$</code>）</li>
         <li>箭頭上下方寫字：<code>$A\xrightarrow[下方]{上方}B$</code>　例：<code>$\mathrm{A}\xrightarrow[\Delta]{\text{催化劑}}\mathrm{B}$</code></li>
@@ -1345,7 +1345,7 @@
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
-  <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25^\\circ\\mathrm{C}$、$95^\\circ\\mathrm{F}$</code></div></div></div>
+  <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25\\,{}^\\circ\\mathrm{C}$、$95\\,{}^\\circ\\mathrm{F}$</code></div></div></div>
   <div class="pv-char-panel noprint" id="pvCharPanel"></div>
   <div class="pv-sheet" id="pvSheet"></div>
   <input id="pvInlineImage" type="file" accept="image/*" hidden onchange="pvInlineImageChange(this)">
@@ -4054,8 +4054,8 @@ function togglePvCharPanel(force){
       +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="_pvInsertLatex('\\rightarrow')" title="方程式反應箭頭">方程式 →</button>`
       +`<button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvLatexHelp()" title="LaTeX 與 Word 公式小抄">公式小抄</button>`
       +PV_CHARS.map(c=>`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('${c}')">${c}</button>`).join('')
-      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{C}$')" title="攝氏度">℃</button>`
-      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$^\\\\circ\\\\mathrm{F}$')" title="華氏度">℉</button>`;
+      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$\\\\,{}^\\\\circ\\\\mathrm{C}$')" title="攝氏度">℃</button>`
+      +`<button type="button" onmousedown="event.preventDefault()" onclick="_pvInsertText('$\\\\,{}^\\\\circ\\\\mathrm{F}$')" title="華氏度">℉</button>`;
     box.dataset.built='1';
   }
   box.classList.toggle('show',show);
@@ -4483,6 +4483,9 @@ function fixLatex(text){
     // 修正 \ext{} → \text{}、\rac{} → \frac{}（AI 有時只漏打一個字母）
     fixed=fixed.replace(/\\ext\{/g,'\\text{');
     fixed=fixed.replace(/\\rac\{/g,'\\frac{');
+    // 溫度：細空格後緊接上標會讓 KaTeX 找不到底而渲染失敗（$25\,^\circ$ 會壞成「25,℃」）。
+    // 在空格指令與 ^ 之間補一個空群組 {} 作為底，等效於標準溫度寫法 $25\,{}^\circ\mathrm{C}$。
+    fixed=fixed.replace(/(\\[,;:! ])\s*\^(\s*(?:\\circ\b|\{\s*\\circ\s*\}))/g,'$1{}^$2');
     return '$'+fixed+'$';
   });
 }
@@ -4902,7 +4905,18 @@ function wzSchoolPopulateFilters(){
   _wzFillSel('wzSfSem','全部學期',[...new Set(pool.map(_wzItemSem).filter(Boolean))].sort());
   _wzFillSel('wzSfRound','全部段考次',[...new Set(pool.map(_wzItemRound).filter(Boolean))].sort(byOrd(rOrd)));
 }
-function wzSchoolFilterChange(){wzBuildSchoolTree();}
+function wzSchoolFilterChange(){
+  // Step 1 換篩選條件（年級／學年／學期／段考次）時，若先前已勾過考卷，提醒是否清除，
+  // 避免不在目前篩選範圍的考卷／題目悄悄累積（WZ_SCHOOLSCOPE 的 key 不受樹是否顯示影響）。
+  if(WZ_SCHOOLSCOPE.size>0&&!WZ_CLEARPROMPT_OFF){
+    if(confirm('你更換了篩選條件，先前已勾選了 '+WZ_SCHOOLSCOPE.size+' 份考卷（可能含不在目前範圍內的）。\n要清除先前已勾選的考卷與題目、重新選嗎？\n\n【確定】清除　　【取消】保留（之後不再提醒，直到你再勾新考卷）')){
+      WZ_SCHOOLSCOPE.clear();PICKS.clear();
+    }else{
+      WZ_CLEARPROMPT_OFF=true;
+    }
+  }
+  wzBuildSchoolTree();
+}
 function wzBuildSchoolTree(){
   wzSchoolPopulateFilters();
   const f=_wzSchoolFilters();
@@ -4949,13 +4963,13 @@ function wzSchoolToggleCol(id){if(WZ_SCHOOLCOLLAPSED.has(id))WZ_SCHOOLCOLLAPSED.
 function wzSchoolToggleSchool(si){
   const g=WZ_SCHOOLTREE[si];if(!g)return;const keys=g.exams.map(e=>e.key);
   const allIn=keys.every(k=>WZ_SCHOOLSCOPE.has(k));
-  if(allIn)keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));else keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));
+  if(allIn)keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));else{keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));WZ_CLEARPROMPT_OFF=false;}
   wzRenderSchoolTree();
 }
-function wzSchoolToggleExam(key){if(WZ_SCHOOLSCOPE.has(key))WZ_SCHOOLSCOPE.delete(key);else WZ_SCHOOLSCOPE.add(key);wzRenderSchoolTree();}
+function wzSchoolToggleExam(key){if(WZ_SCHOOLSCOPE.has(key))WZ_SCHOOLSCOPE.delete(key);else{WZ_SCHOOLSCOPE.add(key);WZ_CLEARPROMPT_OFF=false;}wzRenderSchoolTree();}
 function wzSchoolAll(on){
   const keys=[];WZ_SCHOOLTREE.forEach(g=>g.exams.forEach(e=>keys.push(e.key)));
-  if(on)keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));else keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));
+  if(on){keys.forEach(k=>WZ_SCHOOLSCOPE.add(k));WZ_CLEARPROMPT_OFF=false;}else keys.forEach(k=>WZ_SCHOOLSCOPE.delete(k));
   wzRenderSchoolTree();
 }
 function wzScopeCount(){return _wzPool().filter(wzInScope).length;}
@@ -6320,9 +6334,10 @@ function buildPrompt(){const syl=SYL_RAW;
     ✓ 燒杯中有 $12$ 顆分子　　　　　　　✗ 燒杯中有12顆分子
     ⚠️ 例外（不要包 $...$）：題號、年度／學年學期（如112年、114上）、選項代號(A)(B)(C)(D)
     ⚠️ 溫度一律用 KaTeX 度數格式，禁止用裸字「℃」「℉」「°C」「°F」「度C」「度F」
-    ✓ 水溫 $25^\\circ\\mathrm{C}$　　✗ $25$℃、25℃、$25\\,\\text{℃}$
-    ✓ $32^\\circ\\mathrm{F}$　　　　✗ $32$℉、32℉、$32\\,^{\\circ}F$、$32°F$
-    ✓ 原文「華氏32度」→ $32^\\circ\\mathrm{F}$（遇到「華氏」字樣，改寫成數字加 $^\\circ\\mathrm{F}$，不保留「華氏」中文）
+    ✓ 水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ $25$℃、25℃、$25^\\circ\\mathrm{C}$（缺 \\,{}）、$25\\,\\text{℃}$
+    ✓ $32\\,{}^\\circ\\mathrm{F}$　　　　✗ $32$℉、32℉、$32^\\circ\\mathrm{F}$（缺 \\,{}）、$32°F$
+    ⚠️ 數字與度數符號之間一律加細空格 \\,：格式固定為 $數字\\,{}^\\circ\\mathrm{C}$ 或 $數字\\,{}^\\circ\\mathrm{F}$（\\, 後面要接空群組 {}，否則 KaTeX 無法渲染）
+    ✓ 原文「華氏32度」→ $32\\,{}^\\circ\\mathrm{F}$（遇到「華氏」字樣，改寫成數字加 $\\,{}^\\circ\\mathrm{F}$，不保留「華氏」中文）
   ▸ 化學方程式整條在同一個 $...$，不可截斷
     ✓ $C_2H_5OH + 3O_2 \\rightarrow 2CO_2 + 3H_2O$
     ✓ 可逆反應用 \\rightleftharpoons
@@ -6341,7 +6356,7 @@ function buildPrompt(){const syl=SYL_RAW;
     ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
     ✗ v=d/t（無$）         →　✓ $v=\\frac{d}{t}$
     ✗ 30公尺（裸數字無$）  →　✓ $30$\\,\\text{公尺}
-    ✗ 華氏32度 / 32°F / $32$℉  →　✓ $32^\\circ\\mathrm{F}$
+    ✗ 華氏32度 / 32°F / $32$℉  →　✓ $32\\,{}^\\circ\\mathrm{F}$
   ▸ ⚠️ 禁止在數字與 \\text{} 之間插入逗號（ChatGPT 常犯此錯誤）
     ✗ $29,\\text{ g/mol}$　→　✓ $29\\text{ g/mol}$
     ✗ $2,\\text{cm}$      →　✓ $2\\text{cm}$
@@ -7248,7 +7263,7 @@ function buildPromptHS(){
     ✓ $30$\\,\\text{公尺}　✗ 30公尺（裸數字無$）
     ⚠️ 例外（不要包）：題號、年度／學年學期、選項代號(A)(B)(C)(D)
     ⚠️ 溫度一律用 KaTeX 度數格式，禁止用裸字「℃」「℉」「°C」「°F」
-    ✓ 水溫 $25^\\circ\\mathrm{C}$　　✗ $25$℃、25℃
+    ✓ 水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ $25$℃、25℃、$25^\\circ\\mathrm{C}$（缺 \\,{}）
   ▸ 化學方程式整條在同一個 $...$，不可截斷
   ▸ 所有 LaTeX 指令必須有反斜線（\\times \\cdot \\frac \\rightarrow 等）
   ▸ 常見錯誤對照（禁止使用左欄，必須用右欄）：
@@ -7664,7 +7679,7 @@ async function callOllama(sys,msg,baseUrl,model,imgs=[]){
   if(!r.ok){const e=await r.json().catch(()=>({error:{message:r.statusText}}));throw new Error(e.error?.message||r.statusText);}
   return (await r.json()).choices[0].message.content.trim();
 }
-function solutionWritingRules(){return "你是臺灣國中自然科教師。請使用繁體中文，依題號一次完成整份考卷的詳解。\n【內容原則】\n只使用國中課綱教過的概念與講法，不使用高中公式或正式定義。題幹、圖片、選項或條件不足時，在相關內容標示「需人工確認」，不得捏造。有提供答案時，先獨立核對題意、圖表與計算，確認詳解能支持答案；若有衝突，標示「需人工確認」，不可硬湊理由。未提供答案且資訊充分時，自行判斷，先寫「【AI 判斷答案】X」；資訊不足時不猜答案。\n【詳解格式與選擇原則】\n只保留【詳解】及其內容，不寫【解題關鍵】或【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。先判斷解題所需的說明形式，不因題目有四個選項就一律分項，也不一律合併：\n一、計算題：需要計算才能得到答案，包括數值選項題，只寫一段統一詳解，交代公式、代入、計算結果與單位，不逐一解說選項。\n二、同一觀念可完整判斷的題目：同一個概念、判斷或計算能在一段交代清楚時，整段說明，必要時直接指出關鍵差異，不重複列出各選項。例如質量與長度單位辨認、估計值位置、同一圖表的密度大小排序。\n三、需要逐選項判斷的題目：各選項涉及不同觀念、不同實驗操作或情境、不同錯誤原因，或只解釋答案會漏掉其他選項的重要迷思時，依原題實際選項數量逐項說明，不自行增加選項。不能為求簡短省略必要的判斷理由；也不能為了分項把同一理由重複多次。\n逐選項格式為 (A)正確：說明判斷原因。或 (B)錯誤：說明錯在哪裡及正確觀念。選項標籤與文字間不留空格。每個選項約40～70字、1～2行，以清楚解釋原因為準；簡單理由可更短，不只給結論，也不要為湊字數冗長敘述。\n四、共同說明加逐選項：確實有多個選項共用且能減少重複的概念或計算，才在分項前加入共同說明。沒有共同說明就直接從第一個選項開始，不輸出空白段落、空標題或「無」等佔位內容。只有統一詳解時，不輸出任何選項標籤或空白選項欄位。\n每段說明必須完整，不用「同(A)」「同上」取代理由，也不能只剩「同」等斷句。\n【否定問法】\n「正確／錯誤」表示選項敘述本身的真偽，不代表是否應選。問「何者錯誤、不正確、不是、不可能」等題目時，答案應對應標為「錯誤」的選項；一般問法答案對應標為「正確」的選項。禁止把「被選為答案」當作「敘述正確」，不得寫「正確：符合題目所問的有誤」。多選題必須核對全部答案字母。\n【公式規則】\n特殊公式使用單錢號 $...$ 純文字 LaTeX。分數、根號、科學記號、上下標、希臘字母、特殊溫度符號等需要排版時才使用。一般數字和單位直接寫文字，例如12、60g、5cm/s，不包錢號。只包需要排版的部分，例如 $\\lambda$=2cm。含分數的完整算式可整段包住，例如 $v=\\frac{120}{4}=30$cm/s。不使用雙錢號、Markdown標題或粗體，不產出Word內建方程式或OMML。LaTeX括號必須對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。\n【交付檢查】\n逐題確認答案、計算結果和選項判斷一致。否定題核對「錯誤」選項，一般題核對「正確」選項。所有資訊不足或推理衝突處均標示「需人工確認」。最後檢查說明形式：同一觀念不重複分項，不同觀念不過度合併，沒有內容的共同說明或選項欄位不要輸出。";}
+function solutionWritingRules(){return "你是臺灣國中自然科教師。請使用繁體中文，依題號一次完成整份考卷的詳解。\n【內容原則】\n只使用國中課綱教過的概念與講法，不使用高中公式或正式定義。題幹、圖片、選項或條件不足時，在相關內容標示「需人工確認」，不得捏造。有提供答案時，先獨立核對題意、圖表與計算，確認詳解能支持答案；若有衝突，標示「需人工確認」，不可硬湊理由。未提供答案且資訊充分時，自行判斷，先寫「【AI 判斷答案】X」；資訊不足時不猜答案。\n【詳解格式與選擇原則】\n只保留【詳解】及其內容，不寫【解題關鍵】或【觀念補充】，不重複題幹、題號或答案欄（答案由系統另列）。先判斷解題所需的說明形式，不因題目有四個選項就一律分項，也不一律合併：\n一、計算題：需要計算才能得到答案，包括數值選項題，只寫一段統一詳解，交代公式、代入、計算結果與單位，不逐一解說選項。\n二、同一觀念可完整判斷的題目：同一個概念、判斷或計算能在一段交代清楚時，整段說明，必要時直接指出關鍵差異，不重複列出各選項。例如質量與長度單位辨認、估計值位置、同一圖表的密度大小排序。\n三、需要逐選項判斷的題目：各選項涉及不同觀念、不同實驗操作或情境、不同錯誤原因，或只解釋答案會漏掉其他選項的重要迷思時，依原題實際選項數量逐項說明，不自行增加選項。不能為求簡短省略必要的判斷理由；也不能為了分項把同一理由重複多次。\n逐選項格式為 (A)正確：說明判斷原因。或 (B)錯誤：說明錯在哪裡及正確觀念。選項標籤與文字間不留空格。每個選項約40～70字、1～2行，以清楚解釋原因為準；簡單理由可更短，不只給結論，也不要為湊字數冗長敘述。\n四、共同說明加逐選項：確實有多個選項共用且能減少重複的概念或計算，才在分項前加入共同說明。沒有共同說明就直接從第一個選項開始，不輸出空白段落、空標題或「無」等佔位內容。只有統一詳解時，不輸出任何選項標籤或空白選項欄位。\n每段說明必須完整，不用「同(A)」「同上」取代理由，也不能只剩「同」等斷句。\n【否定問法】\n「正確／錯誤」表示選項敘述本身的真偽，不代表是否應選。問「何者錯誤、不正確、不是、不可能」等題目時，答案應對應標為「錯誤」的選項；一般問法答案對應標為「正確」的選項。禁止把「被選為答案」當作「敘述正確」，不得寫「正確：符合題目所問的有誤」。多選題必須核對全部答案字母。\n【公式規則】\n特殊公式使用單錢號 $...$ 純文字 LaTeX。分數、根號、科學記號、上下標、希臘字母、特殊溫度符號等需要排版時才使用。溫度一律寫成 $25\\,{}^\\circ\\mathrm{C}$ 或 $32\\,{}^\\circ\\mathrm{F}$ 格式（數字與度數符號間加細空格 \\,，\\, 後接空群組 {}），不用裸字℃℉或°C、°F。一般數字和單位直接寫文字，例如12、60g、5cm/s，不包錢號。只包需要排版的部分，例如 $\\lambda$=2cm。含分數的完整算式可整段包住，例如 $v=\\frac{120}{4}=30$cm/s。不使用雙錢號、Markdown標題或粗體，不產出Word內建方程式或OMML。LaTeX括號必須對稱，避免中文下標。化學式上下標可用LaTeX，反應條件箭頭用 \\xrightarrow，不用overset搭配longrightarrow。\n【交付檢查】\n逐題確認答案、計算結果和選項判斷一致。否定題核對「錯誤」選項，一般題核對「正確」選項。所有資訊不足或推理衝突處均標示「需人工確認」。最後檢查說明形式：同一觀念不重複分項，不同觀念不過度合併，沒有內容的共同說明或選項欄位不要輸出。";}
 function makeSolPrompt(q,ans,meta,groupCtx){
   const sys=solutionWritingRules();
   const example="【格式範例：計算題】\n【詳解】\n先以路程除以所需時間求平均速率，代入得 $v=\\frac{120}{4}=30$cm/s，因此選擇數值為30cm/s的選項。";
@@ -8389,7 +8404,7 @@ function copyModalTA(id,btn){
 function normalizeWordLatex(text){
   let s=String(text==null?'':text).replace(/\\+%/g,'%');
   // 僅辨識攝氏單位，不把角度的 ^\circ 或化學元素 C 當成溫度。
-  s=s.replace(/(?:\{\})?(?:\^\s*\{\s*\\+circ\s*\}|\^\s*\\+circ\b|\\+degree\b|\^?°)\s*(?:\\+(?:mathrm|text)\s*\{\s*C\s*\}|C(?![a-zA-Z]))/g,'℃');
+  s=s.replace(/(?:(?:\\+[,;:! ]|\{\})\s*)*(?:\^\s*\{\s*\\+circ\s*\}|\^\s*\\+circ\b|\\+degree\b|\^?°)\s*(?:\\+(?:mathrm|text)\s*\{\s*C\s*\}|C(?![a-zA-Z]))/g,'℃');
   s=s.replace(/\\+(?:mathrm|text)\s*\{\s*℃\s*\}/g,'℃');
   // 獨立的「數值＋℃」不需要 MathType；複合算式仍保留原本的 $...$。
   s=s.replace(/\$(\s*(?:[+−-]?\d+(?:\.\d+)?\s*)?℃\s*)\$/g,(_match,value)=>value.trim());
