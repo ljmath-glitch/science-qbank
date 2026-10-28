@@ -8577,13 +8577,10 @@ function _preOptLen(s){let n=0;for(const ch of String(s)){n+=(ch.codePointAt(0)>
 // （標籤約 1.5em、再保留 1em）才可放在選項右側；否則一律在全部選項後靠右 inline。
 // 高度由 Word 的實際 extent 再確認（超過選項區 1.6 倍即退回 inline）。
 function _defaultImagePlacement(images,raw,kind,heights){
-  if(!images||images.length!==1)return 'block';
-  const im=images[0],w=Math.max(5,Math.min(100,Number(im.layout&&im.layout.width)||Number(im.width)||65));if(w>42)return 'block';
-  const opts=String(raw||'').split(/\n(?=\([A-Ea-e]\))/).slice(1).filter(x=>/^\([A-Ea-e]\)/.test(x.trim()));
-  if(opts.length<2)return 'block';
-  const profile=_templateOptionProfile(kind||'pre'),avail=(profile.W||65.65)*(100-w)/100-1;
-  const need=Math.max(...opts.map(x=>_preOptLen(x.replace(/^\([A-Ea-e]\)\s*/,''))+2.5));
-  const h=heights&&heights[0];return need<=avail&&(!h||h<=opts.length*20*1.6)?'beside':'block';
+  // 使用者要求：匯出與預覽的圖片一律「置中、自成一行」，不要「排在選項旁」(beside)
+  // 也不要「靠右浮動文繞圖」。因此一律回傳 'block'（block 圖在預覽置中、在 Word 由
+  // _preCenterInlineImages 拆成自己的置中段落）。手動拖曳過位置的圖仍可浮動（manual override）。
+  return 'block';
 }
 function _templateOptionProfile(kind){
   if(kind==='abk'){
@@ -8886,13 +8883,19 @@ function _preCenterInlineImages(xml){
     const close='</w:p>';
     const pp=(p.match(/<w:pPr>[\s\S]*?<\/w:pPr>/)||[])[0]||'';
     const body=p.slice(open.length,p.length-close.length).replace(pp,'');
-    const im=(body.match(/<w:r\b[^>]*>[\s\S]*?<wp:inline\b[\s\S]*?<\/w:r>/)||[])[0];
+    // 只抓「圖片自己那個 run」：第一段 [\s\S]*? 不得跨過 </w:r>，否則會從題幹第一個 run 一路吃到圖，
+    // 導致整題（題幹＋選項）被搬進置中段落、還掉了題號（即『有些題沒題號又置中』的來源）。
+    const im=(body.match(/<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<wp:inline\b[\s\S]*?<\/w:r>/)||[])[0];
     if(!im)return p;
     const at=body.indexOf(im),before=body.slice(0,at),after=body.slice(at+im.length);
-    const clean=(pp||'<w:pPr></w:pPr>').replace(/<w:numPr>[\s\S]*?<\/w:numPr>/,'').replace(/<w:keepLines\b[^>]*\/>/g,'');
+    const baseClean=(pp||'<w:pPr></w:pPr>').replace(/<w:numPr>[\s\S]*?<\/w:numPr>/,'').replace(/<w:keepLines\b[^>]*\/>/g,'');
+    // 圖片置中段落：先移除既有的 w:jc／懸吊左縮排／選項定位點（否則圖會被原本左縮排、tab 推開而非真的置中），
+    // 再把 w:jc=center 插在「rPr 之前」（符合 pPr 子元素順序，避免重複或位置錯誤讓 Word 忽略）。
+    let centerPr=baseClean.replace(/<w:jc\b[^>]*\/>/g,'').replace(/<w:ind\b[^>]*\/>/g,'').replace(/<w:tabs>[\s\S]*?<\/w:tabs>/g,'');
+    centerPr=/<w:rPr>/.test(centerPr)?centerPr.replace('<w:rPr>','<w:jc w:val="center"/><w:rPr>'):centerPr.replace('</w:pPr>','<w:jc w:val="center"/></w:pPr>');
     const left=before?open+pp+before+close:'';
-    const center=open+clean.replace('</w:pPr>','<w:jc w:val="center"/></w:pPr>')+im+close;
-    const right=after?open+clean+after+close:'';
+    const center=open+centerPr+im+close;
+    const right=after?open+baseClean+after+close:'';
     return left+center+right;
   });
 }
@@ -9929,7 +9932,8 @@ async function downloadWordViaTemplate(kind,opts){
     if(kind==='pre'){
       xml2=_preApplyOptionTabs(xml2,kind);
       xml2=_preKeepQuestionTogether(xml2);
-      xml2=_preFloatQuestionImages(xml2,undefined,questionImageLayouts);
+      // 課前考改與 ABK 一致：圖片不再靠右浮動，改成拆成自己的置中段落（題幹/選項仍靠左、題號不變）。
+      xml2=_preCenterInlineImages(xml2);
     }
     if(kind==='abk'){
       xml2=_preApplyOptionTabs(xml2,kind);
@@ -9941,6 +9945,8 @@ async function downloadWordViaTemplate(kind,opts){
       xml2=_preCenterInlineImages(xml2);
       xml2=_abkFitMultilineTitle(xml2);
     }
+    // 防呆：圖片一律置中自成一行後不再使用「小圖旁」哨兵，殘留的一律清除。
+    xml2=xml2.split(PRE_IMG_SENTINEL).join('');
     // 教用版答案使用紅色文字方塊；題組文章內的文字方塊會被 _tplAnswerBoxes 略過。
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     renderedZip.file('word/document.xml',xml2);
