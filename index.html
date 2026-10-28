@@ -1073,6 +1073,20 @@
 #composer .wz-foot .btn{min-width:100px}
 #composer .wz-qlist{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;gap:8px}
 #composer .wz-q{display:block!important;box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer}
+#composer .wz-admin{margin-top:16px;border:1px solid #e6ddce;border-radius:10px;background:#fffdf9}
+#composer .wz-admin>summary{cursor:pointer;padding:9px 14px;font-size:13px;font-weight:700;color:#8a7d6b;list-style:none}
+#composer .wz-admin>summary::-webkit-details-marker{display:none}
+#composer .wz-admin[open]>summary{border-bottom:1px solid #eee3d3;color:#6e5a3c}
+#composer .wz-admin-body{padding:12px 14px 14px}
+#composer .wz-admin-title{font-size:14px;font-weight:800;color:var(--ink)}
+#composer .wz-admin-desc{margin:4px 0 10px;font-size:12.5px;color:#7a6f62;line-height:1.7}
+#composer .wz-admin-actions{display:flex;gap:8px;flex-wrap:wrap}
+#composer .wz-ai-btn{font-family:inherit;font-size:13.5px;font-weight:700;line-height:1;padding:9px 16px;border-radius:8px;border:1px solid #d8cbb6;background:#fff;color:#5a5148;cursor:pointer;white-space:nowrap}
+#composer .wz-ai-btn:hover{background:#faf4ea}
+#composer .wz-ai-btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+#composer .wz-ai-btn.primary:hover{filter:brightness(1.08)}
+#composer .wz-ai-btn:disabled{opacity:.55;cursor:wait}
+#composer .wz-admin-status{margin-top:10px;font-size:12.5px;color:#7a6f62;display:flex;flex-direction:column;gap:2px}
 #composer .wz-q.wz-aibad .wz-qtext,#composer .wz-q.wz-aibad .wz-qfull,#composer .wz-q.wz-aibad .wz-qmeta{color:#d32020!important}
 #composer .wz-q.wz-aibad .wz-qtext *,#composer .wz-q.wz-aibad .wz-qfull *{color:#d32020!important}
 #composer .wz-q.picked{border-color:var(--red);background:#fdf5f4}
@@ -1226,11 +1240,18 @@
           <div class="wz-score-head"><b>配分設定</b><span class="wz-set-note">各題型每題配分可調，共計即時計算</span><button type="button" class="btn sm" style="margin-left:auto" onclick="wzAutoScore()">↻ 重新配分</button></div>
           <div id="wzScoreTable"></div>
         </div>
-        <div class="wz-set-row" style="margin-top:12px">
-          <button type="button" class="btn" id="wzAiCheckBtn" onclick="wzAiCheck()">🔍 AI 健檢（Gemini）</button>
-          <button type="button" class="btn sm" onclick="wzBridgeSetup()" title="改用本機 Antigravity，不耗 API token">⚙ 本機橋接</button>
-          <span id="wzBridgeInfo" class="wz-set-note"></span><span id="wzAiCheckInfo" class="wz-set-note">用 Gemini 檢查選到的題：文字、選項、答案、圖片。有問題會紅字標示並自動標待確認，仍可直接出卷。</span>
-        </div>
+        <details class="wz-admin" id="wzAdminTools" ontoggle="wzAdminToggle(this)">
+          <summary>🛠 管理員工具</summary>
+          <div class="wz-admin-body">
+            <div class="wz-admin-title">AI 題目健檢</div>
+            <p class="wz-admin-desc">用 Gemini 檢查選到的題：文字、選項、答案、圖片。有問題的題會紅字標示並自動標為待確認；不影響出卷。</p>
+            <div class="wz-admin-actions">
+              <button type="button" class="wz-ai-btn primary" id="wzAiCheckBtn" onclick="wzAiCheck()">開始健檢</button>
+              <button type="button" class="wz-ai-btn" onclick="wzBridgeSetup()" title="改用本機 Antigravity，不耗 API token">本機橋接設定</button>
+            </div>
+            <div class="wz-admin-status"><span id="wzBridgeInfo"></span><span id="wzAiCheckInfo"></span></div>
+          </div>
+        </details>
         <button type="button" class="btn primary" style="margin-top:14px" onclick="wzToExport()">開啟預覽與輸出 →</button>
       </div>
     </section>
@@ -5415,7 +5436,7 @@ function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 W
 function wzToExport(){
   if(!PICKS.size){alert('尚未選題');return;}
   // 匯出前提示 Gemini 健檢：非強制；沒設金鑰或已檢查過同一批題就直接略過。
-  if(!wzAiCheckBusy&&_wzHasGeminiKey()&&WZ_AICHECK_SIG!==_wzPickSig()){
+  if(!wzAiCheckBusy&&_wzIsAdmin()&&_wzHasGeminiKey()&&WZ_AICHECK_SIG!==_wzPickSig()){
     if(confirm('要先用 Gemini 檢查這次選的題（文字／選項／答案／圖片）嗎？\n\n確定＝先檢查（有問題會紅字標示，檢查完仍可再按匯出）\n取消＝直接匯出')){wzAiCheck();return;}
   }
   wzDoExport();
@@ -5427,6 +5448,16 @@ function wzDoExport(){
   if(typeof openPaperDlg==='function')openPaperDlg();
 }
 /* ===== 匯出前 Gemini 題目健檢（非阻擋） ===== */
+function _wzIsAdmin(){try{return sessionStorage.getItem('qbank_admin_ok')==='1';}catch(e){return false;}}
+async function wzAdminToggle(d){
+  if(!d.open||_wzIsAdmin())return;
+  let pw=prompt('管理員工具：請輸入管理員密碼');
+  if(pw==null){d.open=false;return;}
+  let ok=false;
+  try{const ann=window.QAnnounce?await window.QAnnounce.get():null;const real=String((ann&&ann.pw)||(window.QAnnounce&&window.QAnnounce.DEFAULT_PW)||'');ok=!!real&&pw.trim()===real;}catch(e){}
+  if(ok){try{sessionStorage.setItem('qbank_admin_ok','1');}catch(e){}}
+  else{alert('密碼不對。');d.open=false;}
+}
 let WZ_AICHECK_BAD=new Set(),WZ_AICHECK_WHY={},WZ_AICHECK_SIG='',wzAiCheckBusy=false;
 function _wzPickSig(){return [...PICKS].sort().join(',');}
 function _wzHasGeminiKey(){if(_wzBridge())return true;try{return !!(AI_CFG&&AI_CFG.gemini)||!!localStorage.getItem('aiKey_gemini');}catch(e){return !!(AI_CFG&&AI_CFG.gemini);}}
@@ -5480,6 +5511,7 @@ async function _wzAiCheckOne(it,no,key){
 }
 async function wzAiCheck(){
   if(wzAiCheckBusy)return;
+  if(!_wzIsAdmin()){alert('此功能僅限管理員。');return;}
   const items=pickedItems().filter(it=>it&&it.type!=='passage');
   if(!items.length){alert('尚未選題');return;}
   let key='';if(_wzBridge())key='__bridge__';else{try{key=getAIKey('gemini');}catch(e){console.warn(e);}}
