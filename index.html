@@ -4492,28 +4492,38 @@ function fixControlCharEatenLatex(text){
   out=out.replace(/([^f\\])rac\{/g,function(m,pre){return pre+'\\frac{'}).replace(/^rac\{/,'\\frac{');
   return out;
 }
+// 共用：修正 $...$ 內常見的指令錯字／漏反斜線。網頁渲染（KaTeX）與 Word 匯出（MathType）共用，
+// 確保兩邊都轉得出來。只處理一段 $...$ 的「內容」，不含錢號。只在數學區塊內動作，不碰一般中文/英文。
+// KaTeX 支援的指令清單（不含 \Alpha \Beta 這類無效的大寫希臘，那些本來就該直接寫 A、B）。
+const _TEX_CMDS=['varepsilon','varphi','vartheta','varrho','varpi','varsigma',
+  'alpha','beta','gamma','delta','epsilon','zeta','eta','theta','iota','kappa','lambda','mu','nu','xi','pi','rho','sigma','tau','upsilon','phi','chi','psi','omega',
+  'Gamma','Delta','Theta','Lambda','Xi','Pi','Sigma','Upsilon','Phi','Psi','Omega',
+  'times','div','cdot','pm','mp','leq','geq','neq','approx','simeq','cong','propto','infty','circ','degree','angle','perp','parallel',
+  'leftrightarrow','rightleftharpoons','Rightarrow','rightarrow','leftarrow'];
+function fixTexTypos(inner){
+  var f=String(inner==null?'':inner);
+  // ① 常見拼錯（會害 KaTeX 與 MathType 都轉不出來）：lamda 漏了 b 等
+  f=f.replace(/\\?lamda(?![a-zA-Z])/g,'\\lambda')
+     .replace(/\\?aplha(?![a-zA-Z])/g,'\\alpha')
+     .replace(/\\?gama(?![a-zA-Z])/g,'\\gamma')
+     .replace(/\\?thita(?![a-zA-Z])/g,'\\theta')
+     .replace(/\\?omiga(?![a-zA-Z])/g,'\\omega')
+     .replace(/\\?sigmma(?![a-zA-Z])/g,'\\sigma');
+  // ② 漏反斜線：成詞的指令名（前後都不是字母、前面不是反斜線）補上反斜線
+  _TEX_CMDS.forEach(function(cmd){
+    f=f.replace(new RegExp('(?<![A-Za-z\\\\])'+cmd+'(?![A-Za-z])','g'),'\\'+cmd);
+  });
+  // ③ \ext{}→\text{}、\rac{}→\frac{}（AI 有時只漏打一個字母）
+  f=f.replace(/\\ext\{/g,'\\text{').replace(/\\rac\{/g,'\\frac{');
+  // ④ 溫度：細空格後緊接上標會讓 KaTeX 找不到底（$25\,^\circ$ 會壞成「25,℃」）→ 補空群組 {} 當底
+  f=f.replace(/(\\[,;:! ])\s*\^(\s*(?:\\circ\b|\{\s*\\circ\s*\}))/g,'$1{}^$2');
+  return f;
+}
 function fixLatex(text){
   text=fixControlCharEatenLatex(text);
   return text.replace(/\$([^$]+)\$/g,function(match,inner){
-    var fixed=inner;
-    // 移除 $...$ 內的換行
-    fixed=fixed.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim();
-    // 修正常見 AI 錯誤：少了反斜線的指令
-    fixed=fixed.replace(/(?<!\\)times/g,'\\times');      // times → \times
-    fixed=fixed.replace(/(?<!\\)cdot/g,'\\cdot');        // cdot → \cdot
-    fixed=fixed.replace(/(?<![a-zA-Z\\])rightarrow/g,'\\rightarrow'); // rightarrow → \rightarrow（不破壞 \longrightarrow、\xrightarrow 等）
-    fixed=fixed.replace(/(?<![a-zA-Z\\])leftarrow/g,'\\leftarrow');
-    fixed=fixed.replace(/(?<!\\)rightleftharpoons/g,'\\rightleftharpoons');
-    fixed=fixed.replace(/(?<!\\)alpha/g,'\\alpha');
-    fixed=fixed.replace(/(?<!\\)beta/g,'\\beta');
-    fixed=fixed.replace(/(?<!\\)Delta/g,'\\Delta');
-    fixed=fixed.replace(/(?<!\\)degree/g,'\\degree');
-    // 修正 \ext{} → \text{}、\rac{} → \frac{}（AI 有時只漏打一個字母）
-    fixed=fixed.replace(/\\ext\{/g,'\\text{');
-    fixed=fixed.replace(/\\rac\{/g,'\\frac{');
-    // 溫度：細空格後緊接上標會讓 KaTeX 找不到底而渲染失敗（$25\,^\circ$ 會壞成「25,℃」）。
-    // 在空格指令與 ^ 之間補一個空群組 {} 作為底，等效於標準溫度寫法 $25\,{}^\circ\mathrm{C}$。
-    fixed=fixed.replace(/(\\[,;:! ])\s*\^(\s*(?:\\circ\b|\{\s*\\circ\s*\}))/g,'$1{}^$2');
+    var fixed=inner.replace(/[\r\n]+/g,' ').replace(/  +/g,' ').trim(); // 移除 $...$ 內的換行
+    fixed=fixTexTypos(fixed);
     return '$'+fixed+'$';
   });
 }
@@ -8452,7 +8462,10 @@ function copyModalTA(id,btn){
 // Word 內由使用者的 MathType 工具轉換 TeX：保留界定符、指令與巢狀括號。
 // 百分號與攝氏單位直接輸出可讀符號；其餘公式不可刪除反斜線。
 function normalizeWordLatex(text){
-  let s=String(text==null?'':text).replace(/\\+%/g,'%');
+  let s=String(text==null?'':text);
+  // 先修正每段 $...$ 內的指令錯字／漏反斜線（與網頁渲染共用 fixTexTypos），確保 MathType 轉得出來。
+  if(typeof fixTexTypos==='function')s=s.replace(/\$([^$]+)\$/g,(m,inner)=>'$'+fixTexTypos(inner)+'$');
+  s=s.replace(/\\+%/g,'%');
   // 僅辨識攝氏單位，不把角度的 ^\circ 或化學元素 C 當成溫度。
   s=s.replace(/(?:(?:\\+[,;:! ]|\{\})\s*)*(?:\^\s*\{\s*\\+circ\s*\}|\^\s*\\+circ\b|\\+degree\b|\^?°)\s*(?:\\+(?:mathrm|text)\s*\{\s*C\s*\}|C(?![a-zA-Z]))/g,'℃');
   s=s.replace(/\\+(?:mathrm|text)\s*\{\s*℃\s*\}/g,'℃');
