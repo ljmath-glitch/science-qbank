@@ -1244,10 +1244,11 @@
           <summary>🛠 管理員工具</summary>
           <div class="wz-admin-body">
             <div class="wz-admin-title">AI 題目健檢</div>
-            <p class="wz-admin-desc">用 Gemini 檢查選到的題：文字、選項、答案、圖片。有問題的題會紅字標示並自動標為待確認；不影響出卷。</p>
+            <p class="wz-admin-desc">用 Gemini 檢查選到的題：文字、選項、答案、圖片。有問題的題會紅字標示並自動標為待確認；不影響出卷。使用 Gemini API 需輸入你自己的 API Key（只存在此瀏覽器）；管理員可改用本機橋接。</p>
             <div class="wz-admin-actions">
               <button type="button" class="wz-ai-btn primary" id="wzAiCheckBtn" onclick="wzAiCheck()">開始健檢</button>
               <button type="button" class="wz-ai-btn" onclick="wzBridgeSetup()" title="改用本機 Antigravity，不耗 API token">本機橋接設定</button>
+              <button type="button" class="wz-ai-btn" onclick="wzOwnGeminiKeySetup()">設定我的 Gemini 金鑰</button>
             </div>
             <div class="wz-admin-status"><span id="wzBridgeInfo"></span><span id="wzAiCheckInfo"></span></div>
           </div>
@@ -5451,7 +5452,28 @@ function wzDoExport(){
 /* ===== 匯出前 Gemini 題目健檢（非阻擋） ===== */
 let WZ_AICHECK_BAD=new Set(),WZ_AICHECK_WHY={},WZ_AICHECK_SIG='',wzAiCheckBusy=false;
 function _wzPickSig(){return [...PICKS].sort().join(',');}
-function _wzHasGeminiKey(){if(_wzBridge())return true;try{return !!(AI_CFG&&AI_CFG.gemini)||!!localStorage.getItem('aiKey_gemini');}catch(e){return !!(AI_CFG&&AI_CFG.gemini);}}
+function _wzHasGeminiKey(){if(_wzBridge())return true;try{return !!localStorage.getItem('aiKey_gemini');}catch(e){return false;}}
+// AI 健檢僅使用此瀏覽器自己的 Gemini 金鑰；絕不讀寫雲端共用 AI_CFG。
+function _wzOwnGeminiKey(){
+  let key='';try{key=localStorage.getItem('aiKey_gemini')||'';}catch(e){}
+  if(key.trim())return key.trim();
+  const input=prompt('請輸入你自己的 Gemini API Key\n取得網址：aistudio.google.com/apikey\n\n此金鑰只存在這個瀏覽器，不會上傳雲端。');
+  if(input==null){alert('尚未設定 Gemini 金鑰，已略過健檢；不影響出卷。');return '';}
+  key=input.trim();
+  if(!key){alert('尚未設定 Gemini 金鑰，已略過健檢；不影響出卷。');return '';}
+  try{localStorage.setItem('aiKey_gemini',key);}catch(e){alert('無法儲存 Gemini 金鑰，已略過健檢；不影響出卷。');return '';}
+  wzBridgeInfo();
+  return key;
+}
+function wzOwnGeminiKeySetup(){
+  let cur='';try{cur=localStorage.getItem('aiKey_gemini')||'';}catch(e){}
+  const input=prompt('請輸入你自己的 Gemini API Key\n取得網址：aistudio.google.com/apikey\n\n此金鑰只存在這個瀏覽器，不會上傳雲端。'+(cur?'\n目前已設定，輸入新的金鑰可更換。':'')+'\n留空並按確定＝清除目前金鑰。');
+  if(input==null)return;
+  const key=input.trim();
+  try{if(key)localStorage.setItem('aiKey_gemini',key);else localStorage.removeItem('aiKey_gemini');}catch(e){alert('無法更新 Gemini 金鑰。');return;}
+  wzBridgeInfo();
+  alert(key?'已儲存你的 Gemini 金鑰（只存在此瀏覽器）。':'已清除你的 Gemini 金鑰。');
+}
 // 本機 Antigravity 橋接（tools/agy_bridge.cjs + tailscale serve）：設定後健檢改走本機 agy，不耗 Gemini API token（圖片由橋接存檔讓 agy 讀檔判讀）
 function _wzBridge(){try{const o=JSON.parse(localStorage.getItem('qbank_agy_bridge')||'null');return o&&o.url&&o.token?o:null;}catch(e){return null;}}
 function wzBridgeSetup(){
@@ -5467,7 +5489,7 @@ function wzBridgeSetup(){
   wzBridgeInfo();
   fetch(String(o.url).replace(/\/+$/,'')+'/ping',{headers:{'x-bridge-token':o.token}}).then(r=>r.ok?alert('橋接連線成功！之後 AI 健檢會用你本機的 agy（含圖片）。'):alert('連得到但被拒絕，請重新複製連線碼。')).catch(()=>alert('已儲存，但現在連不到橋接。請確認 Mac 上「啟動AI橋接」視窗開著，且這台裝置有登入同一個 Tailscale。'));
 }
-function wzBridgeInfo(){const i=document.getElementById('wzBridgeInfo');if(i)i.textContent=_wzBridge()?'目前：本機 agy 橋接（免 API、含圖片）':'目前：Gemini API（含圖片）';}
+function wzBridgeInfo(){const i=document.getElementById('wzBridgeInfo');if(!i)return;let own=false;try{own=!!localStorage.getItem('aiKey_gemini');}catch(e){}i.textContent=_wzBridge()?'目前：本機 agy 橋接（免 API、含圖片）':own?'目前：Gemini API（使用自己的金鑰、含圖片）':'目前：尚未設定（可設自己的 Gemini 金鑰或本機橋接）';}
 async function _wzAiCall(sys,msg,key,imgs){
   const br=_wzBridge();
   if(!br)return callGemini(sys,msg,key,imgs);
@@ -5504,8 +5526,8 @@ async function wzAiCheck(){
   if(wzAiCheckBusy)return;
   const items=pickedItems().filter(it=>it&&it.type!=='passage');
   if(!items.length){alert('尚未選題');return;}
-  let key='';if(_wzBridge())key='__bridge__';else{try{key=getAIKey('gemini');}catch(e){console.warn(e);}}
-  if(!key){alert('沒有設定 Gemini 金鑰，已略過健檢。你仍可直接開啟預覽與輸出。');return;}
+  let key='';if(_wzBridge())key='__bridge__';else{try{key=_wzOwnGeminiKey();}catch(e){console.warn(e);}}
+  if(!key)return;
   wzAiCheckBusy=true;
   const btn=document.getElementById('wzAiCheckBtn'),info=document.getElementById('wzAiCheckInfo');
   if(btn)btn.disabled=true;
