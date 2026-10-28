@@ -1,6 +1,13 @@
 {
-  "build": "2026-10-28.13",
+  "build": "2026-10-28.14",
   "entries": [
+    {
+      "id": 66,
+      "date": "10/28",
+      "tag": "修正",
+      "title": "LaTeX 指令錯字／漏反斜線自動修正（網頁＋Word 匯出）",
+      "body": "系統現在會自動修正數學式 $...$ 裡常見的指令錯誤，網頁預覽（KaTeX）與 Word 匯出（MathType）都適用：① 拼錯如 lamda→\\lambda（漏 b）等；② 漏反斜線的指令會自動補上，例如 5^circ→5^\\circ、lambda→\\lambda、theta→\\theta、times/cdot/rightarrow 等希臘字母與運算符號；③ \\ext{}→\\text{}；④ 溫度 \\,^\\circ 自動補空群組。所以手打漏字、AI 產出漏反斜線的題目，顯示與轉檔都能正常。另把題庫既有 2 題詳解的 ^circ 錯字一併修正。"
+    },
     {
       "id": 65,
       "date": "10/28",
