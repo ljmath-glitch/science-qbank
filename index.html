@@ -1073,6 +1073,8 @@
 #composer .wz-foot .btn{min-width:100px}
 #composer .wz-qlist{display:grid!important;grid-template-columns:minmax(0,1fr)!important;width:100%;gap:8px}
 #composer .wz-q{display:block!important;box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;cursor:pointer}
+#composer .wz-q.wz-aibad .wz-qtext,#composer .wz-q.wz-aibad .wz-qfull,#composer .wz-q.wz-aibad .wz-qmeta{color:#d32020!important}
+#composer .wz-q.wz-aibad .wz-qtext *,#composer .wz-q.wz-aibad .wz-qfull *{color:#d32020!important}
 #composer .wz-q.picked{border-color:var(--red);background:#fdf5f4}
 #composer .wz-q input{margin-top:3px;width:17px;height:17px;flex-shrink:0;accent-color:var(--red)}
 #composer .wz-q .wz-qmeta{font-size:11px;color:#9a8f83;margin-bottom:2px}
@@ -1223,6 +1225,10 @@
         <div class="wz-score-wrap">
           <div class="wz-score-head"><b>配分設定</b><span class="wz-set-note">各題型每題配分可調，共計即時計算</span><button type="button" class="btn sm" style="margin-left:auto" onclick="wzAutoScore()">↻ 重新配分</button></div>
           <div id="wzScoreTable"></div>
+        </div>
+        <div class="wz-set-row" style="margin-top:12px">
+          <button type="button" class="btn" id="wzAiCheckBtn" onclick="wzAiCheck()">🔍 AI 健檢（Gemini）</button>
+          <span id="wzAiCheckInfo" class="wz-set-note">用 Gemini 檢查選到的題：文字、選項、答案、圖片。有問題會紅字標示並自動標待確認，仍可直接出卷。</span>
         </div>
         <button type="button" class="btn primary" style="margin-top:14px" onclick="wzToExport()">開啟預覽與輸出 →</button>
       </div>
@@ -4738,7 +4744,7 @@ function wzOpen(){
   var _l=document.getElementById('wzLoading');if(_l)_l.remove();
   if(!DB.length){alert('題庫尚未載入完成，請稍候再試');return;}
   WZ_STEP=1;WZ_TAB='pool';WZ_COLLAPSED=new Set();WZ_LEVEL='';WZ_SCOPE=new Set();WZ_UNITFILTER='';WZ_MONEXPANDED=new Set();
-  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_SCORE_TARGET=100;WZ_EXCLUDE=new Set();WZ_FMT=new Set();WZ_CLEARPROMPT_OFF=false;document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
+  WZ_SCORE={};WZ_SCORE_MANUAL=false;WZ_SCORE_TARGET=100;WZ_AICHECK_BAD=new Set();WZ_AICHECK_WHY={};WZ_AICHECK_SIG='';WZ_EXCLUDE=new Set();WZ_FMT=new Set();WZ_CLEARPROMPT_OFF=false;document.querySelectorAll('#wzFmtChips .wz-chip').forEach(b=>b.classList.remove('on'));   // 每次開精靈重置配分與過濾
   WZ_MODE='chapter';WZ_SCHOOLSCOPE=new Set();WZ_SCHOOLCOLLAPSED=new Set();  // 重置選題方式
   document.body.style.overflow='hidden';
   document.getElementById('composer').hidden=false;
@@ -5236,7 +5242,7 @@ function wzRenderList(){
   const html=items.slice(0,400).map(it=>{
     const d=effDiffLvl(it)||'未評分';const picked=PICKS.has(it.id);
     const meta=`${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}`;
-    return `<div class="wz-q${picked?' picked':''}" data-id="${it.id}">`
+    return `<div class="wz-q${picked?' picked':''}${WZ_AICHECK_BAD.has(it.id)?' wz-aibad':''}" data-id="${it.id}"${WZ_AICHECK_WHY[it.id]?` title="${esc(WZ_AICHECK_WHY[it.id])}"`:''}>`
       +`<div class="wz-qhead">`
       +`<input type="checkbox" ${picked?'checked':''} title="選入考卷" onclick="event.stopPropagation();wzPick('${it.id}')">`
       +`<div class="wz-qbody" onclick="wzToggleExpand('${it.id}')">`
@@ -5392,10 +5398,80 @@ function wzAfterBulkPick(){
 function wzOpenMix(){autoMix();} // 智慧組卷已改為在精靈開啟時以 WZ_SCOPE 為題源
 function wzToExport(){
   if(!PICKS.size){alert('尚未選題');return;}
+  // 匯出前提示 Gemini 健檢：非強制；沒設金鑰或已檢查過同一批題就直接略過。
+  if(!wzAiCheckBusy&&_wzHasGeminiKey()&&WZ_AICHECK_SIG!==_wzPickSig()){
+    if(confirm('要先用 Gemini 檢查這次選的題（文字／選項／答案／圖片）嗎？\n\n確定＝先檢查（有問題會紅字標示，檢查完仍可再按匯出）\n取消＝直接匯出')){wzAiCheck();return;}
+  }
+  wzDoExport();
+}
+function wzDoExport(){
   // 獨立精靈頁要在本頁接著開啟考卷預覽；只有點右上角離開才回題庫管理。
   if(WZ_EMBEDDED){document.getElementById('composer').hidden=true;document.body.style.overflow='';}
   else wzClose();
   if(typeof openPaperDlg==='function')openPaperDlg();
+}
+/* ===== 匯出前 Gemini 題目健檢（非阻擋） ===== */
+let WZ_AICHECK_BAD=new Set(),WZ_AICHECK_WHY={},WZ_AICHECK_SIG='',wzAiCheckBusy=false;
+function _wzPickSig(){return [...PICKS].sort().join(',');}
+function _wzHasGeminiKey(){try{return !!(AI_CFG&&AI_CFG.gemini)||!!localStorage.getItem('aiKey_gemini');}catch(e){return !!(AI_CFG&&AI_CFG.gemini);}}
+function _wzParseAiJson(raw){
+  const m=String(raw||'').match(/\{[\s\S]*\}/);if(!m)return null;
+  try{const o=JSON.parse(m[0]);return (o&&typeof o==='object')?o:null;}catch(e){return null;}
+}
+async function _wzAiCheckOne(it,no,key){
+  const gid=it.groupId,ps=gid&&PASSAGES[gid]?PASSAGES[gid]:null;
+  const imgs=[...(it.imgs||[]),...((ps&&ps.imgs)||[])].slice(0,6);
+  const sys='你是國中自然科（生物/理化/地科）資深審題老師。請檢查下面這一題是否有錯誤，從四個面向判斷：\n'
+    +'1. 題目文字：是否通順、有無亂碼或缺字、語意是否完整。\n'
+    +'2. 選項：選項是否完整、有無重複、是否與題幹對應。\n'
+    +'3. 答案：是否有答案、答案是否落在選項範圍內、答案是否合理正確。\n'
+    +'4. 圖片（若有附圖）：圖片是否與題目相符、是否缺圖或貼錯圖。\n'
+    +'只回傳 JSON，格式：{"ok": true/false, "issues": ["簡短問題1","簡短問題2"]}。沒有問題就回 {"ok": true, "issues": []}。問題描述要具體、精簡（每項 30 字內）。不要輸出 JSON 以外的任何文字。';
+  const clean=t=>{try{return stripRichMarks(t||'');}catch(e){return t||'';}};
+  const msg='【題號】'+no+'\n【領域/單元】'+(it.field||'')+' / '+(it.unit||'')+'＞'+(it.sub||'')+'\n'
+    +(ps&&ps.q?'【題組文章】'+clean(ps.q)+'\n':'')
+    +'【題目】'+clean(it.q||it.summary)+'\n【答案】'+(it.ans||'（無答案）')+'\n【詳解】'+(it.sol?clean(it.sol):'（無）')
+    +'\n（如有附圖請一併判讀圖片是否與題目相符）';
+  const raw=await callGemini(sys,msg,key,imgs);
+  const o=_wzParseAiJson(raw);
+  if(!o){console.warn('AI 健檢：無法解析回傳',it.id,raw);return null;}
+  const issues=Array.isArray(o.issues)?o.issues.map(x=>String(x).trim()).filter(Boolean):[];
+  return {bad:o.ok===false&&issues.length>0,issues};
+}
+async function wzAiCheck(){
+  if(wzAiCheckBusy)return;
+  const items=pickedItems().filter(it=>it&&it.type!=='passage');
+  if(!items.length){alert('尚未選題');return;}
+  let key='';try{key=getAIKey('gemini');}catch(e){console.warn(e);}
+  if(!key){alert('沒有設定 Gemini 金鑰，已略過健檢。你仍可直接開啟預覽與輸出。');return;}
+  wzAiCheckBusy=true;
+  const btn=document.getElementById('wzAiCheckBtn'),info=document.getElementById('wzAiCheckInfo');
+  if(btn)btn.disabled=true;
+  WZ_AICHECK_BAD=new Set();WZ_AICHECK_WHY={};
+  let done=0,fail=0,bad=0;
+  for(let i=0;i<items.length;i++){
+    const it=items[i];
+    if(info)info.textContent='檢查中 '+(i+1)+'/'+items.length+'…';
+    try{
+      const r=await _wzAiCheckOne(it,i+1,key);
+      if(!r){fail++;continue;}
+      done++;
+      if(r.bad){
+        bad++;WZ_AICHECK_BAD.add(it.id);WZ_AICHECK_WHY[it.id]=r.issues.join('；');
+        it.flag=true;
+        const old=String(it.basis||'');
+        const rest=/^\[回報\] AI健檢：/.test(old)?(old.indexOf('　')>=0?old.slice(old.indexOf('　')+1):''):old;
+        it.basis='[回報] AI健檢：'+r.issues.join('；')+(rest&&!/^\[回報\]/.test(rest)?'　'+rest:'');
+        try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)console.warn('AI 健檢標記存檔失敗',it.id,error);}catch(e){console.warn('AI 健檢標記存檔失敗',it.id,e);}
+      }
+    }catch(e){fail++;console.warn('AI 健檢失敗',it.id,e);}
+  }
+  wzAiCheckBusy=false;if(btn)btn.disabled=false;
+  WZ_AICHECK_SIG=_wzPickSig();
+  const msg='檢查 '+items.length+' 題'+(bad?'，發現 '+bad+' 題可能有問題，已標記為待確認並以紅字標示':'，未發現問題')+(fail?'；另有 '+fail+' 題檢查失敗或無法判定':'')+'。仍可直接匯出。';
+  if(info)info.textContent=msg;
+  if(typeof wzRenderList==='function')wzRenderList();
+  alert(msg);
 }
 
 /* ===== 考卷 ===== */
