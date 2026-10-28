@@ -9872,7 +9872,8 @@ async function downloadWordViaTemplate(kind,opts){
       // ABK 與課前考的題目段落同為 numId=100、縮排同為 left=567/hanging=425；可安全 keepLines。
       xml2=_preKeepQuestionTogether(xml2);
       // ABK 圖片保持 ImageModule 產生的 wp:inline（Inline with Text），並將圖片段落置中。
-      xml2=_preMoveInlineImagesBeforeOptions(xml2);
+      // 不在 ABK 範本的文字方塊之間搬移 drawing：Word 會拒絕「drawing object into a text box」。
+      // 圖片保留 ImageModule 原本的 inline 段落並置中，確保檔案可正常開啟。
       xml2=_preCenterInlineImages(xml2);
     }
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
