@@ -9798,7 +9798,8 @@ function _answerBoxXml(ans, digits){
    +'<wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="251680000" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1">'
    +'<wp:simplePos x="0" y="0"/>'
    +'<wp:positionH relativeFrom="column"><wp:posOffset>'+offx+'</wp:posOffset></wp:positionH>'
-   +'<wp:positionV relativeFrom="line"><wp:posOffset>'+ANSBOX.offY+'</wp:posOffset></wp:positionV>'
+   // 以題目段落而非目前文字行為基準；題內圖片造成額外行高時，答案仍固定對齊題號括弧。
+   +'<wp:positionV relativeFrom="paragraph"><wp:posOffset>'+ANSBOX.offY+'</wp:posOffset></wp:positionV>'
    +'<wp:extent cx="'+ANSBOX.w+'" cy="'+ANSBOX.h+'"/>'
    +'<wp:effectExtent l="0" t="0" r="0" b="0"/><wp:wrapNone/>'
    +'<wp:docPr id="'+id+'" name="ans'+id+'"/><wp:cNvGraphicFramePr/>'
