@@ -8879,6 +8879,18 @@ function _preCenterInlineImages(xml){
     return left+center+right;
   });
 }
+// ABK 標題位於範本文字方塊；多行標題時擴大文字方塊並啟用自動適應，
+// 避免第二行被固定高度裁掉或壓到下方分隔線。
+function _abkFitMultilineTitle(xml){
+  return String(xml||'').replace(/<wp:anchor\b[\s\S]*?<\/wp:anchor>/g,anchor=>{
+    if(!/<w:txbxContent\b[\s\S]*?<w:br\s*\/?\s*>[\s\S]*?<\/w:txbxContent>/.test(anchor))return anchor;
+    anchor=anchor.replace(/(<wp:extent\b[^>]*\bcy=")([0-9]+)(")/,(_m,a,n,c)=>a+Math.round(Number(n)*1.75)+c);
+    anchor=anchor.replace(/(<a:ext\b[^>]*\bcy=")([0-9]+)(")/,(_m,a,n,c)=>a+Math.round(Number(n)*1.75)+c);
+    anchor=anchor.replace(/<a:noAutofit\s*\/>/,'<a:spAutoFit/>');
+    anchor=anchor.replace(/(<w:pPr>)/,'$1<w:spacing w:before="0" w:after="0" w:line="360" w:lineRule="auto"/>');
+    return anchor;
+  });
+}
 // 課前考／ABK 預覽：把選項依長度打包成 1/2/4 欄顯示（與 _preOptionLayout 的 Word 邏輯一致）。
 // 關鍵：同一視覺列的選項之間用「隱藏的 <br>」分隔——畫面上併排，但 serializeRichText 仍會
 // 為每個 <br> 產生 \n，所以回存時 it.q 與原本「一行一選項」完全相同、不會被污染。
@@ -9901,6 +9913,7 @@ async function downloadWordViaTemplate(kind,opts){
       // 題組文字方塊會被 _preMoveInlineImagesBeforeOptions 略過。
       xml2=_preMoveInlineImagesBeforeOptions(xml2);
       xml2=_preCenterInlineImages(xml2);
+      xml2=_abkFitMultilineTitle(xml2);
     }
     // 教用版：把 … 內的答案拆成獨立「紅色 run」（括弧維持原色與 10pt）。
     // ABK 題目可能位於範本文字方塊；不要插入浮動答案 drawing，改用紅色行內答案。
