@@ -5925,8 +5925,21 @@ function _pvBlankResizeEnd(el){
   _rebuildLastPaperHTML();
 }
 // 預覽可直接點擊修改的卷頭文字：綁定到設定欄位，失焦即寫回並重繪（也同步匯出）。
-function _pvHdrEditable(txt,field){return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${esc(txt)}</span>`;}
-function _pvHdrBlur(el){const f=document.getElementById(el.dataset.hf);if(!f)return;const v=(el.textContent||'').replace(/\s+$/,'').trim();if(f.value===v)return;if(['pTitle','pExamName','pSubject','pScope','pGoldenYear','pGoldenVersion'].includes(el.dataset.hf)&&typeof paperMetadataChanged==='function'){paperMetadataChanged(el.dataset.hf,v);return;}f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();}
+function _pvHdrEditable(txt,field){
+  // 卷頭標題允許 Enter；用 <br> 呈現換行，失焦時再還原成欄位中的 \n。
+  const html=esc(String(txt||'')).replace(/\r?\n/g,'<br>');
+  return `<span class="pvh" contenteditable="true" data-hf="${field}" onclick="event.stopPropagation()" onblur="_pvHdrBlur(this)">${html}</span>`;
+}
+function _pvHdrBlur(el){
+  const f=document.getElementById(el.dataset.hf);if(!f)return;
+  const box=el.cloneNode(true);
+  box.querySelectorAll('br').forEach(br=>br.replaceWith('\n'));
+  box.querySelectorAll('div,p').forEach(block=>{block.prepend('\n');});
+  const v=(box.textContent||'').replace(/\r/g,'').replace(/[ \t]+\n/g,'\n').replace(/\n+$/,'').trim();
+  if(f.value===v)return;
+  if(['pTitle','pExamName','pSubject','pScope','pGoldenYear','pGoldenVersion'].includes(el.dataset.hf)&&typeof paperMetadataChanged==='function'){paperMetadataChanged(el.dataset.hf,v);return;}
+  f.value=v;if(typeof _pvRebuild==='function')_pvRebuild();if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();paperSettingsPreviewLater&&paperSettingsPreviewLater();
+}
 function buildExamHeader(forPreview){
   const kind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(kind==='golden')return buildGoldenPreviewHeader(forPreview);
