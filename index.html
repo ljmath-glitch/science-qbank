@@ -2221,7 +2221,9 @@ async function uploadExamPdfFile(file,examName){
   if(!examName){alert('請先填「考試名稱」欄位，原稿會對應到這個考卷名稱。');return;}
   const bar=document.getElementById('examPdfBar');if(bar)bar.dataset.busy='1';renderExamPdfBar();
   try{
-    const path=`_exam_pdfs/${_examPdfSlug(examName)}_${Date.now().toString(36)}.pdf`;
+    // Supabase Storage object key 不接受以底線開頭的資料夾名稱；舊版 `_exam_pdfs/`
+    // 會回傳「Invalid key」，改用合法且固定的 `exam-pdfs/`，既有 URL 仍可讀取。
+    const path=`exam-pdfs/${_examPdfSlug(examName)}_${Date.now().toString(36)}.pdf`;
     const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:'application/pdf',upsert:true});
     if(error)throw error;
     const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
