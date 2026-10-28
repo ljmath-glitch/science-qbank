@@ -5626,8 +5626,14 @@ function openPaperSettings(){
   paperDlg.showModal();
   if(!paperDlg.dataset.previewBound){
     paperDlg.dataset.previewBound='1';
-    paperDlg.addEventListener('input',paperSettingsPreviewLater);
-    paperDlg.addEventListener('change',paperSettingsPreviewLater);
+    const refreshUnlessHeaderEditing=e=>{
+      // 卷頭 contenteditable 按 Enter 時，先不要用舊欄位值重繪，
+      // 否則會把尚未 blur 儲存的換行吃掉。
+      if(e&&e.target&&e.target.closest&&e.target.closest('.pvh'))return;
+      paperSettingsPreviewLater();
+    };
+    paperDlg.addEventListener('input',refreshUnlessHeaderEditing);
+    paperDlg.addEventListener('change',refreshUnlessHeaderEditing);
   }
   paperSyncDocuments();
   paperSetLayout(!!(document.getElementById('pTwoCol')||{}).checked);
