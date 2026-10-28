@@ -5022,14 +5022,15 @@ function wzGo(dir){
 function wzJump(n){
   if(n===WZ_STEP)return;
   if(n>WZ_STEP){
-    if(WZ_STEP===1&&wzScopeCount()===0&&!(n>=3&&PICKS.size>0)){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
+    if(WZ_STEP===1&&wzScopeCount()===0&&PICKS.size===0){alert(WZ_MODE==='school'?'請先勾選至少一個學校／考試':'請先在範圍樹勾選至少一個章節');return;}
     if(n>=3&&PICKS.size===0){alert('請先選擇至少一題');return;}
   }
   wzSetStep(n);
 }
+function wzViewPicked(){wzSetTab('pick');wzJump(2);}
 function wzUpdateFoot(){
   const info=document.getElementById('wzFootInfo');
-  if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`+(PICKS.size?`　｜　已選 <b>${PICKS.size}</b> 題（已還原）<button type="button" class="btn sm" style="margin-left:6px" onclick="wzJump(3)">直接看已選題目並輸出 →</button>`:'');
+  if(WZ_STEP===1)info.innerHTML=`範圍內共 <b>${wzScopeCount()}</b> 題可選`+(PICKS.size?`　｜　已選 <b>${PICKS.size}</b> 題（已還原）<button type="button" class="btn sm" style="margin-left:6px" onclick="wzViewPicked()">查看已選題目</button><button type="button" class="btn sm" style="margin-left:6px" onclick="wzJump(3)">直接看已選題目並輸出 →</button>`:'');
   else info.innerHTML=`已選 <b>${PICKS.size}</b> 題`;
 }
 /* ===== Step 3：配分設定（TESTGO 式總分調整表） ===== */
@@ -5261,9 +5262,9 @@ function _wzFullHtml(it){
 // 目前篩選條件下的題目（forSelect=true 時忽略「已選分頁」限制，供全選用）
 function _wzFilteredItems(forSelect){
   const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
-  let items=_wzPool().filter(wzInScope);
-  if(!forSelect&&WZ_TAB==='pick')items=items.filter(it=>PICKS.has(it.id));
-  if(WZ_UNITFILTER)items=items.filter(it=>{const fp=_wzPath(it);return fp===WZ_UNITFILTER||fp.indexOf(WZ_UNITFILTER+'\u0001')===0;});
+  const showingPicks=!forSelect&&WZ_TAB==='pick';
+  let items=showingPicks?DB.filter(it=>it&&it.type!=='passage'&&PICKS.has(it.id)):_wzPool().filter(wzInScope);
+  if(WZ_UNITFILTER&&!showingPicks)items=items.filter(it=>{const fp=_wzPath(it);return fp===WZ_UNITFILTER||fp.indexOf(WZ_UNITFILTER+'\u0001')===0;});
   if(ft)items=items.filter(it=>it.type===ft);
   if(WZ_FMT.size)items=items.filter(it=>WZ_FMT.has(_wzFormat(it)));
   if(fd)items=items.filter(it=>(effDiffLvl(it)||'未評分')===fd);
@@ -5274,7 +5275,7 @@ function wzRenderList(){
   let items=_wzFilteredItems(false);
   const poolAll=_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
-  document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
+  document.getElementById('wzPickN').textContent=PICKS.size;
   wzUpdateExcludeInfo();
   const html=items.slice(0,400).map(it=>{
     const d=effDiffLvl(it)||'未評分';const picked=PICKS.has(it.id);
@@ -5291,7 +5292,7 @@ function wzRenderList(){
       +`</div></div>`;
   }).join('');
   let banner='';
-  if(WZ_UNITFILTER){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter('')">✕ 看全部範圍</button></div>`;}
+  if(WZ_UNITFILTER&&WZ_TAB!=='pick'){const un=WZ_UNITFILTER.split('\u0001');banner=`<div class="wz-unitbanner">目前只看：<b>${un.map(esc).join('／')}</b>（${items.length} 題）<button type="button" onclick="wzSetUnitFilter('')">✕ 看全部範圍</button></div>`;}
   const list=document.getElementById('wzList');
   if(window._wzMathObserver){window._wzMathObserver.disconnect();window._wzMathObserver=null;}
   clearTimeout(window._wzMathRenderTimer);
@@ -5340,7 +5341,7 @@ function wzSyncPickStates(scoped){
   document.querySelectorAll('#wzList .wz-q').forEach(el=>{const id=el.dataset.id;const on=PICKS.has(id);el.classList.toggle('picked',on);const cb=el.querySelector('input[type=checkbox]');if(cb)cb.checked=on;});
   const poolAll=scoped||_wzPool().filter(wzInScope);
   document.getElementById('wzPoolN').textContent=poolAll.length;
-  document.getElementById('wzPickN').textContent=poolAll.filter(it=>PICKS.has(it.id)).length;
+  document.getElementById('wzPickN').textContent=PICKS.size;
 }
 function wzRenderMonitor(scoped){
   const el=document.getElementById('wzMonitor');if(!el)return;
