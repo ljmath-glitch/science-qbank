@@ -8899,6 +8899,12 @@ function _preCenterInlineImages(xml){
     return left+center+right;
   });
 }
+// 題組題（題組文章的文字方塊）內的段落一律靠左。範本的 Group Passage 方塊原本是
+// 兩端對齊（jc=both），會把中文字距拉爆（例如「回　答　第　42　～　45　題」）。
+// 只動文字方塊內的 both→left，不影響方塊外的題目段落與置中標題。
+function _tplPassageLeftAlign(xml){
+  return String(xml||'').replace(/<w:txbxContent\b[\s\S]*?<\/w:txbxContent>/g,box=>box.replace(/<w:jc w:val="both"\/>/g,'<w:jc w:val="left"/>'));
+}
 // ABK 標題位於範本文字方塊；多行標題時擴大文字方塊並啟用自動適應，
 // 避免第二行被固定高度裁掉或壓到下方分隔線。
 function _abkFitMultilineTitle(xml){
@@ -9947,6 +9953,8 @@ async function downloadWordViaTemplate(kind,opts){
     }
     // 防呆：圖片一律置中自成一行後不再使用「小圖旁」哨兵，殘留的一律清除。
     xml2=xml2.split(PRE_IMG_SENTINEL).join('');
+    // 題組文字方塊內的段落一律靠左（不要兩端對齊）。
+    xml2=_tplPassageLeftAlign(xml2);
     // 教用版答案使用紅色文字方塊；題組文章內的文字方塊會被 _tplAnswerBoxes 略過。
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     renderedZip.file('word/document.xml',xml2);
