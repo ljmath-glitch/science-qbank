@@ -402,10 +402,14 @@
       if(!files.length){alert('沒有找到圖片檔案（支援 PNG／JPG／JPEG／WEBP／GIF／BMP）。');return}
       const status=document.getElementById('cropReviewState');
       status.textContent=`正在讀取 ${files.length} 張圖片…`;
-      let added=0;
+      // 防止同一張圖重複貼入：以「圖片內容(src)」為準（換檔名也抓得到），已在清單中的就自動略過並警告。
+      const seen=new Set(cropCandidates.map(c=>c.src));
+      let added=0;const dupNames=[];
       for(const file of files){
         try{
           const src=await new Promise((ok,bad)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=bad;r.readAsDataURL(file)});
+          if(seen.has(src)){dupNames.push(file.name);continue;}   // 與現有或本批已加入的圖內容相同 → 視為重複，略過
+          seen.add(src);
           const parsed=_rawParseImgName(file.name);
           const label=safeCropLabel(file.name.replace(/\.[^.]+$/,''));
           cropCandidates.push({src,page:'圖片',qno:parsed.qno,scope:parsed.scope,kind:'已裁切圖片',label,verdict:parsed.qno===null?'review':'pass',reason:parsed.qno===null?'檔名無法辨識題號，請按「改題號」補上':'依檔名辨識題號',skip:false,filename:file.name});
@@ -413,7 +417,13 @@
         }catch(e){console.error('讀取圖片失敗',file.name,e)}
       }
       renderCropCandidates();
-      status.textContent=`已上傳 ${added} 張已裁切圖片（疊加進現有清單，共 ${cropCandidates.length} 張）；請確認每張的題號是否正確，再按「批次貼入題庫」。`;
+      let msg=`已上傳 ${added} 張已裁切圖片（疊加進現有清單，共 ${cropCandidates.length} 張）；請確認每張的題號是否正確，再按「批次貼入題庫」。`;
+      if(dupNames.length){
+        const list=dupNames.slice(0,12).join('、')+(dupNames.length>12?` …等共 ${dupNames.length} 張`:'');
+        alert(`⚠ 偵測到 ${dupNames.length} 張圖片與清單中已有的「內容完全相同」，已自動略過，避免同一張圖重複貼兩次：\n\n${list}\n\n（如果這些是你刻意要重複加入的，請先改動圖片內容或改用「題組共用圖」。）`);
+        msg=`⚠ 已自動略過 ${dupNames.length} 張重複圖片（內容相同）；`+msg;
+      }
+      status.textContent=msg;
     }
     // 拖曳圖片檔案／ZIP／整個資料夾到這裡：ZIP 一律當「已裁切圖片打包」處理，依檔名辨識題號。
     async function handleCropDrop(e,el){
