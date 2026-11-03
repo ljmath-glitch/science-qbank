@@ -2220,7 +2220,29 @@ function _recordGeneratedPaper(){
     _savePaperHistory();
   }catch(e){console.error('記錄考卷失敗',e);}
 }
-function _examPdfSlug(name){let h=0x811c9dc5;for(const c of String(name||'')){h=Math.imul(h^c.codePointAt(0),0x01000193);}return 'exam'+(h>>>0).toString(36);}   // Storage 路徑不接受中文（Invalid key）；考卷對應靠 EXAM_PDFS，路徑只要不重複
+// Storage 路徑不接受中文（Invalid key）：士林國中-八年級-114-上學期-第二次段考-理化 → shilin-g8-114-s1-exam2-physchem
+const _PDF_SUBJECT={理化:'physchem',生物:'biology',地科:'earthsci',自然:'science',物理:'physics',化學:'chemistry',數學:'math',英文:'english',國文:'chinese',社會:'social'};
+const _PDF_CN={一:1,二:2,三:3,四:4};
+function _examPdfSegment(seg,toPinyin){
+  let m;
+  if(_PDF_SUBJECT[seg])return _PDF_SUBJECT[seg];
+  if((m=seg.match(/^([七八九])年級$/)))return 'g'+{七:7,八:8,九:9}[m[1]];
+  if((m=seg.match(/^高([一二三])$/)))return 'hs'+_PDF_CN[m[1]];
+  if((m=seg.match(/^([上下])學期$/)))return m[1]==='上'?'s1':'s2';
+  if((m=seg.match(/^第([一二三四])次(段考|模擬考)$/)))return (m[2]==='段考'?'exam':'mock')+_PDF_CN[m[1]];
+  if((m=seg.match(/^(\d{3})([上下])$/)))return m[1]+'-'+(m[2]==='上'?'s1':'s2');
+  if((m=seg.match(/^(\d{3})(會考|學測|分科測驗)$/)))return m[1]+'-'+{會考:'cap',學測:'gsat',分科測驗:'ast'}[m[2]];
+  const school=seg.replace(/國中$/,'');
+  const text=toPinyin?toPinyin(school):school;
+  const ascii=text.toLowerCase().replace(/[^a-z0-9]+/g,'');
+  if(ascii.length>=text.replace(/\s/g,'').length)return ascii;
+  let h=0x811c9dc5;for(const c of seg){h=Math.imul(h^c.codePointAt(0),0x01000193);}return (ascii?ascii+'-':'')+'x'+(h>>>0).toString(36);   // 拼音工具載入失敗時的備援，檔名一樣合法
+}
+function _examPdfSlug(name,toPinyin){return String(name||'').split(/[-_\s]+/).filter(Boolean).map(s=>_examPdfSegment(s,toPinyin)).filter(Boolean).join('-').slice(0,100)||'exam';}
+function _loadPinyin(){
+  if(window.pinyinPro)return Promise.resolve(window.pinyinPro);
+  return new Promise(ok=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js';s.onload=()=>ok(window.pinyinPro||null);s.onerror=()=>ok(null);document.head.appendChild(s)});
+}
 async function uploadExamPdfFile(file,examName){
   if(!file)return;
   if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){alert('請選擇 PDF 檔。');return;}
@@ -2228,7 +2250,8 @@ async function uploadExamPdfFile(file,examName){
   const bar=document.getElementById('examPdfBar');if(bar)bar.dataset.busy='1';renderExamPdfBar();
   try{
     // 舊版路徑 `_exam_pdfs/` 與中文檔名都會被 Storage 拒絕（Invalid key），既有 URL 仍可讀取。
-    const path=`exam-pdfs/${_examPdfSlug(examName)}_${Date.now().toString(36)}.pdf`;
+    const py=await _loadPinyin();
+    const path=`exam-pdfs/${_examPdfSlug(examName,py?(t=>py.pinyin(t,{toneType:'none',type:'array'}).join('')):null)}_${Date.now().toString(36)}.pdf`;
     const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:'application/pdf',upsert:true});
     if(error)throw error;
     const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
