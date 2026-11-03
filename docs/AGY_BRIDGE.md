@@ -22,4 +22,4 @@
 ## 2026-11-03 更新：多引擎＋批次補齊題目明細
 - 橋接現在支援 **agy／claude（Claude Code CLI）／codex（Codex CLI）**：`GET /engines` 回報這台電腦有哪些可用；`POST /ai` 可帶 `engine`（agy｜claude｜codex｜auto，預設 auto＝依序挑第一個有安裝的）。CLI 若未登入會回明確錯誤。
 - Windows：雙擊 `tools/start_ai_bridge.bat`（需 Node.js）。沒有 Tailscale 時連線碼會是 `http://127.0.0.1:8790`，只適用同一台電腦的 Chrome。
-- raw 自動匯題「題庫 Excel」步驟新增「🤖 本機 AI 補齊明細」：缺少冊數／冊名／領域／大單元／子單元／知識點／題目摘要的題目，分批（每批 8 題）交給本機 AI 補上，已有的欄位不動。
+- raw 自動匯題「題庫 Excel」步驟新增「本機 AI 補齊明細」：缺少冊數／冊名／領域／大單元／子單元／知識點／題目摘要的題目，分批（每批 8 題）交給本機 AI 補上，已有的欄位不動。
