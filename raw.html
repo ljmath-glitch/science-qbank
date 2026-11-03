@@ -68,6 +68,7 @@
     .pz.snap{animation:pzsnap .55s cubic-bezier(.2,1.4,.4,1)}.pz.snap.knob::after{animation:pzknob .55s cubic-bezier(.2,1.4,.4,1)}.pz.run.knob::after,.pz.manual.knob::after,.pz.done.knob::after,.pz.fail.knob::after,.pz.skip.knob::after{border-style:solid}
     @keyframes pzflow{from{margin-left:0}to{margin-left:60%}}@keyframes pzpulse{50%{box-shadow:0 0 0 4px rgba(208,135,0,.18)}}@keyframes pzsnap{0%{transform:scale(.94)}60%{transform:scale(1.05)}100%{transform:scale(1)}}@keyframes pzknob{0%{right:-34px;opacity:.2}100%{right:-17px;opacity:1}}
     body.stages-closed main .stage{display:none}.pz-act{display:none;align-self:flex-start;margin-top:4px;padding:3px 10px;border:1px solid #c99a2e;border-radius:999px;background:#fff;color:#7a5a12;font-size:12px;font-weight:700;cursor:pointer}.pz-act:hover{background:#fff8e6}.pz.done .pz-act{display:inline-block}
+    .pipe-host{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:16px;font-size:13px}.pipe-host label{display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}.pipe-host label input{width:auto;margin:0}.pipe-host .status{margin:0;flex-basis:100%}.pipe-host .status:empty{display:none}
     .pipe-import{margin-top:16px;padding:26px 18px;display:flex;flex-direction:column;align-items:center;gap:6px}.pipe-import b{font-size:15px;color:var(--ink,#2b2118)}.pipe-import.has{border-style:solid}
     .pipe-done{display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#fdf3d8;border:1px solid #e3c36e;color:#7a5a12;font-weight:700}.pipe-done.show{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}}
@@ -106,16 +107,13 @@
         <li data-step="2"><b>2. 清除筆跡，產生乾淨 PDF</b>上傳筆跡掃描 PDF／圖片；清稿後會自動沿用到 OCR 與裁圖。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="drop" onclick="dehandFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');startDehand(event.dataTransfer.files[0])"><b>拖放整份考卷，或點此選檔</b><span class="help">PDF、JPG、PNG；只在本機瀏覽器處理。每清完一頁會立即顯示成果。</span></div><div class="row"><label class="help">清稿模式 <select id="dehandMode"><option value="v10">茲茲版 v10</option><option value="r8">實驗版 r8</option></select></label></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>⬇ 下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">↻ 重試</button></div></div></div>
         </li>
-        <li data-step="3"><b>3. 茲茲 OCR 辨識文字與公式</b>送出考卷到公司電腦，產生文字、Word 與題庫 Excel；AI 僅在你另外需要分類或詳解時才使用，不是 OCR 的必要條件。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="3"><b>3. 茲茲 OCR 辨識文字與公式</b>送出考卷到選定的主機，產生文字與題庫 Excel；AI 僅在你另外需要分類或詳解時才使用，不是 OCR 的必要條件。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
-              <span class="help">茲茲 OCR 運算主機：公司電腦</span>
               <input id="ocrUrl" aria-hidden="true" tabindex="-1" oninput="localStorage.setItem('ocrUrl',this.value)" style="display:none">
-              <button class="btn" onclick="testOcrService()">測試茲茲 OCR</button>
             </div>
-            <div class="status" id="ocrHealth" style="margin-top:8px"></div>
             <input id="ocrPdf" type="file" accept=".pdf" class="hide" onchange="runAutoOcr(this.files[0])">
-            <div class="drop" style="margin-top:10px" onclick="ocrPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runAutoOcr(event.dataTransfer.files[0],false)">丟入或選擇考卷 PDF → 交給茲茲 OCR<br><span class="help">清稿完成後可直接按下方按鈕沿用同一份檔案；OCR 與題庫 Excel 由公司電腦完成，不需要 Gemini。</span></div>
+            <div class="drop" style="margin-top:10px" onclick="ocrPdf.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');runAutoOcr(event.dataTransfer.files[0],false)">丟入或選擇考卷 PDF → 交給茲茲 OCR<br><span class="help">清稿完成後可直接按下方按鈕沿用同一份檔案；OCR 與題庫 Excel 由選定的主機完成，不需要 Gemini。</span></div>
             <div class="row" style="margin-top:8px"><button class="btn" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" id="ocrFromCleanBtn" disabled>沿用清稿，交給茲茲 OCR</button></div>
             <div class="status" id="ocrStatus" style="margin-top:8px"></div>
             <div id="ocrResultWrap" class="hide" style="margin-top:10px">
@@ -957,8 +955,13 @@
     async function batchImportToQbank(){const images=cropCandidates.filter(x=>!x.skip);if(!images.length){alert('請先在第 2 步保留至少一張圖表素材。');return}if(!examName.value){alert('找不到前面校正的考卷名稱，請先在第 I 區丟入考卷檔案，或直接在上方欄位手動輸入。');return}const btn=document.getElementById('toBatchImageBtn'),state=document.getElementById('batchImportState');if(document.getElementById('autoImportImages')?.checked===false){downloadCropZip();state.textContent='已下載圖表素材 ZIP；未直接匯入題庫。';document.getElementById('finishRawBtn').disabled=false;return}btn.disabled=true;state.textContent='正在批次貼入題庫…';try{const importer=await waitForPromptBuilder('importBatchHandoffImages');const result=await importer({exam:examName.value,images:images.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});const examNote=result.matchedExam&&result.matchedExam!==examName.value?`（已自動對應「${result.matchedExam}」）`:'';const bits=[];if(result.unmatchedQnos&&result.unmatchedQnos.length)bits.push(`題庫裡找不到第 ${result.unmatchedQnos.join('、')} 題（請確認這些題號是否已匯入、或素材題號是否打錯）`);if(result.noPassageQnos&&result.noPassageQnos.length)bits.push(`第 ${result.noPassageQnos.join('、')} 題設為題組共用圖，但題庫裡這些題號沒有對應的題組文章（請先確認該題有填題組ID、且已建立題組文章，或改回「單題圖」）`);if(result.unknownQno)bits.push(`${result.unknownQno} 張題號未知（請用「改題號」補上）`);if(result.failed)bits.push(`${result.failed} 張上傳失敗，請重試`);state.textContent=`完成：成功貼入 ${result.done} 張。${bits.join('；')}${examNote}`;if(result.done){document.getElementById('finishRawBtn').disabled=false}}catch(e){const sug=e.suggestions&&e.suggestions.length?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+e.suggestions.map(n=>`<button class="btn" onclick="useSuggestedExamName('${esc(jsStr(n))}')">用「${esc(n)}」</button>`).join('')+'</div>':'';state.innerHTML=esc('批次貼圖失敗：'+(e.message||e))+sug}finally{btn.disabled=false}}
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
 
-    // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字、Word 與題庫 Excel，不要求 Gemini ──
-    const OCR_COMPANY='https://ljm2222.tail3d3c18.ts.net:8443';
+    // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字與題庫 Excel，不要求 Gemini ──
+    const OCR_IS_MAC=/Mac/.test(navigator.platform||navigator.userAgent);
+    // 打包程式只有 Windows 版；Mac 的「本機」連它自己的 OCR 服務（Safari 擋 http://localhost，所以走 Tailscale https）
+    const OCR_HOSTS={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
+    function ocrHost(){return localStorage.getItem('ocrHost')==='local'?'local':'company'}
+    function setOcrHost(v){localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];document.querySelectorAll('input[name="ocrHost"]').forEach(r=>{r.checked=r.value===v});const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent=''}
+    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到公司電腦：請確認公司電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
     function toggleOcrPanel(){
@@ -974,7 +977,7 @@
       btn.textContent=opening?'收合 Gemini 測試功能':'主管／測試人員展開';
     }
     function initOcrUi(){
-      const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_COMPANY;localStorage.setItem('ocrUrl',OCR_COMPANY);
+      setOcrHost(ocrHost());
     }
     function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
     // 把 CSV 填入後，自動展開第 4 步（貼回 CSV）的收合區並捲過去，避免「跑完看不到結果」。
@@ -1042,34 +1045,34 @@
       el.textContent='測試中…';
       try{const r=await fetch(base+'/api/health');if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');const j=await r.json();
         if(!r.ok||j.service!=='tzutzu-ocr')throw new Error('這不是茲茲 OCR 主機');
-        el.textContent=`✓ 已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR、Word、題庫 Excel 均由此主機處理。`;
-      }catch(e){el.textContent='✗ 連不到茲茲 OCR：'+(e.message||e)+'。請確認主機已啟動、Tailscale／localhost 可連線。';}
+        el.textContent=`✓ 已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR 與題庫 Excel 均由此主機處理。`;
+      }catch(e){el.textContent='✗ '+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
     }
     async function runAutoOcr(file,skipClean){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='找不到茲茲 OCR 主機設定。';return}
       OCR_DEMO=false;
-      st.textContent=skipClean?'正在把清稿交給茲茲 OCR…':'正在交給茲茲 OCR 清稿、辨識並產生 Word／題庫 Excel…';
+      st.textContent=skipClean?'正在把清稿交給茲茲 OCR…':'正在交給茲茲 OCR 清稿、辨識並產生題庫 Excel…';
       document.getElementById('ocrResultWrap').classList.add('hide');
       OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供手動切圖步驟手動框選修正
       try{
         const data=await file.arrayBuffer();let binary='';const bytes=new Uint8Array(data);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-        const r=await fetch(base+'/api/py-ocr/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:btoa(binary),skipClean:skipClean===true})});
+        const r=await fetch(base+'/api/py-ocr/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:btoa(binary),skipClean:skipClean===true,skipWord:true})});
         if(!r.ok)throw new Error('茲茲 OCR 回應 '+r.status+'：'+(await r.text()).slice(0,200));
         const started=await r.json();if(!started.ok||!started.jobId)throw new Error(started.error||'無法啟動辨識');
         let since=0,j=null;
-        while(true){await new Promise(resolve=>setTimeout(resolve,1000));const p=await fetch(base+'/api/py-ocr/progress?job='+encodeURIComponent(started.jobId)+'&since='+since);if(!p.ok)throw new Error('茲茲 OCR 進度回應 '+p.status);j=await p.json();since=j.next==null?since+(j.events||[]).length:j.next;const ev=(j.events||[]).map(x=>x.message||x.text||'').filter(Boolean);if(ev.length)st.textContent=ev[ev.length-1];if(j.done)break;}
+        while(true){await new Promise(resolve=>setTimeout(resolve,1000));const p=await fetch(base+'/api/py-ocr/progress?job='+encodeURIComponent(started.jobId)+'&since='+since);if(!p.ok)throw new Error('茲茲 OCR 進度回應 '+p.status);j=await p.json();since=j.next==null?since+(j.events||[]).length:j.next;const ev=(j.events||[]).map(x=>x.msg||x.message||x.text||'').filter(Boolean);if(ev.length)st.textContent=ev[ev.length-1];if(j.done)break;}
         if(OCR_PDF_FILE!==file)return;   // 這段期間已換了另一份考卷，舊結果不可蓋掉新的
         if(!j.ok)throw new Error(j.error||'辨識失敗');
         OCR_RESULT={...j,pages:[],engine:'茲茲 OCR（本機）'};
         if(!examName.value)syncExamNameFromFile(file);
         document.getElementById('ocrResultWrap').classList.remove('hide');
-        document.getElementById('ocrSummary').textContent='茲茲 OCR 已完成文字辨識；可下載 Word／原文，或直接產生題庫 Excel。';
+        document.getElementById('ocrSummary').textContent='茲茲 OCR 已完成文字辨識；可下載原文，或直接產生題庫 Excel。';
         document.getElementById('ocrMarkdown').textContent=j.text||'尚無整份文字';
         document.getElementById('ocrFigures').innerHTML='';
         const links=[];if(j.docxUrl)links.push(`<a class="btn green" target="_blank" href="${base+j.docxUrl}">⬇ 下載 Word</a>`);if(j.txtUrl)links.push(`<a class="btn" target="_blank" href="${base+j.txtUrl}">⬇ 下載辨識原文</a>`);if(j.qbankUrl)links.push(`<a class="btn" target="_blank" href="${base+j.qbankUrl}">⬇ 下載題庫 Excel</a>`);document.getElementById('ocrFigures').innerHTML=links.join(' ');
-        st.textContent='茲茲 OCR 完成。第 4 步可直接抓取題庫 Excel，或下載 Word／原文。';
-      }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
+        st.textContent='茲茲 OCR 完成。第 4 步可直接抓取題庫 Excel，或下載原文。';
+      }catch(e){st.textContent='辨識失敗：'+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
     }
     function ocrRenderResult(){
       const j=OCR_RESULT;if(!j)return;
@@ -1111,7 +1114,7 @@
       renderCropCandidates();
       if(!added){
         pipeGo(5);
-        document.getElementById('ocrStatus').textContent='茲茲 OCR 已完成文字與 Word；圖表／題目圖片請在手動切圖步驟用同一份清稿 PDF 手動框選。';
+        document.getElementById('ocrStatus').textContent='茲茲 OCR 已完成文字辨識；圖表／題目圖片請在手動切圖步驟用同一份清稿 PDF 手動框選。';
         return;
       }
       const grid=document.getElementById('cropPreviewGrid');
@@ -1214,8 +1217,9 @@
     box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/5</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
+      '<div class="pipe-host"><b>OCR 運算主機</b><label><input type="radio" name="ocrHost" value="company" onchange="setOcrHost(this.value)"> 公司電腦</label><label><input type="radio" name="ocrHost" value="local" onchange="setOcrHost(this.value)"> 本機</label><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.0/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
       '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');startDehand(event.dataTransfer.files[0])"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 →</a></div>';
-    pipeRender()}
+    setOcrHost(ocrHost());pipeRender()}
   function pipeRender(){
     const board=document.getElementById('pipeBoard');if(!board)return;const now=Date.now();let done=0;
     PIPE.steps.forEach(s=>{const el=document.querySelector('#pipe .pz[data-id="'+s.id+'"]');if(!el)return;
@@ -1246,7 +1250,7 @@
     watch('dehandProgressBar',()=>{const bar=document.getElementById('dehandProgressBar'),p=parseFloat(bar.style.width);if(!isNaN(p))pipeProgress(2,p,((document.getElementById('dehandPageMeta')||{}).textContent||'')+' · '+((document.getElementById('dehandProgressText')||{}).textContent||'').split('：')[0])});
     wrap('syncExamNameFromFile',function(o,a){const r=o.apply(this,a);const n=(document.getElementById('examName')||{}).value||(document.getElementById('rawName')||{}).value||'';if(a[0]){const keep=PIPE.sel;pipeStart(1,'');pipeDone(1,n.slice(0,22));if(pipeStep(2).state==='run')PIPE.sel=keep}return r});
     wrap('runAutoOcr',async function(o,a){if(!a[0])return o.apply(this,a);pipeSkip(2,'已略過（直接用乾淨 PDF）');pipeSkip(1,'');pipeStart(3,'送出中');let r;try{r=await o.apply(this,a)}catch(e){pipeFail(3,e&&e.message);throw e}
-      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_PDF_FILE===a[0]){pipeDone(3,'Word／Excel 已產生');if(OCR_RESULT.qbankUrl)ocrMakeCsv(true)}return r});
+      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_PDF_FILE===a[0]){pipeDone(3,'文字辨識完成');if(OCR_RESULT.qbankUrl)ocrMakeCsv(true)}return r});
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
