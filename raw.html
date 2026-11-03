@@ -74,7 +74,8 @@
     .pipe-done{display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#fdf3d8;border:1px solid #e3c36e;color:#7a5a12;font-weight:700}.pipe-done.show{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
     .auto-review,.auto-crop,.auto-optional{border:1px solid #dfd2c4;background:linear-gradient(145deg,#fff,#fffcf7);box-shadow:0 14px 34px -28px #351a14}.auto-review>.head .no,.auto-crop>.head .no{display:none}.auto-review>.head,.auto-crop>.head{padding-bottom:10px;border-bottom:1px solid #eee4d9}.auto-review>.notice,.auto-crop>.notice{display:none}.auto-review .steps>li,.auto-crop .steps>li{min-height:72px;border-color:#e6dbcf;background:#fff;box-shadow:none}.auto-review .steps>li:hover,.auto-crop .steps>li:hover{border-color:#b58a3a}.auto-review .steps>li[data-step="1"]:before{content:"01"}.auto-review .steps>li[data-step="2"]:before{content:"02"}.auto-review .steps>li[data-step="3"]:before{content:"03"}.auto-review .steps>li[data-step="4"]:before{content:"04"}.auto-crop .steps>li[data-step="5a"]{display:none}.auto-crop .steps>li[data-step="5c"]:before{content:"01"}.auto-crop .steps>li[data-step="5d"]:before{content:"02"}.auto-review .step-detail,.auto-crop .step-detail{background:#fdfaf5;border-color:#eadfd3}.auto-review .green,.auto-crop .green{background:#b58a3a;border-color:#a47a2e;color:#fff}.auto-review .green:hover,.auto-crop .green:hover{background:#9d7229;border-color:#8d641f;color:#fff}.auto-review .dehand-flow .done{background:#fbf1df;color:#76551b}.auto-review .dehand-progress,.auto-crop .crop-summary{background:#fff7e8;border-left-color:#b58a3a}.auto-review .dehand-bar i{background:linear-gradient(90deg,var(--red),#b58a3a)}.auto-crop{background:#fffdf9}.auto-optional,.auto-finish{display:none!important}.auto-optional.active{display:block!important}
     .auto-review,.auto-crop,.auto-optional{--green:#b58a3a}.auto-review .toggle-detail,.auto-crop .toggle-detail{display:none}.auto-review .step-detail,.auto-crop .step-detail{display:block;margin-top:8px}.auto-review .steps>li,.auto-crop .steps>li{cursor:default}
-    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}}
+    .auto-review .steps,.auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.auto-review .steps>li,.auto-crop .steps>li{min-height:64px;padding:11px 36px 10px 48px}.auto-review .steps>li:before,.auto-crop .steps>li:before{left:10px;top:11px;width:29px;height:29px;font-size:12px}.auto-review .steps b,.auto-crop .steps b{font-size:13px}.auto-review .step-detail,.auto-crop .step-detail{margin:7px -24px -2px -38px;padding:9px;font-size:12px}.auto-crop .steps>li[data-step="5a"]{display:none}
+    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}.auto-review .steps,.auto-crop .steps{grid-template-columns:1fr}}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
 </head>
@@ -87,7 +88,7 @@
       <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <ol class="steps">
-        <li data-step="1"><b>確認考試名稱</b>系統已自動命名；名稱需要修正時再展開。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="1"><b>確認考試名稱</b>自動命名結果。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="paperFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.md" class="hide" onchange="readPaperFile(this.files[0])">
             <div class="row"><button type="button" class="btn" onclick="paperFile.click()">重新選擇考卷檔案</button><span class="help">通常會自動沿用上方已匯入的考卷。</span></div>
@@ -102,10 +103,10 @@
             <div class="status" id="nameMatchHint" style="margin-top:4px"></div>
           </div>
         </li>
-        <li data-step="2"><b>檢查清稿結果</b>查看原稿與乾淨 PDF；有漏除時再人工修補。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="2"><b>檢查清稿結果</b>檢查或修補清稿。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">茲茲版 v10</option><option value="r8">實驗版 r8</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>⬇ 下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">↻ 重試</button></div></div></div>
         </li>
-        <li data-step="3"><b>重新執行 OCR</b>自動辨識失敗或需要換乾淨 PDF 時才使用。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="3"><b>重新執行 OCR</b>需要時重跑。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
               <input id="ocrUrl" aria-hidden="true" tabindex="-1" oninput="localStorage.setItem('ocrUrl',this.value)" style="display:none">
@@ -121,7 +122,7 @@
             </div>
           </div>
         </li>
-        <li data-step="4"><b>匯入或下載題庫 Excel</b>確認題數後直接匯入；需要時才查看原始資料。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <div class="detail-title">題庫 Excel 已自動產生</div><p class="help">可直接匯入或下載；只有要人工修改內容時才展開原始資料。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
