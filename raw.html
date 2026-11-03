@@ -1023,7 +1023,7 @@
       const el=document.getElementById('ocrHealth');const base=ocrBase();
       if(!base){el.textContent='請先選擇茲茲 OCR 運算主機。';return}
       el.textContent='測試中…';
-      try{const r=await fetch(base+'/api/health');const j=await r.json();
+      try{const r=await fetch(base+'/api/health');if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');const j=await r.json();
         if(!r.ok||j.service!=='tzutzu-ocr')throw new Error('這不是茲茲 OCR 主機');
         el.textContent=`✓ 已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'}；OCR、Word、題庫 Excel 均由此主機處理。`;
       }catch(e){el.textContent='✗ 連不到茲茲 OCR：'+(e.message||e)+'。請確認主機已啟動、Tailscale／localhost 可連線。';}
