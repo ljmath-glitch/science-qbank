@@ -4,7 +4,7 @@
  * 用法見 docs/AGY_BRIDGE.md。 */
 const http=require('http'),fs=require('fs'),os=require('os'),path=require('path'),crypto=require('crypto');
 const {spawn}=require('child_process');
-const PORT=+process.env.PORT||8787;
+const PORT=+process.env.PORT||8790;
 const TOKEN_FILE=path.join(os.homedir(),'.science-qbank-bridge-token');
 const AGY=process.env.AGY_BIN||path.join(os.homedir(),'.local/bin/agy');
 const ALLOW=[/^https:\/\/science-qbank\.vercel\.app$/,/^http:\/\/localhost(:\d+)?$/,/^http:\/\/127\.0\.0\.1(:\d+)?$/];
@@ -70,7 +70,7 @@ http.createServer((req,res)=>{
   // 組出「連線碼」（網址＋token）並複製到剪貼簿，網頁貼一次就完成設定
   const TS='/Applications/Tailscale.app/Contents/MacOS/Tailscale';
   require('child_process').execFile(TS,['status','--json'],(e,out)=>{
-    let url='';try{const dns=JSON.parse(out).Self.DNSName.replace(/\.$/,'');url='https://'+dns;}catch(x){}
+    let url='';try{const dns=JSON.parse(out).Self.DNSName.replace(/\.$/,'');url='https://'+dns+':'+PORT;}catch(x){}
     if(!url){console.log('\n抓不到 Tailscale 網址（Tailscale 有登入嗎？）。Token：'+token);return;}
     const code=Buffer.from(JSON.stringify({url,token})).toString('base64');
     console.log('\n連線碼（已複製到剪貼簿，回網頁貼上即可）：\n'+code+'\n');
