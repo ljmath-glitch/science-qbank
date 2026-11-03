@@ -72,6 +72,8 @@
     .stage+.stage{margin-top:14px!important}.step-detail details summary{cursor:pointer;font-weight:700;color:#746b61}.step-detail code{background:#f0ece2;padding:1px 4px;border-radius:3px}.dehand-workspace{margin-top:0;padding:10px}.dehand-flow{margin:9px 0 7px;gap:6px}.dehand-flow div{padding:6px}.dehand-actions{margin-top:9px}
     .pipe-import{margin-top:16px;padding:26px 18px;display:flex;flex-direction:column;align-items:center;gap:6px}.pipe-import b{font-size:15px;color:var(--ink,#2b2118)}.pipe-import.has{border-style:solid}
     .pipe-done{display:none;margin-top:12px;padding:12px 14px;border-radius:12px;background:#fdf3d8;border:1px solid #e3c36e;color:#7a5a12;font-weight:700}.pipe-done.show{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .auto-review,.auto-crop,.auto-optional{border:1px solid #dfd2c4;background:linear-gradient(145deg,#fff,#fffcf7);box-shadow:0 14px 34px -28px #351a14}.auto-review>.head .no,.auto-crop>.head .no{display:none}.auto-review>.head,.auto-crop>.head{padding-bottom:10px;border-bottom:1px solid #eee4d9}.auto-review>.notice,.auto-crop>.notice{display:none}.auto-review .steps>li,.auto-crop .steps>li{min-height:72px;border-color:#e6dbcf;background:#fff;box-shadow:none}.auto-review .steps>li:hover,.auto-crop .steps>li:hover{border-color:#b58a3a}.auto-review .steps>li[data-step="1"]:before{content:"01"}.auto-review .steps>li[data-step="2"]:before{content:"02"}.auto-review .steps>li[data-step="3"]:before{content:"03"}.auto-review .steps>li[data-step="4"]:before{content:"04"}.auto-crop .steps>li[data-step="5a"]{display:none}.auto-crop .steps>li[data-step="5c"]:before{content:"01"}.auto-crop .steps>li[data-step="5d"]:before{content:"02"}.auto-review .step-detail,.auto-crop .step-detail{background:#fdfaf5;border-color:#eadfd3}.auto-review .green,.auto-crop .green{background:#b58a3a;border-color:#a47a2e;color:#fff}.auto-review .green:hover,.auto-crop .green:hover{background:#9d7229;border-color:#8d641f;color:#fff}.auto-review .dehand-flow .done{background:#fbf1df;color:#76551b}.auto-review .dehand-progress,.auto-crop .crop-summary{background:#fff7e8;border-left-color:#b58a3a}.auto-review .dehand-bar i{background:linear-gradient(90deg,var(--red),#b58a3a)}.auto-crop{background:#fffdf9}.auto-optional,.auto-finish{display:none!important}.auto-optional.active{display:block!important}
+    .auto-review,.auto-crop,.auto-optional{--green:#b58a3a}
     @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
@@ -81,11 +83,11 @@
   <main>
     <nav class="modetabs" aria-label="匯題方式"><a href="raw.html" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
     <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel，最後手動切圖。詳解是可選項，可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
-    <section class="stage">
-      <div class="head"><div class="no">I</div><div><h2>1–4｜清稿、OCR、題庫題目 Excel</h2><p>筆跡掃描 PDF → 乾淨 PDF → OCR → 題目 Excel／CSV → 可選直接匯入</p></div></div>
+    <section class="stage auto-review">
+      <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
       <ol class="steps">
-        <li data-step="1"><b>1. 自動命名，對齊題庫資料庫格式</b>拖入考卷檔案，系統會讀取檔名／PDF 標題並整理成題庫名稱；請人工確認一次。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="1"><b>確認考試名稱</b>系統已自動命名；名稱需要修正時再展開。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="paperFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.md" class="hide" onchange="readPaperFile(this.files[0])">
             <div class="row"><button type="button" class="btn" onclick="paperFile.click()">重新選擇考卷檔案</button><span class="help">通常會自動沿用上方已匯入的考卷。</span></div>
@@ -100,10 +102,10 @@
             <div class="status" id="nameMatchHint" style="margin-top:4px"></div>
           </div>
         </li>
-        <li data-step="2"><b>2. 清除筆跡，產生乾淨 PDF</b>上傳筆跡掃描 PDF／圖片；清稿後會自動沿用到 OCR 與裁圖。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="2"><b>檢查清稿結果</b>查看原稿與乾淨 PDF；有漏除時再人工修補。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">茲茲版 v10</option><option value="r8">實驗版 r8</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>⬇ 下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">↻ 重試</button></div></div></div>
         </li>
-        <li data-step="3"><b>3. 茲茲 OCR 辨識文字與公式</b>送出考卷到選定的主機，產生文字與題庫 Excel；AI 僅在你另外需要分類或詳解時才使用，不是 OCR 的必要條件。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="3"><b>重新執行 OCR</b>自動辨識失敗或需要換乾淨 PDF 時才使用。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
               <input id="ocrUrl" aria-hidden="true" tabindex="-1" oninput="localStorage.setItem('ocrUrl',this.value)" style="display:none">
@@ -119,23 +121,22 @@
             </div>
           </div>
         </li>
-        <li data-step="4"><b>4. 產生題庫匯入 Excel／CSV</b>確認題目、題號與考試名稱正確後，可下載檔案或直接開啟題庫匯入。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
+        <li data-step="4"><b>匯入或下載題庫 Excel</b>確認題數後直接匯入；需要時才查看原始資料。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
-            <div class="detail-title">匯入題目 CSV</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。送出後會開啟題庫既有的完整匯入視窗。</p>
+            <div class="detail-title">題庫 Excel 已自動產生</div><p class="help">可直接匯入或下載；只有要人工修改內容時才展開原始資料。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
-            <div class="drop" style="margin-top:10px" onclick="csvFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readCsvFile(event.dataTransfer.files[0])">點此選擇 CSV／Excel，或拖放檔案到這裡</div>
-            <textarea id="questionCsv" placeholder="貼上 AI 回傳的完整題目 CSV…" oninput="inspectCsv()" style="margin-top:10px"></textarea><div class="preview" id="csvPreview"></div>
+            <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
             <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox" checked> 送出後直接開啟題庫匯入</label><button class="btn green" onclick="sendQuestionsToQbank()">⬆ 匯入題庫</button><button class="btn" onclick="downloadCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">⬇ 下載 Excel</button></div>
           </div>
         </li>
       </ol>
     </section>
 
-    <section class="stage" style="margin-top:20px">
-      <div class="head"><div class="no">II</div><div><h2>5｜手動切圖、編號與批次貼入題庫（必要・最後一步）</h2><p>清稿 PDF／Word → 手動框選裁切 → 編號 → 批次貼入題庫</p></div></div>
+    <section class="stage auto-crop" style="margin-top:20px">
+      <div class="head"><div class="no">II</div><div><h2>需要補圖時</h2><p>題目含圖表且 OCR 沒有完整取得時，再使用框選裁切與批次貼圖。</p></div></div>
       <div class="notice"><b>完成標準：</b>每一張要保留的圖或表格都有正確題號，裁切範圍不含題幹、選項、題號與頁首頁尾。</div>
       <ol class="steps">
-        <li data-step="5a"><b>選擇清稿檔案（PDF／Word）</b>清稿 PDF 會自動沿用；若另有 Word，可在這裡一起補上。
+        <li data-step="5a"><b>確認清稿檔案</b>乾淨 PDF 會自動沿用；若另有 Word，可在這裡補上。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
             <input id="solutionAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
@@ -143,18 +144,18 @@
             <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">⚠ 尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
           </div>
         </li>
-        <li data-step="5c"><b>手動框選裁切圖表素材</b>用清稿 PDF 逐張框選要保留的圖或表格（可含整張表格、題組共用圖、整組選項圖），框好後系統會建立可批次貼圖的素材包。
+        <li data-step="5c"><b>框選需要的圖表</b>只裁切題庫中需要保留的圖、表格或題組共用圖。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><p class="help">從清稿 PDF 框出要保留的圖表；已裁好的圖片或 ZIP 也可直接拖入下方。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">選擇圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)">更新題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖入已裁切圖片或 ZIP</div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState">等待選擇檔案。按「手動框選裁切」開始，或直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
         </li>
-        <li data-step="5d"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
+        <li data-step="5d"><b>批次貼入題庫</b>確認題號後，一次把圖表貼入對應題目。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><p class="help">先在第 2 步快速預覽、取消不需要的圖片；可以只下載素材 ZIP，或勾選後直接批次貼入已校正的這份考卷。</p><div class="action-row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">⬇ 下載圖表素材 ZIP</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">🖼 完成切圖</button></div><div class="status" id="batchImportState"></div></div>
         </li>
       </ol>
     </section>
     
-    <section class="stage" style="margin-top:20px">
+    <section class="stage auto-optional" style="margin-top:20px">
       <div class="head"><div class="no">III</div><div><h2>可選｜詳解與詳解 Excel（事後再做也可以）</h2><p>不影響上方必要流程；需要時再用茲茲詳解工具產生，貼回 Excel／CSV 後匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
       <ol class="steps">
@@ -170,7 +171,7 @@
     </section>
 
     
-    <div class="intro" style="margin-top:20px;text-align:center"><h2>完成並跳轉題庫系統</h2><p>上方 5 個必要步驟完成後，回到題庫主系統做最後人工審核（詳解可事後再補）。</p><button class="btn primary" id="finishRawBtn" onclick="finishRawWorkflow()" style="margin-top:14px" disabled>✓ 完成前處理，前往題庫</button></div>
+    <div class="intro auto-finish" style="margin-top:20px;text-align:center"><h2>完成並跳轉題庫系統</h2><p>回到題庫主系統做最後人工審核。</p><button class="btn primary" id="finishRawBtn" onclick="finishRawWorkflow()" style="margin-top:14px" disabled>完成前處理，前往題庫</button></div>
   </main>
   <div class="crop-modal-overlay" id="cropModalOverlay" onclick="if(event.target===this)closeCropPreview()"><div class="crop-modal" id="cropModalBody"></div></div>
   <iframe id="promptSource" class="hide" src="index.html"></iframe>
@@ -1189,11 +1190,12 @@
   function pipeFail(id,msg){const s=pipeStep(id);s.state='fail';s.detail=String(msg||'失敗').slice(0,80);s.elapsedMs=s.startedAt?Date.now()-s.startedAt:0;PIPE.sel=id;pipeRender()}
   function pipeSkip(id,msg){const s=pipeStep(id);if(s.state!=='wait')return;s.state='skip';s.detail=msg||'已略過';pipeRender()}
   function pipeReset(){PIPE.startedAt=0;PIPE.sel=1;PIPE.steps.forEach(s=>{s.state='wait';s.pct=null;s.detail='';s.summary='';s.startedAt=0;s.elapsedMs=0;s.snap=0});pipeRender()}
-  function setStagesOpen(open){document.body.classList.toggle('stages-closed',!open);const b=document.getElementById('stagesToggle');if(b){b.textContent=open?'收合下方操作區':'展開下方操作區';b.setAttribute('aria-expanded',String(open))}}
+  function setStagesOpen(open){document.body.classList.toggle('stages-closed',!open);if(!open)document.querySelector('.auto-optional')?.classList.remove('active');const b=document.getElementById('stagesToggle');if(b){b.textContent=open?'收合下方操作區':'展開下方操作區';b.setAttribute('aria-expanded',String(open))}}
   setStagesOpen(false);
   function pipeGo(id){
     setStagesOpen(true);
-    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5a'],6:[2,'6'],7:[2,'7']};
+    const optional=document.querySelector('.auto-optional');if(optional)optional.classList.toggle('active',id>=6);
+    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],6:[2,'6'],7:[2,'7']};
     const m=map[id];if(!m)return;const st=stages[m[0]];const el=st&&st.querySelector('li[data-step="'+m[1]+'"]');
     if(!el)return;PIPE.sel=id;pipeRender();const d=el.querySelector('.step-detail');const b=el.querySelector('.toggle-detail');if(d&&!d.classList.contains('open')&&b)b.click();el.scrollIntoView({behavior:'smooth',block:'start'});el.style.transition='box-shadow .4s';el.style.boxShadow='0 0 0 3px rgba(133,1,3,.25)';setTimeout(()=>el.style.boxShadow='',1400)}
   async function pipeSaveExamPdfs(original,clean){
