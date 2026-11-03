@@ -17,8 +17,8 @@ from base64 import b64decode
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.0.0"
-PORT = 18787          # 不用 8787：那是 OCR 主機的埠，有的電腦把它對外開放
+VERSION = "1.0.1"
+PORT = int(os.environ.get("ZIZI_OCR_PORT", "18787"))   # 不用 8787：那是 OCR 主機的埠，有的電腦把它對外開放
 HOST = "127.0.0.1"
 MAX_BODY = 100 * 1024 * 1024
 JOB_TTL = 24 * 3600   # 考卷含學生資料，不留超過一天

@@ -155,6 +155,7 @@
   select,input[type=text],input[type=search],input[type=number],textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
   select:focus,input[type=text]:focus,input[type=search]:focus,input[type=number]:focus,textarea:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(133,1,3,.14)}
   textarea{font-family:inherit;font-size:12px;line-height:1.5;resize:vertical;min-height:70px}
+  #examPdfBar.drag-over{border-color:var(--accent)!important;background:#fff6f2!important}
   textarea.drag-over{border:2px dashed #3498db!important;background:#eaf6ff!important;outline:none}
   .card{background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;margin-bottom:13px;position:relative;border-left:4px solid var(--line)}
   .card.bio{border-left-color:var(--bio)}.card.phy{border-left-color:var(--phy)}.card.earth{border-left-color:var(--earth)}
@@ -786,7 +787,7 @@
       <div class="field"><label>考試名稱（自動組合）</label><input type="text" id="eExam" placeholder="士林國中-九年級-114-上學期-第一次段考-理化" oninput="renderExamPdfBar()"></div>
       <div class="field"><label>題號</label><input type="text" id="eNo" placeholder="23"></div>
     </div>
-    <div class="field" style="margin-top:-2px"><div id="examPdfBar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:8px 10px;background:#faf8f4;border:1px solid var(--line);border-radius:8px"></div><input type="file" id="examPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="uploadExamPdfFile(this.files[0],(document.getElementById('eExam').value||'').trim());this.value=''"></div>
+    <div class="field" style="margin-top:-2px"><div id="examPdfBar" ondragover="examPdfDrag(event,true)" ondragleave="examPdfDrag(event,false)" ondrop="examPdfDrop(event)" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);padding:8px 10px;background:#faf8f4;border:2px dashed #c8b89a;border-radius:8px"></div><input type="file" id="examPdfIn" accept="application/pdf,.pdf" style="display:none" onchange="uploadExamPdfFile(this.files[0],(document.getElementById('eExam').value||'').trim());this.value=''"></div>
     <div class="grid2">
       <div class="field"><label>段考次（選了會自動更新考試名稱）</label><select id="eExamRound" onchange="onEditExamRound()"><option value="">— 請選擇 —</option><option>第一次段考</option><option>第二次段考</option><option>第三次段考</option><option>第一次模擬考</option><option>第二次模擬考</option><option>第三次模擬考</option><option>會考</option><option>學測</option><option>分科測驗</option></select></div>
     </div>
@@ -2243,6 +2244,34 @@ function _loadPinyin(){
   if(window.pinyinPro)return Promise.resolve(window.pinyinPro);
   return new Promise(ok=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/index.js';s.onload=()=>ok(window.pinyinPro||null);s.onerror=()=>ok(null);document.head.appendChild(s)});
 }
+const EXAM_CLEAN_KEY=exam=>'清稿::'+exam;
+async function _examPdfPath(examName,kind,fileName){
+  const py=await _loadPinyin();
+  const ext=(/\.(pdf|png|jpe?g)$/i.exec(fileName||'')||['.pdf'])[0].toLowerCase();
+  return `exam-pdfs/${_examPdfSlug(examName,py?(t=>py.pinyin(t,{toneType:'none',type:'array'}).join('')):null)}${kind?'-'+kind:''}_${Date.now().toString(36)}${ext}`;
+}
+async function _putExamPdf(path,file){
+  const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:file.type||'application/pdf',upsert:true});
+  if(error)throw error;
+  return sb.storage.from(IMG_BUCKET).getPublicUrl(path).data.publicUrl;
+}
+// 先讀最新的對照表再合併：別人可能同時在存別份考卷，不能用這個分頁的舊資料蓋掉
+async function _mergeExamPdfs(patch){
+  const {data,error}=await sb.from('syllabus_doc').select('content').eq('id',4).maybeSingle();
+  if(error)throw error;
+  EXAM_PDFS={...(data&&data.content?JSON.parse(data.content):{}),...patch};
+  const {error:saveError}=await sb.from('syllabus_doc').upsert({id:4,content:JSON.stringify(EXAM_PDFS)});
+  if(saveError)throw saveError;
+}
+// 自動匯題用：清稿一完成就把原稿與清稿存進題庫。original 可省略（手動修補後只更新清稿）
+async function saveExamPdfPair(examName,original,clean){
+  const patch={};
+  if(original)patch[examName]=await _putExamPdf(await _examPdfPath(examName,'orig',original.name),original);
+  if(clean)patch[EXAM_CLEAN_KEY(examName)]=await _putExamPdf(await _examPdfPath(examName,'clean',clean.name),clean);
+  await _mergeExamPdfs(patch);
+  if(typeof renderExamPdfBar==='function')renderExamPdfBar();
+  return patch;
+}
 async function uploadExamPdfFile(file,examName){
   if(!file)return;
   if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){alert('請選擇 PDF 檔。');return;}
@@ -2250,8 +2279,7 @@ async function uploadExamPdfFile(file,examName){
   const bar=document.getElementById('examPdfBar');if(bar)bar.dataset.busy='1';renderExamPdfBar();
   try{
     // 舊版路徑 `_exam_pdfs/` 與中文檔名都會被 Storage 拒絕（Invalid key），既有 URL 仍可讀取。
-    const py=await _loadPinyin();
-    const path=`exam-pdfs/${_examPdfSlug(examName,py?(t=>py.pinyin(t,{toneType:'none',type:'array'}).join('')):null)}_${Date.now().toString(36)}.pdf`;
+    const path=await _examPdfPath(examName,'',file.name);
     const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:'application/pdf',upsert:true});
     if(error)throw error;
     const {data}=sb.storage.from(IMG_BUCKET).getPublicUrl(path);
@@ -2270,7 +2298,14 @@ async function removeExamPdf(){
   const exam=(document.getElementById('eExam').value||'').trim();
   if(!EXAM_PDFS[exam])return;
   if(!confirm(`確定移除「${exam}」的原稿 PDF 對應嗎？（檔案仍留在雲端，只是不再顯示）`))return;
-  delete EXAM_PDFS[exam];await _saveExamPdfsMap();renderExamPdfBar();
+  delete EXAM_PDFS[exam];delete EXAM_PDFS[EXAM_CLEAN_KEY(exam)];await _saveExamPdfsMap();renderExamPdfBar();
+}
+function examPdfDrag(e,on){e.preventDefault();document.getElementById('examPdfBar').classList.toggle('drag-over',on)}
+function examPdfDrop(e){
+  examPdfDrag(e,false);
+  const file=[...(e.dataTransfer&&e.dataTransfer.files||[])].find(f=>/\.pdf$/i.test(f.name)||f.type==='application/pdf');
+  if(!file){alert('請拖放 PDF 檔。');return}
+  uploadExamPdfFile(file,(document.getElementById('eExam').value||'').trim());
 }
 function renderExamPdfBar(){
   const bar=document.getElementById('examPdfBar');if(!bar)return;
@@ -2280,10 +2315,11 @@ function renderExamPdfBar(){
   if(EXAM_PDFS[exam]){
     bar.innerHTML=`<span style="color:var(--bio,#1f6f5c);font-weight:700">📄 已存原稿</span>
       <button type="button" class="btn sm" onclick="openExamPdfForEdit()">📄 看原稿</button>
+      ${EXAM_PDFS[EXAM_CLEAN_KEY(exam)]?`<button type="button" class="btn sm" onclick="window.open(EXAM_PDFS[EXAM_CLEAN_KEY((document.getElementById('eExam').value||'').trim())],'_blank','noopener')">📄 看清稿</button>`:''}
       <button type="button" class="btn sm" onclick="examPdfIn.click()">換一份</button>
-      <button type="button" class="btn sm" onclick="removeExamPdf()">移除對應</button>`;
+      <button type="button" class="btn sm" onclick="removeExamPdf()">移除對應</button><span>或把新的 PDF 拖到這裡更換</span>`;
   }else{
-    bar.innerHTML=`<span>此考卷尚未存原稿。</span><button type="button" class="btn sm" onclick="examPdfIn.click()">📄 上傳考卷原稿 PDF</button>`;
+    bar.innerHTML=`<span>此考卷尚未存原稿，把 PDF 拖到這裡，或</span><button type="button" class="btn sm" onclick="examPdfIn.click()">📄 上傳考卷原稿 PDF</button>`;
   }
 }
 function normalizeSol(s){
