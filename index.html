@@ -2220,15 +2220,14 @@ function _recordGeneratedPaper(){
     _savePaperHistory();
   }catch(e){console.error('記錄考卷失敗',e);}
 }
-function _examPdfSlug(name){return String(name||'').replace(/[^一-鿿0-9a-zA-Z]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'exam';}
+function _examPdfSlug(name){let h=0x811c9dc5;for(const c of String(name||'')){h=Math.imul(h^c.codePointAt(0),0x01000193);}return 'exam'+(h>>>0).toString(36);}   // Storage 路徑不接受中文（Invalid key）；考卷對應靠 EXAM_PDFS，路徑只要不重複
 async function uploadExamPdfFile(file,examName){
   if(!file)return;
   if(file.type!=='application/pdf'&&!/\.pdf$/i.test(file.name)){alert('請選擇 PDF 檔。');return;}
   if(!examName){alert('請先填「考試名稱」欄位，原稿會對應到這個考卷名稱。');return;}
   const bar=document.getElementById('examPdfBar');if(bar)bar.dataset.busy='1';renderExamPdfBar();
   try{
-    // Supabase Storage object key 不接受以底線開頭的資料夾名稱；舊版 `_exam_pdfs/`
-    // 會回傳「Invalid key」，改用合法且固定的 `exam-pdfs/`，既有 URL 仍可讀取。
+    // 舊版路徑 `_exam_pdfs/` 與中文檔名都會被 Storage 拒絕（Invalid key），既有 URL 仍可讀取。
     const path=`exam-pdfs/${_examPdfSlug(examName)}_${Date.now().toString(36)}.pdf`;
     const {error}=await sb.storage.from(IMG_BUCKET).upload(path,file,{contentType:'application/pdf',upsert:true});
     if(error)throw error;
