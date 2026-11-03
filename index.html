@@ -8172,6 +8172,9 @@ async function aiEnrichSelected(){
   const targets=items.filter(need);
   if(!targets.length){alert('勾選的 '+items.length+' 題，明細都已完整，不需要補。');return;}
   if(!_wzBridge()){alert('尚未連線本機 AI：請先在 Mac 雙擊「啟動AI橋接」（Windows 用 start_ai_bridge.bat），再貼上連線碼。');wzBridgeSetup();return;}
+  // 先確認橋接真的連得上（舊的連線碼可能指向別的服務，例如 OCR 服務的 8787）
+  try{const br=_wzBridge();const r=await fetch(br.url+'/ping',{headers:{'x-bridge-token':br.token}});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error('ping '+r.status)}
+  catch(e){alert('連不到本機 AI 橋接（目前記的是 '+(_wzBridge()||{}).url+'）。\n\n請確認「啟動AI橋接」視窗開著，然後按確定，貼上橋接視窗最新顯示的「連線碼」。');wzBridgeSetup();return;}
   const eng=localStorage.getItem('qbank_ai_engine')||'auto';
   const pick=prompt('用本機 AI 補齊 '+targets.length+' 題（勾選 '+items.length+' 題中缺明細的）。\nAI 引擎：auto（自動）／agy／claude／codex\n按確定開始（輸入 auto 或引擎名稱）；取消則不執行。',eng);
   if(pick==null)return;const engine=(pick.trim()||'auto').toLowerCase();localStorage.setItem('qbank_ai_engine',engine);
