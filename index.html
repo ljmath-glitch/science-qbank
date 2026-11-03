@@ -8175,9 +8175,10 @@ async function aiEnrichSelected(){
   // 先確認橋接真的連得上（舊的連線碼可能指向別的服務，例如 OCR 服務的 8787）
   try{const br=_wzBridge();const r=await fetch(br.url+'/ping',{headers:{'x-bridge-token':br.token}});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error('ping '+r.status)}
   catch(e){alert('連不到本機 AI 橋接（目前記的是 '+(_wzBridge()||{}).url+'）。\n\n請確認「啟動AI橋接」視窗開著，然後按確定，貼上橋接視窗最新顯示的「連線碼」。');wzBridgeSetup();return;}
-  const eng=localStorage.getItem('qbank_ai_engine')||'auto';
-  const pick=prompt('用本機 AI 補齊 '+targets.length+' 題（勾選 '+items.length+' 題中缺明細的）。\nAI 引擎：auto（自動）／agy／claude／codex\n按確定開始（輸入 auto 或引擎名稱）；取消則不執行。',eng);
-  if(pick==null)return;const engine=(pick.trim()||'auto').toLowerCase();localStorage.setItem('qbank_ai_engine',engine);
+  const _okEng=['auto','agy','claude','codex'];
+  let eng=(localStorage.getItem('qbank_ai_engine')||'auto').toLowerCase();if(!_okEng.includes(eng))eng='auto';
+  const pick=prompt('用本機 AI 補齊 '+targets.length+' 題（勾選 '+items.length+' 題中缺明細的）。\nAI 引擎：auto（自動）／agy／claude／codex\n按確定開始（只能輸入 auto、agy、claude 或 codex；不是貼連線碼）；取消則不執行。',eng);
+  if(pick==null)return;let engine=(pick.trim()||'auto').toLowerCase();if(!_okEng.includes(engine)){alert('引擎只能是 auto、agy、claude 或 codex（您輸入的是別的內容，已改用 '+eng+'）。');engine=eng}localStorage.setItem('qbank_ai_engine',engine);
   AI_ENRICH_BUSY=true;AI_ENRICH_CANCEL=false;
   const prog=document.createElement('div');
   prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 18px;border-radius:12px;font-size:14px;z-index:9999;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.6';
