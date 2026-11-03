@@ -62,8 +62,8 @@
         <p class="help" style="margin:0 0 10px">這裡已整合清稿、OCR、題目 CSV 與後續裁圖。先在上方「清除筆跡」完成，或直接丟入乾淨 PDF；辨識結果會留在本頁並可直接送到第 4 步與第 III 區，不再跳到另一個 OCR 網站。</p>
         <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
           <span class="help">茲茲 OCR 運算主機：</span>
-          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="local">本機 OCR（localhost:8787）</option><option value="mac">我的 Mac（Tailscale）</option><option value="company">公司電腦（Tailscale）</option><option value="custom">其他</option></select>
-          <input id="ocrUrl" placeholder="http://localhost:8787" oninput="localStorage.setItem('ocrUrl',this.value)" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;width:250px;font-family:inherit">
+          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" aria-label="茲茲 OCR 運算主機" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="mac">我的 Mac</option><option value="company">公司電腦</option></select>
+          <input id="ocrUrl" aria-hidden="true" tabindex="-1" oninput="localStorage.setItem('ocrUrl',this.value)" style="display:none">
           <button class="btn" onclick="testOcrService()">測試茲茲 OCR</button>
         </div>
         <div class="status" id="ocrHealth" style="margin-top:8px"></div>
@@ -954,9 +954,9 @@
       btn.textContent=opening?'收合 Gemini 測試功能':'主管／測試人員展開';
     }
     function initOcrUi(){
-      const p=localStorage.getItem('ocrPreset')||'local';
+      const storedPreset=localStorage.getItem('ocrPreset');const p=storedPreset==='company'?'company':'mac';
       const presetEl=document.getElementById('ocrPreset');if(presetEl)presetEl.value=p;
-      const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=localStorage.getItem('ocrUrl')||OCR_PRESETS[p]||OCR_PRESETS.local;
+      const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_PRESETS[p];localStorage.setItem('ocrUrl',OCR_PRESETS[p]);
     }
     function onOcrPresetChange(v){localStorage.setItem('ocrPreset',v);const urlEl=document.getElementById('ocrUrl');if(v!=='custom'&&urlEl){urlEl.value=OCR_PRESETS[v]||'';localStorage.setItem('ocrUrl',urlEl.value);}}
     function ocrBase(){return (document.getElementById('ocrUrl').value||'').trim().replace(/\/+$/,'');}
