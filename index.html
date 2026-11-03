@@ -4776,14 +4776,48 @@ const LAIYAN_BIO_SECMAP=(function(){const m={};const add=(hu,hs,lu,ls)=>{m[hu+WZ
   add('C5 生物體的協調作用','5-4 行為與感應','C4 生物體的協調作用','4-4 動物的行為');
   add('C6 生物體的恆定','6-1 呼吸與氣體的恆定','C5 動物體內的恆定與調節','5-2 呼吸作用與呼吸運動');
   add('C6 生物體的恆定','6-2 排泄與水分的恆定','C5 動物體內的恆定與調節','5-4 水分的恆定');
-  add('C6 生物體的恆定','6-3 體溫的恆定與血糖的恆定','C5 動物體內的恆定與調節','5-3 體溫的調節');
+  add('C6 生物體的恆定','6-3 體溫的恆定與血糖的恆定','C5 動物體內的恆定與調節','5-3 體溫的調節與恆定');
   return m;
 })();
+// 部分翰林子單元在賴妍被拆成兩節（翰林把兩個主題併一節），依題目內容細分。
+// 回傳細分後的 {unit,sub}；無需細分時回 null（用 SECMAP 的預設）。純檢視、不動資料庫。
+function _wzLaiyanRefine(it){
+  const q=String(it.q||'')+' '+String(it.summary||''),u=it.unit,s=it.sub;
+  const C2='C2 生物體與營養',C3='C3 生物體的運輸作用',C4='C4 生物體的協調作用',C5='C5 動物體內的恆定與調節';
+  // 3-2 酵素：提到「實驗／酵素活性」→ 留酵素(2-2)；只跟「消化酶功能」有關 → 消化(2-4)。
+  if(u==='C3 生物體的營養'&&s==='3-2 酵素'){
+    const enzymeConcept=/實驗|專一性|最適|催化|受質|變性|酵素活性|活性|反應速率|反應速度|pH|ＰＨ|酸鹼值|溫度對/.test(q);
+    const digestFunc=/消化酶|胃蛋白酶|唾液澱粉酶|胰蛋白酶|胰液|膽汁|腸液|胃液|脂肪酶|麥芽糖酶|消化道|消化系統|小腸|大腸|胃壁|分解食物/.test(q);
+    if(digestFunc&&!enzymeConcept)return {unit:C2,sub:'2-4 動物如何獲得養分'};
+    return null;
+  }
+  // 6-2 排泄與水分 → 排泄題 5-6 / 其餘(水分) 5-4
+  if(u==='C6 生物體的恆定'&&s==='6-2 排泄與水分的恆定'){
+    if(/排泄|排遺|尿|腎|膀胱|尿素|氨|輸尿管|腎元|腎絲球|腎小球|廢物/.test(q))return {unit:C5,sub:'5-6 廢物的排泄與調節'};
+    return {unit:C5,sub:'5-4 水分的恆定'};
+  }
+  // 6-3 體溫與血糖 → 血糖題 5-5 / 其餘(體溫) 5-3
+  if(u==='C6 生物體的恆定'&&s==='6-3 體溫的恆定與血糖的恆定'){
+    if(/血糖|胰島素|升糖素|昇糖素|葡萄糖|糖尿|肝糖|胰[島臟]/.test(q))return {unit:C5,sub:'5-5 血糖的恆定'};
+    return {unit:C5,sub:'5-3 體溫的調節與恆定'};
+  }
+  // 5-4 行為與感應 → 植物感應題 4-1 / 其餘(動物行為) 4-4
+  if(u==='C5 生物體的協調作用'&&s==='5-4 行為與感應'){
+    if(/向性|向光|向地|向水|向觸|膨壓|植物|含羞草|捕蠅草|開花|睡眠運動|幼苗|莖|根(?!據)/.test(q))return {unit:C4,sub:'4-1 植物對環境的感應'};
+    return {unit:C4,sub:'4-4 動物的行為'};
+  }
+  // 4-4 人體的循環系統 → 淋巴題 3-4 / 其餘(血液循環) 3-3
+  if(u==='C4 生物體的運輸作用'&&s==='4-4 人體的循環系統'){
+    if(/淋巴/.test(q))return {unit:C3,sub:'3-4 動物體內的淋巴循環'};
+    return {unit:C3,sub:'3-3 動物體內的血液循環'};
+  }
+  return null;
+}
 // 回傳某題在「目前選用版本」下的 (unit, sub)。賴妍版只對國中七上生物(JB1)做對應，其餘原樣。
 function _wzUS(it){
   if(WZ_SYLVER==='laiyan'&&it&&it.book==='JB1'){
     const sec=LAIYAN_BIO_SECMAP[(it.unit||'')+WZ_SEP+(it.sub||'')];
-    if(sec)return sec;
+    if(sec)return _wzLaiyanRefine(it)||sec;
     const u=LAIYAN_BIO_UNITMAP[it.unit||''];
     if(u)return {unit:u,sub:it.sub||'（未分類）'};
   }
