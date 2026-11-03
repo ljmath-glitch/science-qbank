@@ -19,7 +19,7 @@ const which=(cmd)=>new Promise(r=>require('child_process').execFile(isWin?'where
 const ENGINES={
   agy:{label:'Antigravity（agy）',bin:process.env.AGY_BIN||'agy',fallback:path.join(os.homedir(),'.local/bin/agy'),args:(prompt,dir)=>{const a=['-p',prompt,'--effort',process.env.AGY_EFFORT||'low'];if(dir)a.push('--add-dir',dir);return a}},
   claude:{label:'Claude Code',bin:process.env.CLAUDE_BIN||'claude',args:(prompt)=>['-p',prompt,'--model',process.env.CLAUDE_MODEL||'haiku','--disable-slash-commands']},
-  codex:{label:'Codex CLI',bin:process.env.CODEX_BIN||'codex',args:(prompt,dir,outFile)=>['exec','--skip-git-repo-check','--sandbox','read-only','-c','model_reasoning_effort='+(process.env.CODEX_EFFORT||'low'),'-o',outFile,prompt],outFile:true}
+  codex:{label:'Codex CLI',bin:process.env.CODEX_BIN||'codex',args:(prompt,dir,outFile)=>['exec','--skip-git-repo-check','--sandbox','read-only','-m',process.env.CODEX_MODEL||'gpt-6-luna','-c','model_reasoning_effort='+(process.env.CODEX_EFFORT||'low'),'-o',outFile,prompt],outFile:true}
 };
 async function detectEngines(){const r={};for(const [k,e] of Object.entries(ENGINES)){let p=await which(e.bin);if(!p&&e.fallback&&fs.existsSync(e.fallback))p=e.fallback;r[k]={label:e.label,path:p,ok:!!p}}return r}
 async function pickEngine(name){const all=await detectEngines();if(name&&name!=='auto'){if(!all[name]||!all[name].ok)throw new Error('這台電腦找不到 '+name+' 命令列工具');return [name,all[name].path]}
