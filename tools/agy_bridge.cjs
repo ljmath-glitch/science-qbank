@@ -55,6 +55,20 @@ async function saveImgs(srcs){
   }
   return {dir,files};
 }
+function printCode(){
+  // 組出「連線碼」（網址＋token）並複製到剪貼簿，網頁貼一次就完成設定
+  const TS=process.platform==='darwin'?'/Applications/Tailscale.app/Contents/MacOS/Tailscale':'tailscale';
+  const finish=(url,note)=>{const code=Buffer.from(JSON.stringify({url,token})).toString('base64');
+    console.log('\n連線碼（已複製到剪貼簿，回網頁貼上即可）：\n'+code+'\n'+(note||''));
+    try{const c=require('child_process').spawn(process.platform==='win32'?'clip':'pbcopy',{shell:process.platform==='win32'});c.stdin.end(code);}catch(x){}
+    console.log('這個視窗請保持開著；要關閉橋接就關掉視窗。');};
+  require('child_process').execFile(TS,['status','--json'],{shell:process.platform==='win32'},(e,out)=>{
+    let url='';try{const dns=JSON.parse(out).Self.DNSName.replace(/\.$/,'');url='https://'+dns+':'+PORT;}catch(x){}
+    if(url)return finish(url);
+    finish('http://127.0.0.1:'+PORT,'（沒有 Tailscale：此連線碼只適用「這台電腦上的 Chrome」，Safari 會擋 http 本機位址）');
+  });
+}
+if(process.argv.includes('--code')){printCode();return}
 http.createServer((req,res)=>{
   const origin=req.headers.origin||'';
   const okOrigin=ALLOW.some(r=>r.test(origin));
@@ -83,15 +97,5 @@ http.createServer((req,res)=>{
   });
 }).listen(PORT,'127.0.0.1',()=>{
   console.log('agy 橋接已啟動：http://127.0.0.1:'+PORT);
-  // 組出「連線碼」（網址＋token）並複製到剪貼簿，網頁貼一次就完成設定
-  const TS=process.platform==='darwin'?'/Applications/Tailscale.app/Contents/MacOS/Tailscale':'tailscale';
-  const finish=(url,note)=>{const code=Buffer.from(JSON.stringify({url,token})).toString('base64');
-    console.log('\n連線碼（已複製到剪貼簿，回網頁貼上即可）：\n'+code+'\n'+(note||''));
-    try{const c=require('child_process').spawn(process.platform==='win32'?'clip':'pbcopy',{shell:process.platform==='win32'});c.stdin.end(code);}catch(x){}
-    console.log('這個視窗請保持開著；要關閉橋接就關掉視窗。');};
-  require('child_process').execFile(TS,['status','--json'],{shell:process.platform==='win32'},(e,out)=>{
-    let url='';try{const dns=JSON.parse(out).Self.DNSName.replace(/\.$/,'');url='https://'+dns+':'+PORT;}catch(x){}
-    if(url)return finish(url);
-    finish('http://127.0.0.1:'+PORT,'（沒有 Tailscale：此連線碼只適用「這台電腦上的 Chrome」，Safari 會擋 http 本機位址）');
-  });
+  printCode();
 });
