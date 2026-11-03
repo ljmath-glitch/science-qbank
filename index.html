@@ -5671,7 +5671,7 @@ function wzBridgeInfo(){const i=document.getElementById('wzBridgeInfo');if(!i)re
 async function _wzAiCall(sys,msg,key,imgs){
   const br=_wzBridge();
   if(!br)return callGemini(sys,msg,key,imgs);
-  const r=await fetch(br.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':br.token},body:JSON.stringify({prompt:sys+'\n\n'+msg,engine:localStorage.getItem('qbank_ai_engine')||'auto',imgs:(imgs||[]).map(x=>x&&x.src).filter(Boolean)})});
+  let r;try{r=await fetch(br.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':br.token},body:JSON.stringify({prompt:sys+'\n\n'+msg,engine:localStorage.getItem('qbank_ai_engine')||'auto',imgs:(imgs||[]).map(x=>x&&x.src).filter(Boolean)})})}catch(e){throw new Error('連不到本機 AI 橋接（'+br.url+'）：請確認「啟動AI橋接」視窗還開著，且連線碼是最新的；Safari 需用含 https 的 Tailscale 位址。')}
   const j=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(j.error||('橋接錯誤 '+r.status));
   return j.text||'';

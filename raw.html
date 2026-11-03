@@ -1304,7 +1304,7 @@
     const eng=engOverride||document.getElementById('enrichEngine').value;
     if(eng==='ollama'){const w=promptSource.contentWindow;if(typeof w.resolveOllamaBase!=='function'||typeof w.callOllama!=='function')throw new Error('題庫 Ollama 函式尚未載入，請稍後再試。');const baseU=await w.resolveOllamaBase();return w.callOllama('',prompt,baseU,localStorage.getItem('ollamaModel')||'qwen2.5:latest')}
     const br=enrichBridge();if(!br)throw new Error('尚未連線本機 AI：請雙擊「啟動AI橋接」，再按「連線本機 AI」貼上連線碼；或改選 Ollama。');
-    const r=await fetch(br.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':br.token},body:JSON.stringify({prompt,engine:eng})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('橋接錯誤 '+r.status));return j.text||''}
+    let r;try{r=await fetch(br.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':br.token},body:JSON.stringify({prompt,engine:eng})})}catch(e){throw new Error('連不到本機 AI 橋接（'+br.url+'）：請確認「啟動AI橋接」視窗還開著，且連線碼是最新的')}const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('橋接錯誤 '+r.status));return j.text||''}
   const _csvCell=c=>/[",\n\r]/.test(c)?'"'+String(c).replace(/"/g,'""')+'"':String(c);
   async function enrichQuestions(auto){
     if(ENRICH_BUSY)return;const st=document.getElementById('enrichStatus'),bar=document.getElementById('enrichBar'),btn=document.getElementById('enrichBtn');
