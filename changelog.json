@@ -1,6 +1,13 @@
 {
-  "build": "2026-11-03.2",
+  "build": "2026-11-03.9",
   "entries": [
+    {
+      "id": 86,
+      "date": "11/03",
+      "tag": "修正",
+      "title": "raw「使用者本機」OCR 主機改走 Tailscale https，Safari 不再連不上",
+      "body": "Safari 不允許 https 網頁連 http://localhost（混合內容），所以 raw 頁面按「測試茲茲 OCR」會顯示 Load failed。「使用者本機」現在改連 Mac 的 Tailscale https 位址；這台裝置需登入同一個 Tailscale，且 Mac 上的茲茲 OCR 服務要開著。"
+    },
     {
       "id": 84,
       "date": "11/03",

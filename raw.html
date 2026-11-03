@@ -938,7 +938,7 @@
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
 
     // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字、Word 與題庫 Excel，不要求 Gemini ──
-    const OCR_PRESETS={local:'http://localhost:8787',mac:'http://localhost:8787',company:'https://ljm2222.tail3d3c18.ts.net:8443'};
+    const OCR_PRESETS={local:'http://localhost:8787',mac:'https://chias-macbook-pro.tail3d3c18.ts.net:8443',company:'https://ljm2222.tail3d3c18.ts.net:8443'};   // Safari 擋 https 頁面連 http://localhost（mixed content），Mac 改走 Tailscale https
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供第 III 區「手動框選修正」用
     function toggleOcrPanel(){
