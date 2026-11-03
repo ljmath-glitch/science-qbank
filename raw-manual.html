@@ -61,12 +61,6 @@
     <section class="stage">
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>茲茲清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
-      <div class="ocr-auto" style="border:1px solid #1666d6;border-radius:12px;padding:10px 12px;margin:12px 0;background:#eef5ff">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-          <div style="font-weight:700;font-size:13px">茲茲 OCR <span style="display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#fff0c2;color:#8a5a00;font-size:11px">測試中</span></div>
-          <a class="btn" href="https://tzutzu-ocr.vercel.app/" target="_blank" rel="noopener">↗ 開啟茲茲 OCR</a>
-        </div>
-      </div>
       <ol class="steps">
         <li data-step="1"><b>清除筆跡並保存原稿</b>先選擇原稿，再開啟去除筆跡網站；完成後於下一步選擇清稿，兩份都會自動存入題庫。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail"><input id="manualOriginalFile" type="file" accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" class="hide" onchange="setManualOriginal(this.files[0]);this.value=''"> <button class="btn" onclick="manualOriginalFile.click()">選擇考卷原稿</button> <a class="btn tool-link" href="https://tzutzu-course-system.vercel.app/eraser.html" target="_blank" rel="noopener">↗ 茲茲去除筆跡</a><p class="help" style="margin-top:8px">原稿會先保留；清除筆跡後下載乾淨 PDF，再到下一步選擇清稿。確認考試名稱後會自動上傳原稿與清稿。</p><div class="status" id="manualPdfSaveStatus">尚未選擇原稿。</div></div>
