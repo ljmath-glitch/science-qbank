@@ -62,7 +62,7 @@
         <p class="help" style="margin:0 0 10px">這裡已整合清稿、OCR、題目 CSV 與後續裁圖。先在上方「清除筆跡」完成，或直接丟入乾淨 PDF；辨識結果會留在本頁並可直接送到第 4 步與第 III 區，不再跳到另一個 OCR 網站。</p>
         <div class="row" style="align-items:center;gap:6px;flex-wrap:wrap">
           <span class="help">茲茲 OCR 運算主機：</span>
-          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" aria-label="茲茲 OCR 運算主機" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="mac">我的 Mac（本機）</option><option value="company">公司電腦（遠端）</option></select>
+          <select id="ocrPreset" onchange="onOcrPresetChange(this.value)" aria-label="茲茲 OCR 運算主機" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit"><option value="mac">使用者本機</option><option value="company">公司電腦</option></select>
           <input id="ocrUrl" aria-hidden="true" tabindex="-1" oninput="localStorage.setItem('ocrUrl',this.value)" style="display:none">
           <button class="btn" onclick="testOcrService()">測試茲茲 OCR</button>
         </div>
