@@ -4,7 +4,7 @@
 export const DEHAND_MODEL_URL=new URL('./models/handwriting-eraser-v10.onnx',import.meta.url).href;
 export const DEHAND_FALLBACK_URL='https://tzutzu-course-system.vercel.app/models/handwriting-eraser-v10.onnx';
 export const DEHAND_EXPERIMENTAL_MODEL_URL=new URL('./models/jwmask-r8.onnx',import.meta.url).href;
-export const HAND_TH=.12;   // 筆跡機率門檻（OCR 端 clean_pdf 同值）
+export const HAND_TH=.10;   // 筆跡機率門檻（OCR 端 clean_pdf 同值）
 export const TILE_SIZE=512,OVERLAP=48,PAGE_WIDTH=1240;
 
 export function printGray(g){return Math.max(0,Math.min(1,(g-.25)/(.88-.25)))*255}
