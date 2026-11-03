@@ -1451,6 +1451,9 @@ var KP_MAP = {
 "5-1 生物多樣性":[{c:"Gc-IV-2",n:"生物多樣功能維持生態系穩定"}],
 "5-2 生物多樣性面臨的危機":[{c:"Lb-IV-2",n:"人類活動改變環境影響其他生物"}],
 "5-3 保育的落實":[{c:"Lb-IV-3",n:"人類採行動維持生物生存環境"},{c:"Lb-IV-5",n:"公民共同維護生物多樣性"}],
+"0-1 實驗室安全守則與急救":[{c:"pe-IV-2",n:"能正確安全操作適合學習階段的物品、器材與生物"}],
+"0-2 常用實驗器材與基本操作":[{c:"pe-IV-2",n:"能正確安全操作適合學習階段的物品、器材與生物"}],
+"0-3 藥品取用與酒精燈使用":[{c:"pe-IV-2",n:"能正確安全操作適合學習階段的物品、器材與生物"}],
 "1-1 長度、質量與時間":[{c:"Ea-IV-1",n:"基本物理量與衍伸物理量"}],
 "1-2 測量與估計":[{c:"Ea-IV-2",n:"以適當尺度量測物理量"},{c:"Ea-IV-3",n:"依最小刻度估計測量值"}],
 "1-3 體積與密度":[{c:"Ea-IV-1",n:"基本物理量與衍伸物理量"}],
@@ -2337,9 +2340,17 @@ function normalizeSol(s){
 function parseSyl(raw){return raw.split('\n').map(l=>l.split('|').map(s=>s.trim())).filter(a=>a.length>=5&&a[4]).map(a=>({book:a[0],bookName:a[1],field:a[2],unit:a[3],sub:a[4]}))}
 // 賴妍講義版與原翰林版並存，避免既有題目的 book/unit 值失配。
 function mergeSyllabusProfiles(raw){
-  const base=String(raw||HANLIN_SYLLABUS).trim();
+  let lines=String(raw||HANLIN_SYLLABUS).trim().split('\n');
   const lai=typeof LAIYAN_BIO_SYLLABUS==='string'?LAIYAN_BIO_SYLLABUS.trim():'';
-  return lai&& !base.split('\n').some(line=>line.startsWith('JB1-LY|')) ? base+'\n'+lai : base;
+  if(lai&&!lines.some(line=>line.startsWith('JB1-LY|')))lines=lines.concat(lai.split('\n'));
+  // 補充章節（理化 C0 進入實驗室）：插在該冊第一行之前，已存在就不重複
+  const extra=typeof EXTRA_SYLLABUS==='string'?EXTRA_SYLLABUS.trim().split('\n'):[];
+  const missing=extra.filter(l=>l&&!lines.includes(l));
+  if(missing.length){
+    const book=missing[0].split('|')[0];const at=lines.findIndex(l=>l.startsWith(book+'|'));
+    if(at>=0)lines.splice(at,0,...missing);else lines=lines.concat(missing);
+  }
+  return lines.join('\n');
 }
 
 /* ===== 難度計算 ===== */
@@ -8180,14 +8191,18 @@ async function aiClassifyCompact(items,exam){
   let cat=SYL.filter(x=>/^JB/.test(x.book)&&(!books||books.includes(x.book))&&(!fm||x.field===fm));
   if(!cat.length)cat=SYL.filter(x=>/^JB/.test(x.book));
   const catTxt=cat.map((x,i)=>(i+1)+'|'+x.bookName+'|'+x.unit+'|'+x.sub).join('\n');
-  const qTxt=items.map(it=>'Q'+it.no+' '+stripRichMarks(it.q||it.summary||'').replace(/\s+/g,' ').slice(0,170)).join('\n');
-  const prompt='你是臺灣國中自然科老師。為每一題從「單元清單」挑出最符合的編號，並寫 12 字內的題目摘要（動詞＋對象）。\n只輸出，每題一行：題號|編號|摘要。不要其他文字。\n\n【單元清單】編號|冊|單元|子單元\n'+catTxt+'\n\n【題目】\n'+qTxt;
+  const qTxt=items.map(it=>'Q'+it.no+((it.imgs&&it.imgs.length)?'［有附圖］':'')+' '+stripRichMarks(it.q||it.summary||'').replace(/\s+/g,' ').slice(0,170)).join('\n');
+  const types=QTYPES.map(t=>t.code+t.name).join('、');
+  const prompt='你是臺灣國中自然科老師。為每一題：①從「單元清單」挑出最符合的編號；②挑題型代碼；③評難度三項分數；④判斷圖表類型；⑤寫 12 字內的題目摘要（動詞＋對象）。\n'
+    +'題型代碼：'+types+'\n圖表類型（只能從這 12 個擇一，題目標［有附圖］或文字明顯要看圖／表才填，否則填「無」）：無／表格／函數關係圖／運動圖／統計圖／電路圖／光學圖／波動圖／場線／等值線圖／微觀模型圖／實驗裝置圖／力學示意圖\n步驟分：1=1步、2=2步、3=3步以上｜記憶分：1=背就會、2=需理解、3=陌生情境活用｜概念分：1=1個概念、2=2個概念、3=3個以上或跨章\n'
+    +'只輸出，每題一行：題號|編號|題型|步驟分|記憶分|概念分|圖表類型|摘要。不要其他文字。\n\n【單元清單】編號|冊|單元|子單元\n'+catTxt+'\n\n【題目】\n'+qTxt;
   const out=await _wzAiCall('',prompt,'',[]);
   const res=[];
   for(const line of String(out||'').split(/\r?\n/)){
-    const m=line.match(/^\s*Q?(\d+)\s*[|｜]\s*(\d+)\s*[|｜]\s*(.+?)\s*$/);if(!m)continue;
+    const m=line.match(/^\s*Q?(\d+)\s*[|｜]\s*(\d+)\s*[|｜]\s*([^|｜]*?)\s*[|｜]\s*([1-3])\s*[|｜]\s*([1-3])\s*[|｜]\s*([1-3])\s*[|｜]\s*([^|｜]*?)\s*[|｜]\s*(.+?)\s*$/);if(!m)continue;
     const it=items.find(x=>String(x.no)===m[1]);const sel=cat[parseInt(m[2])-1];if(!it||!sel)continue;
-    res.push({no:m[1],book:sel.book,bookName:sel.bookName,field:sel.field,unit:sel.unit,sub:sel.sub,kp:_nearKp(it,sel),summary:m[3].replace(/[「」]/g,'').slice(0,20)});
+    const tcode=(m[3].match(/[A-E][1-3]|填|計/)||[''])[0];
+    res.push({no:m[1],book:sel.book,bookName:sel.bookName,field:sel.field,unit:sel.unit,sub:sel.sub,kp:_nearKp(it,sel),chart:(function(){const CH=['無','表格','函數關係圖','運動圖','統計圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','力學示意圖'];const raw=m[7].trim();const hit=CH.find(c=>raw===c||raw.includes(c))||(/場線|等值線/.test(raw)?'場線／等值線圖':'');const txt=String(it.q||'');const noFig=!(it.imgs&&it.imgs.length)&&!/[圖表]/.test(txt);return noFig?'無':(hit||'無')})(),summary:m[8].replace(/[「」]/g,'').slice(0,20),type:QTYPES.some(t=>t.code===tcode)?tcode:'',step:+m[4],mem:+m[5],con:+m[6]});
   }
   return res;
 }
@@ -8198,7 +8213,7 @@ async function aiEnrichSelected(){
   if(AI_ENRICH_BUSY){AI_ENRICH_CANCEL=true;return;}
   const items=pickedItems().filter(it=>it&&it.type!=='passage');
   if(!items.length){alert('請先勾選要補齊的題目（可用「全選篩選」）。');return;}
-  const need=it=>['book','unit','sub','kp','summary'].some(k=>!String(it[k]||'').trim());
+  const need=it=>['book','unit','sub','kp','summary','type','chart'].some(k=>!String(it[k]||'').trim())||!(+it.step&&+it.mem&&+it.con);
   const targets=items.filter(need);
   if(!targets.length){alert('勾選的 '+items.length+' 題，明細都已完整，不需要補。');return;}
   if(!_wzBridge()){alert('尚未連線本機 AI：請先在 Mac 雙擊「啟動AI橋接」（Windows 用 start_ai_bridge.bat），再貼上連線碼。');wzBridgeSetup();return;}
@@ -8226,7 +8241,8 @@ async function aiEnrichSelected(){
         callT0=0;const by=new Map(res.map(r=>[String(r.no),r]));
         for(const it of chunk){
           const a=by.get(String(it.no));if(!a){failed++;continue}
-          let got=0;for(const k of ['book','bookName','field','unit','sub','kp','summary']){if(!String(it[k]||'').trim()&&String(a[k]||'').trim()){it[k]=a[k];got++}}
+          let got=0;for(const k of ['book','bookName','field','unit','sub','kp','summary','type','chart']){if(!String(it[k]||'').trim()&&String(a[k]||'').trim()){it[k]=a[k];got++}}
+          if(!(+it.step&&+it.mem&&+it.con)&&a.step&&a.mem&&a.con){it.step=a.step;it.mem=a.mem;it.con=a.con;got++}
           if(!got){failed++;continue}
           try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)throw error;done++}catch(e){console.warn('補齊明細存檔失敗',it.id,e);failed++}
         }

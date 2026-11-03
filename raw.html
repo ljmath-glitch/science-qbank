@@ -1310,8 +1310,8 @@
     if(ENRICH_BUSY)return;const st=document.getElementById('enrichStatus'),bar=document.getElementById('enrichBar'),btn=document.getElementById('enrichBtn');
     const v=(document.getElementById('questionCsv')||{}).value||'';if(!v.trim()){st.textContent='還沒有題庫資料，請先產生題庫 Excel。';return}
     const rows=parseCSV(v);let head=null;if(rows.length&&/年度|題號/.test((rows[0]||[]).slice(0,5).join(','))&&isNaN(parseInt(rows[0][0])))head=rows.shift();
-    const NO=3,ANS=4,Q=19,FILL=[5,6,7,8,9,10,11];
-    const need=rows.filter(r=>r.length>=12&&[5,8,9,10,11].some(i=>!String(r[i]||'').trim()));
+    const NO=3,ANS=4,Q=19,FILL=[5,6,7,8,9,10,11,12,13,14,15,16];
+    const need=rows.filter(r=>r.length>=12&&[5,8,9,10,11,12,13,14,15,16].some(i=>!String(r[i]||'').trim()));
     if(!need.length){st.textContent='所有題目的明細都已完整，不需要補。';bar.style.width='100%';return}
     ENRICH_BUSY=true;btn.disabled=true;bar.style.width='2%';const t0=Date.now();let filled=0,failed=0;
     try{
@@ -1327,7 +1327,7 @@
         if(compact){
           let res;try{res=await w.aiClassifyCompact(batches[b].map(r=>({no:r[NO],q:r[Q]||r[11]||'',exam:r[2]||exam,id:''})),exam||batches[b][0][2])}catch(e){if(b===0)throw e;failed+=batches[b].length;continue}
           const by=new Map(res.map(x=>[String(x.no),x]));
-          for(const r of batches[b]){const a=by.get(String(r[NO]).trim());if(!a){failed++;continue}let got=0;const vals={5:a.book,6:a.bookName,7:a.field,8:a.unit,9:a.sub,10:a.kp,11:a.summary};for(const i of FILL){if(!String(r[i]||'').trim()&&String(vals[i]||'').trim()){r[i]=vals[i];got++}}if(got)filled++;else failed++}
+          for(const r of batches[b]){const a=by.get(String(r[NO]).trim());if(!a){failed++;continue}let got=0;const vals={5:a.book,6:a.bookName,7:a.field,8:a.unit,9:a.sub,10:a.kp,11:a.summary,12:a.type,13:a.step,14:a.mem,15:a.con,16:a.chart};for(const i of FILL){if(!String(r[i]||'').trim()&&String(vals[i]||'').trim()){r[i]=vals[i];got++}}if(got)filled++;else failed++}
         }else{
           const list=batches[b].map(r=>'【題號 '+r[NO]+'】答案：'+(r[ANS]||'（無）')+'\n'+(r[Q]||r[11]||'')).join('\n\n');
           const prompt=instruction+'\n\n════════\n以下是這份考卷已辨識好的 '+batches[b].length+' 題。請「只針對這些題」輸出 23 欄 CSV（不要表頭、不要任何說明文字），題號必須與下列完全相同；考試名稱、題號、答案、題目內容照原樣填入，重點是把冊數、冊名、領域、大單元、子單元、知識點、題目摘要判斷完整：\n\n'+list;
