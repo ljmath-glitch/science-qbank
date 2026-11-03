@@ -1057,6 +1057,23 @@
         el.textContent=`✓ 已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR、Word、題庫 Excel 均由此主機處理。`;
       }catch(e){el.textContent='✗ 連不到茲茲 OCR：'+(e.message||e)+'。請確認主機已啟動、Tailscale／localhost 可連線。';}
     }
+    // 茲茲 OCR 回傳的 figures＝[{name,url}]，檔名 *_p{頁}_fig{序}.png；下載成 dataURL 後組成 ocrToBatch 讀的 pages 結構。單張失敗不影響 OCR 結果。
+    async function ocrFetchFigures(base,figures){
+      const byPage=new Map();let failed=0;
+      for(const f of (figures||[])){
+        try{
+          const r=await fetch(base+f.url);if(!r.ok)throw new Error('HTTP '+r.status);
+          const blob=await r.blob();
+          const src=await new Promise((ok,bad)=>{const fr=new FileReader();fr.onload=()=>ok(fr.result);fr.onerror=bad;fr.readAsDataURL(blob)});
+          const m=/_p(\d+)_fig(\d+)\.png$/i.exec(f.name||'');const page=m?+m[1]:1;
+          if(!byPage.has(page))byPage.set(page,[]);
+          // label 帶頁碼與序號：題號未知的圖檔名才不會相同，打包 ZIP 時才不會互相覆蓋
+          byPage.get(page).push({type:'figure',kind:'圖表',page,label:m?`p${m[1]}圖${m[2]}`:(f.name||'圖表').replace(/\.png$/i,''),fig:m?+m[2]:0,image_b64:src});
+        }catch(e){failed++;console.warn('OCR 圖表下載失敗',f&&f.name,e);}
+      }
+      const pages=[...byPage.keys()].sort((a,b)=>a-b).map(page=>({page,blocks:byPage.get(page).sort((a,b)=>a.fig-b.fig)}));
+      return {pages,count:pages.reduce((n,p)=>n+p.blocks.length,0),failed};
+    }
     async function runAutoOcr(file,skipClean){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='請先選擇茲茲 OCR 運算主機。';return}
@@ -1072,14 +1089,17 @@
         let since=0,j=null;
         while(true){await new Promise(resolve=>setTimeout(resolve,1000));const p=await fetch(base+'/api/py-ocr/progress?job='+encodeURIComponent(started.jobId)+'&since='+since);if(!p.ok)throw new Error('茲茲 OCR 進度回應 '+p.status);j=await p.json();since=j.next==null?since+(j.events||[]).length:j.next;const ev=(j.events||[]).map(x=>x.message||x.text||'').filter(Boolean);if(ev.length)st.textContent=ev[ev.length-1];if(j.done)break;}
         if(!j.ok)throw new Error(j.error||'辨識失敗');
-        OCR_RESULT={...j,pages:[],engine:'茲茲 OCR（本機）'};
+        if((j.figures||[]).length)st.textContent='正在取回 OCR 裁好的 '+j.figures.length+' 張圖…';
+        const figs=await ocrFetchFigures(base,j.figures);
+        OCR_RESULT={...j,pages:figs.pages,engine:'茲茲 OCR（本機）'};
+        const figNote=(figs.count?`，取回 ${figs.count} 張圖`:'，沒有偵測到圖')+(figs.failed?`，另有 ${figs.failed} 張圖下載失敗（可在手動切圖步驟框選補上）`:'');
         if(!examName.value)syncExamNameFromFile(file);
         document.getElementById('ocrResultWrap').classList.remove('hide');
-        document.getElementById('ocrSummary').textContent='茲茲 OCR 已完成文字辨識；可下載 Word／原文，或直接產生題庫 Excel。';
+        document.getElementById('ocrSummary').textContent='茲茲 OCR 已完成文字辨識'+figNote+'；可下載 Word／原文，或直接產生題庫 Excel。';
         document.getElementById('ocrMarkdown').textContent=j.text||'尚無整份文字';
         document.getElementById('ocrFigures').innerHTML='';
         const links=[];if(j.docxUrl)links.push(`<a class="btn green" target="_blank" href="${base+j.docxUrl}">⬇ 下載 Word</a>`);if(j.txtUrl)links.push(`<a class="btn" target="_blank" href="${base+j.txtUrl}">⬇ 下載辨識原文</a>`);if(j.qbankUrl)links.push(`<a class="btn" target="_blank" href="${base+j.qbankUrl}">⬇ 下載題庫 Excel</a>`);document.getElementById('ocrFigures').innerHTML=links.join(' ');
-        st.textContent='茲茲 OCR 完成。第 4 步可直接抓取題庫 Excel，或下載 Word／原文。';
+        st.textContent='茲茲 OCR 完成'+figNote+'。第 4 步可直接抓取題庫 Excel，或下載 Word／原文。';
       }catch(e){st.textContent='辨識失敗：'+(e.message||e);}
     }
     function ocrRenderResult(){
@@ -1102,25 +1122,28 @@
     function ocrToBatch(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
       if(OCR_PDF_FILE){try{cropFiles.pdf=OCR_PDF_FILE;}catch(e){}}
-      let added=0;
+      let added=0,dup=0;const seen=new Set(cropCandidates.map(c=>c.src));
       for(const pg of (OCR_RESULT.pages||[])){
         for(const b of (pg.blocks||[])){
           if(!b.image_b64)continue;
+          if(seen.has(b.image_b64)){dup++;continue}   // 重複按不重複加
+          seen.add(b.image_b64);
           const qno=Number.isInteger(b.qno)?b.qno:null;
           const kind=b.kind||(b.type==='table'?'表格':'圖表');
+          const label=b.label||kind;
           cropCandidates.push({
             src:b.image_b64, page:(Number.isInteger(b.page)?b.page:1), qno,
-            scope:'single', kind, label:kind,
+            scope:'single', kind, label,
             verdict:qno?'pass':'review',
             reason:'自動 OCR 裁切，請確認題號與範圍',
             skip:false,
-            filename:(qno?('Q'+qno):'Q未知')+'_'+kind+(qno?'':'_請人工確認')+'.png'
+            filename:(qno?('Q'+qno):'Q未知')+'_'+label+(qno?'':'_請人工確認')+'.png'
           });
           added++;
         }
       }
       renderCropCandidates();
-      if(!added){
+      if(!added&&!dup){
         document.querySelector('[data-step="5"] .toggle-detail')?.click();
         document.querySelector('[data-step="5"]')?.scrollIntoView({behavior:'smooth',block:'start'});
         document.getElementById('ocrStatus').textContent='茲茲 OCR 已完成文字與 Word；圖表／題目圖片請在手動切圖步驟用同一份清稿 PDF 手動框選。';
@@ -1130,7 +1153,7 @@
       const detail=grid&&grid.closest('.step-detail');
       if(detail&&!detail.classList.contains('open')){const tb=detail.parentElement.querySelector('.toggle-detail');if(tb)tb.click();}
       if(grid)grid.scrollIntoView({behavior:'smooth',block:'start'});
-      document.getElementById('ocrStatus').textContent='已送 '+added+' 張圖到手動切圖步驟批次貼圖。可在下面改題號、手動框選、略過，再按「批次貼入題庫」。';
+      document.getElementById('ocrStatus').textContent=(added?'已送 '+added+' 張圖到手動切圖步驟批次貼圖。':'這批圖已經在手動切圖步驟的清單裡。')+'可在下面改題號、手動框選、略過，再按「批次貼入題庫」。';
     }
     // ── 示範模式：合併自 raw.test，免開服務即可預覽 MinerU 流程 ──
     let OCR_DEMO=false;
