@@ -35,6 +35,7 @@
     .crop-modal .crop-modal-meta{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6}
     .crop-modal .action-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:8px;margin-top:16px}
     .crop-modal .action-row .btn{width:100%;min-height:42px;font-size:13px;line-height:1;padding:0 8px;white-space:nowrap}
+    .crop-modal-overlay.dehand-editor{padding:0;background:#eef2f6;align-items:stretch;justify-content:stretch}.crop-modal-overlay.dehand-editor .crop-modal{width:100vw;max-width:none;height:100vh;max-height:none;border-radius:0;padding:14px 18px 10px;display:flex;flex-direction:column;overflow:hidden}.crop-modal-overlay.dehand-editor .crop-modal-title{font-size:16px}.crop-modal-overlay.dehand-editor .eraser-tools{flex:0 0 auto;margin:5px 0 8px}.crop-modal-overlay.dehand-editor .eraser-stage{flex:1;max-height:none;border-radius:10px;background:#e9eef4}.crop-modal-overlay.dehand-editor .eraser-stage canvas{max-height:calc(100vh - 205px);width:auto;max-width:100%}.crop-modal-overlay.dehand-editor .crop-modal-meta{display:none}.crop-modal-overlay.dehand-editor .action-row{flex:0 0 auto;display:flex;justify-content:flex-end;margin:8px 0 0}.crop-modal-overlay.dehand-editor .action-row .btn{width:auto;min-width:110px}
     .eraser-tools{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0 12px;padding:9px 12px;background:#faf8f4;border:1px solid var(--line);border-radius:10px}
     .eraser-tools .et-left{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;min-width:0}
     .eraser-tools input[type=range]{width:110px;vertical-align:middle;accent-color:var(--red)}
@@ -76,7 +77,8 @@
     .auto-review,.auto-crop,.auto-optional{--green:#b58a3a}.auto-review .toggle-detail,.auto-crop .toggle-detail{display:none}.auto-review .step-detail,.auto-crop .step-detail{display:block;margin-top:8px}.auto-review .steps>li,.auto-crop .steps>li{cursor:default}
     .auto-review .btn,.auto-crop .btn{min-height:34px;padding:0 12px;font-size:13px;line-height:1.2;white-space:nowrap}.auto-review input,.auto-review select,.auto-crop input,.auto-crop select{min-height:34px;font-size:13px}.auto-review .action-row,.auto-crop .action-row{align-items:center;gap:8px}.auto-review .row,.auto-crop .row{align-items:center;gap:8px}
     .auto-review .steps,.auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.auto-review .steps>li,.auto-crop .steps>li{min-height:64px;padding:11px 36px 10px 48px}.auto-review .steps>li:before,.auto-crop .steps>li:before{left:10px;top:11px;width:29px;height:29px;font-size:12px}.auto-review .steps b,.auto-crop .steps b{font-size:13px}.auto-review .step-detail,.auto-crop .step-detail{margin:7px -24px -2px -38px;padding:9px;font-size:12px}.auto-crop .steps>li[data-step="5a"]{display:none}
-    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}.auto-review .steps,.auto-crop .steps{grid-template-columns:1fr}}
+    .review-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}.review-tab{appearance:none;min-height:70px;padding:10px 12px;border:1px solid #e3d7ca;border-radius:14px;background:#fff;color:var(--ink);text-align:left;cursor:pointer;font:inherit;display:grid;grid-template-columns:31px 1fr;align-items:center;gap:9px}.review-tab:hover{border-color:#b58a3a;background:#fffaf2}.review-tab.on{border-color:var(--red);box-shadow:0 0 0 2px rgba(133,1,3,.10);background:#fff8f5}.review-tab-no{width:31px;height:31px;border:1.5px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:12px;font-weight:900}.review-tab b{font-size:13px;line-height:1.25}.review-tab small{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:500}.review-workspace{margin-top:10px;border:1px solid #e4d7ca;border-radius:16px;background:#fdfaf5;padding:14px;min-height:150px}.review-pane{display:none}.review-pane.on{display:block}.review-pane>.step-detail{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.review-pane .review-ocr{margin-top:12px;padding-top:12px;border-top:1px solid #e9ddd0}.review-pane .review-ocr:before{content:"OCR";display:inline-block;margin-bottom:8px;color:var(--red);font-size:11px;font-weight:900;letter-spacing:.12em}.review-pane .auto-crop{display:block!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}.review-pane .auto-crop>.head,.review-pane .auto-crop>.notice{display:none}.review-pane .auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr))}.auto-review.compact-ready>.steps,.auto-crop.merged-source{display:none!important}.dehand-grid{display:flex;overflow-x:auto;gap:10px;padding:4px 1px 8px;scroll-snap-type:x proximity}.dehand-card{flex:0 0 190px;scroll-snap-align:start}.dehand-card .dehand-pair{grid-template-columns:1fr}.dehand-card .dehand-pair>div:first-child{display:none}.dehand-card .dehand-pair img{height:210px}.dehand-card b{display:block;margin-bottom:5px}.dehand-card .btn{min-height:32px}.dehand-actions{position:sticky;bottom:0;z-index:4;padding:9px;background:rgba(255,253,249,.94);border-top:1px solid #eadfd3;backdrop-filter:blur(8px)}
+    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}.review-tabs{grid-template-columns:repeat(4,minmax(155px,1fr));overflow-x:auto;padding-bottom:5px}.review-tab{scroll-snap-align:start}.review-pane .auto-crop .steps{grid-template-columns:1fr}}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
   </style>
 </head>
@@ -105,7 +107,7 @@
           </div>
         </li>
         <li data-step="2"><b>檢查清稿結果</b>檢查或修補清稿。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">茲茲版 v10</option><option value="r8">實驗版 r8</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>⬇ 下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">↻ 重試</button></div></div></div>
+          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">混合版（v10 模型＋紅藍色筆規則・建議）</option><option value="r8">實驗版 r8（模型筆跡機率）</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>⬇ 下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">↻ 重試</button></div></div></div>
         </li>
         <li data-step="3"><b>重新執行 OCR</b>需要時重跑。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
@@ -132,6 +134,7 @@
           </div>
         </li>
       </ol>
+      <div id="reviewWorkspace" class="review-workspace" aria-live="polite"></div>
     </section>
 
     <section class="stage auto-crop" style="margin-top:20px">
@@ -180,6 +183,23 @@
   <script>
     function toggleDetail(btn){const detail=btn.parentElement.querySelector('.step-detail');const open=detail.classList.toggle('open');btn.textContent=open?'⌃':'⌄';btn.title=open?'收合本步工具':'展開本步工具';btn.setAttribute('aria-label',btn.title)}
     document.querySelectorAll('.steps>li').forEach(card=>card.addEventListener('click',event=>{if(event.target.closest('button,a,input,textarea,select,label'))return;const detail=card.querySelector('.step-detail');if(detail&&detail.classList.contains('open')&&event.target.closest('.step-detail'))return;const toggle=card.querySelector('.toggle-detail');if(toggle)toggleDetail(toggle)}));
+    function initReviewWorkspace(){
+      const section=document.querySelector('.auto-review'),list=section&&section.querySelector(':scope>.steps'),workspace=document.getElementById('reviewWorkspace'),crop=document.querySelector('.auto-crop');
+      if(!section||!list||!workspace||!crop)return;
+      const get=n=>list.querySelector(`li[data-step="${n}"] .step-detail`),name=get('1'),clean=get('2'),ocr=get('3'),excel=get('4');
+      const panes=[document.createElement('div'),document.createElement('div'),document.createElement('div'),document.createElement('div')];
+      panes.forEach((p,i)=>{p.className='review-pane';p.dataset.review=String(i+1)});
+      panes[0].append(name);panes[1].append(clean);ocr.classList.add('review-ocr');panes[1].append(ocr);panes[2].append(excel);crop.classList.add('merged-source');panes[3].append(crop);workspace.append(...panes);
+      const labels=[['確認考卷名稱','命名與對應'],['檢查清稿結果','下載・修補・OCR'],['題庫 Excel','匯入或下載'],['切圖','框選與貼圖']];
+      const tabs=document.createElement('div');tabs.className='review-tabs';tabs.setAttribute('role','tablist');
+      labels.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.className='review-tab';b.dataset.review=String(i+1);b.setAttribute('role','tab');b.innerHTML=`<span class="review-tab-no">0${i+1}</span><span><b>${x[0]}</b><small>${x[1]}</small></span>`;b.onclick=()=>openReviewStep(i+1);tabs.appendChild(b)});
+      section.insertBefore(tabs,workspace);section.classList.add('compact-ready');openReviewStep(1);
+    }
+    function openReviewStep(n){
+      document.querySelectorAll('.review-tab').forEach(x=>{const on=x.dataset.review==n;x.classList.toggle('on',on);x.setAttribute('aria-selected',String(on))});
+      document.querySelectorAll('.review-pane').forEach(x=>x.classList.toggle('on',x.dataset.review==n));
+    }
+    initReviewWorkspace();
     function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
     function readPaperFile(f){if(!f)return;syncExamNameFromFile(f);const lower=f.name.toLowerCase();if(lower.endsWith('.pdf'))setCropFile('pdf',f);else if(/\.(docx?|odt)$/i.test(f.name))setCropFile('word',f)}
     function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name;normalizeName();autoMatchExamName()}
@@ -513,22 +533,22 @@
       location.href=scheme;
       return false;
     }
-    function closeInfoModal(){document.getElementById('cropModalOverlay').classList.remove('show');document.getElementById('cropModalBody').innerHTML=''}
+    function closeInfoModal(){const overlay=document.getElementById('cropModalOverlay');overlay.classList.remove('show','dehand-editor');document.getElementById('cropModalBody').innerHTML=''}
     function closeCropPreview(){cropPreviewIndex=null;closeInfoModal()}
     // ── 橡皮擦／裁切：把已裁切圖片中不要的部分塗成白色，或直接框選裁掉（當白紙背景） ──
     let _eraserBrush=24,_eraserHistory=[],_eraserRedoStack=[],_eraserDrawing=false,_eraserLast=null;
     let _eraserToolMode='brush',_eraserSelRect=null;
     function openCropEraser(i){
       const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserRedoStack=[];_eraserDrawing=false;_eraserLast=null;_eraserToolMode='brush';_eraserSelRect=null;
-      cropPreviewIndex=i;document.getElementById('cropModalOverlay').classList.add('show');
+      const isPage=Number.isInteger(it.dehandIndex);cropPreviewIndex=i;const overlay=document.getElementById('cropModalOverlay');overlay.classList.add('show');overlay.classList.toggle('dehand-editor',isPage);
       const body=document.getElementById('cropModalBody');
-      body.innerHTML=`<div class="crop-modal-title">🧽 橡皮擦／裁切 — ${esc(it.filename)}</div>
+      body.innerHTML=`<div class="crop-modal-title">${isPage?'清稿檢查與修補':'橡皮擦／裁切'} — ${esc(it.filename)}${isPage?'（系統已自動判斷方向）':''}</div>
         <div class="eraser-tools"><div class="et-left">
           <label><input type="radio" name="eraserTool" value="brush" checked onchange="setEraserTool('brush')">🖌 手繪塗白</label>
           <label><input type="radio" name="eraserTool" value="rect" onchange="setEraserTool('rect')">▭ 框選（更精準）</label>
           <span id="eraserBrushWrap">筆刷 <input type="range" id="eraserSize" min="6" max="90" value="${_eraserBrush}" oninput="_eraserBrush=+this.value;document.getElementById('eraserSizeVal').textContent=this.value"> <span id="eraserSizeVal">${_eraserBrush}</span> px</span>
         </div>
-        <span class="ur"><button class="btn" onclick="_eraserUndo()" title="復原（上一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>復原</button><button class="btn" onclick="_eraserRedo()" title="重做（下一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>重做</button></span></div>
+        <span class="ur">${isPage?'<button class="btn" onclick="_eraserRotate90()" title="順時針旋轉 90°">↻ 旋轉 90°</button>':''}<button class="btn" onclick="_eraserUndo()" title="復原（上一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>復原</button><button class="btn" onclick="_eraserRedo()" title="重做（下一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>重做</button></span></div>
         <div class="eraser-stage" id="eraserStage"><canvas id="eraserCanvas"></canvas><div class="eraser-cursor" id="eraserCursor"></div><div class="eraser-sel" id="eraserSel"></div></div>
         <div class="crop-modal-meta" id="eraserModeHint">在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。</div>
         <div class="action-row" id="eraserSelActions" style="display:none"><button class="btn" onclick="_eraserFillSelection()">⬜ 把框內塗白</button><button class="btn" onclick="_eraserCropToSelection()">✂ 只保留框內（其餘裁掉）</button><button class="btn" onclick="_eraserClearSelection()">✕ 取消框選</button></div>
@@ -590,6 +610,11 @@
       const ctx=canvas.getContext('2d');_pushEraserHistory(ctx,canvas);
       ctx.save();ctx.globalCompositeOperation='source-over';ctx.fillStyle='#ffffff';ctx.fillRect(_eraserSelRect.x,_eraserSelRect.y,_eraserSelRect.w,_eraserSelRect.h);ctx.restore();
       _eraserClearSelection();
+    }
+    function _eraserRotate90(){
+      const canvas=document.getElementById('eraserCanvas');if(!canvas)return;const ctx=canvas.getContext('2d');_pushEraserHistory(ctx,canvas);
+      const copy=document.createElement('canvas');copy.width=canvas.width;copy.height=canvas.height;copy.getContext('2d').drawImage(canvas,0,0);
+      canvas.width=copy.height;canvas.height=copy.width;const next=canvas.getContext('2d');next.translate(canvas.width/2,canvas.height/2);next.rotate(Math.PI/2);next.drawImage(copy,-copy.width/2,-copy.height/2);_eraserClearSelection();
     }
     function _eraserCropToSelection(){
       const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserSelRect)return;
@@ -1197,6 +1222,7 @@
   function pipeGo(id){
     setStagesOpen(true);
     const optional=document.querySelector('.auto-optional');if(optional)optional.classList.toggle('active',id>=6);
+    if(id<=5){openReviewStep({1:1,2:2,3:2,4:3,5:4}[id]);PIPE.sel=id;pipeRender();document.querySelector('.auto-review')?.scrollIntoView({behavior:'smooth',block:'start'});return}
     const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],6:[2,'6'],7:[2,'7']};
     const m=map[id];if(!m)return;const st=stages[m[0]];const el=st&&st.querySelector('li[data-step="'+m[1]+'"]');
     if(!el)return;PIPE.sel=id;pipeRender();const d=el.querySelector('.step-detail');const b=el.querySelector('.toggle-detail');if(d&&!d.classList.contains('open')&&b)b.click();el.scrollIntoView({behavior:'smooth',block:'start'});el.style.transition='box-shadow .4s';el.style.boxShadow='0 0 0 3px rgba(133,1,3,.25)';setTimeout(()=>el.style.boxShadow='',1400)}
