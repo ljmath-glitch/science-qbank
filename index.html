@@ -8253,6 +8253,76 @@ async function aiEnrichSelected(){
   }catch(e){clearInterval(tick);prog.innerHTML='⚠ AI 補齊明細停止：'+(e.message||e)+'（已補 '+done+' 題）'}
   finally{clearInterval(tick);AI_ENRICH_BUSY=false;setTimeout(()=>prog.remove(),15000);if(typeof render==='function')render()}
 }
+
+/* ===== 理化「C0 進入實驗室」重新分類：關鍵字找候選 → 本機 AI 判斷 → 預覽確認 → 套用（可復原） ===== */
+let LAB_RECLASS_BUSY=false;
+const LAB_SUBS=['','0-1 實驗室安全守則與急救','0-2 常用實驗器材與基本操作','0-3 藥品取用與酒精燈使用'];
+async function labReclassify(){
+  if(LAB_RECLASS_BUSY)return;
+  if(!_wzBridge()){alert('尚未連線本機 AI：請先雙擊「啟動AI橋接」，再貼上連線碼。');wzBridgeSetup();return;}
+  try{const br=_wzBridge();const r=await fetch(br.url+'/ping',{headers:{'x-bridge-token':br.token}});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error('ping')}catch(e){alert('連不到本機 AI 橋接，請確認「啟動AI橋接」視窗開著後，貼上最新連線碼。');wzBridgeSetup();return;}
+  const re=/實驗室|酒精燈|滴管|量筒|燒杯|試管|護目|藥品|藥匙|取用|廢液|急救|滅火|玻璃儀器|實驗安全|安全守則|洗滌|警示|危險|器材|玻璃棒|漏斗|三腳架|石棉網|點燃|熄滅/;
+  const picks=pickedItems().filter(x=>x&&x.type!=='passage');
+  const pool=(picks.length?picks:DB).filter(x=>x&&x.type!=='passage'&&(x.field==='理化'||/理化/.test(x.bookName||''))&&x.unit!=='C0 進入實驗室');
+  const cand=pool.filter(x=>re.test(stripRichMarks((x.q||'')+(x.summary||''))));
+  if(!cand.length){alert('沒有找到可能屬於「進入實驗室」的理化題目。');return;}
+  if(!confirm('找到 '+cand.length+' 題可能與實驗室安全／器材／藥品取用有關（範圍：'+(picks.length?'勾選的 '+picks.length+' 題':'全部理化題')+'）。\n將分批請本機 AI 判斷，約需 '+Math.ceil(cand.length/40)*15+' 秒；判斷後會先給你預覽，確認才會改資料庫。\n開始嗎？'))return;
+  const eng=(localStorage.getItem('qbank_ai_engine')||'auto');
+  LAB_RECLASS_BUSY=true;
+  const prog=document.createElement('div');prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 18px;border-radius:12px;font-size:14px;z-index:9999;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.6';document.body.appendChild(prog);
+  const t0=Date.now();let batchNo=0,callT0=0;const nB=Math.ceil(cand.length/40);
+  const tick=setInterval(()=>{prog.innerHTML='重新分類「進入實驗室」：第 '+batchNo+'/'+nB+' 批・已跑 <b>'+Math.round((Date.now()-t0)/1000)+'</b> 秒'+(callT0?'（這一批已等 <b>'+Math.round((Date.now()-callT0)/1000)+'</b> 秒）':'')},1000);
+  const props=[];
+  try{
+    for(let i=0;i<cand.length;i+=40){
+      const chunk=cand.slice(i,i+40);batchNo++;callT0=Date.now();
+      const qTxt=chunk.map((x,j)=>'Q'+(j+1)+' '+stripRichMarks(x.q||x.summary||'').replace(/\s+/g,' ').slice(0,150)).join('\n');
+      const prompt='你是臺灣國中理化老師。判斷每題是否「主要在考實驗室相關基本常識」，只能回 0／1／2／3：\n'
+        +'1＝實驗室安全守則與急救（安全規則、穿著、藥品危險標示、意外處理、滅火）\n2＝常用實驗器材與基本操作（器材名稱與用途、量筒／滴管／燒杯／試管／漏斗等的使用方法與讀數姿勢）\n3＝藥品取用與酒精燈使用（固體液體取用、酒精燈點熄、加熱試管）\n'
+        +'0＝不屬於以上：題目主要在考其他單元知識（測量讀數與計算、密度、濃度、混合物分離原理、空氣、酸鹼等），即使用到量筒燒杯也回 0。\n只輸出每題一行：題號|數字。不要其他文字。\n\n'+qTxt;
+      let out;try{out=await _wzAiCall('',prompt,'',[])}catch(e){if(!props.length&&i===0)throw e;continue}
+      callT0=0;
+      for(const line of String(out||'').split(/\r?\n/)){const m=line.match(/^\s*Q?(\d+)\s*[|｜]\s*([0-3])/);if(!m)continue;const it=chunk[parseInt(m[1])-1];const c=+m[2];if(it&&c>0)props.push({it,c})}
+    }
+  }catch(e){clearInterval(tick);prog.innerHTML='⚠ 重新分類停止：'+(e.message||e);setTimeout(()=>prog.remove(),12000);LAB_RECLASS_BUSY=false;return}
+  clearInterval(tick);LAB_RECLASS_BUSY=false;prog.innerHTML='判斷完成：'+cand.length+' 題中 '+props.length+' 題屬於「進入實驗室」・共 '+Math.round((Date.now()-t0)/1000)+' 秒';setTimeout(()=>prog.remove(),8000);
+  if(!props.length){alert('AI 判斷沒有題目屬於「進入實驗室」。');return;}
+  labReclassPreview(props);
+}
+function labReclassPreview(props){
+  const old=document.getElementById('labPrevDlg');if(old)old.remove();
+  const d=document.createElement('dialog');d.id='labPrevDlg';d.style.cssText='width:min(900px,94vw);max-height:88vh;border:0;border-radius:14px;padding:0;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)';
+  d.innerHTML='<div style="background:var(--red,#850103);color:#fff;padding:14px 20px;font-weight:800;font-size:16px">預覽：改分到「C0 進入實驗室」（共 '+props.length+' 題）</div>'
+    +'<div style="padding:10px 18px;font-size:13px;color:#6e5a3c">取消勾選的題目不會被改。套用後會寫入資料庫，並保留一份可復原的備份。</div>'
+    +'<div id="labPrevBody" style="padding:0 18px;overflow:auto;max-height:55vh"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="text-align:left;color:#6e5a3c"><th></th><th>考卷／題號</th><th>原分類</th><th>改為</th><th>題目</th></tr></thead><tbody>'
+    +props.map((p,i)=>'<tr style="border-top:1px solid #eee"><td><input type="checkbox" data-i="'+i+'" checked></td><td>'+esc((p.it.exam||'')+' 第'+p.it.no+'題')+'</td><td>'+esc((p.it.unit||'')+' / '+(p.it.sub||''))+'</td><td><b>'+esc(LAB_SUBS[p.c])+'</b></td><td>'+esc(stripRichMarks(p.it.q||'').replace(/\s+/g,' ').slice(0,46))+'</td></tr>').join('')
+    +'</tbody></table></div><div style="display:flex;gap:10px;justify-content:flex-end;padding:14px 18px"><button class="btn" id="labCancel">取消</button><button class="btn primary" id="labApply">套用勾選的題目</button></div>';
+  document.body.appendChild(d);d.showModal();
+  d.querySelector('#labCancel').onclick=()=>d.close();
+  d.querySelector('#labApply').onclick=async()=>{
+    const sel=[...d.querySelectorAll('input[data-i]:checked')].map(x=>props[+x.dataset.i]);if(!sel.length){d.close();return}
+    const btn=d.querySelector('#labApply');btn.disabled=true;let ok=0,bad=0;const backup={};
+    for(const {it,c} of sel){
+      backup[it.id]={book:it.book,bookName:it.bookName,field:it.field,unit:it.unit,sub:it.sub,kp:it.kp};
+      it.book='JB3';it.bookName='八上理化';it.field='理化';it.unit='C0 進入實驗室';it.sub=LAB_SUBS[c];
+      const kp=(KP_MAP[LAB_SUBS[c]]||[])[0];it.kp=kp?kp.c+' '+kp.n:(it.kp||'');
+      btn.textContent='套用中… '+(ok+bad+1)+'/'+sel.length;
+      try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)throw error;ok++}catch(e){console.warn('重分類存檔失敗',it.id,e);bad++}
+    }
+    try{localStorage.setItem('labReclassBackup',JSON.stringify(backup))}catch(e){}
+    d.querySelector('#labPrevBody').innerHTML='<div style="padding:16px;font-size:14px">已改分 <b>'+ok+'</b> 題'+(bad?'，失敗 '+bad+' 題':'')+'。</div>';
+    btn.textContent='完成';btn.disabled=false;btn.onclick=()=>d.close();
+    const un=document.createElement('button');un.className='btn';un.textContent='復原這次重分類';un.onclick=labReclassUndo;btn.parentElement.insertBefore(un,btn);
+    if(typeof render==='function')render();
+  };
+}
+async function labReclassUndo(){
+  let b={};try{b=JSON.parse(localStorage.getItem('labReclassBackup')||'{}')}catch(e){}
+  const ids=Object.keys(b);if(!ids.length){alert('沒有可復原的紀錄。');return}
+  if(!confirm('把上次重分類的 '+ids.length+' 題改回原本的分類？'))return;
+  let ok=0;for(const id of ids){const it=DB.find(x=>x.id===id);if(!it)continue;Object.assign(it,b[id]);try{const {error}=await sb.from('questions').upsert(toRow(it));if(!error)ok++}catch(e){}}
+  localStorage.removeItem('labReclassBackup');alert('已復原 '+ok+' 題。');if(typeof render==='function')render();
+}
 /* ===== 工具 ===== */
 function stamp(){const d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}
 function download(name,content,type){const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
@@ -8270,6 +8340,7 @@ const TB_BUTTONS={
   guide:   ()=>`<a class="btn" href="guide.html" style="text-decoration:none">使用說明</a>`,
   raw:     ()=>`<a class="btn" href="raw.html" title="開啟考卷前處理流程" style="text-decoration:none">考卷處理</a>`,
   selFilt: ()=>`<button class="btn" onclick="selectFiltered()">全選篩選</button>`,
+  labReclass: ()=>`<button class="btn" onclick="labReclassify()" title="把理化題目中屬於實驗室安全／器材／藥品取用的題，用本機 AI 找出並改分到 C0 進入實驗室（先預覽再套用）">重分類：進入實驗室</button>`,
   aiEnrich: ()=>`<button class="btn" onclick="aiEnrichSelected()" title="用本機 AI 補齊勾選題目缺少的冊數、大單元、子單元、知識點、題目摘要">AI 補齊明細</button>`,
   batchGenBtn:  ()=>`<button class="btn" onclick="openBatchGenDlg()" title="批次生成勾選題目的詳解">批次生成</button>`,
   solPromptBtn: ()=>`<button class="btn" onclick="showSolPrompt()" title="把勾選的題目整理成一份指令複製給 AI 製作詳解">詳解指令</button>`,
@@ -8293,7 +8364,7 @@ const TB_TAB_ICONS=[
 const TB_DEFAULT=[
   ['raw','claude','import','batchImg'],
   ['batchGenBtn','solPromptBtn','solImport'],
-  ['aiEnrich','progress','backup','restore','sysDoc','guide'],
+  ['aiEnrich','labReclass','progress','backup','restore','sysDoc','guide'],
   ['selFilt','stat'],
   [],
 ];
