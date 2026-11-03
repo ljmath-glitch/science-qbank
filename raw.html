@@ -961,7 +961,7 @@
     const OCR_HOSTS={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
     function ocrHost(){return localStorage.getItem('ocrHost')==='local'?'local':'company'}
     function setOcrHost(v){localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];document.querySelectorAll('input[name="ocrHost"]').forEach(r=>{r.checked=r.value===v});const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent=''}
-    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到公司電腦：請確認公司電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
+    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到公司電腦：請確認公司電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
     function toggleOcrPanel(){
