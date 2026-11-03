@@ -33,7 +33,8 @@ function runCli(name,binPath,prompt,dir){
     p.on('error',x=>{clearTimeout(to);reject(x);});
     p.on('close',c=>{clearTimeout(to);let text=out.trim();if(outFile){try{text=fs.readFileSync(outFile,'utf8').trim();fs.rmSync(outFile,{force:true})}catch(x){}}
       if(/Failed to authenticate|OAuth session expired|Please run \/login/i.test(text))return reject(new Error(name+' 尚未登入或登入已過期，請先在終端機登入該工具'));
-      c===0||text?resolve(text):reject(new Error(name+' 失敗：'+err.slice(0,200)));});
+      if(c===0||text)return resolve(text);
+      const lines=err.split(/\r?\n/).filter(x=>/error|quota|unauthor|401|429|denied/i.test(x));reject(new Error(name+' 失敗：'+(lines.length?lines.slice(-2).join(' ｜ '):err.slice(-300)).slice(0,300)));});
   });
 }
 // 把題目附圖存成暫存檔，讓 agy 用讀檔的方式看圖（data: 直接解碼，http(s) 由橋接下載）

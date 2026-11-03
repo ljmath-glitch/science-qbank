@@ -51,6 +51,7 @@
 
 
     .enrich{margin-top:12px;padding:12px 14px;border:1px solid #e8d9b5;border-radius:12px;background:#fffaf0}.enrich-head{display:flex;flex-direction:column;gap:2px;margin-bottom:4px}.enrich-head b{font-size:14px}.enrich-bar{height:8px;border-radius:999px;background:#efe6d2;overflow:hidden;margin:8px 0 4px}.enrich-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--red),#c99a2e);transition:width .4s}
+    .auto-optional .steps{grid-template-columns:1fr!important}.auto-optional .steps>li[data-step="6"]:before{display:none}.auto-optional .steps>li[data-step="6"]{padding-left:14px!important}.auto-optional .steps>li[data-step="6"] .step-detail{display:block!important;margin-left:0!important;margin-right:0!important}
     .modetabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#fff;border:1px solid #e8d9b5;border-radius:14px;width:max-content;max-width:100%}.modetabs a{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:10px;font-weight:800;font-size:14px;color:#6e5a3c;text-decoration:none}.modetabs a:hover{background:#faf4ea}.modetabs a.on{background:linear-gradient(135deg,#850103,#a3141a);color:#fff;box-shadow:0 4px 10px -6px #850103}
     .intro.wf{position:relative;overflow:hidden;border:1px solid #e8d9b5;background:linear-gradient(135deg,#fffaf0 0%,#fff 55%,#fdf1f0 100%)}.intro.wf:before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,var(--red),#c99a2e)}
     .wf-kicker{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.18em;color:#b8892b;margin-bottom:4px}.intro.wf h2{margin:0 0 6px}
@@ -167,13 +168,12 @@
       <div class="head"><div class="no">III</div><div><h2>可選｜詳解與詳解 Excel（事後再做也可以）</h2><p>不影響上方必要流程；需要時再用茲茲詳解工具產生，貼回 Excel／CSV 後匯入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
       <ol class="steps">
-        <li data-step="6"><b>6.（可選）詳解工具</b>使用目前茲茲 OCR／題庫詳解指令，可交給 Claude、Gemini、ChatGPT 或本機 Ollama，並附上同一份清稿檔。
+        <li data-step="6"><b>詳解（可選）</b>用本機 AI 批次生成詳解，貼回／匯入題庫；也可以事後再做。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><button class="btn primary" onclick="copySolutionPrompt()">📋 一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div></div>
-        </li>
-        <li data-step="7"><b>7.（可選）產生詳解匯入 Excel／CSV</b>確認考試名稱、題號與詳解對應後，可下載檔案或直接開啟題庫詳解匯入。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><div class="detail-title">匯入詳解 CSV／Excel</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="event.preventDefault();this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportSolutions" type="checkbox" checked> 送出後直接開啟題庫詳解匯入</label><button class="btn green" onclick="sendSolutionsToQbank()">⬆ 匯入詳解</button><button class="btn" onclick="downloadSolutionCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadSolutionXlsx()">⬇ 下載 Excel</button></div></div>
+          <div class="step-detail"><div class="enrich" id="solBox"><div class="enrich-head"><b>🤖 本機 AI 批次生成詳解</b><span class="help">依上方題庫資料，分批（每批 5 題）交給本機 AI 寫詳解，結果自動填入下方並可直接匯入題庫；不需要複製貼上。</span></div>
+            <div class="row"><label class="help">AI 引擎 <select id="solEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="solConn"></span></div>
+            <div class="row"><button class="btn green" id="solBtn" onclick="solGenerate()">🤖 批次生成詳解</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="solAuto" type="checkbox"> 題庫 Excel 完成後自動生成詳解</label></div>
+            <div class="enrich-bar"><i id="solBar"></i></div><div class="status" id="solStatus">需要先有題庫資料（上一步的題庫 Excel）。詳解是可選項，可以事後再做。</div></div><details class="status" style="margin-top:10px"><summary>手動方式：複製指令貼到外部 AI</summary><div style="margin-top:8px"><button class="btn primary" onclick="copySolutionPrompt()">📋 一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT ↗</a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini ↗</a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude ↗</a></div></div></details><div style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><div class="detail-title">匯入詳解 CSV／Excel</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="event.preventDefault();this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportSolutions" type="checkbox" checked> 送出後直接開啟題庫詳解匯入</label><button class="btn green" onclick="sendSolutionsToQbank()">⬆ 匯入詳解</button><button class="btn" onclick="downloadSolutionCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadSolutionXlsx()">⬇ 下載 Excel</button></div></div></div>
         </li>
       </ol>
     </section>
@@ -1226,7 +1226,7 @@
     setStagesOpen(true);
     const optional=document.querySelector('.auto-optional');if(optional)optional.classList.toggle('active',id>=6);
     if(id<=5){openReviewStep({1:1,2:2,3:2,4:3,5:4}[id]);PIPE.sel=id;pipeRender();document.querySelector('.auto-review')?.scrollIntoView({behavior:'smooth',block:'start'});return}
-    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],6:[2,'6'],7:[2,'7']};
+    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],6:[2,'6'],7:[2,'6']};
     const m=map[id];if(!m)return;const st=stages[m[0]];const el=st&&st.querySelector('li[data-step="'+m[1]+'"]');
     if(!el)return;PIPE.sel=id;pipeRender();const d=el.querySelector('.step-detail');const b=el.querySelector('.toggle-detail');if(d&&!d.classList.contains('open')&&b)b.click();el.scrollIntoView({behavior:'smooth',block:'start'});el.style.transition='box-shadow .4s';el.style.boxShadow='0 0 0 3px rgba(133,1,3,.25)';setTimeout(()=>el.style.boxShadow='',1400)}
   async function pipeSaveExamPdfs(original,clean){
@@ -1288,7 +1288,7 @@
     wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始手動切圖',true)}}catch(e){}return r});
     wrap('batchImportToQbank',function(o,a){const n=(typeof cropCandidates!=='undefined'?cropCandidates.filter(x=>!x.skip).length:0);const r=o.apply(this,a);if(n)pipeDone(5,n+' 張圖已送入題庫');return r});
     wrap('copySolutionPrompt',function(o,a){pipeStart(6,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
-    wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(7).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(7,n+' 題詳解');if(pipeStep(6).state!=='done')pipeDone(6,'已取得詳解')}}catch(e){}return r});
+    wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(7).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(7,n+' 題詳解');if(pipeStep(6).state!=='done'&&pipeStep(6).state!=='run')pipeDone(6,'已取得詳解')}}catch(e){}return r});
   })();
   </script>
   <script id="enrichScript">
@@ -1296,12 +1296,12 @@
      引擎＝本機 AI 橋接（tools/agy_bridge.cjs；自動挑 agy／claude／codex）或 Ollama；沿用題庫的 buildPrompt 規則。 */
   let ENRICH_BUSY=false;
   function enrichBridge(){try{const o=JSON.parse(localStorage.getItem('qbank_agy_bridge')||'null');return o&&o.url&&o.token?o:null}catch(e){return null}}
-  async function enrichConnCheck(){const el=document.getElementById('enrichConn');if(!el)return;const br=enrichBridge();if(!br){el.textContent='尚未連線（雙擊「啟動AI橋接」後按「連線本機 AI」貼上連線碼）';return}
-    try{const r=await fetch(br.url+'/engines',{headers:{'x-bridge-token':br.token}});const j=await r.json();const ok=Object.entries(j.engines||{}).filter(([k,v])=>v.ok).map(([k])=>k);el.textContent=ok.length?'已連線・可用：'+ok.join('、'):'已連線，但這台電腦沒有 agy／claude／codex'}catch(e){el.textContent='已儲存連線碼，但目前連不到橋接（橋接視窗開著嗎？）'}}
+  async function enrichConnCheck(){const el=document.getElementById('enrichConn');const el2=document.getElementById('solConn');if(!el)return;const br=enrichBridge();if(!br){el.textContent='尚未連線（雙擊「啟動AI橋接」後按「連線本機 AI」貼上連線碼）';if(el2)el2.textContent=el.textContent;return}
+    try{const r=await fetch(br.url+'/engines',{headers:{'x-bridge-token':br.token}});const j=await r.json();const ok=Object.entries(j.engines||{}).filter(([k,v])=>v.ok).map(([k])=>k);el.textContent=ok.length?'已連線・可用：'+ok.join('、'):'已連線，但這台電腦沒有 agy／claude／codex';if(el2)el2.textContent=el.textContent}catch(e){el.textContent='已儲存連線碼，但目前連不到橋接（橋接視窗開著嗎？）';if(el2)el2.textContent=el.textContent}}
   function enrichBridgeSetup(){const code=prompt('請貼上「連線碼」（雙擊「啟動AI橋接」後視窗會顯示，並已複製到剪貼簿）');if(code==null)return;const c=code.trim();if(!c)return;let o=null;try{o=JSON.parse(atob(c))}catch(e){}
     if(!o||!o.url||!o.token){alert('連線碼看起來不對，請重新複製。');return}localStorage.setItem('qbank_agy_bridge',JSON.stringify({url:String(o.url).replace(/\/+$/,''),token:o.token}));enrichConnCheck()}
-  async function enrichCall(prompt){
-    const eng=document.getElementById('enrichEngine').value;
+  async function enrichCall(prompt,engOverride){
+    const eng=engOverride||document.getElementById('enrichEngine').value;
     if(eng==='ollama'){const w=promptSource.contentWindow;if(typeof w.resolveOllamaBase!=='function'||typeof w.callOllama!=='function')throw new Error('題庫 Ollama 函式尚未載入，請稍後再試。');const baseU=await w.resolveOllamaBase();return w.callOllama('',prompt,baseU,localStorage.getItem('ollamaModel')||'qwen2.5:latest')}
     const br=enrichBridge();if(!br)throw new Error('尚未連線本機 AI：請雙擊「啟動AI橋接」，再按「連線本機 AI」貼上連線碼；或改選 Ollama。');
     const r=await fetch(br.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':br.token},body:JSON.stringify({prompt,engine:eng})});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('橋接錯誤 '+r.status));return j.text||''}
@@ -1332,7 +1332,41 @@
       try{const s4=pipeStep(4);if(s4&&s4.state==='done'){s4.summary=rows.length+' 題・明細已補 '+filled;pipeRender(true)}}catch(e){}
     }catch(e){st.textContent='補齊明細失敗：'+(e.message||e);bar.style.width='0%'}
     finally{ENRICH_BUSY=false;btn.disabled=false}}
-  (function(){const o=window.inspectCsv;if(typeof o!=='function')return;let auto=false;window.inspectCsv=function(...a){let was='';try{was=pipeStep(4).state}catch(e){}const r=o.apply(this,a);try{const el=document.getElementById('enrichAuto');if(!auto&&!ENRICH_BUSY&&was!=='done'&&pipeStep(4).state==='done'&&el&&el.checked&&(document.getElementById('questionCsv')||{}).value.trim()&&(enrichBridge()||document.getElementById('enrichEngine').value==='ollama')){auto=true;setTimeout(()=>{enrichQuestions(true);auto=false},400)}}catch(e){}return r}})();
+  (function(){const o=window.inspectCsv;if(typeof o!=='function')return;let auto=false;window.inspectCsv=function(...a){let was='';try{was=pipeStep(4).state}catch(e){}const r=o.apply(this,a);try{
+    const ea=document.getElementById('enrichAuto'),sa=document.getElementById('solAuto');
+    if(!auto&&!ENRICH_BUSY&&was!=='done'&&pipeStep(4).state==='done'&&(document.getElementById('questionCsv')||{}).value.trim()&&(enrichBridge()||document.getElementById('enrichEngine').value==='ollama')){
+      const doEnrich=ea&&ea.checked,doSol=sa&&sa.checked;
+      if(doEnrich||doSol){auto=true;setTimeout(async()=>{try{if(doEnrich)await enrichQuestions(true);if(doSol)await solGenerate()}finally{auto=false}},400)}}
+  }catch(e){}return r}})();
+
+  let SOL_BUSY=false;
+  async function solGenerate(){
+    if(SOL_BUSY)return;const st=document.getElementById('solStatus'),bar=document.getElementById('solBar'),btn=document.getElementById('solBtn');
+    const v=(document.getElementById('questionCsv')||{}).value||'';if(!v.trim()){st.textContent='還沒有題庫資料，請先產生題庫 Excel（上一步）。';return}
+    const rows=parseCSV(v);if(rows.length&&isNaN(parseInt(rows[0][0])))rows.shift();
+    const qs=rows.filter(r=>r.length>=20&&String(r[19]||'').trim());if(!qs.length){st.textContent='題庫資料裡沒有題目內容可寫詳解。';return}
+    SOL_BUSY=true;btn.disabled=true;bar.style.width='2%';const t0=Date.now();const out=[];let failed=0;
+    try{
+      if(typeof pipeStart==='function')pipeStart(6,'生成中',false);
+      const w=promptSource.contentWindow;await waitForPromptBuilder('buildSolBatchPrompt');
+      const eng=document.getElementById('solEngine').value;const SIZE=5,batches=[];for(let i=0;i<qs.length;i+=SIZE)batches.push(qs.slice(i,i+SIZE));
+      for(let b=0;b<batches.length;b++){
+        st.textContent='生成詳解中：第 '+(b+1)+'/'+batches.length+' 批（共 '+qs.length+' 題）・已完成 '+out.length+' 題・已耗時 '+Math.round((Date.now()-t0)/1000)+' 秒';bar.style.width=Math.max(3,Math.round(b/batches.length*100))+'%';
+        if(typeof pipeProgress==='function')pipeProgress(6,Math.round(b/batches.length*100),'第 '+(b+1)+'/'+batches.length+' 批');
+        const items=batches[b].map(r=>({exam:r[2],no:r[3],ans:r[4],field:r[7],unit:r[8],kp:r[10],q:(String(r[21]||'').trim()?'【題組文章】'+r[21]+'\n\n':'')+r[19],imgs:[],groupId:''}));
+        const ex=w.buildSolBatchPrompt(items);let prompt='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(40)+'\n\n【使用者訊息 user】\n'+ex.msg;
+        const exam=(document.getElementById('examName')||{}).value||'';if(exam)prompt='【本次指定考試名稱】'+exam+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+prompt;
+        let res;try{res=await enrichCall(prompt,eng)}catch(e){if(b===0)throw e;failed+=items.length;continue}
+        res=String(res||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+        const want=new Set(items.map(x=>String(x.no).trim()));let got=0;
+        for(const r of parseCSV(res)){if(r.length>=3&&want.has(String(r[1]).trim())&&String(r[2]||'').trim()){out.push([r[0]||items[0].exam,r[1],r[2]]);want.delete(String(r[1]).trim());got++}}
+        failed+=want.size;
+        document.getElementById('solutionCsv').value=[['考試名稱','題號','詳解']].concat(out).map(r=>r.map(_csvCell).join(',')).join('\n');inspectSolCsv();
+      }
+      bar.style.width='100%';st.textContent='詳解生成完成：'+out.length+' 題'+(failed?'，'+failed+' 題沒生成（可再按一次補）':'')+'・用時 '+Math.round((Date.now()-t0)/1000)+' 秒。請抽查後按「匯入詳解」。';
+      if(typeof pipeDone==='function'){pipeDone(6,out.length+' 題詳解')}
+    }catch(e){st.textContent='生成詳解失敗：'+(e.message||e);bar.style.width='0%';if(typeof pipeFail==='function')pipeFail(6,e.message||e)}
+    finally{SOL_BUSY=false;btn.disabled=false}}
   enrichConnCheck();
   </script>
   <script src="announce.js"></script>
