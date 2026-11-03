@@ -8207,6 +8207,23 @@ async function aiClassifyCompact(items,exam){
   return res;
 }
 
+
+/* 有附圖的題：另外請 AI 看圖判斷「圖表類型」（每次最多 5 張圖；Claude／Codex／Antigravity 都能讀圖） */
+async function aiChartPass(items){
+  const CH=['無','表格','函數關係圖','運動圖','統計圖','電路圖','光學圖','波動圖','場線／等值線圖','微觀模型圖','實驗裝置圖','力學示意圖'];
+  const out=new Map();
+  for(let i=0;i<items.length;i+=5){
+    const chunk=items.slice(i,i+5),imgs=[],lab=[];
+    chunk.forEach(it=>{const im=(it.imgs||[]).find(x=>x&&x.src);if(im){imgs.push({src:im.src});lab.push('第'+imgs.length+'張＝Q'+it.no)}});
+    if(!imgs.length)continue;
+    const txt=chunk.filter(it=>(it.imgs||[]).some(x=>x&&x.src)).map(it=>'Q'+it.no+' '+stripRichMarks(it.q||'').replace(/\s+/g,' ').slice(0,100)).join('\n');
+    const prompt='請實際查看附圖，判斷每題附圖的「圖表類型」。附圖順序：'+lab.join('、')+'。\n只能從這 12 個擇一：'+CH.join('／')+'。只問「是否必須看圖或表才能作答」：只是裝飾、情境插圖、不看圖也能作答→無。\n只輸出每題一行：題號|類型。不要其他文字。\n\n'+txt;
+    let res;try{res=await _wzAiCall('',prompt,'',imgs)}catch(e){continue}
+    for(const line of String(res||'').split(/\r?\n/)){const m=line.match(/^\s*Q?(\d+)\s*[|｜]\s*(.+?)\s*$/);if(!m)continue;const raw=m[2];const hit=CH.find(c=>raw===c)||CH.find(c=>raw.includes(c))||(/場線|等值線/.test(raw)?'場線／等值線圖':'');if(hit)out.set(String(m[1]),hit)}
+  }
+  return out;
+}
+
 /* ===== 勾選題目 → 本機 AI 補齊資料庫缺漏的明細（冊數／冊名／領域／大單元／子單元／知識點／題目摘要） ===== */
 let AI_ENRICH_BUSY=false,AI_ENRICH_CANCEL=false;
 async function aiEnrichSelected(){
@@ -8239,6 +8256,9 @@ async function aiEnrichSelected(){
         const chunk=list.slice(i,i+30);cur=(exam||'（未命名考卷）')+' 第 '+(i/30+1)+' 批（'+chunk.length+' 題）';callT0=Date.now();upd();
         let res;try{res=await aiClassifyCompact(chunk,exam)}catch(e){if(done+failed===0)throw e;failed+=chunk.length;callT0=0;continue}
         callT0=0;const by=new Map(res.map(r=>[String(r.no),r]));
+        // 有附圖且還沒有圖表類型的題：另外看圖判斷
+        const needChart=chunk.filter(it=>!String(it.chart||'').trim()&&(it.imgs||[]).some(x=>x&&x.src));
+        if(needChart.length){cur=(exam||'（未命名考卷）')+'：看圖判斷圖表類型（'+needChart.length+' 題有附圖）';callT0=Date.now();upd();try{const cm=await aiChartPass(needChart);cm.forEach((v,no)=>{const a=by.get(no);if(a)a.chart=v})}catch(e){console.warn('看圖失敗',e)}callT0=0}
         for(const it of chunk){
           const a=by.get(String(it.no));if(!a){failed++;continue}
           let got=0;for(const k of ['book','bookName','field','unit','sub','kp','summary','type','chart']){if(!String(it[k]||'').trim()&&String(a[k]||'').trim()){it[k]=a[k];got++}}
