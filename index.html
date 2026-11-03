@@ -8162,6 +8162,36 @@ async function batchGenerateSol(){
 }
 
 
+/* ===== 緊湊版 AI 分類（省 token、快）：AI 只回「題號|子單元編號|12字摘要」，
+   冊／領域／大單元／子單元由編號對照課綱取得，知識點沿用題庫內最相似的既有題。 ===== */
+function _gradeBooks(exam){const m=String(exam||'').match(/([七八九])年級/);const map={'七':['JB1','JB1-LY','JB2'],'八':['JB3','JB4'],'九':['JB5','JB6']};return m?map[m[1]]:null}
+function _bigrams(t){const x=String(t||'').replace(/[\s　，。、；：？！（）()「」『』.,;:?!\-—_$\\{}]/g,'');const o=new Set();for(let i=0;i<x.length-1;i++)o.add(x.slice(i,i+2));return o}
+function _nearKp(item,sel){
+  const key=(x)=>x.book+'|'+x.unit+'|'+x.sub;
+  const pool=DB.filter(x=>x&&x.type!=='passage'&&x.id!==item.id&&String(x.kp||'').trim()&&key(x)===key(sel));
+  if(!pool.length)return '';
+  const t=_bigrams(stripRichMarks(item.q||item.summary||''));let best='',bs=-1;const freq={};
+  for(const x of pool){freq[x.kp]=(freq[x.kp]||0)+1;const u=_bigrams(stripRichMarks((x.q||x.summary||'').slice(0,200)));let inter=0;t.forEach(g=>{if(u.has(g))inter++});const sc=inter/(t.size+u.size-inter||1);if(sc>bs){bs=sc;best=x.kp}}
+  if(bs>=0.06)return best;
+  return Object.entries(freq).sort((a,b)=>b[1]-a[1])[0][0];
+}
+async function aiClassifyCompact(items,exam){
+  const books=_gradeBooks(exam),fm=(String(exam||'').match(/(理化|生物|地科)/)||[])[1]||'';
+  let cat=SYL.filter(x=>/^JB/.test(x.book)&&(!books||books.includes(x.book))&&(!fm||x.field===fm));
+  if(!cat.length)cat=SYL.filter(x=>/^JB/.test(x.book));
+  const catTxt=cat.map((x,i)=>(i+1)+'|'+x.bookName+'|'+x.unit+'|'+x.sub).join('\n');
+  const qTxt=items.map(it=>'Q'+it.no+' '+stripRichMarks(it.q||it.summary||'').replace(/\s+/g,' ').slice(0,170)).join('\n');
+  const prompt='你是臺灣國中自然科老師。為每一題從「單元清單」挑出最符合的編號，並寫 12 字內的題目摘要（動詞＋對象）。\n只輸出，每題一行：題號|編號|摘要。不要其他文字。\n\n【單元清單】編號|冊|單元|子單元\n'+catTxt+'\n\n【題目】\n'+qTxt;
+  const out=await _wzAiCall('',prompt,'',[]);
+  const res=[];
+  for(const line of String(out||'').split(/\r?\n/)){
+    const m=line.match(/^\s*Q?(\d+)\s*[|｜]\s*(\d+)\s*[|｜]\s*(.+?)\s*$/);if(!m)continue;
+    const it=items.find(x=>String(x.no)===m[1]);const sel=cat[parseInt(m[2])-1];if(!it||!sel)continue;
+    res.push({no:m[1],book:sel.book,bookName:sel.bookName,field:sel.field,unit:sel.unit,sub:sel.sub,kp:_nearKp(it,sel),summary:m[3].replace(/[「」]/g,'').slice(0,20)});
+  }
+  return res;
+}
+
 /* ===== 勾選題目 → 本機 AI 補齊資料庫缺漏的明細（冊數／冊名／領域／大單元／子單元／知識點／題目摘要） ===== */
 let AI_ENRICH_BUSY=false,AI_ENRICH_CANCEL=false;
 async function aiEnrichSelected(){
@@ -8181,36 +8211,31 @@ async function aiEnrichSelected(){
   if(pick==null)return;let engine=(pick.trim()||'auto').toLowerCase();if(!_okEng.includes(engine)){alert('引擎只能是 auto、agy、claude 或 codex（您輸入的是別的內容，已改用 '+eng+'）。');engine=eng}localStorage.setItem('qbank_ai_engine',engine);
   AI_ENRICH_BUSY=true;AI_ENRICH_CANCEL=false;
   const prog=document.createElement('div');
-  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 18px;border-radius:12px;font-size:14px;z-index:9999;min-width:280px;box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.6';
+  prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:14px 18px;border-radius:12px;font-size:14px;z-index:9999;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.4);line-height:1.6';
   document.body.appendChild(prog);
-  let done=0,failed=0,saved=0;const t0=Date.now();
-  const upd=(extra)=>{prog.innerHTML='AI 補齊明細：'+(done+failed)+'/'+targets.length+' 題（成功 '+done+'・失敗 '+failed+'）・'+Math.round((Date.now()-t0)/1000)+' 秒'+(extra?'<br>'+extra:'')+'<br><span style="font-size:12px;opacity:.7">再按一次「AI 補齊明細」可中止</span>'};
-  upd();
+  let done=0,failed=0,cur='',callT0=0;const t0=Date.now();
+  const upd=()=>{const tot=Math.round((Date.now()-t0)/1000),cs=callT0?Math.round((Date.now()-callT0)/1000):0;prog.innerHTML='AI 補齊明細：'+(done+failed)+'/'+targets.length+' 題（成功 '+done+'・失敗 '+failed+'）<br>已跑 <b>'+tot+'</b> 秒'+(callT0?'（這一批已等 <b>'+cs+'</b> 秒）':'')+(cur?'<br>'+cur:'')+'<br><span style="font-size:12px;opacity:.7">再按一次「AI 補齊明細」可中止</span>'};
+  const tick=setInterval(upd,1000);upd();
   try{
-    const instruction0=buildPrompt();
     const byExam=new Map();targets.forEach(it=>{const k=it.exam||'';(byExam.get(k)||byExam.set(k,[]).get(k)).push(it)});
     for(const [exam,list] of byExam){
-      for(let i=0;i<list.length;i+=8){
+      for(let i=0;i<list.length;i+=30){
         if(AI_ENRICH_CANCEL)throw new Error('已中止');
-        const chunk=list.slice(i,i+8);upd('正在處理：'+(exam||'（未命名考卷）')+' 第 '+(i/8+1)+' 批');
-        const text=chunk.map(it=>'【題號 '+it.no+'】答案：'+(it.ans||'（無）')+'\n'+stripRichMarks(it.q||it.summary||'')).join('\n\n');
-        const prompt=(exam?'【本次指定考試名稱】'+exam+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n':'')+instruction0+'\n\n════════\n以下是這份考卷已有的 '+chunk.length+' 題。請「只針對這些題」輸出 23 欄 CSV（不要表頭、不要任何說明文字），題號必須與下列完全相同；考試名稱、題號、答案、題目內容照原樣填入，重點是把冊數、冊名、領域、大單元、子單元、知識點、題目摘要判斷完整：\n\n'+text;
-        let out;try{out=await _wzAiCall('',prompt,'',[])}catch(e){if(done+failed===0)throw e;failed+=chunk.length;upd();continue}
-        out=String(out||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
-        const ai=new Map();for(const r of parseCSV(out)){if(r.length>=12)ai.set(String(r[3]).trim(),r)}
+        const chunk=list.slice(i,i+30);cur=(exam||'（未命名考卷）')+' 第 '+(i/30+1)+' 批（'+chunk.length+' 題）';callT0=Date.now();upd();
+        let res;try{res=await aiClassifyCompact(chunk,exam)}catch(e){if(done+failed===0)throw e;failed+=chunk.length;callT0=0;continue}
+        callT0=0;const by=new Map(res.map(r=>[String(r.no),r]));
         for(const it of chunk){
-          const a=ai.get(String(it.no).trim());if(!a){failed++;continue}
-          const map={book:5,bookName:6,field:7,unit:8,sub:9,kp:10,summary:11};let got=0;
-          for(const [k,ix] of Object.entries(map)){if(!String(it[k]||'').trim()&&String(a[ix]||'').trim()){it[k]=String(a[ix]).trim();got++}}
+          const a=by.get(String(it.no));if(!a){failed++;continue}
+          let got=0;for(const k of ['book','bookName','field','unit','sub','kp','summary']){if(!String(it[k]||'').trim()&&String(a[k]||'').trim()){it[k]=a[k];got++}}
           if(!got){failed++;continue}
-          try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)throw error;saved++;done++}catch(e){console.warn('補齊明細存檔失敗',it.id,e);failed++}
+          try{const {error}=await sb.from('questions').upsert(toRow(it));if(error)throw error;done++}catch(e){console.warn('補齊明細存檔失敗',it.id,e);failed++}
         }
         upd();if(typeof render==='function')render();
       }
     }
-    prog.innerHTML='✅ AI 補齊明細完成：成功 '+done+' 題'+(failed?'，'+failed+' 題沒補到（可再按一次重試）':'')+'・用時 '+Math.round((Date.now()-t0)/1000)+' 秒。<br><span style="font-size:12px;opacity:.7">已存回資料庫，請抽查。</span>';
-  }catch(e){prog.innerHTML='⚠ AI 補齊明細停止：'+(e.message||e)+'（已補 '+done+' 題）'}
-  finally{AI_ENRICH_BUSY=false;setTimeout(()=>prog.remove(),12000);if(typeof render==='function')render()}
+    clearInterval(tick);prog.innerHTML='✅ AI 補齊明細完成：成功 '+done+' 題'+(failed?'，'+failed+' 題沒補到（可再按一次重試）':'')+'・共用 '+Math.round((Date.now()-t0)/1000)+' 秒。<br><span style="font-size:12px;opacity:.7">已存回資料庫，請抽查。</span>';
+  }catch(e){clearInterval(tick);prog.innerHTML='⚠ AI 補齊明細停止：'+(e.message||e)+'（已補 '+done+' 題）'}
+  finally{clearInterval(tick);AI_ENRICH_BUSY=false;setTimeout(()=>prog.remove(),15000);if(typeof render==='function')render()}
 }
 /* ===== 工具 ===== */
 function stamp(){const d=new Date();return d.getFullYear()+('0'+(d.getMonth()+1)).slice(-2)+('0'+d.getDate()).slice(-2)}

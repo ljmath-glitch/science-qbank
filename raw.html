@@ -1315,19 +1315,30 @@
     if(!need.length){st.textContent='所有題目的明細都已完整，不需要補。';bar.style.width='100%';return}
     ENRICH_BUSY=true;btn.disabled=true;bar.style.width='2%';const t0=Date.now();let filled=0,failed=0;
     try{
-      const w=promptSource.contentWindow;const build=await waitForPromptBuilder('buildPrompt');let instruction=build.call(w);
-      const exam=(document.getElementById('examName')||{}).value||'';if(exam)instruction='【本次指定考試名稱】'+exam+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+instruction;
-      const SIZE=8,batches=[];for(let i=0;i<need.length;i+=SIZE)batches.push(need.slice(i,i+SIZE));
+      const w=promptSource.contentWindow;await waitForPromptBuilder('buildPrompt');
+      const exam=(document.getElementById('examName')||{}).value||'';
+      const eng=document.getElementById('enrichEngine').value,compact=eng!=='ollama'&&typeof w.aiClassifyCompact==='function';
+      let instruction='';if(!compact){const build=await waitForPromptBuilder('buildPrompt');instruction=build.call(w);if(exam)instruction='【本次指定考試名稱】'+exam+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+instruction}
+      const SIZE=compact?30:8,batches=[];for(let i=0;i<need.length;i+=SIZE)batches.push(need.slice(i,i+SIZE));
+      let curB=0,callT=0;const tick=setInterval(()=>{const tot=Math.round((Date.now()-t0)/1000);st.textContent='補齊明細中：第 '+curB+'/'+batches.length+' 批（共 '+need.length+' 題待補）・已補 '+filled+' 題・已跑 '+tot+' 秒'+(callT?'（這一批已等 '+Math.round((Date.now()-callT)/1000)+' 秒）':'')},1000);
+      try{
       for(let b=0;b<batches.length;b++){
-        st.textContent='補齊明細中：第 '+(b+1)+'/'+batches.length+' 批（共 '+need.length+' 題待補）・已補 '+filled+' 題・已耗時 '+Math.round((Date.now()-t0)/1000)+' 秒';bar.style.width=Math.max(3,Math.round(b/batches.length*100))+'%';
-        const list=batches[b].map(r=>'【題號 '+r[NO]+'】答案：'+(r[ANS]||'（無）')+'\n'+(r[Q]||r[11]||'')).join('\n\n');
-        const prompt=instruction+'\n\n════════\n以下是這份考卷已辨識好的 '+batches[b].length+' 題。請「只針對這些題」輸出 23 欄 CSV（不要表頭、不要任何說明文字），題號必須與下列完全相同；考試名稱、題號、答案、題目內容照原樣填入，重點是把冊數、冊名、領域、大單元、子單元、知識點、題目摘要判斷完整：\n\n'+list;
-        let out;try{out=await enrichCall(prompt)}catch(e){if(b===0){throw e}failed+=batches[b].length;continue}
-        out=String(out||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
-        const ai=new Map();for(const r of parseCSV(out)){if(r.length>=12)ai.set(String(r[NO]).trim(),r)}
-        for(const r of batches[b]){const a=ai.get(String(r[NO]).trim());if(!a){failed++;continue}let got=0;for(const i of FILL){if(!String(r[i]||'').trim()&&String(a[i]||'').trim()){r[i]=a[i];got++}}if(got)filled++;else failed++}
-        const merged=(head?[head]:[]).concat(rows).map(r=>r.map(_csvCell).join(',')).join('\n');document.getElementById('questionCsv').value=merged;inspectCsv();
+        curB=b+1;callT=Date.now();bar.style.width=Math.max(3,Math.round(b/batches.length*100))+'%';
+        if(compact){
+          let res;try{res=await w.aiClassifyCompact(batches[b].map(r=>({no:r[NO],q:r[Q]||r[11]||'',exam:r[2]||exam,id:''})),exam||batches[b][0][2])}catch(e){if(b===0)throw e;failed+=batches[b].length;continue}
+          const by=new Map(res.map(x=>[String(x.no),x]));
+          for(const r of batches[b]){const a=by.get(String(r[NO]).trim());if(!a){failed++;continue}let got=0;const vals={5:a.book,6:a.bookName,7:a.field,8:a.unit,9:a.sub,10:a.kp,11:a.summary};for(const i of FILL){if(!String(r[i]||'').trim()&&String(vals[i]||'').trim()){r[i]=vals[i];got++}}if(got)filled++;else failed++}
+        }else{
+          const list=batches[b].map(r=>'【題號 '+r[NO]+'】答案：'+(r[ANS]||'（無）')+'\n'+(r[Q]||r[11]||'')).join('\n\n');
+          const prompt=instruction+'\n\n════════\n以下是這份考卷已辨識好的 '+batches[b].length+' 題。請「只針對這些題」輸出 23 欄 CSV（不要表頭、不要任何說明文字），題號必須與下列完全相同；考試名稱、題號、答案、題目內容照原樣填入，重點是把冊數、冊名、領域、大單元、子單元、知識點、題目摘要判斷完整：\n\n'+list;
+          let out;try{out=await enrichCall(prompt)}catch(e){if(b===0){throw e}failed+=batches[b].length;continue}
+          out=String(out||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+          const ai=new Map();for(const r of parseCSV(out)){if(r.length>=12)ai.set(String(r[NO]).trim(),r)}
+          for(const r of batches[b]){const a=ai.get(String(r[NO]).trim());if(!a){failed++;continue}let got=0;for(const i of FILL){if(!String(r[i]||'').trim()&&String(a[i]||'').trim()){r[i]=a[i];got++}}if(got)filled++;else failed++}
+        }
+        callT=0;const merged=(head?[head]:[]).concat(rows).map(r=>r.map(_csvCell).join(',')).join('\n');document.getElementById('questionCsv').value=merged;inspectCsv();
       }
+      }finally{clearInterval(tick)}
       bar.style.width='100%';st.textContent='明細補齊完成：補上 '+filled+' 題'+(failed?'，'+failed+' 題沒補到（可再按一次重試）':'')+'・用時 '+Math.round((Date.now()-t0)/1000)+' 秒。請人工抽查後再匯入。';
       try{const s4=pipeStep(4);if(s4&&s4.state==='done'){s4.summary=rows.length+' 題・明細已補 '+filled;pipeRender(true)}}catch(e){}
     }catch(e){st.textContent='補齊明細失敗：'+(e.message||e);bar.style.width='0%'}
