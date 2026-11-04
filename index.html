@@ -2888,6 +2888,31 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
         existingByExamNo.set(x.exam+'-'+x.field+'|||'+(x.field||'')+'|||'+String(x.no),x);
     }
   });
+  // ===== 連續題號修正（題組題接續選擇題，避免同卷同領域題號重複）=====
+  // 有些學校的「題組題」題號會從 1 重新計算，和前面「選擇題」的 1~N 撞號；
+  // 撞號會害重複偵測/覆蓋把兩題當成同一題（資料遺失），排序與匯出也會出現兩個「第1題」。
+  // 這裡偵測到撞號時，自動把題組題（有題組ID的列）接到選擇題最大題號後面連續編號。
+  const _renumLog=[];
+  (function autoRenumber(){
+    const gidOf=r=>((r.length>=23?r[22]:r.length>=22?r[21]:r[20])||'').trim();
+    const noOf=r=>(r[3]||'').trim();
+    const numNo=s=>{const m=String(s).match(/\d+/);return m?+m[0]:NaN;};
+    const groups={};
+    for(let i=start;i<rows.length;i++){const r=rows[i];const k=((r[2]||'')+'|||'+(r[7]||''));(groups[k]=groups[k]||[]).push(i);}
+    Object.values(groups).forEach(idxs=>{
+      const grpRows=idxs.filter(i=>gidOf(rows[i]));
+      const selRows=idxs.filter(i=>!gidOf(rows[i]));
+      if(!grpRows.length||!selRows.length)return; // 純選擇或純題組，不處理
+      const selNos=new Set(selRows.map(i=>noOf(rows[i])));
+      const grpNos=grpRows.map(i=>noOf(rows[i]));
+      const collide=grpNos.some(n=>selNos.has(n))||(new Set(grpNos).size!==grpNos.length);
+      if(!collide)return; // 已是連續題號，不動
+      let maxSel=0;selRows.forEach(i=>{const v=numNo(noOf(rows[i]));if(!isNaN(v)&&v>maxSel)maxSel=v;});
+      const ordered=grpRows.slice().sort((a,b)=>{const na=numNo(noOf(rows[a])),nb=numNo(noOf(rows[b]));if(isNaN(na)&&isNaN(nb))return a-b;if(isNaN(na))return 1;if(isNaN(nb))return -1;return na-nb||a-b;});
+      let next=maxSel;
+      ordered.forEach(i=>{next++;const old=noOf(rows[i]);if(String(old)!==String(next)){_renumLog.push(old+'→'+next);rows[i][3]=String(next);}});
+    });
+  })();
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
     const rawExam=g(2),school=normalizeSchool(g(1)),year=g(0),book=g(5),_field=g(7);
     const grade=gradeFromExam(rawExam,book);
@@ -3000,6 +3025,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(_imgN)_issues.push(`${_imgN} 題含〔含圖〕→ 請逐題編輯並上傳圖片`);
   if(_flagN)_issues.push(`${_flagN} 題已標記「待確認」→ 點左側「只看待確認」集中處理`);
   if(_issues.length)_sumMsg+='\n\n⚠️ 需人工補充：\n• '+_issues.join('\n• ');
+  if(_renumLog.length)_sumMsg+='\n\n🔢 題組題號已自動接續選擇題（避免重複題號）：共調整 '+_renumLog.length+' 題\n• '+_renumLog.slice(0,15).join('、')+(_renumLog.length>15?' …等':'');
   alert(_sumMsg);}
 
 /* ===== 連動下拉 ===== */
@@ -6579,6 +6605,10 @@ function buildPrompt(){const syl=SYL_RAW;
     ⚠️ 只要來源是出版社或考區（非單一學校），一律是「模擬考」，**不可**命名為「段考」。如 康軒-九年級-114-第一次模擬考-自然
   - 會考格式：114會考；學測格式：114學測；分科測驗格式：114分科測驗
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
+  ⚠️ 連續題號：整份考卷的題號必須「由頭到尾連續遞增」，不可分區重算。
+     有些考卷「題組題（二、題組題）」的題號會從 1 重新開始（例如選擇題 1~35，題組題又寫 1~15）；
+     這種情況請把題組題接續選擇題往下編號（35 之後接 36、37…50），不可照卷面從 1 重填，
+     否則同一份考卷會出現兩個「第1題」而互相覆蓋。承上題/題組內各小題一律用這個「接續後」的連續題號。
 ▷ 欄5 答案：
   - 單選題：A/B/C/D；卷子有附答案直接填入，卷子沒有附答案請根據你的專業知識判斷並填入正確答案，不可留空
   - 多選題（卷面寫「應選X項」或有多個正確選項）：把正確選項字母直接連在一起，不加任何分隔符號，如 BD、ACD
@@ -7523,6 +7553,7 @@ function buildPromptHS(){
   - 分科測驗格式：114分科測驗
   - 段考格式：學校-年級-學年度-上／下學期-考試次-科目，如 建中-高一-114-上學期-第一次段考-物理
 ▷ 欄4 題號：阿拉伯數字，如 1、2、23
+  ⚠️ 連續題號：整份考卷題號必須由頭到尾連續遞增，不可分區重算。若題組題（二、題組題）的題號從 1 重新開始（如選擇題 1~35、題組題又寫 1~15），請接續選擇題往下編（接 36、37…），不可照卷面從 1 重填，否則同卷會有兩個「第1題」互相覆蓋。
 ▷ 欄5 答案：
   - 單選題：A/B/C/D；卷子有附答案直接填入，沒有請判斷並填入，不可留空
   - 多選題（卷面寫「應選X項」或有多個正確選項，學測、分科測驗常見）：把正確選項字母直接連在一起，不加任何分隔符號，如 BD、ACD
