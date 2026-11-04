@@ -2028,7 +2028,7 @@ class PersistPickSet extends Set{
 }
 window.addEventListener('pagehide',_picksFlush);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')_picksFlush();});
-let DB=[], PASSAGES={}, PICKS=new PersistPickSet(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[], GROUP_MAXDIFF=null;
+let DB=[], PASSAGES={}, PICKS=new PersistPickSet(), editingId=null, SYL=[], SYL_RAW=HANLIN_SYLLABUS, curImgs=[], curPassageImgs=[], diff={step:0,mem:0,con:0}, EXAM_PDFS={}, PAPER_HISTORY=[], GROUP_MAXDIFF=null, GROUP_LATEST=null;
 window.__qbankDataReady=false;
 // 供 raw.html（考卷前處理）讀取題庫既有的考卷名稱，做成自動完成清單，避免匯入時名稱對不上
 window.getExamNames=function(){try{return [...new Set(DB.map(function(x){return x&&x.exam}).filter(Boolean))].sort();}catch(e){return [];}};
@@ -2045,7 +2045,7 @@ function fromRow(r){const it={...r};it.bookName=r.book_name;delete it.book_name;
   return it;}
 function precompute(it){
   it._diff=calcDiff(it.step,it.mem,it.con);
-  GROUP_MAXDIFF=null; // 題目有異動就讓題組難易度快取重建
+  GROUP_MAXDIFF=null;GROUP_LATEST=null; // 題目有異動就讓題組難易度／最後章節快取重建
   it._sylYear=parseSylYear(it.year);
   it._sylSem=parseSylSem(it.year,it.exam);
   it._examType=examType(it.exam,it.school);
@@ -2376,6 +2376,33 @@ function effDiffLvl(it){
     if(g&&g.lvl)return g.lvl;
   }
   return (it._diff||calcDiff(it.step,it.mem,it.con)).lvl;
+}
+// 題組題「跨章節」時統一用最後(後面)章節那一題的分類——只用於組卷精靈的分類樹／篩選。
+// 排序鍵：先比大單元章號（子單元開頭數字，或大單元 C 後數字），再比子單元節號；數字大＝後面。
+function _chapSecRank(unit,sub){
+  const s=String(sub||''),u=String(unit||'');let ch=0,sec=0;
+  const ms=s.match(/^(\d+)\s*[-－]\s*(\d+)/);
+  if(ms){ch=+ms[1];sec=+ms[2];}
+  else{const mu=u.match(/^C\s*(\d+)/i);if(mu)ch=+mu[1];const ms2=s.match(/^(\d+)/);if(ms2)sec=+ms2[1];}
+  return ch*1000+sec;
+}
+function _rebuildGroupLatest(){
+  GROUP_LATEST={};
+  DB.forEach(it=>{
+    if(!it||!it.groupId||it.type==='passage')return;
+    const r=_chapSecRank(it.unit,it.sub);
+    const cur=GROUP_LATEST[it.groupId];
+    if(!cur||r>cur.r)GROUP_LATEST[it.groupId]={r:r,unit:it.unit||'',sub:it.sub||'',rep:it};
+  });
+}
+// 題組題→組內「最後章節」那一題的 (unit,sub,rep)；其餘→自己。
+function effGroupUnitSub(it){
+  if(it&&it.groupId){
+    if(!GROUP_LATEST)_rebuildGroupLatest();
+    const g=GROUP_LATEST[it.groupId];
+    if(g)return {unit:g.unit,sub:g.sub,rep:g.rep};
+  }
+  return {unit:(it&&it.unit)||'',sub:(it&&it.sub)||'',rep:it};
 }
 function diffTagClass(l){return l==='簡單'?'d1':l==='中等'?'d2':l==='困難'?'d3':l==='極難'?'d4':'meta'}
 function fieldClass(f){return f==='生物'?'bio':f==='理化'?'phy':f==='地科'?'earth':''}
@@ -4884,13 +4911,16 @@ function _wzLaiyanRefine(it){
 }
 // 回傳某題在「目前選用版本」下的 (unit, sub)。賴妍版只對國中七上生物(JB1)做對應，其餘原樣。
 function _wzUS(it){
-  if(WZ_SYLVER==='laiyan'&&it&&it.book==='JB1'){
-    const sec=LAIYAN_BIO_SECMAP[(it.unit||'')+WZ_SEP+(it.sub||'')];
-    if(sec)return _wzLaiyanRefine(it)||sec;
-    const u=LAIYAN_BIO_UNITMAP[it.unit||''];
-    if(u)return {unit:u,sub:it.sub||'（未分類）'};
+  // 題組題跨章節時，整組統一用「最後章節」那一題的分類（組卷精靈分類樹／篩選用）。
+  const eff=effGroupUnitSub(it),rep=eff.rep||it,eu=eff.unit||'',es=eff.sub||'';
+  const book=(rep&&rep.book)||(it&&it.book);
+  if(WZ_SYLVER==='laiyan'&&book==='JB1'){
+    const sec=LAIYAN_BIO_SECMAP[eu+WZ_SEP+es];
+    if(sec)return _wzLaiyanRefine(rep)||sec;
+    const u=LAIYAN_BIO_UNITMAP[eu];
+    if(u)return {unit:u,sub:es||'（未分類）'};
   }
-  return {unit:it.unit||'（未分類）',sub:it.sub||'（未分類）'};
+  return {unit:eu||'（未分類）',sub:es||'（未分類）'};
 }
 const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
