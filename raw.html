@@ -1545,7 +1545,7 @@
     const EG=id=>document.getElementById(id);
     const PGFONTS={kai:'"DFKai-SB","BiauKai","標楷體","TW-Kai",KaiTi,serif',ming:'"PMingLiU","MingLiU","新細明體","Noto Serif TC","Songti TC",serif',hei:'"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif'};
     const PG_MARK_TOOLS=new Set(['text','line','rect','ellipse']);
-    const UNDO_MAX=10;
+    const UNDO_MAX=6;
     let EDC,EDCTX,EDML,EDMLCTX,EDORIG=null,EDORIGIMG=null;
     let pgCurIdx=null,pgIsPage=false,pgDehandIdx=null;
     let pgTool='erase',pgShape='brush';
@@ -1608,7 +1608,7 @@
     }
     function pgBakeMarks(){if(pgMarks.length){drawMarks(EDCTX,pgMarks);pgMarks=[];pgSelMark=null;pgEditing=null;EG('pgEdit').hidden=true;pgRedrawMarks()}}
     function pgBakeCurrentPage(){pgCommitEdit();pgBakeMarks();const copy=document.createElement('canvas');copy.width=EDC.width;copy.height=EDC.height;copy.getContext('2d').drawImage(EDC,0,0);const pg=dehandResult.pages[pgDehandIdx];pg.canvas=copy;pg.after=copy.toDataURL('image/png')}
-    function pgClose(){EG('pgEd').hidden=true;document.body.style.overflow='';EG('pgBrush').hidden=true}
+    function pgClose(){EG('pgEd').hidden=true;document.body.style.overflow='';EG('pgBrush').hidden=true;pgUndo=[];pgRedo=[];pgMarks=[];pgSelMark=null;pgEditing=null;_peekData=null;EDORIG=null;EDORIGIMG=null;try{if(EDC){EDC.width=EDC.height=1}if(EDML){EDML.width=EDML.height=1}}catch(e){}}
     async function pgDone(){
       if(pgIsPage){
         pgBakeCurrentPage();
@@ -1648,7 +1648,7 @@
 
     // ---- 座標、筆刷 ----
     function canvasPoint(e){const r=EDC.getBoundingClientRect(),k=EDC.width/r.width;return{x:(e.clientX-r.left)*k,y:(e.clientY-r.top)*k,k}}
-    function pgDab(p){const rad=(+EG('pgBrushSize').value)/2*p.k;EDCTX.save();EDCTX.beginPath();EDCTX.arc(p.x,p.y,rad,0,Math.PI*2);if(pgTool==='erase'){EDCTX.fillStyle='#fff';EDCTX.fill()}else if(EDORIG){EDCTX.clip();EDCTX.drawImage(EDORIG,0,0)}EDCTX.restore()}
+    function pgDab(p){const rad=(+EG('pgBrushSize').value)/2*p.k;EDCTX.save();EDCTX.beginPath();EDCTX.arc(p.x,p.y,rad,0,Math.PI*2);if(pgTool==='erase'){EDCTX.fillStyle='#fff';EDCTX.fill()}else if(EDORIG&&EDORIG.width>1){EDCTX.clip();const r=rad+2,sx=Math.max(0,Math.floor(p.x-r)),sy=Math.max(0,Math.floor(p.y-r)),sw=Math.min(EDORIG.width-sx,Math.ceil(r*2)),sh=Math.min(EDORIG.height-sy,Math.ceil(r*2));if(sw>0&&sh>0)EDCTX.drawImage(EDORIG,sx,sy,sw,sh,sx,sy,sw,sh)}EDCTX.restore()}
     function pgFillRect(x0,y0,x1,y1){const x=Math.min(x0,x1),y=Math.min(y0,y1),w=Math.abs(x1-x0),h=Math.abs(y1-y0);if(pgTool==='erase'){EDCTX.fillStyle='#fff';EDCTX.fillRect(x,y,w,h)}else if(EDORIG)EDCTX.drawImage(EDORIG,x,y,w,h,x,y,w,h)}
     function moveBrush(e){if(!EDC.width||pgShape==='rect'||PG_MARK_TOOLS.has(pgTool)){EG('pgBrush').hidden=true;return}const box=EG('pgBox'),r=box.getBoundingClientRect(),size=+EG('pgBrushSize').value,brush=EG('pgBrush');brush.hidden=false;brush.style.width=brush.style.height=size/ZM()+'px';brush.style.left=(e.clientX-r.left)/ZM()+'px';brush.style.top=(e.clientY-r.top)/ZM()+'px';brush.style.borderColor=pgTool==='erase'?'#850103':'#2f7d37'}
 
