@@ -68,22 +68,42 @@ export function removeWatermark(img){const d=img.data,n=img.width*img.height,col
   const pad=Math.round(Math.min(img.width,img.height)*.015),mask=new Uint8Array(n);x0=Math.max(0,x0-pad);x1=Math.min(img.width-1,x1+pad);y0=Math.max(0,y0-pad);y1=Math.min(img.height-1,y1+pad);
   for(let y=y0;y<=y1;y++)mask.fill(1,y*img.width+x0,y*img.width+x1+1);
   return mask}
+// 浮水印區內保留印刷字：浮水印是半透明疊在字上，字會變灰（64~160），不能用「暗於 110 才留」判斷。
+// 改用局部對比：灰階閉運算（細於 2R+1 的暗線會被填掉）估背景，背景比該點亮很多＝細筆畫＝字；大塊校徽色塊、平滑底色不是字。
+function morph(src,w,h,y0,y1,R,isMax){const tmp=new Float32Array(src.length),out=new Float32Array(src.length),pick=isMax?Math.max:Math.min,init=isMax?-1:1e9;
+  for(let y=y0;y<=y1;y++){const row=y*w;for(let x=0;x<w;x++){let m=init;const a=Math.max(0,x-R),b=Math.min(w-1,x+R);for(let k=a;k<=b;k++)m=pick(m,src[row+k]);tmp[row+x]=m}}
+  for(let y=y0;y<=y1;y++){const a=Math.max(y0,y-R),b=Math.min(y1,y+R);for(let x=0;x<w;x++){let m=init;for(let k=a;k<=b;k++)m=pick(m,tmp[k*w+x]);out[y*w+x]=m}}
+  return out}
+export function watermarkText(img,mask){const w=img.width,h=img.height,n=w*h,L=new Float32Array(n);let y0=h,y1=-1;
+  for(let i=0;i<n;i++){L[i]=.299*img.data[i*4]+.587*img.data[i*4+1]+.114*img.data[i*4+2]}
+  for(let y=0;y<h;y++){if(mask.subarray(y*w,y*w+w).some(Boolean)){if(y<y0)y0=y;y1=y}}
+  const R=6,bg=morph(morph(L,w,h,y0,y1,R,true),w,h,y0,y1,R,false),val=new Uint8Array(n).fill(255),text=new Uint8Array(n);
+  for(let i=0;i<n;i++){if(!mask[i])continue;const c=bg[i]-L[i];if(c>=22&&L[i]<225&&bg[i]>85){const norm=Math.min(255,L[i]*255/bg[i]);val[i]=Math.round(norm*.55);text[i]=1}}
+  return{val,text}}
+// 同一份 PDF 的每一頁浮水印位置相同：多頁逐像素取最亮值＝「浮水印＋白紙」底圖，字在不同頁位置不同會被取掉。
+// 之後每頁用 灰階/底圖 的比值還原字，浮水印不管多深都會被抵消，字不會被當成浮水印洗掉。
+async function pageLum(source){const w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*w/source.width)),c=canvas(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(source,0,0,w,h);const im=x.getImageData(0,0,w,h),n=w*h,L=new Uint8Array(n);for(let i=0;i<n;i++)L[i]=.299*im.data[i*4]+.587*im.data[i*4+1]+.114*im.data[i*4+2];return{L,w,h,wm:!!removeWatermark(im)}}
+function buildWmBg(list){const ok=list.filter(p=>p&&p.wm);if(ok.length<2)return null;const{w,h}=ok[0];const same=ok.filter(p=>p.w===w&&p.h===h);if(same.length<2)return null;const n=w*h,bg=new Uint8Array(n);for(const p of same)for(let i=0;i<n;i++)if(p.L[i]>bg[i])bg[i]=p.L[i];
+  const tmp=new Uint8Array(n),out=new Uint8Array(n);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let m=0;for(let k=Math.max(0,x-2);k<=Math.min(w-1,x+2);k++)m=Math.max(m,bg[y*w+k]);tmp[y*w+x]=m}
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let m=0;for(let k=Math.max(0,y-2);k<=Math.min(h-1,y+2);k++)m=Math.max(m,tmp[k*w+x]);out[y*w+x]=m}return{bg:out,w,h}}
+function watermarkRatio(img,mask,bg){const n=img.width*img.height,val=new Uint8Array(n).fill(255),text=new Uint8Array(n);for(let i=0;i<n;i++){if(!mask[i])continue;const L=.299*img.data[i*4]+.587*img.data[i*4+1]+.114*img.data[i*4+2],b=bg[i];if(b>70&&L<b*.68){val[i]=Math.round(Math.min(255,L*255/b)*.5);text[i]=1}}return{val,text}}
 // WebGPU session 不能同時跑兩個 run（連續丟兩份檔會報 Session already started）：排隊一個一個跑
 let runChain=Promise.resolve();
 function runQueued(session,feeds){const p=runChain.then(()=>session.run(feeds));runChain=p.catch(()=>{});return p}
-export async function cleanCanvas(source,onTile,{mode='v10'}={}){
-  const scale=PAGE_WIDTH/source.width,w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*scale)),input=canvas(w,h),ictx=input.getContext('2d',{willReadFrequently:true});ictx.drawImage(source,0,0,w,h);const image=ictx.getImageData(0,0,w,h),wm=removeWatermark(image),out=canvas(w,h),odata=out.getContext('2d').createImageData(w,h),sum=new Float32Array(w*h),hand=new Float32Array(w*h),weights=new Float32Array(w*h),runtime=await getSession(mode),session=runtime.session,xs=tileStarts(w),ys=tileStarts(h);let done=0;
+export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
+  const scale=PAGE_WIDTH/source.width,w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*scale)),input=canvas(w,h),ictx=input.getContext('2d',{willReadFrequently:true});ictx.drawImage(source,0,0,w,h);const image=ictx.getImageData(0,0,w,h),wm=removeWatermark(image),wmt=wm?(wmBg&&wmBg.w===w&&wmBg.h===h?watermarkRatio(image,wm,wmBg.bg):watermarkText(image,wm)):null,out=canvas(w,h),odata=out.getContext('2d').createImageData(w,h),sum=new Float32Array(w*h),hand=new Float32Array(w*h),weights=new Float32Array(w*h),runtime=await getSession(mode),session=runtime.session,xs=tileStarts(w),ys=tileStarts(h);let done=0;
   for(const y of ys)for(const x of xs){const tw=Math.min(TILE_SIZE,w-x),th=Math.min(TILE_SIZE,h-y),data=new Float32Array(3*TILE_SIZE*TILE_SIZE);for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const src=((y+yy)*w+x+xx)*4,v=yy*TILE_SIZE+xx,g=(.299*image.data[src]+.587*image.data[src+1]+.114*image.data[src+2])/255;data[v]=data[TILE_SIZE*TILE_SIZE+v]=data[2*TILE_SIZE*TILE_SIZE+v]=g}const feeds={[session.inputNames[0]]:new runtime.ort.Tensor('float32',data,[1,3,TILE_SIZE,TILE_SIZE])};const result=await runQueued(session,feeds),raw=(result.out||result[session.outputNames[0]]).data,TT=TILE_SIZE*TILE_SIZE;for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const n=(y+yy)*w+x+xx,wt=tileWeight(xx,yy,tw,th),k=yy*TILE_SIZE+xx;sum[n]+=raw[k]*wt;if(raw.length>=2*TT)hand[n]+=1/(1+Math.exp(-Math.max(-30,Math.min(30,raw[TT+k]))))*wt;weights[n]+=wt}onTile&&onTile(++done,xs.length*ys.length)}
-  for(let i=0;i<sum.length;i++){const r=image.data[i*4],g=image.data[i*4+1],b=image.data[i*4+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),orig=.299*r+.587*g+.114*b,colour=mx<245&&mx-mn>Math.max(18,mx*.10),model=hand[i]/(weights[i]||1)>.48;let v=Math.round(printGray(sum[i]/(weights[i]||1)));if(wm&&wm[i])v=orig<110?Math.min(v,orig):255;if(colour||model)v=255;odata.data[i*4]=odata.data[i*4+1]=odata.data[i*4+2]=v;odata.data[i*4+3]=255}out.getContext('2d').putImageData(odata,0,0);return out
+  for(let i=0;i<sum.length;i++){const r=image.data[i*4],g=image.data[i*4+1],b=image.data[i*4+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),orig=.299*r+.587*g+.114*b,colour=mx<245&&mx-mn>Math.max(18,mx*.10),model=hand[i]/(weights[i]||1)>.48;let v=Math.round(printGray(sum[i]/(weights[i]||1))),keep=false;if(wm&&wm[i]){v=wmt.val[i];keep=wmt.text[i]===1}if(!keep&&(colour||model))v=255;odata.data[i*4]=odata.data[i*4+1]=odata.data[i*4+2]=v;odata.data[i*4+3]=255}out.getContext('2d').putImageData(odata,0,0);return out
 }
 async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){const c=pg.canvas||pg,blob=pg.blob&&pg.blobOf===c?pg.blob:await toBlob(c,'image/jpeg',.92),png=await pdf.embedJpg(await blob.arrayBuffer()),p=pdf.addPage([c.width,c.height]);p.drawImage(png,{x:0,y:0,width:c.width,height:c.height})}return new Blob([await pdf.save()],{type:'application/pdf'})}
 export function preload(mode='v10'){return getSession(mode).catch(e=>{console.warn('模型預載失敗',e)})}
 export async function cleanFile(file,{loadPdfJs,onProgress,onPage,mode='v10'}={}){const began=performance.now(),el=()=>((performance.now()-began)/1000).toFixed(1);let total=0;const emit=(stage,percent,page=0,message='')=>onProgress&&onProgress({stage,percent,page,total,message,elapsed:el()}),src=await (emit('讀取檔案',2,0,'正在讀取檔案'),filePages(file,loadPdfJs));total=src.count;const pages=[];
   emit('載入模型',8,0,'正在載入去筆跡模型');await getSession(mode);emit('逐頁轉影像',14,0,`共 ${total} 頁，準備轉為影像`);
   // 流水線：清第 i 頁時，第 i+1 頁已在繪製、第 i-1 頁還在編 JPEG；onPage 仍照頁序觸發
+  let wmBg=null;if(total>=2&&total<=40&&/\.pdf$/i.test(file.name)){emit('分析浮水印',10,0,'正在分析各頁浮水印');const lums=[];for(let i=0;i<total;i++){try{lums.push(await pageLum(await src.get(i)))}catch(e){lums.push(null)}}wmBg=buildWmBg(lums)}
   let next=src.get(0),shown=Promise.resolve();
   for(let i=0;i<total;i++){emit('逐頁轉影像',14+i/total*12,i+1,`正在轉換第 ${i+1}/${total} 頁`);const source=await next;if(i+1<total)next=src.get(i+1);const beforeP=blobUrl(source,'image/jpeg',.8),
-    clean=await cleanCanvas(source,(n,t)=>emit('逐頁清除筆跡',26+(i+n/t)/total*62,i+1,`第 ${i+1}/${total} 頁，清稿切塊 ${n}/${t}`),{mode}),blobP=toBlob(clean,'image/jpeg',.92);
+    clean=await cleanCanvas(source,(n,t)=>emit('逐頁清除筆跡',26+(i+n/t)/total*62,i+1,`第 ${i+1}/${total} 頁，清稿切塊 ${n}/${t}`),{mode,wmBg}),blobP=toBlob(clean,'image/jpeg',.92);
     shown=shown.then(async()=>{const blob=await blobP,page={before:await beforeP,after:URL.createObjectURL(blob),canvas:clean,blob,blobOf:clean};pages[i]=page;onPage&&onPage(page,i)})}
   await shown;
   emit('合成乾淨 PDF',92,total,'正在合成乾淨 PDF');const pdf=await pdfFromCanvases(pages);emit('合成乾淨 PDF',100,total,'乾淨 PDF 已完成');return{pages,file:new File([pdf],file.name.replace(/\.[^.]+$/,'')+'-清稿.pdf',{type:'application/pdf'})}}
