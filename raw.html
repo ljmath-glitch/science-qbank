@@ -550,20 +550,28 @@
     function closeCropPreview(){cropPreviewIndex=null;closeInfoModal()}
     // ── 橡皮擦／裁切：把已裁切圖片中不要的部分塗成白色，或直接框選裁掉（當白紙背景） ──
     let _eraserBrush=24,_eraserHistory=[],_eraserRedoStack=[],_eraserDrawing=false,_eraserLast=null;
-    let _eraserToolMode='brush',_eraserSelRect=null;
+    let _eraserToolMode='brush',_eraserSelRect=null,_eraserOrigImg=null,_eraserBC=null,_eraserPeekSnap=null;
+    // 還原筆用的筆刷遮罩暫存畫布（重複使用，免得每一筆都新建全尺寸畫布）
+    function _eraserBrushCanvas(canvas){if(!_eraserBC||_eraserBC.width!==canvas.width||_eraserBC.height!==canvas.height){_eraserBC=document.createElement('canvas');_eraserBC.width=canvas.width;_eraserBC.height=canvas.height;}return _eraserBC;}
+    // 「按住看原圖」：按住時暫時把整張原圖畫上來，放開還原回修補中的畫面
+    function _eraserPeek(on){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserOrigImg||!_eraserOrigImg.complete)return;const ctx=canvas.getContext('2d');if(on){if(_eraserPeekSnap)return;try{_eraserPeekSnap=ctx.getImageData(0,0,canvas.width,canvas.height);}catch(e){_eraserPeekSnap=null;}ctx.drawImage(_eraserOrigImg,0,0,canvas.width,canvas.height);}else if(_eraserPeekSnap){ctx.putImageData(_eraserPeekSnap,0,0);_eraserPeekSnap=null;}}
     function openCropEraser(i){
-      const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserRedoStack=[];_eraserDrawing=false;_eraserLast=null;_eraserToolMode='brush';_eraserSelRect=null;
+      const it=cropCandidates[i];if(!it)return;_eraserHistory=[];_eraserRedoStack=[];_eraserDrawing=false;_eraserLast=null;_eraserToolMode='brush';_eraserSelRect=null;_eraserBC=null;_eraserPeekSnap=null;
       const isPage=Number.isInteger(it.dehandIndex);cropPreviewIndex=i;const overlay=document.getElementById('cropModalOverlay');overlay.classList.add('show');overlay.classList.toggle('dehand-editor',isPage);
+      // 還原筆的來源（原圖）：清稿頁面用「原始掃描 before」，其餘裁切圖用載入的原圖本身（＝救回誤擦）。
+      const restoreSrc=isPage&&dehandResult&&dehandResult.pages[it.dehandIndex]?dehandResult.pages[it.dehandIndex].before:it.src;
+      _eraserOrigImg=new Image();_eraserOrigImg.src=restoreSrc;
       const body=document.getElementById('cropModalBody');
       body.innerHTML=`<div class="crop-modal-title">${isPage?'清稿檢查與修補':'橡皮擦／裁切'} — ${esc(it.filename)}${isPage?'（系統已自動判斷方向）':''}</div>
         <div class="eraser-tools"><div class="et-left">
-          <label><input type="radio" name="eraserTool" value="brush" checked onchange="setEraserTool('brush')">🖌 手繪塗白</label>
+          <label><input type="radio" name="eraserTool" value="brush" checked onchange="setEraserTool('brush')">🖌 消除筆（塗白）</label>
+          <label><input type="radio" name="eraserTool" value="restore" onchange="setEraserTool('restore')">🩹 還原筆（救回誤刪）</label>
           <label><input type="radio" name="eraserTool" value="rect" onchange="setEraserTool('rect')">▭ 框選（更精準）</label>
           <span id="eraserBrushWrap">筆刷 <input type="range" id="eraserSize" min="6" max="90" value="${_eraserBrush}" oninput="_eraserBrush=+this.value;document.getElementById('eraserSizeVal').textContent=this.value"> <span id="eraserSizeVal">${_eraserBrush}</span> px</span>
         </div>
-        <span class="ur">${isPage?'<button class="btn" onclick="_eraserRotate90()" title="順時針旋轉 90°">↻ 旋轉 90°</button>':''}<button class="btn" onclick="_eraserUndo()" title="復原（上一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>復原</button><button class="btn" onclick="_eraserRedo()" title="重做（下一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>重做</button></span></div>
+        <span class="ur"><button class="btn" onmousedown="_eraserPeek(true)" onmouseup="_eraserPeek(false)" onmouseleave="_eraserPeek(false)" ontouchstart="event.preventDefault();_eraserPeek(true)" ontouchend="_eraserPeek(false)" title="按住顯示原始圖，放開回到修補中的畫面">👁 按住看原圖</button>${isPage?'<button class="btn" onclick="_eraserRotate90()" title="順時針旋轉 90°">↻ 旋轉 90°</button>':''}<button class="btn" onclick="_eraserUndo()" title="復原（上一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 8 5 12l4 4"/><path d="M5 12h9a5 5 0 1 1 0 10"/></svg>復原</button><button class="btn" onclick="_eraserRedo()" title="重做（下一步）"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8l4 4-4 4"/><path d="M19 12h-9a5 5 0 1 0 0 10"/></svg>重做</button></span></div>
         <div class="eraser-stage" id="eraserStage"><canvas id="eraserCanvas"></canvas><div class="eraser-cursor" id="eraserCursor"></div><div class="eraser-sel" id="eraserSel"></div></div>
-        <div class="crop-modal-meta" id="eraserModeHint">在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。</div>
+        <div class="crop-modal-meta" id="eraserModeHint">消除筆：按住拖曳把殘留筆跡塗白。還原筆：在被清掉的地方拖曳，從原圖救回來。可調筆刷大小、按「復原」還原上一筆。</div>
         <div class="action-row" id="eraserSelActions" style="display:none"><button class="btn" onclick="_eraserFillSelection()">⬜ 把框內塗白</button><button class="btn" onclick="_eraserCropToSelection()">✂ 只保留框內（其餘裁掉）</button><button class="btn" onclick="_eraserClearSelection()">✕ 取消框選</button></div>
         <div class="action-row"><button class="btn primary" onclick="saveCropEraser(${i})">儲存</button><button class="btn" onclick="renderCropPreviewModal()">取消</button></div>`;
       const img=new Image();
@@ -576,12 +584,21 @@
       const brushWrap=document.getElementById('eraserBrushWrap');if(brushWrap)brushWrap.style.display=mode==='rect'?'none':'';
       const canvas=document.getElementById('eraserCanvas');if(canvas)canvas.style.cursor=mode==='rect'?'crosshair':'none';
       const ring=document.getElementById('eraserCursor');if(ring)ring.style.display='none';
-      const hint=document.getElementById('eraserModeHint');if(hint)hint.textContent=mode==='rect'?'在圖上拖曳框出要處理的範圍，放開後選擇「塗白」或「只保留框內」（裁掉範圍外的部分）。':'在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。';
+      const hint=document.getElementById('eraserModeHint');if(hint)hint.textContent=mode==='rect'?'在圖上拖曳框出要處理的範圍，放開後選擇「塗白」或「只保留框內」（裁掉範圍外的部分）。':(mode==='restore'?'在圖上按住拖曳，把剛剛不小心塗掉的原始內容「刷」回來（從原圖救回）。可調筆刷大小、按「復原」還原上一筆、按「👁 按住看原圖」比對。':'在圖上按住拖曳，把不要的東西塗成白色。可調筆刷大小、按「復原」還原上一筆。');
     }
     function _bindEraser(canvas){
       const ctx=canvas.getContext('2d');
       const pos=(e)=>{const r=canvas.getBoundingClientRect();const sx=canvas.width/r.width,sy=canvas.height/r.height;const t=(e.touches&&e.touches[0])||e;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
-      const paint=(p)=>{ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_eraserBrush;ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';ctx.beginPath();if(_eraserLast)ctx.moveTo(_eraserLast.x,_eraserLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_eraserLast=p;};
+      const paint=(p)=>{
+        if(_eraserToolMode==='restore'&&_eraserOrigImg&&_eraserOrigImg.complete){
+          const bc=_eraserBrushCanvas(canvas),bctx=bc.getContext('2d');
+          bctx.clearRect(0,0,bc.width,bc.height);
+          bctx.save();bctx.lineCap='round';bctx.lineJoin='round';bctx.lineWidth=_eraserBrush;bctx.globalCompositeOperation='source-over';bctx.strokeStyle='#000';bctx.beginPath();if(_eraserLast)bctx.moveTo(_eraserLast.x,_eraserLast.y);else bctx.moveTo(p.x-0.01,p.y);bctx.lineTo(p.x,p.y);bctx.stroke();bctx.restore();
+          bctx.globalCompositeOperation='source-in';bctx.drawImage(_eraserOrigImg,0,0,bc.width,bc.height);bctx.globalCompositeOperation='source-over';
+          ctx.save();ctx.globalCompositeOperation='source-over';ctx.drawImage(bc,0,0);ctx.restore();
+          _eraserLast=p;return;
+        }
+        ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.lineWidth=_eraserBrush;ctx.globalCompositeOperation='source-over';ctx.strokeStyle='#ffffff';ctx.beginPath();if(_eraserLast)ctx.moveTo(_eraserLast.x,_eraserLast.y);else ctx.moveTo(p.x-0.01,p.y);ctx.lineTo(p.x,p.y);ctx.stroke();ctx.restore();_eraserLast=p;};
       const stage=canvas.parentElement,ring=document.getElementById('eraserCursor'),selEl=document.getElementById('eraserSel');
       const showRing=(e)=>{if(!ring||_eraserToolMode==='rect')return;const r=canvas.getBoundingClientRect(),sr=stage.getBoundingClientRect();const t=(e.touches&&e.touches[0])||e;const d=_eraserBrush*(r.width/canvas.width);ring.style.width=ring.style.height=d+'px';ring.style.left=(t.clientX-sr.left+stage.scrollLeft)+'px';ring.style.top=(t.clientY-sr.top+stage.scrollTop)+'px';ring.style.display='block';};
       const hideRing=()=>{if(ring)ring.style.display='none';};
