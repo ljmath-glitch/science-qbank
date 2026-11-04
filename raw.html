@@ -158,7 +158,7 @@
         </li>
         <li data-step="5c"><b>框選需要的圖表，並貼入題庫</b>只裁切題庫中需要保留的圖、表格或題組共用圖；確認題號後，按最下方「完成切圖」一次貼入對應題目。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help"><b>與手動匯題相同：</b>可從清稿 PDF 逐張框選，也可上傳已裁好的單張、多張、整個資料夾或 ZIP。完成後可逐張預覽、修改題號、重新框選或略過。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState">等待選擇檔案。按「手動框選裁切」開始，或直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">⬇ 下載圖表素材 ZIP</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">🖼 完成切圖</button></div><div class="status" id="batchImportState"></div></div>
+          <div class="step-detail"><p class="help"><b>與手動匯題相同：</b>可從清稿 PDF 逐張框選，也可上傳已裁好的單張、多張、整個資料夾或 ZIP。完成後可逐張預覽、修改題號、重新框選或略過。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">⚡ 自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState">等待選擇檔案。按「⚡ 自動裁切」讓系統自動找圖表，或「手動框選裁切」自己框，也可直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">⬇ 下載圖表素材 ZIP</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">🖼 完成切圖</button></div><div class="status" id="batchImportState"></div></div>
         </li>
 
       </ol>
@@ -729,6 +729,30 @@
         renderCropCandidates();renderCropPreviewModal();
       }catch(e){console.error(e);alert('提高解析度失敗：'+(e.message||e));}
       finally{if(btn){btn.disabled=false;}}
+    }
+    // ── 自動裁切：茲茲 OCR 主機用本機版面模型（PP-DocLayout v3）找圖形／表格，再依墨跡精修邊界（不缺角缺邊、不含題幹與文字選項）。
+    // 回傳 PDF 點座標 → 換成手動框選畫布（scale 2）的 rect，所以「✂ 手動修正」可直接在同一頁微調。
+    async function autoCropByModel(){
+      if(!cropFiles.pdf){alert('自動裁切需要清稿 PDF：請先在前面步驟上傳考卷（或清稿 PDF）。');return;}
+      const base=ocrBase();const status=document.getElementById('cropReviewState'),btn=document.getElementById('autoCropBtn');
+      if(!base){status.textContent='找不到茲茲 OCR 主機設定。';return;}
+      btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，每頁約數秒）…';
+      try{
+        const bytes=new Uint8Array(await cropFiles.pdf.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)})});
+        let j={};try{j=await r.json();}catch(e){}
+        if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
+        cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
+        for(const p of (j.pages||[]))for(const it of (p.items||[])){
+          const qno=Number.isInteger(it.qno)&&it.qno>0?it.qno:null;const label=`p${p.page}圖${++n}`;
+          cropCandidates.push({src:'data:image/png;base64,'+it.png,page:p.page,rect:{x:it.x*2,y:it.y*2,w:it.w*2,h:it.h*2},renderScale:2,qno,kind:'自動裁切',label,
+            verdict:qno===null?'review':'pass',reason:qno===null?'找不到題號，請按「改題號」補上':'題號依圖上方最近的題號推測，請確認',skip:false,
+            filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`});
+        }
+        status.textContent=n?`自動裁切完成，共 ${n} 張；請逐張確認題號與範圍，有問題按「✂ 手動修正」或略過。`:'沒有偵測到圖形或表格；可改用「手動框選裁切」。';
+        renderCropCandidates();
+      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.message||e)+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
+      finally{btn.disabled=false;}
     }
     // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
     // startManualCrop 是冪等的：同一份 PDF 只渲染一次頁面，之後呼叫（含「手動修正」單張跳轉）都重用同一批頁面，
