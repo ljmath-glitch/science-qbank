@@ -24,6 +24,16 @@
     .crop-page .crop-page-no{position:absolute;top:6px;left:8px;background:rgba(45,48,56,.72);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;pointer-events:none;line-height:1.4;z-index:3}
     .crop-page .sel{position:absolute;border:2px solid var(--red);background:rgba(133,1,3,.14);pointer-events:none;display:none;z-index:4}
     .crop-page .box{position:absolute;border:2px solid var(--green);background:rgba(31,111,92,.10);z-index:2}
+    .crop-page .box{cursor:default}
+    .crop-page .box.unknown{border-color:var(--red);background:rgba(133,1,3,.08)}
+    .crop-page .box.unknown .lbl{background:var(--red)}
+    .crop-page .box.skipped{border-style:dashed;border-color:#9a9a9a;background:rgba(0,0,0,.10)}
+    .crop-page .box.skipped .lbl{background:#9a9a9a}
+    .crop-page .box .box-tools{display:none;position:absolute;top:4px;right:4px;gap:4px;align-items:center;background:rgba(255,255,255,.97);border:1px solid var(--line);border-radius:8px;padding:4px;box-shadow:0 4px 14px -6px rgba(0,0,0,.35);z-index:6;line-height:1.2}
+    .crop-page .box:hover .box-tools,.crop-page .box:focus-within .box-tools{display:flex}
+    .crop-page .box .box-tools input{width:58px;font-size:13px;padding:3px 5px;border:1px solid #d8d2c4;border-radius:6px;text-align:center}
+    .crop-page .box .box-tools button{font-size:12px;padding:3px 7px;border:1px solid #d8d2c4;border-radius:6px;background:#fffaf2;cursor:pointer;white-space:nowrap}
+    .crop-page .box .box-tools button:hover{background:#f3e7d2}
     .crop-page .box .lbl{position:absolute;top:-10px;left:-2px;background:var(--green);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;line-height:1.4}
     .detail-title{font-size:14px;font-weight:800;margin-bottom:3px}
     .crop-card img{cursor:zoom-in}
@@ -51,6 +61,11 @@
     .modetabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;background:#fff;border:1px solid #e8d9b5;border-radius:14px;width:max-content;max-width:100%}.modetabs a{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:10px;font-weight:800;font-size:14px;color:#6e5a3c;text-decoration:none}.modetabs a:hover{background:#faf4ea}.modetabs a.on{background:linear-gradient(135deg,#850103,#a3141a);color:#fff;box-shadow:0 4px 10px -6px #850103}
     body{background:#f7f3ed}.intro{border-color:#e1d3c3;background:linear-gradient(145deg,#fffdf8,#fff7ed 62%,#f8ece8);box-shadow:0 12px 30px -26px #351a14}.intro h2{color:#2d3038}.stage{border:1px solid #dfd2c4;border-top:4px solid var(--red);background:linear-gradient(150deg,#fff,#fffcf7);box-shadow:0 16px 36px -30px #351a14}.stage+.stage{margin-top:16px!important}.head{padding-bottom:12px;border-bottom:1px solid #eee4d9}.no{background:linear-gradient(145deg,#97060a,#740002);border-color:#740002;box-shadow:0 7px 18px -12px #740002}.notice{border-left-color:#b58a3a;background:#fff7e8;color:#554535}.ocr-auto{border-color:#d5b36c!important;background:linear-gradient(135deg,#fffaf0,#fff4df)!important}.ocr-auto>div>div:first-child{color:var(--red)}.steps{gap:9px}.steps>li{min-height:88px;border-color:#e5d8ca;border-radius:14px;background:#fff;box-shadow:none}.steps>li:hover{border-color:#b58a3a;box-shadow:0 10px 24px -22px #351a14}.steps>li:before{background:#fffaf0;border-color:#b58a3a;color:var(--red)}.step-detail{border-color:#eadfd3;background:#fdfaf5}.drop{border-color:#cbb58d;background:#fffdf9}.drop:hover{border-color:#b58a3a;background:#fffaf0}.green{background:#b58a3a;border-color:#9d7229;color:#fff}.green:hover{background:#9d7229;border-color:#8d641f;color:#fff}.precision-warn{background:#fff7e8;border-left-color:#b58a3a;color:#76551b}.ready-dot.ok{background:#b58a3a}.crop-page .box{border-color:var(--red);background:rgba(133,1,3,.08)}.crop-page .box .lbl{background:var(--red)}.crop-summary{background:#fff7e8;border-left-color:#b58a3a}.file-state{padding:7px 9px;border-radius:8px;background:#faf6ef}.intro:last-of-type{border-top:4px solid #b58a3a}.status span[style*="var(--green)"]{color:#8d641f!important}@media(max-width:680px){.modetabs{width:100%}.modetabs a{flex:1;justify-content:center;padding:9px 12px}.stage{padding:16px}}
     body{--green:#b58a3a}
+    /* 本機清稿（同自動匯題） */
+.crop-modal-overlay.dehand-editor{padding:0;background:#eef2f6;align-items:stretch;justify-content:stretch}.crop-modal-overlay.dehand-editor .crop-modal{width:100vw;max-width:none;height:100vh;max-height:none;border-radius:0;padding:14px 18px 10px;display:flex;flex-direction:column;overflow:hidden}.crop-modal-overlay.dehand-editor .crop-modal-title{font-size:16px}.crop-modal-overlay.dehand-editor .eraser-tools{flex:0 0 auto;margin:5px 0 8px}.crop-modal-overlay.dehand-editor .eraser-stage{flex:1;max-height:none;border-radius:10px;background:#e9eef4}.crop-modal-overlay.dehand-editor .eraser-stage canvas{max-height:calc(100vh - 205px);width:auto;max-width:100%}.crop-modal-overlay.dehand-editor .crop-modal-meta{display:none}.crop-modal-overlay.dehand-editor .action-row{flex:0 0 auto;display:flex;justify-content:flex-end;margin:8px 0 0}.crop-modal-overlay.dehand-editor .action-row .btn{width:auto;min-width:110px}
+.dehand-workspace{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:14px;background:#fffdfa}.dehand-workspace .drop{min-height:116px}.dehand-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px;margin:14px 0 10px}.dehand-flow div{padding:8px;border-radius:8px;background:#f3f0eb;color:var(--muted);font-size:11px;line-height:1.35}.dehand-flow b{display:block;font-size:12px;color:inherit}.dehand-flow .active{background:#fff1eb;color:#9e321f;box-shadow:inset 0 0 0 1px #e4a796}.dehand-flow .done{background:#edf8f1;color:#17724f}.dehand-progress{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f6faf7;border-left:3px solid var(--green);font-size:12px;line-height:1.65}.dehand-bar{height:9px;background:#e7ece8;border-radius:999px;overflow:hidden;margin:7px 0}.dehand-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#16835b,#54ba82);transition:width .2s}.dehand-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted)}.dehand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}.dehand-card{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;font-size:11px}.dehand-pair{display:grid;grid-template-columns:1fr 1fr;gap:5px}.dehand-pair button{appearance:none;border:0;padding:0;background:#f5f4f1;border-radius:5px;overflow:hidden;cursor:zoom-in}.dehand-pair img{display:block;width:100%;height:112px;object-fit:contain}.dehand-label{display:block;color:var(--muted);padding:3px 0}.dehand-card .btn{margin-top:7px;width:100%;font-size:11px}.dehand-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.dehand-actions .primary{font-size:14px}.dehand-error{margin-top:10px;padding:10px;border-radius:9px;background:#fff0ef;color:#9e251a;font-size:12px}.crop-modal-body .eraser-tools{align-items:flex-start}.crop-modal-body .eraser-tools .et-left{flex:1 1 360px}.crop-modal-body .eraser-tools .ur{margin-left:auto}@media(max-width:680px){.dehand-workspace{padding:10px}.dehand-pair img{height:92px}.crop-modal-body .eraser-tools .ur{width:100%;margin-left:0}.eraser-tools input[type=range]{width:92px}}
+.dehand-workspace{margin-top:0;padding:10px}.dehand-flow{margin:9px 0 7px;gap:6px}.dehand-flow div{padding:6px}.dehand-actions{margin-top:9px}
+.dehand-grid{display:flex;overflow-x:auto;gap:10px;padding:4px 1px 8px;scroll-snap-type:x proximity;max-width:100%}.dehand-card{flex:0 0 190px;scroll-snap-align:start}.dehand-card .dehand-pair{grid-template-columns:1fr}.dehand-card .dehand-pair>div:first-child{display:none}.dehand-card .dehand-pair img{height:210px}.dehand-card b{display:block;margin-bottom:5px}.dehand-card .btn{min-height:32px}.dehand-actions{position:sticky;bottom:0;z-index:4;padding:9px;background:rgba(255,253,249,.94);border-top:1px solid #eadfd3;backdrop-filter:blur(8px)}
   </style>
 </head>
 <body>
@@ -139,7 +154,7 @@
         </li>
         <li data-step="2"><b>手動框選裁切圖表素材</b>用清稿 PDF 逐張框選要保留的圖或表格（可含整張表格、題組共用圖、整組選項圖），框好後系統會建立可批次貼圖的素材包。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
-          <div class="step-detail"><p class="help"><b>建議流程：</b>按「手動框選裁切」，在下方頁面逐張框出要保留的圖／表格；框選範圍不要含題幹、選項、題號與頁首頁尾。每張框好後可在卡片上按「改題號」補上題號、或「手動修正」重新框一次，各張互不影響。<br>如果你已經自己裁好圖了，也可以用「上傳已裁切圖片」加入單張或多張，或「上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="剛在第 I 區另開分頁匯入完題目後，這裡按一下就能重抓最新題庫資料，不用整頁重新整理、不會清掉已裁切的圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:10px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><div class="status" id="cropReviewState">等待選擇檔案。按「手動框選裁切」開始，或直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
+          <div class="step-detail"><p class="help"><b>建議流程：</b>按「手動框選裁切」，在下方頁面逐張框出要保留的圖／表格；框選範圍不要含題幹、選項、題號與頁首頁尾。每張框好後可在卡片上按「改題號」補上題號、或「手動修正」重新框一次，各張互不影響。<br>如果你已經自己裁好圖了，也可以用「上傳已裁切圖片」加入單張或多張，或「上傳圖片資料夾」整批加入；支援 PNG／JPG／JPEG／WEBP／GIF／BMP。檔名開頭若是 <code>Q3</code>、<code>第3題</code> 或 <code>3_</code> 這類格式會自動辨識題號，辨識不到就會標「需人工確認」，之後可在卡片上按「改題號」補上。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">⚡ 自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="剛在第 I 區另開分頁匯入完題目後，這裡按一下就能重抓最新題庫資料，不用整頁重新整理、不會清掉已裁切的圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:10px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><div class="status" id="cropReviewState">等待選擇檔案。按「⚡ 自動裁切」讓系統自動找圖表，或「手動框選裁切」自己框，也可直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div></div>
         </li>
         <li data-step="3"><b>批次貼入題庫</b>確認每張圖的題號後，直接開啟題庫系統的既有「批次貼圖」視窗，最後仍會顯示對應結果供你確認。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
@@ -386,7 +401,7 @@
     async function askGeminiPage(imageData,pageNo,onlyTables){const scope=onlyTables?'只需要找「資料表格」（data table：欄列整齊排列、通常有格線或分隔線）。不用理會一般圖片、照片、示意圖、裝置圖、折線圖、圓餅圖等，那些已經用其他精準方式抽好了。':'找出所有需要獨立裁切的原始視覺素材：資料表格、折線圖、長條圖、圓餅圖、座標圖、實驗裝置圖、流程圖、結構圖、照片、標籤圖。';const instruction=`你是臺灣自然科考卷的「圖表裁切與題號對應」檢查員。以下是一整頁掃描考卷。${scope}\n嚴格排除：頁首校名、學校 Logo、出版商 Logo、頁碼、純文字題幹、題號、選項、答案欄、姓名欄、裝飾線。${onlyTables?'':'表格必須列入。'}\n每個素材要依頁內「如圖／如表」引用或相鄰題目，填最早引用的阿拉伯數字題號；若是題組共用（多題共用同一段閱讀文字或圖表），填題組第一題的題號，不要填最後一題。無法確定題號時 qno 必須是 null，不可猜。\n座標以頁面左上為原點，範圍 0 到 1000；x,y,w,h 必須完整包含圖／表、圖例、座標軸、單位及圖表標籤，但不要包含題幹、題號或選項。\n只回傳 JSON：{"assets":[{"qno":9或null,"kind":"表格|折線圖|裝置圖|流程圖|結構圖|照片|圖表","label":"簡短繁體中文描述","x":0,"y":0,"w":0,"h":0,"verdict":"pass|review","reason":"簡短原因"}]}。若本頁沒有符合項目，assets 是空陣列。這是第 ${pageNo} 頁。`;
       const comma=imageData.indexOf(','),mime=(imageData.slice(0,comma).match(/data:([^;]+)/)||[])[1]||'image/jpeg';const payload={contents:[{parts:[{text:instruction},{inline_data:{mime_type:mime,data:imageData.slice(comma+1)}}]}],generationConfig:{temperature:0,responseMimeType:'application/json',maxOutputTokens:2048,thinkingConfig:{thinkingBudget:0}}};let last='';
       for(const model of ['gemini-3.5-flash-lite','gemini-3.5-flash']){const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});if(res.ok){const body=await res.json();const raw=body.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'{"assets":[]}';return JSON.parse(raw.replace(/^```json\s*|\s*```$/g,''))}last=await res.text();if(res.status===403)throw new Error('Gemini 金鑰沒有 API 使用權限，或帳戶配額不足。');if(res.status!==429&&res.status!==503&&res.status!==404)throw new Error(`Gemini 無法使用（${res.status}）。請確認金鑰與 API 權限。`)}throw new Error('Gemini 目前繁忙或沒有可用配額；已用省錢模型與備援模型各嘗試一次，請稍後再試。')}
-    function renderCropCandidates(){const grid=document.getElementById('cropPreviewGrid');const active=cropCandidates.filter(x=>!x.skip);const unknown=active.filter(x=>x.qno===null).length;const review=active.filter(x=>x.verdict!=='pass').length;const sum=document.getElementById('cropSummary');sum.classList.remove('hide');sum.textContent=`共偵測 ${cropCandidates.length} 張候選素材，保留 ${active.length} 張；其中 ${unknown} 張題號未知、${review} 張需人工確認。表格已包含在候選素材內。`;document.getElementById('clearCropResultsBtn').disabled=!cropCandidates.length;
+    function renderCropCandidates(){try{setTimeout(drawCropBoxes,0)}catch(e){}const grid=document.getElementById('cropPreviewGrid');const active=cropCandidates.filter(x=>!x.skip);const unknown=active.filter(x=>x.qno===null).length;const review=active.filter(x=>x.verdict!=='pass').length;const sum=document.getElementById('cropSummary');sum.classList.remove('hide');sum.textContent=`共偵測 ${cropCandidates.length} 張候選素材，保留 ${active.length} 張；其中 ${unknown} 張題號未知、${review} 張需人工確認。表格已包含在候選素材內。`;document.getElementById('clearCropResultsBtn').disabled=!cropCandidates.length;
       grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}" onclick="openCropPreview(${i})"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span>${it.reason?`<div class="crop-meta">${esc(it.reason)}</div>`:''}<div class="crop-actions"><button class="btn" onclick="openCropPreview(${i})">✏️ 編輯</button><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length;
       if(cropPreviewIndex!==null&&cropCandidates[cropPreviewIndex])renderCropPreviewModal();}
     function toggleCropSkip(i){cropCandidates[i].skip=!cropCandidates[i].skip;renderCropCandidates()}
@@ -678,6 +693,52 @@
       }catch(e){console.error(e);alert('提高解析度失敗：'+(e.message||e));}
       finally{if(btn){btn.disabled=false;}}
     }
+    // ── 頁面上的框：所有素材（自動裁切、手動框選）都畫在頁面上，游標移到框上就能直接改題號／單題或題組／略過／刪除，
+    // 不用再捲回上方卡片。位置用頁面百分比，視窗縮放也不會跑掉。
+    function drawCropBoxes(){
+      manualPageWraps.forEach((wrap,pageNo)=>{
+        wrap.querySelectorAll('.box').forEach(b=>b.remove());
+        const canvas=wrap.querySelector('canvas');if(!canvas)return;
+        cropCandidates.forEach((it,i)=>{
+          if(it.page!==pageNo||!it.rect)return;
+          const k=2/(it.renderScale||2),r=it.rect,pct=(v,d)=>(v*k/d*100)+'%';
+          const box=document.createElement('div');box.className='box'+(it.skip?' skipped':'')+(it.qno===null&&!it.skip?' unknown':'');
+          box.style.left=pct(r.x,canvas.width);box.style.top=pct(r.y,canvas.height);box.style.width=pct(r.w,canvas.width);box.style.height=pct(r.h,canvas.height);
+          const name=it.skip?'已略過':(it.qno?(it.scope==='group'?'🔗題組第'+it.qno+'題':'第'+it.qno+'題'):'題號？');
+          box.innerHTML=`<span class="lbl">${name}</span><div class="box-tools" onmousedown="event.stopPropagation()"><input type="number" min="1" inputmode="numeric" value="${it.qno??''}" placeholder="題號" title="改題號（Enter 確定）" onkeydown="if(event.key==='Enter')this.blur()" onchange="setCropQno(${i},this.value)"><button type="button" title="切換單題圖／題組共用圖" onclick="setCropScope(${i})">${it.scope==='group'?'🔗題組':'單題'}</button><button type="button" onclick="toggleCropSkip(${i})">${it.skip?'恢復':'略過'}</button><button type="button" title="刪除這個框" onclick="deleteCrop(${i})">✕</button></div>`;
+          wrap.appendChild(box);
+        });
+      });
+    }
+    function _cropChanged(i){const it=cropCandidates[i];it.verdict=it.qno===null?'review':'pass';it.reason=it.qno===null?'題號未填，請人工確認':(it.scope==='group'?'題組共用圖（貼到題組文章）':'已在頁面上確認');it.filename=cropFileName(it);renderCropCandidates();}
+    function setCropQno(i,v){const n=parseInt(v,10);cropCandidates[i].qno=Number.isInteger(n)&&n>0?n:null;_cropChanged(i);}
+    function setCropScope(i){const it=cropCandidates[i];it.scope=it.scope==='group'?'single':'group';_cropChanged(i);}
+    function deleteCrop(i){cropCandidates.splice(i,1);renderCropCandidates();}
+    // ── 自動裁切：茲茲 OCR 主機用本機版面模型（PP-DocLayout v3）找圖形／表格，再依墨跡精修邊界（不缺角缺邊、不含題幹與文字選項）。
+    // 回傳 PDF 點座標 → 換成手動框選畫布（scale 2）的 rect，所以「✂ 手動修正」可直接在同一頁微調。
+    // OCR 主機沿用「自動匯題」頁選的公司電腦／本機（存在 localStorage）
+    async function autoCropByModel(){
+      if(!cropFiles.pdf){alert('自動裁切需要清稿 PDF：請先在前面步驟上傳考卷（或清稿 PDF）。');return;}
+      const base=(()=>{const mac=/Mac/.test(navigator.platform||navigator.userAgent);const hosts={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:mac?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};return hosts[localStorage.getItem('ocrHost')==='local'?'local':'company'];})();const status=document.getElementById('cropReviewState'),btn=document.getElementById('autoCropBtn');
+      if(!base){status.textContent='找不到茲茲 OCR 主機設定。';return;}
+      btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，每頁約數秒）…';
+      try{
+        const bytes=new Uint8Array(await cropFiles.pdf.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)})});
+        let j={};try{j=await r.json();}catch(e){}
+        if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
+        cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
+        for(const p of (j.pages||[]))for(const it of (p.items||[])){
+          const qno=Number.isInteger(it.qno)&&it.qno>0?it.qno:null;const label=`p${p.page}圖${++n}`;
+          cropCandidates.push({src:'data:image/png;base64,'+it.png,page:p.page,rect:{x:it.x*2,y:it.y*2,w:it.w*2,h:it.h*2},renderScale:2,qno,kind:'自動裁切',label,
+            verdict:qno===null?'review':'pass',reason:qno===null?'找不到題號，請按「改題號」補上':'題號依圖上方最近的題號推測，請確認',skip:false,
+            filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`});
+        }
+        await startManualCrop();renderCropCandidates();
+        status.textContent=n?`自動裁切完成，共 ${n} 張，已畫在下方頁面上：游標移到框上可直接改題號、切換單題／題組、略過或刪除；漏掉的圖直接在頁面上拖曳框選補上。`:'沒有偵測到圖形或表格；可直接在下方頁面拖曳框選。';
+      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.message||e)+'。'+(/fetch|network/i.test(String(e))?'請確認 OCR 主機（公司電腦或本機，在「自動匯題」頁切換）已開啟、Tailscale 已連線。':'');}
+      finally{btn.disabled=false;}
+    }
     // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
     // startManualCrop 是冪等的：同一份 PDF 只渲染一次頁面，之後呼叫（含「手動修正」單張跳轉）都重用同一批頁面，
     // 不會清掉已經框好的框、也不會讓卡片重新收合。
@@ -693,7 +754,7 @@
           status.textContent=`正在渲染第 ${pageNo}/${doc.numPages} 頁…`;
           const page=await doc.getPage(pageNo);const viewport=page.getViewport({scale:2});
           const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);
-          await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+          await page.render({canvasContext:canvas.getContext('2d'),viewport,intent:'print'}).promise;   // print：分頁在背景時 display 渲染會停住
           const wrap=document.createElement('div');wrap.className='crop-page';
           wrap.appendChild(canvas);
           const no=document.createElement('div');no.className='crop-page-no';no.textContent='第 '+pageNo+' 頁';wrap.appendChild(no);
@@ -701,7 +762,7 @@
           area.appendChild(wrap);_bindManualCrop(wrap,canvas,sel,pageNo);
           manualPageWraps.set(pageNo,wrap);
         }
-        manualPagesFile=cropFiles.pdf;
+        manualPagesFile=cropFiles.pdf;drawCropBoxes();
         status.textContent=`已載入 ${doc.numPages} 頁。請在頁面上拖曳框選；框好放開後輸入題號。`;
       }catch(e){console.error(e);status.textContent='載入 PDF 失敗：'+(e.message||e);}
       finally{btn.disabled=false;}
@@ -764,8 +825,6 @@
       item.filename=cropFileName(item);
       if(fixing){cropCandidates[pendingFixIndex]=item;pendingFixIndex=null;}
       else cropCandidates.push(item);
-      const box=document.createElement('div');box.className='box';box.style.left=(rect.x/sc)+'px';box.style.top=(rect.y/sc)+'px';box.style.width=(rect.w/sc)+'px';box.style.height=(rect.h/sc)+'px';
-      const lbl=document.createElement('span');lbl.className='lbl';lbl.textContent=qno?(scope==='group'?('題組第'+qno+'題'):('第'+qno+'題')):'未知';box.appendChild(lbl);wrap.appendChild(box);
       renderCropCandidates();
       if(fixing)document.getElementById('cropReviewState').textContent='已完成手動修正，該張素材已更新。';
     }
