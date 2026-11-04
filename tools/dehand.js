@@ -25,8 +25,8 @@ async function loadImage(file){const url=URL.createObjectURL(file);try{const im=
 // 1. 橫書的字讓「逐列墨量」起伏大、直的（轉了 90°）讓「逐欄墨量」起伏大 → 判斷要不要轉；
 // 2. 卷頭標題字粗、墨多，頁尾頁碼墨少 → 兩側邊條墨量多的那側是上方，決定順時針或逆時針。
 // 圖的保護區：二值化後找連通塊，字是一堆小塊，圖的座標軸＋曲線會連成一大塊（寬、高都 > 頁寬 6%）。
-// 回傳每個像素的門檻陣列：圖內（外擴 4%）要筆跡機率 > 0.97 才擦（同 OCR 端 apply.py hand 模式）
-export function figureThreshold(gray,w,h,base,fig=.97){
+// 回傳每個像素的門檻陣列：圖內（外擴 4%）要筆跡機率 > 0.5 才擦（同 OCR 端 apply.py hand 模式）
+export function figureThreshold(gray,w,h,base,fig=.5){
   const s=4,W=Math.ceil(w/s),H=Math.ceil(h/s),lab=new Int32Array(W*H).fill(-1),th=new Float32Array(w*h).fill(base);
   const ink=i=>{const x0=(i%W)*s,y0=((i/W)|0)*s;for(let y=y0;y<Math.min(h,y0+s);y++)for(let x=x0;x<Math.min(w,x0+s);x++)if(gray[y*w+x]<200)return true;return false};   // 4×4 格內有任何墨就算：座標軸、淡曲線、刻度連成一塊（圖線常很淡，石牌 pH 曲線約 177）   // 掃描的圖線常很淡（石牌 pH 曲線灰階約 177）
   const stack=[],m=Math.round(w*.04);let id=0;
