@@ -1531,6 +1531,8 @@
       </div>
       <label class="pg-size pg-zoomctl">縮放 <input id="pgZoom" type="range" min="50" max="800" value="100"></label>
       <div class="pg-row">
+        <button id="pgRotL" class="pg-ib" title="向左旋轉 90°（側躺的掃描按一次，顛倒的按兩次）">↺ 左轉</button>
+        <button id="pgRotR" class="pg-ib" title="向右旋轉 90°">↻ 右轉</button>
         <button id="pgUndo" class="pg-ib" title="復原（Ctrl+Z）">↶ 復原</button>
         <button id="pgRedo" class="pg-ib" title="重做（Ctrl+Y）">↷ 重做</button>
         <button id="pgPeek" class="pg-ib" title="按住看原圖，放開回到修補畫面">按住看原圖</button>
@@ -1631,8 +1633,12 @@
     function pgSetShape(t){pgShape=t;EG('pgShapeBrush').classList.toggle('on',t==='brush');EG('pgShapeRect').classList.toggle('on',t==='rect');EG('pgBrushWrap').style.visibility=t==='rect'?'hidden':'';if(EDC&&!PG_MARK_TOOLS.has(pgTool))EDC.style.cursor=t==='rect'?'crosshair':'none';EG('pgBrush').hidden=true}
 
     // ---- 復原 / 重做 ----
-    function pgSnap(pix){const e={marks:JSON.stringify(pgMarks)};if(pix)e.img=EDCTX.getImageData(0,0,EDC.width,EDC.height);return e}
-    function pgSwap(from,to){pgCommitEdit();const u=from.pop();if(!u)return;to.push(pgSnap(!!u.img));if(to.length>UNDO_MAX)to.shift();if(u.img)EDCTX.putImageData(u.img,0,0);if(u.marks!==undefined)pgMarks=JSON.parse(u.marks);pgSelMark=null;pgRedrawMarks()}
+    function pgCopyOf(src){if(!src)return null;const c=document.createElement('canvas');c.width=src.width;c.height=src.height;c.getContext('2d').drawImage(src,0,0);return c}
+    function pgApplyPixels(cv){EDC.width=cv.width;EDC.height=cv.height;EDML.width=cv.width;EDML.height=cv.height;EDCTX.clearRect(0,0,cv.width,cv.height);EDCTX.drawImage(cv,0,0)}
+    function pgSnap(pix,withOrig){const e={marks:JSON.stringify(pgMarks)};if(pix)e.cv=pgCopyOf(EDC);if(withOrig)e.orig=pgCopyOf(EDORIG);return e}
+    function pgSwap(from,to){pgCommitEdit();const u=from.pop();if(!u)return;to.push(pgSnap(!!u.cv,!!u.orig));if(to.length>UNDO_MAX)to.shift();if(u.cv){pgApplyPixels(u.cv);pgPxPerPt=EDC.width/210*0.3528}if(u.orig)EDORIG=u.orig;if(u.marks!==undefined)pgMarks=JSON.parse(u.marks);pgSelMark=null;pgRedrawMarks();pgFitZoom()}
+    function pgRotateCv(cv,dir){const w=cv.width,h=cv.height;const tmp=document.createElement('canvas');tmp.width=w;tmp.height=h;tmp.getContext('2d').drawImage(cv,0,0);cv.width=h;cv.height=w;const ctx=cv.getContext('2d');if(dir>0){ctx.translate(h,0);ctx.rotate(Math.PI/2)}else{ctx.translate(0,w);ctx.rotate(-Math.PI/2)}ctx.drawImage(tmp,0,0);ctx.setTransform(1,0,0,1,0,0)}
+    function pgRotate(dir){if(!EDC.width)return;pgCommitEdit();pgBakeMarks();pgUndo.push(pgSnap(true,true));if(pgUndo.length>UNDO_MAX)pgUndo.shift();pgRedo=[];pgEdited=true;pgRotateCv(EDC,dir);if(EDORIG){const r=pgCopyOf(EDORIG);pgRotateCv(r,dir);EDORIG=r}EDML.width=EDC.width;EDML.height=EDC.height;pgPxPerPt=EDC.width/210*0.3528;pgSelMark=null;pgRedrawMarks();pgFitZoom()}
     function pushMarkUndo(json){pgUndo.push({marks:json||JSON.stringify(pgMarks)});if(pgUndo.length>UNDO_MAX)pgUndo.shift();pgRedo=[];pgEdited=true}
 
     // ---- 按住看原圖（用快照保存目前畫面，放開還原）----
@@ -1677,7 +1683,7 @@
       EG('pgShapeBrush').onclick=()=>pgSetShape('brush');
       EG('pgShapeRect').onclick=()=>pgSetShape('rect');
       EG('pgBrushSize').oninput=()=>{};
-      EG('pgUndo').onclick=()=>{if(pgUndo.length)pgSwap(pgUndo,pgRedo)};
+      EG('pgRotL').onclick=()=>pgRotate(-1);EG('pgRotR').onclick=()=>pgRotate(1);EG('pgUndo').onclick=()=>{if(pgUndo.length)pgSwap(pgUndo,pgRedo)};
       EG('pgRedo').onclick=()=>{if(pgRedo.length)pgSwap(pgRedo,pgUndo)};
       EG('pgDone').onclick=pgDone;
       EG('pgPrev').onclick=()=>pgTurn(-1);EG('pgNext').onclick=()=>pgTurn(1);
@@ -1726,7 +1732,7 @@
         const showBox=ev=>{const r=box.getBoundingClientRect(),x=(ev.clientX-r.left)/ZM(),y=(ev.clientY-r.top)/ZM();Object.assign(selbox.style,{left:Math.min(sx,x)+'px',top:Math.min(sy,y)+'px',width:Math.abs(x-sx)+'px',height:Math.abs(y-sy)+'px'})};
         const move=ev=>{if(pgGesture||ev.pointerId!==e.pointerId)return;if(rect){last=canvasPoint(ev);showBox(ev);return}moveBrush(ev);const p=canvasPoint(ev),rad=(+EG('pgBrushSize').value)/2*p.k;const n=Math.max(1,Math.ceil(Math.hypot(p.x-last.x,p.y-last.y)/Math.max(1,rad/2)));for(let i=1;i<=n;i++)pgDab({x:last.x+(p.x-last.x)*i/n,y:last.y+(p.y-last.y)*i/n,k:p.k});last=p};
         const up=()=>{pgStroke=null;if(selbox)selbox.remove();box.removeEventListener('pointermove',move);box.removeEventListener('pointerup',done);box.removeEventListener('pointercancel',up)};
-        const undoThis=()=>{const u=pgUndo.pop();if(u&&u.img)EDCTX.putImageData(u.img,0,0);pgEdited=wasEdited};
+        const undoThis=()=>{const u=pgUndo.pop();if(u&&u.cv)pgApplyPixels(u.cv);pgEdited=wasEdited};
         pgStroke={cancel(){undoThis();up()}};
         const done=ev=>{if(rect){if(Math.abs(ev.clientX-e.clientX)<4&&Math.abs(ev.clientY-e.clientY)<4)undoThis();else pgFillRect(start.x,start.y,last.x,last.y)}up()};
         box.addEventListener('pointermove',move);box.addEventListener('pointerup',done);box.addEventListener('pointercancel',up);
