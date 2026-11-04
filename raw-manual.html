@@ -67,6 +67,42 @@
 .dehand-workspace{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:14px;background:#fffdfa}.dehand-workspace .drop{min-height:116px}.dehand-flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:7px;margin:14px 0 10px}.dehand-flow div{padding:8px;border-radius:8px;background:#f3f0eb;color:var(--muted);font-size:11px;line-height:1.35}.dehand-flow b{display:block;font-size:12px;color:inherit}.dehand-flow .active{background:#fff1eb;color:#9e321f;box-shadow:inset 0 0 0 1px #e4a796}.dehand-flow .done{background:#edf8f1;color:#17724f}.dehand-progress{margin:10px 0;padding:10px 12px;border-radius:10px;background:#f6faf7;border-left:3px solid var(--green);font-size:12px;line-height:1.65}.dehand-bar{height:9px;background:#e7ece8;border-radius:999px;overflow:hidden;margin:7px 0}.dehand-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#16835b,#54ba82);transition:width .2s}.dehand-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted)}.dehand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}.dehand-card{border:1px solid var(--line);border-radius:10px;padding:8px;background:#fff;font-size:11px}.dehand-pair{display:grid;grid-template-columns:1fr 1fr;gap:5px}.dehand-pair button{appearance:none;border:0;padding:0;background:#f5f4f1;border-radius:5px;overflow:hidden;cursor:zoom-in}.dehand-pair img{display:block;width:100%;height:112px;object-fit:contain}.dehand-label{display:block;color:var(--muted);padding:3px 0}.dehand-card .btn{margin-top:7px;width:100%;font-size:11px}.dehand-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.dehand-actions .primary{font-size:14px}.dehand-error{margin-top:10px;padding:10px;border-radius:9px;background:#fff0ef;color:#9e251a;font-size:12px}.crop-modal-body .eraser-tools{align-items:flex-start}.crop-modal-body .eraser-tools .et-left{flex:1 1 360px}.crop-modal-body .eraser-tools .ur{margin-left:auto}@media(max-width:680px){.dehand-workspace{padding:10px}.dehand-pair img{height:92px}.crop-modal-body .eraser-tools .ur{width:100%;margin-left:0}.eraser-tools input[type=range]{width:92px}}
 .dehand-workspace{margin-top:0;padding:10px}.dehand-flow{margin:9px 0 7px;gap:6px}.dehand-flow div{padding:6px}.dehand-actions{margin-top:9px}
 .dehand-grid{display:flex;overflow-x:auto;gap:10px;padding:4px 1px 8px;scroll-snap-type:x proximity;max-width:100%}.dehand-card{flex:0 0 190px;scroll-snap-align:start}.dehand-card .dehand-pair{grid-template-columns:1fr}.dehand-card .dehand-pair>div:first-child{display:none}.dehand-card .dehand-pair img{height:210px}.dehand-card b{display:block;margin-bottom:5px}.dehand-card .btn{min-height:32px}.dehand-actions{position:sticky;bottom:0;z-index:4;padding:9px;background:rgba(255,253,249,.94);border-top:1px solid #eadfd3;backdrop-filter:blur(8px)}
+    /* ===== 全頁清稿修補編輯器（俊偉式） ===== */
+    .pg-ed{position:fixed;inset:0;z-index:4000;display:flex;flex-direction:column;background:#f1ece4}
+    .pg-ed[hidden]{display:none!important}
+    #pgEd [hidden]{display:none!important}
+    .pg-top{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border-bottom:1px solid #e6dccd;flex-wrap:wrap}
+    .pg-grow{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800;color:var(--ink)}
+    .pg-tip{font-size:12.5px;color:var(--muted)}
+    .pg-ib{display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:7px 12px;border:1px solid #e3d7ca;border-radius:9px;background:#fff;color:var(--ink);cursor:pointer;font:inherit;font-size:14px}
+    .pg-ib:hover{background:#fbf6ee;border-color:#cdbfad}
+    .pg-ib:disabled{opacity:.4;cursor:default}
+    .pg-primary{padding:8px 20px;border:1px solid var(--red);border-radius:9px;background:var(--red);color:#fff;font-weight:800;cursor:pointer;font:inherit;font-size:14px}
+    .pg-primary:hover{background:#a01822}
+    .pg-no{font-size:14px;font-weight:800;color:var(--ink);min-width:48px;text-align:center}
+    .pg-wrap{flex:1;min-height:0;overflow:auto;padding:16px;position:relative}
+    .pg-wrap.panning,.pg-wrap.panning canvas{cursor:grabbing!important}
+    .pg-box{position:relative;touch-action:none;width:fit-content;margin:0 auto}
+    .pg-box canvas{display:block;background:#fff;box-shadow:0 6px 24px rgba(40,25,10,.18);cursor:none;max-width:none}
+    .pg-box canvas.pg-mark{position:absolute;left:0;top:0;background:transparent;box-shadow:none;pointer-events:none}
+    .pg-brush{position:absolute;border:2px solid var(--red);border-radius:50%;pointer-events:none;transform:translate(-50%,-50%);z-index:3}
+    .pg-sel{position:absolute;border:1.5px dashed var(--red);cursor:move;touch-action:none;z-index:4}
+    .pg-sel .pg-mh{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;background:#fff;border:2px solid var(--red);border-radius:3px;cursor:nwse-resize}
+    .pg-edit{position:absolute;z-index:5;margin:0;padding:0;border:1.5px dashed #1d4ed8;outline:none;resize:none;overflow:hidden;white-space:pre;line-height:1.25;box-sizing:content-box;background:rgba(255,255,255,.55)}
+    .pg-selbox{position:absolute;border:2px dashed var(--red);background:rgba(133,1,3,.08);pointer-events:none;z-index:3}
+    .pg-selbox.restore{border-color:#2f7d37;background:rgba(47,125,55,.10)}
+    .pg-tools{background:#fff;border-top:1px solid #e6dccd;padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;gap:10px 16px;flex-wrap:wrap;align-items:center;justify-content:center}
+    .pg-tabs{display:inline-flex;background:#f3ece2;border:1px solid #e3d7ca;border-radius:9px;padding:4px;gap:2px}
+    .pg-tabs button{border:0;background:transparent;padding:6px 13px;border-radius:7px;color:var(--muted);cursor:pointer;font:inherit;font-size:14px;font-weight:700}
+    .pg-tabs button:hover:not(.on){color:var(--ink)}
+    .pg-tabs button.on{background:var(--red);color:#fff;box-shadow:0 1px 2px rgba(15,23,42,.12)}
+    .pg-row{display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap}
+    .pg-size{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:var(--muted)}
+    .pg-tools select{padding:5px 8px;border:1px solid #e3d7ca;border-radius:7px;font:inherit}
+    .pg-swatches button{padding:5px 9px}
+    .pg-swatches i{display:block;width:16px;height:16px;border-radius:50%}
+    .pg-swatches button.on{background:#fff!important;box-shadow:0 0 0 2px var(--red) inset}
+    @media(max-width:900px){.pg-top .pg-hint{display:none}.pg-zoomctl{display:none!important}.pg-tools{gap:8px}.pg-size input[type=range]{width:108px}}
   </style>
 </head>
 <body>
@@ -179,7 +215,7 @@
     function retryDehand(){if(dehandLastFile)startDehand(dehandLastFile)}
     async function startDehand(file){if(!file)return;if(!/\.pdf$/i.test(file.name)&&!/^image\//.test(file.type)){alert('請選擇 PDF 或圖片檔。');return}dehandLastFile=file;dehandStartedAt=Date.now();const status=document.getElementById('dehandStatus'),progress=document.getElementById('dehandProgress'),pages=document.getElementById('dehandPages'),download=document.getElementById('downloadDehandBtn'),error=document.getElementById('dehandError'),retry=document.getElementById('retryDehandBtn');status.textContent='已收到 '+file.name+'，準備開始。';progress.classList.remove('hide');pages.innerHTML='';error.classList.add('hide');retry.classList.add('hide');download.disabled=true;dehandResult=null;setDehandFlow('讀取檔案');try{dehandResult={pages:[]};const addCard=(page,i)=>{dehandResult.pages[i]=page;const card=document.createElement('div');card.className='dehand-card';card.innerHTML=`<b>第 ${i+1} 頁完成</b><div class="dehand-pair"><div><span class="dehand-label">原稿</span><button title="點擊放大" onclick="openDehandImage(${i},false)"><img src="${page.before}" alt="原稿"></button></div><div><span class="dehand-label">清稿</span><button title="點擊放大／手動塗白" onclick="openDehandImage(${i},true)"><img src="${page.after}" alt="清稿"></button></div></div><button class="btn" onclick="openDehandImage(${i},true)">🧽 放大檢查／手動修補</button>`;pages.appendChild(card)};dehandResult=await window.Dehand.cleanFile(file,{loadPdfJs,onPage:addCard,mode:document.getElementById('dehandMode').value,onProgress:info=>{const pct=Math.round(info.percent||0),elapsed=Math.max(0,Date.now()-dehandStartedAt),per=info.page?elapsed/info.page:0,remain=info.total&&info.page?Math.max(0,Math.round(per*(info.total-info.page)/1000)):null;setDehandFlow(info.stage,pct>=100);document.getElementById('dehandProgressText').textContent=`${info.stage}：${info.message}`;document.getElementById('dehandProgressBar').style.width=pct+'%';document.getElementById('dehandPageMeta').textContent=info.total?`第 ${info.page||0}/${info.total} 頁 · ${pct}%`:`${pct}%`;document.getElementById('dehandTimeMeta').textContent=`已耗時 ${Math.round(elapsed/1000)} 秒${remain!==null?' · 預估剩餘 '+remain+' 秒':''}`}});setCropFile('pdf',dehandResult.file);manualCleanPdf=dehandResult.file;manualQueueExamPdfSave();status.textContent=`清稿完成：${dehandResult.pages.length} 頁，已帶入詳解與切圖。`;download.disabled=false}catch(e){console.error(e);status.textContent='清稿失敗，原稿仍保留。';error.textContent='錯誤：'+((e&&e.message)||e)+'。請確認網路可載入 ONNX/WASM，或按「重試」。';error.classList.remove('hide');retry.classList.remove('hide')}}
     async function skipManualCleaning(skip){if(!skip){if(dehandLastFile)startDehand(dehandLastFile);return}if(!manualOriginalPdf)return;let f=manualOriginalPdf;if(!/\.pdf$/i.test(f.name)){const im=new Image(),url=URL.createObjectURL(f);try{await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;im.src=url});const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;c.getContext('2d').drawImage(im,0,0);const pdf=await window.Dehand.makePdfFromPages([{canvas:c}]);f=new File([pdf],f.name.replace(/\.[^.]+$/,'')+'-乾淨.pdf',{type:'application/pdf'})}catch(e){alert('無法將圖片整理成 PDF：'+((e&&e.message)||e));document.getElementById('skipDehand').checked=false;return}finally{URL.revokeObjectURL(url)}}dehandResult=null;document.getElementById('dehandProgress').classList.add('hide');document.getElementById('dehandPages').innerHTML='';document.getElementById('dehandError').classList.add('hide');document.getElementById('retryDehandBtn').classList.add('hide');document.getElementById('dehandStatus').textContent='已略過清稿，原稿將作為乾淨檔案供後續步驟使用。';setCropFile('pdf',f);manualCleanPdf=f;manualQueueExamPdfSave()}
-    function openDehandImage(i,editable){const page=dehandResult&&dehandResult.pages[i];if(!page)return;if(!editable){document.getElementById('cropModalBody').innerHTML=`<div class="crop-modal-title">第 ${i+1} 頁原稿</div><img src="${page.before}" alt="原稿"><div class="action-row"><button class="btn" onclick="closeInfoModal()">關閉</button></div>`;document.getElementById('cropModalOverlay').classList.add('show');return}cropCandidates.push({filename:`清稿-第${i+1}頁.png`,src:page.after,page:i+1,kind:'清稿頁面',qno:null,scope:'single',skip:true,dehandIndex:i});openCropEraser(cropCandidates.length-1)}
+    function openDehandImage(i,editable){const page=dehandResult&&dehandResult.pages[i];if(!page)return;if(!editable){document.getElementById('cropModalBody').innerHTML=`<div class="crop-modal-title">第 ${i+1} 頁原稿</div><img src="${page.before}" alt="原稿"><div class="action-row"><button class="btn" onclick="closeInfoModal()">關閉</button></div>`;document.getElementById('cropModalOverlay').classList.add('show');return}openPageEditor(null,i)}
     function downloadDehandPdf(){if(!dehandResult)return;const a=document.createElement('a');a.href=URL.createObjectURL(dehandResult.file);const base=(examName.value||dehandResult.file.name||'考卷').replace(/\.(pdf|png|jpe?g)$/i,'').replace(/[\\/:*?"<>|]/g,'_');a.download=base+'_乾淨.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
     async function manualNameChanged(){await autoMatchExamName();manualQueueExamPdfSave()}
     function readPaperFile(f){if(!f)return;syncExamNameFromFile(f);const lower=f.name.toLowerCase();if(lower.endsWith('.pdf')){manualCleanPdf=f;setCropFile('pdf',f)}else if(/^image\//.test(f.type))manualCleanPdf=f;else if(/\.(docx?|odt)$/i.test(f.name))setCropFile('word',f);manualQueueExamPdfSave()}
@@ -612,7 +648,7 @@
           <button class="btn primary" onclick="regenCropImage(${i})" title="用 Gemini 依原圖重新繪製一張乾淨高清版；會並排原圖／新圖讓你核對後再採用">🎨 AI 重製圖</button>
           ${canUpscale?`<button class="btn" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
           ${Number.isInteger(it.page)?`<button class="btn" onclick="closeCropPreview();fixCropItem(${i})">✂ 手動修正</button>`:''}
-          <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦／裁切</button>
+          <button class="btn" onclick="openPageEditor(${i})">🧽 橡皮擦／裁切</button>
           <button class="btn" onclick="rotateCropImage(${i},-1)" title="逆時針旋轉 90°">↺ 左轉90°</button>
           <button class="btn" onclick="rotateCropImage(${i},1)" title="順時針旋轉 90°">↻ 右轉90°</button>
           <button class="btn" onclick="editCropQuestion(${i});renderCropPreviewModal()">改題號</button>
@@ -1192,5 +1228,244 @@
   <script src="announce.js"></script>
   <script src="patchnotes.js" defer></script>
   <script src="refresh.js" defer></script>
+  <!-- ===== 全頁清稿修補編輯器（俊偉式） ===== -->
+  <div id="pgEd" class="pg-ed" hidden>
+    <div class="pg-top">
+      <button id="pgPrev" class="pg-ib" title="上一頁（←）">‹</button>
+      <span id="pgNo" class="pg-no"></span>
+      <button id="pgNext" class="pg-ib" title="下一頁（→）">›</button>
+      <b id="pgTitle" class="pg-grow"></b>
+      <span class="pg-tip pg-hint">滾輪：以游標為中心縮放　右鍵或空白鍵拖曳：移動　手機：兩指縮放、移動</span>
+      <button id="pgDone" class="pg-primary">完成</button>
+    </div>
+    <div class="pg-wrap" id="pgWrap"><div class="pg-box" id="pgBox"><canvas id="pgCanvas"></canvas><div class="pg-brush" id="pgBrush" hidden></div><div id="pgSel" class="pg-sel" hidden></div><textarea id="pgEdit" class="pg-edit" spellcheck="false" hidden></textarea></div></div>
+    <div class="pg-tools">
+      <div class="pg-tabs" id="pgToolTabs">
+        <button data-tool="erase" class="on" title="消除筆（E）：塗白殘留筆跡">消除筆</button>
+        <button data-tool="restore" title="還原筆（R）：從原圖救回誤刪">還原筆</button>
+        <button data-tool="text" title="文字（T）：點一下就打字">文字</button>
+        <button data-tool="line" title="直線（Shift 水平／垂直）">直線</button>
+        <button data-tool="rect" title="方框（Shift 正方形）">方框</button>
+        <button data-tool="ellipse" title="圓形（Shift 正圓）">圓形</button>
+      </div>
+      <div class="pg-row" id="pgCtlPaint">
+        <div class="pg-tabs"><button id="pgShapeBrush" class="on" title="用筆刷塗">塗抹</button><button id="pgShapeRect" title="拖方框整塊處理（B 切換）">框選</button></div>
+        <label class="pg-size" id="pgBrushWrap">筆刷 <input id="pgBrushSize" type="range" min="4" max="90" value="24"></label>
+      </div>
+      <div class="pg-row" id="pgCtlMark" hidden>
+        <select id="pgFont" title="字體"><option value="kai">標楷體</option><option value="ming">明體</option><option value="hei">黑體</option></select>
+        <select id="pgFontSize" title="字的大小"><option value="9">9 pt</option><option value="10">10 pt</option><option value="10.5">10.5 pt</option><option value="11">11 pt</option><option value="12" selected>12 pt</option><option value="14">14 pt</option><option value="16">16 pt</option><option value="18">18 pt</option><option value="20">20 pt</option><option value="24">24 pt</option><option value="28">28 pt</option><option value="36">36 pt</option></select>
+        <div class="pg-tabs pg-swatches" id="pgColor"><button data-c="#111111" title="黑"><i style="background:#111111"></i></button><button data-c="#d11a2a" title="紅"><i style="background:#d11a2a"></i></button><button data-c="#1d4ed8" title="藍"><i style="background:#1d4ed8"></i></button></div>
+        <label class="pg-size" id="pgBgWrap" title="蓋住底下沒擦乾淨的地方"><input type="checkbox" id="pgBg"> 白底</label>
+        <label class="pg-size" id="pgWidthWrap">粗細 <input id="pgLineW" type="range" min="1" max="14" value="3"></label>
+        <button id="pgMkDel" class="pg-ib" title="刪除選到的（Delete）" hidden>刪除</button>
+      </div>
+      <label class="pg-size pg-zoomctl">縮放 <input id="pgZoom" type="range" min="50" max="800" value="100"></label>
+      <div class="pg-row">
+        <button id="pgUndo" class="pg-ib" title="復原（Ctrl+Z）">↶ 復原</button>
+        <button id="pgRedo" class="pg-ib" title="重做（Ctrl+Y）">↷ 重做</button>
+        <button id="pgPeek" class="pg-ib" title="按住看原圖，放開回到修補畫面">按住看原圖</button>
+      </div>
+    </div>
+  </div>
+  <script>
+  /* ====== 全頁清稿修補編輯器（移植俊偉 eraser.html，單畫布版） ====== */
+  (function(){
+    const EG=id=>document.getElementById(id);
+    const PGFONTS={kai:'"DFKai-SB","BiauKai","標楷體","TW-Kai",KaiTi,serif',ming:'"PMingLiU","MingLiU","新細明體","Noto Serif TC","Songti TC",serif',hei:'"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif'};
+    const PG_MARK_TOOLS=new Set(['text','line','rect','ellipse']);
+    const UNDO_MAX=10;
+    let EDC,EDCTX,EDML,EDMLCTX,EDORIG=null,EDORIGIMG=null;
+    let pgCurIdx=null,pgIsPage=false,pgDehandIdx=null;
+    let pgTool='erase',pgShape='brush';
+    let pgMarks=[],pgUndo=[],pgRedo=[],pgEdited=false,pgSelMark=null,pgEditing=null;
+    let pgPxPerPt=2,spaceDown=false,pgStroke=null,pgGesture=null;
+    const pgTouches=new Map();
+    const pinchInfo=()=>{const[a,b]=[...pgTouches.values()];return{d:Math.hypot(a.x-b.x,a.y-b.y)||1,cx:(a.x+b.x)/2,cy:(a.y+b.y)/2}};
+    const measureCtx=document.createElement('canvas').getContext('2d');
+    const markOpts={font:'kai',pt:12,color:'#111111',bg:false,width:3};
+    try{Object.assign(markOpts,JSON.parse(localStorage.getItem('qbank.mark')||'{}'))}catch(e){}
+    const saveMarkOpts=()=>{try{localStorage.setItem('qbank.mark',JSON.stringify(markOpts))}catch(e){}};
+    const ZM=()=>1;
+    const fontOf=(m,size)=>`${size||m.s}px ${PGFONTS[m.f]||PGFONTS.kai}`;
+    const cssK=()=>EDC.clientWidth/EDC.width;
+
+    // ---- 幾何、繪製標註 ----
+    function textBox(m){measureCtx.font=fontOf(m);const lines=String(m.text||'').split('\n'),lh=m.s*1.25;const w=Math.max(m.s*0.6,...lines.map(l=>measureCtx.measureText(l).width));return{x:m.x,y:m.y,w,h:lines.length*lh,lines,lh}}
+    function markBox(m){if(m.t==='text')return textBox(m);if(m.t==='line')return{x:Math.min(m.x1,m.x2),y:Math.min(m.y1,m.y2),w:Math.abs(m.x2-m.x1),h:Math.abs(m.y2-m.y1)};return{x:Math.min(m.x,m.x+m.w),y:Math.min(m.y,m.y+m.h),w:Math.abs(m.w),h:Math.abs(m.h)}}
+    function drawMarks(ctx,marks,skip){for(const m of marks||[]){if(m===skip)continue;ctx.save();ctx.strokeStyle=ctx.fillStyle=m.c||'#111111';if(m.t==='text'){const b=textBox(m);if(m.bg){const pad=m.s*0.15;ctx.fillStyle='#fff';ctx.fillRect(b.x-pad,b.y-pad,b.w+pad*2,b.h+pad*2);ctx.fillStyle=m.c}ctx.font=fontOf(m);ctx.textBaseline='top';b.lines.forEach((l,i)=>ctx.fillText(l,m.x,m.y+i*b.lh+(b.lh-m.s)/2))}else{ctx.lineWidth=m.lw||3;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();if(m.t==='line'){ctx.moveTo(m.x1,m.y1);ctx.lineTo(m.x2,m.y2)}else if(m.t==='rect')ctx.rect(Math.min(m.x,m.x+m.w),Math.min(m.y,m.y+m.h),Math.abs(m.w),Math.abs(m.h));else ctx.ellipse(m.x+m.w/2,m.y+m.h/2,Math.abs(m.w)/2,Math.abs(m.h)/2,0,0,Math.PI*2);ctx.stroke()}ctx.restore()}}
+
+    // ---- 開啟 / 關閉 ----
+    function openPageEditor(i,dehandIdx){
+      if(!EDC)pgInit();
+      if(dehandIdx!==undefined&&dehandIdx!==null){
+        if(!(dehandResult&&dehandResult.pages[dehandIdx]))return;
+        pgIsPage=true;pgDehandIdx=dehandIdx;pgCurIdx=null;
+      }else{
+        const it=cropCandidates[i];if(!it)return;
+        pgIsPage=false;pgCurIdx=i;pgDehandIdx=null;
+      }
+      EG('pgEd').hidden=false;document.body.style.overflow='hidden';
+      pgSetTool('erase');pgSetShape('brush');
+      if(pgIsPage){const pg=dehandResult.pages[pgDehandIdx];pgLoadImages(pg.after,pg.before,`清稿-第${pgDehandIdx+1}頁.png`)}
+      else{const it=cropCandidates[pgCurIdx];pgLoadImages(it.src,it.src,it.filename)}
+    }
+    window.openPageEditor=openPageEditor;
+
+    function pgLoadImages(afterSrc,origSrc,title){
+      const img=new Image();
+      img.onload=()=>{
+        EDC.width=img.naturalWidth;EDC.height=img.naturalHeight;
+        EDCTX.clearRect(0,0,EDC.width,EDC.height);EDCTX.drawImage(img,0,0);
+        EDML.width=EDC.width;EDML.height=EDC.height;
+        pgPxPerPt=EDC.width/210*0.3528;
+        EDORIG=null;EDORIGIMG=new Image();
+        EDORIGIMG.onload=()=>{const c=document.createElement('canvas');c.width=EDC.width;c.height=EDC.height;c.getContext('2d').drawImage(EDORIGIMG,0,0,EDC.width,EDC.height);EDORIG=c};
+        EDORIGIMG.onerror=()=>{EDORIG=null};
+        EDORIGIMG.src=origSrc;
+        pgMarks=[];pgUndo=[];pgRedo=[];pgEdited=false;pgSelMark=null;pgEditing=null;
+        EG('pgEdit').hidden=true;
+        pgRedrawMarks();pgUpdateNav(title);pgFitZoom();EG('pgWrap').scrollTo(0,0);
+      };
+      img.onerror=()=>{alert('圖片載入失敗，無法開啟修補。');pgClose()};
+      img.src=afterSrc;
+    }
+    function pgUpdateNav(title){
+      EG('pgTitle').textContent=title||'';
+      if(pgIsPage&&dehandResult){const tot=dehandResult.pages.length;EG('pgNo').textContent=`${pgDehandIdx+1} / ${tot}`;EG('pgPrev').disabled=pgDehandIdx<=0;EG('pgNext').disabled=pgDehandIdx>=tot-1;EG('pgPrev').style.display=EG('pgNext').style.display=EG('pgNo').style.display=''}
+      else{EG('pgNo').textContent='1 / 1';EG('pgPrev').style.display=EG('pgNext').style.display=EG('pgNo').style.display='none'}
+    }
+    function pgBakeMarks(){if(pgMarks.length){drawMarks(EDCTX,pgMarks);pgMarks=[];pgSelMark=null;pgEditing=null;EG('pgEdit').hidden=true;pgRedrawMarks()}}
+    function pgBakeCurrentPage(){pgCommitEdit();pgBakeMarks();const copy=document.createElement('canvas');copy.width=EDC.width;copy.height=EDC.height;copy.getContext('2d').drawImage(EDC,0,0);const pg=dehandResult.pages[pgDehandIdx];pg.canvas=copy;pg.after=copy.toDataURL('image/png')}
+    function pgClose(){EG('pgEd').hidden=true;document.body.style.overflow='';EG('pgBrush').hidden=true}
+    async function pgDone(){
+      if(pgIsPage){
+        pgBakeCurrentPage();
+        try{const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});if(typeof setCropFile==='function')setCropFile('pdf',dehandResult.file);if(typeof OCR_PDF_FILE!=='undefined')OCR_PDF_FILE=dehandResult.file;if(typeof manualCleanPdf!=='undefined')manualCleanPdf=dehandResult.file;if(typeof manualQueueExamPdfSave==='function')manualQueueExamPdfSave();const st=document.getElementById('dehandStatus');if(st)st.textContent='已儲存手動修補，下載與後續步驟都會使用新版清稿。'}catch(e){alert('儲存失敗：'+(e&&e.message||e));return}
+        pgClose();
+      }else{
+        pgCommitEdit();pgBakeMarks();
+        const it=cropCandidates[pgCurIdx];if(it)it.src=EDC.toDataURL('image/png');
+        pgClose();if(typeof renderCropCandidates==='function')renderCropCandidates();
+      }
+    }
+    function pgTurn(d){if(!pgIsPage||!dehandResult)return;const j=pgDehandIdx+d;if(j<0||j>=dehandResult.pages.length)return;pgBakeCurrentPage();pgDehandIdx=j;const pg=dehandResult.pages[j];pgLoadImages(pg.after,pg.before,`清稿-第${j+1}頁.png`)}
+
+    // ---- 縮放 / 平移 ----
+    function baseWidth(){const wrap=EG('pgWrap');return Math.min(wrap.clientWidth-32,(wrap.clientHeight-32)*EDC.width/EDC.height)}
+    function pgFitZoom(){if(!EDC.width)return;pgCommitEdit();const w=Math.round(baseWidth()*EG('pgZoom').value/100)+'px';EDC.style.width=EDML.style.width=w;positionSel()}
+    function zoomAt(z,cx,cy){const wrap=EG('pgWrap');z=Math.max(50,Math.min(800,Math.round(z)));const r=EDC.getBoundingClientRect();const fx=(cx-r.left)/r.width,fy=(cy-r.top)/r.height;EG('pgZoom').value=z;pgFitZoom();const r2=EDC.getBoundingClientRect();wrap.scrollLeft+=((r2.left+fx*r2.width)-cx)/ZM();wrap.scrollTop+=((r2.top+fy*r2.height)-cy)/ZM()}
+
+    // ---- 工具切換 ----
+    const TOOL_BTNS=()=>EG('pgToolTabs').querySelectorAll('button');
+    function pgSetTool(t){pgTool=t;TOOL_BTNS().forEach(b=>b.classList.toggle('on',b.dataset.tool===t));const mk=PG_MARK_TOOLS.has(t);if(!mk){pgCommitEdit();pgSelMark=null;pgRedrawMarks()}EG('pgCtlPaint').hidden=mk;EG('pgBrush').hidden=true;if(EDC)EDC.style.cursor=t==='text'?'text':(mk||pgShape==='rect'?'crosshair':'none');syncMarkCtl()}
+    function pgSetShape(t){pgShape=t;EG('pgShapeBrush').classList.toggle('on',t==='brush');EG('pgShapeRect').classList.toggle('on',t==='rect');EG('pgBrushWrap').style.visibility=t==='rect'?'hidden':'';if(EDC&&!PG_MARK_TOOLS.has(pgTool))EDC.style.cursor=t==='rect'?'crosshair':'none';EG('pgBrush').hidden=true}
+
+    // ---- 復原 / 重做 ----
+    function pgSnap(pix){const e={marks:JSON.stringify(pgMarks)};if(pix)e.img=EDCTX.getImageData(0,0,EDC.width,EDC.height);return e}
+    function pgSwap(from,to){pgCommitEdit();const u=from.pop();if(!u)return;to.push(pgSnap(!!u.img));if(to.length>UNDO_MAX)to.shift();if(u.img)EDCTX.putImageData(u.img,0,0);if(u.marks!==undefined)pgMarks=JSON.parse(u.marks);pgSelMark=null;pgRedrawMarks()}
+    function pushMarkUndo(json){pgUndo.push({marks:json||JSON.stringify(pgMarks)});if(pgUndo.length>UNDO_MAX)pgUndo.shift();pgRedo=[];pgEdited=true}
+
+    // ---- 按住看原圖（用快照保存目前畫面，放開還原）----
+    let _peekData=null;
+    function peekStart(){if(!EDORIG||_peekData)return;try{_peekData=EDCTX.getImageData(0,0,EDC.width,EDC.height)}catch(e){_peekData=null}EDCTX.drawImage(EDORIG,0,0);EDML.style.visibility='hidden';EG('pgSel').style.visibility='hidden'}
+    function peekEnd(){if(!_peekData)return;EDCTX.putImageData(_peekData,0,0);_peekData=null;EDML.style.visibility='';positionSel()}
+
+    // ---- 座標、筆刷 ----
+    function canvasPoint(e){const r=EDC.getBoundingClientRect(),k=EDC.width/r.width;return{x:(e.clientX-r.left)*k,y:(e.clientY-r.top)*k,k}}
+    function pgDab(p){const rad=(+EG('pgBrushSize').value)/2*p.k;EDCTX.save();EDCTX.beginPath();EDCTX.arc(p.x,p.y,rad,0,Math.PI*2);if(pgTool==='erase'){EDCTX.fillStyle='#fff';EDCTX.fill()}else if(EDORIG){EDCTX.clip();EDCTX.drawImage(EDORIG,0,0)}EDCTX.restore()}
+    function pgFillRect(x0,y0,x1,y1){const x=Math.min(x0,x1),y=Math.min(y0,y1),w=Math.abs(x1-x0),h=Math.abs(y1-y0);if(pgTool==='erase'){EDCTX.fillStyle='#fff';EDCTX.fillRect(x,y,w,h)}else if(EDORIG)EDCTX.drawImage(EDORIG,x,y,w,h,x,y,w,h)}
+    function moveBrush(e){if(!EDC.width||pgShape==='rect'||PG_MARK_TOOLS.has(pgTool)){EG('pgBrush').hidden=true;return}const box=EG('pgBox'),r=box.getBoundingClientRect(),size=+EG('pgBrushSize').value,brush=EG('pgBrush');brush.hidden=false;brush.style.width=brush.style.height=size/ZM()+'px';brush.style.left=(e.clientX-r.left)/ZM()+'px';brush.style.top=(e.clientY-r.top)/ZM()+'px';brush.style.borderColor=pgTool==='erase'?'#850103':'#2f7d37'}
+
+    // ---- 標註圖層 ----
+    function pgRedrawMarks(){if(!EDML)return;EDMLCTX.clearRect(0,0,EDML.width,EDML.height);drawMarks(EDMLCTX,pgMarks,pgEditing&&pgEditing.m);positionSel();syncMarkCtl()}
+    function positionSel(){const sel=EG('pgSel');if(!EDC||!pgSelMark||pgEditing){sel.hidden=true;return}const k=cssK(),b=markBox(pgSelMark),pad=pgSelMark.t==='text'?pgSelMark.s*0.2:(pgSelMark.lw||3)/2+4/k;const x=(b.x-pad)*k,y=(b.y-pad)*k,w=(b.w+pad*2)*k,h=(b.h+pad*2)*k;Object.assign(sel.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});const hs=pgSelMark.t==='line'?[['p1',(pgSelMark.x1-b.x+pad)*k,(pgSelMark.y1-b.y+pad)*k],['p2',(pgSelMark.x2-b.x+pad)*k,(pgSelMark.y2-b.y+pad)*k]]:[['br',w,h]];sel.innerHTML=hs.map(([n,hx,hy])=>`<span class="pg-mh" data-h="${n}" style="left:${hx}px;top:${hy}px"></span>`).join('');sel.hidden=false}
+    function hitMark(pt,tolPx){for(let i=pgMarks.length-1;i>=0;i--){const m=pgMarks[i],tol=tolPx+(m.lw||3)/2;if(m.t==='line'){const dx=m.x2-m.x1,dy=m.y2-m.y1,L=dx*dx+dy*dy||1;const t=Math.max(0,Math.min(1,((pt.x-m.x1)*dx+(pt.y-m.y1)*dy)/L));if(Math.hypot(pt.x-(m.x1+t*dx),pt.y-(m.y1+t*dy))<=tol)return m}else{const b=markBox(m);if(pt.x>=b.x-tol&&pt.x<=b.x+b.w+tol&&pt.y>=b.y-tol&&pt.y<=b.y+b.h+tol)return m}}return null}
+    function selectMark(m){pgSelMark=m;pgRedrawMarks()}
+    function deleteMark(){if(!pgSelMark)return;pushMarkUndo();pgMarks.splice(pgMarks.indexOf(pgSelMark),1);pgSelMark=null;pgRedrawMarks()}
+    function markDown(e){e.preventDefault();pgCommitEdit();const pt=canvasPoint(e),hit=hitMark(pt,6*pt.k);if(hit){if(pgTool==='text'&&hit.t==='text'&&hit===pgSelMark){startEdit(hit,false);return}selectMark(hit);dragMark(e,'move');return}pgSelMark=null;if(pgTool==='text'){const s=markOpts.pt*pgPxPerPt;startEdit({t:'text',x:pt.x,y:pt.y-s*0.6,s,f:markOpts.font,c:markOpts.color,bg:markOpts.bg,text:''},true);return}const m=pgTool==='line'?{t:'line',x1:pt.x,y1:pt.y,x2:pt.x,y2:pt.y,lw:markOpts.width,c:markOpts.color}:{t:pgTool,x:pt.x,y:pt.y,w:0,h:0,lw:markOpts.width,c:markOpts.color};const before=JSON.stringify(pgMarks);pgMarks.push(m);const box=EG('pgBox');try{box.setPointerCapture(e.pointerId)}catch(_){}const move=ev=>{if(ev.pointerId!==e.pointerId)return;const q=canvasPoint(ev);if(m.t==='line'){let x2=q.x,y2=q.y;if(ev.shiftKey){if(Math.abs(x2-m.x1)>Math.abs(y2-m.y1))y2=m.y1;else x2=m.x1}m.x2=x2;m.y2=y2}else{m.w=q.x-m.x;m.h=q.y-m.y;if(ev.shiftKey){const d=Math.max(Math.abs(m.w),Math.abs(m.h));m.w=Math.sign(m.w||1)*d;m.h=Math.sign(m.h||1)*d}}pgRedrawMarks()};const up=()=>{box.removeEventListener('pointermove',move);box.removeEventListener('pointerup',up);box.removeEventListener('pointercancel',up);const b=markBox(m);if(Math.max(b.w,b.h)<6*pt.k){pgMarks.pop();pgRedrawMarks();return}if(m.t!=='line'){m.x=b.x;m.y=b.y;m.w=b.w;m.h=b.h}pushMarkUndo(before);selectMark(m)};box.addEventListener('pointermove',move);box.addEventListener('pointerup',up);box.addEventListener('pointercancel',up)}
+    function dragMark(e,mode){const m=pgSelMark,orig=JSON.parse(JSON.stringify(m)),p0=canvasPoint(e),before=JSON.stringify(pgMarks),ob=markBox(orig);let moved=false;const target=e.currentTarget&&e.currentTarget!==window?e.currentTarget:EG('pgBox');try{target.setPointerCapture(e.pointerId)}catch(err){}const move=ev=>{const q=canvasPoint(ev),dx=q.x-p0.x,dy=q.y-p0.y;if(!moved&&Math.hypot(dx,dy)<2*p0.k)return;moved=true;if(mode==='move'){if(m.t==='line'){m.x1=orig.x1+dx;m.y1=orig.y1+dy;m.x2=orig.x2+dx;m.y2=orig.y2+dy}else{m.x=orig.x+dx;m.y=orig.y+dy}}else if(mode==='p1'){m.x1=orig.x1+dx;m.y1=orig.y1+dy}else if(mode==='p2'){m.x2=orig.x2+dx;m.y2=orig.y2+dy}else if(m.t==='text'){m.s=Math.max(6,orig.s*Math.max(0.2,(ob.h+dy)/ob.h))}else{m.w=Math.max(4,orig.w+dx);m.h=Math.max(4,orig.h+dy)}pgRedrawMarks()};const up=()=>{target.removeEventListener('pointermove',move);target.removeEventListener('pointerup',up);target.removeEventListener('pointercancel',up);if(moved)pushMarkUndo(before);pgRedrawMarks()};target.addEventListener('pointermove',move);target.addEventListener('pointerup',up);target.addEventListener('pointercancel',up)}
+
+    // ---- 打字框 ----
+    function startEdit(m,isNew){pgCommitEdit();pgEditing={m,isNew,before:JSON.stringify(pgMarks)};pgSelMark=m;const ta=EG('pgEdit'),k=cssK();ta.value=m.text||'';Object.assign(ta.style,{left:m.x*k+'px',top:m.y*k+'px',font:fontOf(m,m.s*k),color:m.c,background:m.bg?'#fff':'rgba(255,255,255,.55)'});ta.hidden=false;sizeEdit();pgRedrawMarks();const f=()=>{ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)};f();setTimeout(f,0)}
+    function sizeEdit(){if(!pgEditing)return;const ta=EG('pgEdit'),m=pgEditing.m,k=cssK();measureCtx.font=fontOf(m,m.s*k);const lines=ta.value.split('\n');ta.style.width=Math.max(m.s*k*3,...lines.map(l=>measureCtx.measureText(l).width))+m.s*k+'px';ta.style.height=lines.length*m.s*k*1.25+4+'px'}
+    function pgCommitEdit(){if(!pgEditing)return;const{m,isNew,before}=pgEditing,ta=EG('pgEdit');const txt=ta.value.replace(/\s+$/,'');pgEditing=null;ta.hidden=true;if(isNew){if(txt){m.text=txt;pgMarks.push(m);pushMarkUndo(before);pgSelMark=m}else pgSelMark=null}else if(txt!==m.text){pushMarkUndo(before);if(txt)m.text=txt;else{pgMarks.splice(pgMarks.indexOf(m),1);pgSelMark=null}}pgRedrawMarks()}
+
+    // ---- 標註屬性面板 ----
+    function syncMarkCtl(){const m=pgSelMark&&!pgEditing?pgSelMark:pgEditing?pgEditing.m:null;const t=m?m.t:pgTool,show=PG_MARK_TOOLS.has(pgTool)||!!m;EG('pgCtlMark').hidden=!show;if(!show)return;const isText=t==='text';['pgFont','pgFontSize'].forEach(id=>EG(id).hidden=!isText);EG('pgBgWrap').hidden=!isText;EG('pgWidthWrap').hidden=isText;EG('pgMkDel').hidden=!m;const src=m||{f:markOpts.font,s:markOpts.pt*pgPxPerPt,c:markOpts.color,bg:markOpts.bg,lw:markOpts.width};if(isText){EG('pgFont').value=src.f;const pt=Math.round(src.s/pgPxPerPt*2)/2;if(![...EG('pgFontSize').options].some(o=>+o.value===pt))EG('pgFontSize').add(new Option(pt+' pt',pt));EG('pgFontSize').value=String(pt);EG('pgBg').checked=!!src.bg}else EG('pgLineW').value=src.lw;EG('pgColor').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.c===src.c))}
+    function setProp(apply,remember){remember();saveMarkOpts();const m=pgEditing?pgEditing.m:pgSelMark;if(!m)return;if(!pgEditing)pushMarkUndo();apply(m);if(pgEditing){const ta=EG('pgEdit');Object.assign(ta.style,{font:fontOf(m,m.s*cssK()),color:m.c,background:m.bg?'#fff':'rgba(255,255,255,.55)'});sizeEdit();ta.focus()}pgRedrawMarks()}
+
+    // ---- 初始化（只做一次）----
+    let _inited=false;
+    function pgInit(){
+      if(_inited)return;_inited=true;
+      EDC=EG('pgCanvas');EDCTX=EDC.getContext('2d');
+      EDML=document.createElement('canvas');EDML.className='pg-mark';EDMLCTX=EDML.getContext('2d');
+      EG('pgBox').insertBefore(EDML,EG('pgBrush'));
+      EG('pgZoom').value=100;
+      // 工具列按鈕
+      EG('pgToolTabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)pgSetTool(b.dataset.tool)});
+      EG('pgShapeBrush').onclick=()=>pgSetShape('brush');
+      EG('pgShapeRect').onclick=()=>pgSetShape('rect');
+      EG('pgBrushSize').oninput=()=>{};
+      EG('pgUndo').onclick=()=>{if(pgUndo.length)pgSwap(pgUndo,pgRedo)};
+      EG('pgRedo').onclick=()=>{if(pgRedo.length)pgSwap(pgRedo,pgUndo)};
+      EG('pgDone').onclick=pgDone;
+      EG('pgPrev').onclick=()=>pgTurn(-1);EG('pgNext').onclick=()=>pgTurn(1);
+      EG('pgPeek').addEventListener('pointerdown',peekStart);
+      ['pointerup','pointerleave','pointercancel'].forEach(t=>EG('pgPeek').addEventListener(t,peekEnd));
+      // 標註屬性
+      EG('pgFont').onchange=()=>{const v=EG('pgFont').value;setProp(m=>{if(m.t==='text')m.f=v},()=>markOpts.font=v)};
+      EG('pgFontSize').onchange=()=>{const v=+EG('pgFontSize').value;setProp(m=>{if(m.t==='text')m.s=v*pgPxPerPt},()=>markOpts.pt=v)};
+      EG('pgBg').onchange=()=>{const v=EG('pgBg').checked;setProp(m=>{if(m.t==='text')m.bg=v},()=>markOpts.bg=v)};
+      EG('pgLineW').onchange=()=>{const v=+EG('pgLineW').value;setProp(m=>{if(m.t!=='text')m.lw=v},()=>markOpts.width=v)};
+      EG('pgColor').onclick=e=>{const b=e.target.closest('button');if(!b)return;const v=b.dataset.c;setProp(m=>m.c=v,()=>markOpts.color=v)};
+      EG('pgMkDel').onclick=()=>{if(pgEditing){const m=pgEditing.m;EG('pgEdit').value='';pgCommitEdit();if(pgMarks.includes(m)){pgSelMark=m;deleteMark()}}else deleteMark()};
+      // 縮放
+      EG('pgZoom').oninput=()=>{const w=EG('pgWrap').getBoundingClientRect(),z=+EG('pgZoom').value;EG('pgZoom').value=parseFloat(EDC.style.width)/baseWidth()*100;zoomAt(z,w.left+w.width/2,w.top+w.height/2)};
+      EG('pgWrap').addEventListener('wheel',e=>{if(EG('pgEd').hidden)return;e.preventDefault();zoomAt(+EG('pgZoom').value*(e.deltaY<0?1.15:1/1.15),e.clientX,e.clientY)},{passive:false});
+      EG('pgWrap').addEventListener('contextmenu',e=>e.preventDefault());
+      // 平移（右鍵／空白鍵拖曳）
+      EG('pgWrap').addEventListener('pointerdown',e=>{if(EG('pgEd').hidden||!(e.button===2||(e.button===0&&spaceDown)))return;e.preventDefault();e.stopPropagation();const wrap=EG('pgWrap'),sx=e.clientX,sy=e.clientY,sl=wrap.scrollLeft,st=wrap.scrollTop;wrap.classList.add('panning');wrap.setPointerCapture(e.pointerId);EG('pgBrush').hidden=true;const move=ev=>{wrap.scrollLeft=sl-(ev.clientX-sx)/ZM();wrap.scrollTop=st-(ev.clientY-sy)/ZM()};const up=()=>{wrap.classList.remove('panning');wrap.removeEventListener('pointermove',move);wrap.removeEventListener('pointerup',up)};wrap.addEventListener('pointermove',move);wrap.addEventListener('pointerup',up)},true);
+      window.addEventListener('resize',()=>{if(!EG('pgEd').hidden)pgFitZoom()});
+      // 鍵盤
+      document.addEventListener('keydown',e=>{if(EG('pgEd').hidden)return;if(e.key==='Escape'){if(pgEditing){e.preventDefault();pgCommitEdit();return}if(pgSelMark){pgSelMark=null;pgRedrawMarks();return}pgDone();return}if(/TEXTAREA|INPUT|SELECT/.test(e.target.tagName))return;if((e.key==='Delete'||e.key==='Backspace')&&pgSelMark){e.preventDefault();deleteMark();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();EG(e.shiftKey?'pgRedo':'pgUndo').click();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();EG('pgRedo').click();return}if(e.code==='Space'){spaceDown=true;e.preventDefault();return}if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const k=e.key.toLowerCase();if(k==='e')pgSetTool('erase');else if(k==='r')pgSetTool('restore');else if(k==='t')pgSetTool('text');else if(k==='b')pgSetShape(pgShape==='rect'?'brush':'rect');else if(k==='['||k===']'){const b=EG('pgBrushSize');b.value=Math.max(4,Math.min(90,+b.value+(k===']'?6:-6)))}else if(e.key==='ArrowLeft'){e.preventDefault();pgTurn(-1)}else if(e.key==='ArrowRight'){e.preventDefault();pgTurn(1)}}});
+      document.addEventListener('keyup',e=>{if(e.code==='Space')spaceDown=false});
+      // 選取框把手
+      EG('pgSel').addEventListener('pointerdown',e=>{if(!pgSelMark||e.button!==0)return;e.preventDefault();e.stopPropagation();const h=e.target.closest('.pg-mh');dragMark(e,h?h.dataset.h:'move')});
+      EG('pgSel').addEventListener('dblclick',()=>{if(pgSelMark&&pgSelMark.t==='text')startEdit(pgSelMark,false)});
+      EG('pgEdit').addEventListener('input',sizeEdit);
+      EG('pgEdit').addEventListener('blur',()=>setTimeout(pgCommitEdit,0));
+      EG('pgEdit').addEventListener('pointerdown',e=>e.stopPropagation());
+      // 畫布繪製／標註
+      const box=EG('pgBox');
+      // 手機：兩指縮放＋移動（捕獲階段先攔截；第二指放下時取消剛畫的那一筆）
+      box.addEventListener('pointerdown',e=>{if(EG('pgEd').hidden||e.pointerType!=='touch')return;pgTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pgTouches.size!==2)return;if(pgStroke)pgStroke.cancel();const g=pinchInfo();pgGesture={d0:g.d,z0:+EG('pgZoom').value,cx:g.cx,cy:g.cy};EG('pgBrush').hidden=true},true);
+      box.addEventListener('pointermove',e=>{if(!pgTouches.has(e.pointerId))return;pgTouches.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!pgGesture||pgTouches.size!==2)return;const g=pinchInfo(),wrap=EG('pgWrap');zoomAt(pgGesture.z0*g.d/pgGesture.d0,g.cx,g.cy);wrap.scrollLeft-=(g.cx-pgGesture.cx)/ZM();wrap.scrollTop-=(g.cy-pgGesture.cy)/ZM();pgGesture.cx=g.cx;pgGesture.cy=g.cy},true);
+      const endTouch=e=>{pgTouches.delete(e.pointerId);if(pgTouches.size<2)pgGesture=null};
+      box.addEventListener('pointerup',endTouch,true);box.addEventListener('pointercancel',endTouch,true);
+      // 畫布繪製／標註
+      box.addEventListener('pointerdown',e=>{
+        if(EG('pgEd').hidden||e.target!==EDC||e.button!==0||spaceDown||pgGesture||pgTouches.size>1)return;
+        if(PG_MARK_TOOLS.has(pgTool)){markDown(e);return}
+        e.preventDefault();try{box.setPointerCapture(e.pointerId)}catch(_){}
+        const wasEdited=pgEdited;pgEdited=true;
+        pgUndo.push(pgSnap(true));if(pgUndo.length>UNDO_MAX)pgUndo.shift();pgRedo=[];
+        let last=canvasPoint(e);const start=last,rect=pgShape==='rect';let selbox=null;
+        if(rect){selbox=document.createElement('div');selbox.className='pg-selbox'+(pgTool==='restore'?' restore':'');box.appendChild(selbox)}else pgDab(last);
+        const r0=box.getBoundingClientRect(),sx=(e.clientX-r0.left)/ZM(),sy=(e.clientY-r0.top)/ZM();
+        const showBox=ev=>{const r=box.getBoundingClientRect(),x=(ev.clientX-r.left)/ZM(),y=(ev.clientY-r.top)/ZM();Object.assign(selbox.style,{left:Math.min(sx,x)+'px',top:Math.min(sy,y)+'px',width:Math.abs(x-sx)+'px',height:Math.abs(y-sy)+'px'})};
+        const move=ev=>{if(pgGesture||ev.pointerId!==e.pointerId)return;if(rect){last=canvasPoint(ev);showBox(ev);return}moveBrush(ev);const p=canvasPoint(ev),rad=(+EG('pgBrushSize').value)/2*p.k;const n=Math.max(1,Math.ceil(Math.hypot(p.x-last.x,p.y-last.y)/Math.max(1,rad/2)));for(let i=1;i<=n;i++)pgDab({x:last.x+(p.x-last.x)*i/n,y:last.y+(p.y-last.y)*i/n,k:p.k});last=p};
+        const up=()=>{pgStroke=null;if(selbox)selbox.remove();box.removeEventListener('pointermove',move);box.removeEventListener('pointerup',done);box.removeEventListener('pointercancel',up)};
+        const undoThis=()=>{const u=pgUndo.pop();if(u&&u.img)EDCTX.putImageData(u.img,0,0);pgEdited=wasEdited};
+        pgStroke={cancel(){undoThis();up()}};
+        const done=ev=>{if(rect){if(Math.abs(ev.clientX-e.clientX)<4&&Math.abs(ev.clientY-e.clientY)<4)undoThis();else pgFillRect(start.x,start.y,last.x,last.y)}up()};
+        box.addEventListener('pointermove',move);box.addEventListener('pointerup',done);box.addEventListener('pointercancel',up);
+      });
+      box.addEventListener('pointermove',moveBrush);
+      box.addEventListener('pointerleave',()=>{EG('pgBrush').hidden=true});
+    }
+  })();
+  </script>
 </body>
 </html>
