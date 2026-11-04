@@ -55,7 +55,7 @@ async function filePages(file,loadPdfJs){
   if(!/\.pdf$/i.test(file.name)){const im=await loadImage(file);const c=canvas(im.naturalWidth,im.naturalHeight);c.getContext('2d').drawImage(im,0,0);return{count:1,get:async()=>c}}
   const pdfjs=await loadPdfJs(),doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
   // intent:'print' 不靠 requestAnimationFrame：分頁切到背景時繪製才不會停住
-  return{count:doc.numPages,get:async i=>{const page=await doc.getPage(i+1),vp=page.getViewport({scale:2}),c=canvas(Math.ceil(vp.width),Math.ceil(vp.height));await page.render({canvasContext:c.getContext('2d'),viewport:vp,intent:'print'}).promise;return uprightCanvas(c)}}
+  return{count:doc.numPages,get:async i=>{const page=await doc.getPage(i+1),vp=page.getViewport({scale:3}),c=canvas(Math.ceil(vp.width),Math.ceil(vp.height));await page.render({canvasContext:c.getContext('2d'),viewport:vp,intent:'print'}).promise;return uprightCanvas(c)}}
 }
 // 校徽彩色浮水印：同 OCR 端 pyexam.remove_color_ink。整頁彩色像素 >5% 才啟動（一般考卷不會動）。
 // 彩色像素改用亮度 V（淺色浮水印變白、疊在上面的暗字留著）；灰色校徽中灰（150~235）塗白，但黑字周圍 2px 不動。
@@ -93,7 +93,15 @@ function runQueued(session,feeds){const p=runChain.then(()=>session.run(feeds));
 export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
   const scale=PAGE_WIDTH/source.width,w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*scale)),input=canvas(w,h),ictx=input.getContext('2d',{willReadFrequently:true});ictx.drawImage(source,0,0,w,h);const image=ictx.getImageData(0,0,w,h),wm=removeWatermark(image),wmt=wm?(wmBg&&wmBg.w===w&&wmBg.h===h?watermarkRatio(image,wm,wmBg.bg):watermarkText(image,wm)):null,out=canvas(w,h),odata=out.getContext('2d').createImageData(w,h),sum=new Float32Array(w*h),hand=new Float32Array(w*h),weights=new Float32Array(w*h),runtime=await getSession(mode),session=runtime.session,xs=tileStarts(w),ys=tileStarts(h);let done=0;
   for(const y of ys)for(const x of xs){const tw=Math.min(TILE_SIZE,w-x),th=Math.min(TILE_SIZE,h-y),data=new Float32Array(3*TILE_SIZE*TILE_SIZE);for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const src=((y+yy)*w+x+xx)*4,v=yy*TILE_SIZE+xx,g=(.299*image.data[src]+.587*image.data[src+1]+.114*image.data[src+2])/255;data[v]=data[TILE_SIZE*TILE_SIZE+v]=data[2*TILE_SIZE*TILE_SIZE+v]=g}const feeds={[session.inputNames[0]]:new runtime.ort.Tensor('float32',data,[1,3,TILE_SIZE,TILE_SIZE])};const result=await runQueued(session,feeds),raw=(result.out||result[session.outputNames[0]]).data,TT=TILE_SIZE*TILE_SIZE;for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const n=(y+yy)*w+x+xx,wt=tileWeight(xx,yy,tw,th),k=yy*TILE_SIZE+xx;sum[n]+=raw[k]*wt;if(raw.length>=2*TT)hand[n]+=1/(1+Math.exp(-Math.max(-30,Math.min(30,raw[TT+k]))))*wt;weights[n]+=wt}onTile&&onTile(++done,xs.length*ys.length)}
-  for(let i=0;i<sum.length;i++){const r=image.data[i*4],g=image.data[i*4+1],b=image.data[i*4+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),orig=.299*r+.587*g+.114*b,colour=mx<245&&mx-mn>Math.max(18,mx*.10),model=hand[i]/(weights[i]||1)>.48;let v=Math.round(printGray(sum[i]/(weights[i]||1))),keep=false;if(wm&&wm[i]){v=wmt.val[i];keep=wmt.text[i]===1}if(!keep&&(colour||model))v=255;odata.data[i*4]=odata.data[i*4+1]=odata.data[i*4+2]=v;odata.data[i*4+3]=255}out.getContext('2d').putImageData(odata,0,0);return out
+  // 只在 1240 寬上「判斷」要擦哪裡；輸出在原解析度上只塗白要擦的像素、其餘保留原圖（字不會被模型重畫而變糊）
+  const erase=new Uint8Array(w*h),wmv=new Int16Array(w*h).fill(-1);
+  for(let i=0;i<sum.length;i++){const r=image.data[i*4],g=image.data[i*4+1],b=image.data[i*4+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),orig=.299*r+.587*g+.114*b,colour=mx>=170&&mx<245&&mx-mn>Math.max(18,mx*.10),model=hand[i]/(weights[i]||1)>.48,redraw=printGray(sum[i]/(weights[i]||1));let keep=false;if(wm&&wm[i]){wmv[i]=wmt.val[i];keep=wmt.text[i]===1}
+    if(!keep&&(colour||model||(orig<200&&redraw>235)))erase[i]=1}
+  const W=source.width,H=source.height,full=canvas(W,H),fctx=full.getContext('2d',{willReadFrequently:true});fctx.drawImage(source,0,0);const fd=fctx.getImageData(0,0,W,H),d=fd.data,sx=w/W,sy=h/H;
+  for(let Y=0;Y<H;Y++){const yy=Math.min(h-1,(Y*sy)|0);for(let X=0;X<W;X++){const k=yy*w+Math.min(w-1,(X*sx)|0),o=(Y*W+X)*4;let v;
+    if(erase[k])v=255;else if(wmv[k]>=0&&!(wmt&&wmt.text[k]))v=wmv[k];else v=Math.round(printGray((.299*d[o]+.587*d[o+1]+.114*d[o+2])/255));
+    d[o]=d[o+1]=d[o+2]=v;d[o+3]=255}}
+  fctx.putImageData(fd,0,0);return full
 }
 async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){const c=pg.canvas||pg,blob=pg.blob&&pg.blobOf===c?pg.blob:await toBlob(c,'image/jpeg',.92),png=await pdf.embedJpg(await blob.arrayBuffer()),p=pdf.addPage([c.width,c.height]);p.drawImage(png,{x:0,y:0,width:c.width,height:c.height})}return new Blob([await pdf.save()],{type:'application/pdf'})}
 export function preload(mode='v10'){return getSession(mode).catch(e=>{console.warn('模型預載失敗',e)})}
