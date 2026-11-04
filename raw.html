@@ -648,14 +648,20 @@
     async function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas'),item=cropCandidates[i];if(!canvas||!item)return;if(Number.isInteger(item.dehandIndex)&&dehandResult){const copy=document.createElement('canvas');copy.width=canvas.width;copy.height=canvas.height;copy.getContext('2d').drawImage(canvas,0,0);const page=dehandResult.pages[item.dehandIndex];page.canvas=copy;page.after=copy.toDataURL('image/png');const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});setCropFile('pdf',dehandResult.file);OCR_PDF_FILE=dehandResult.file;cropCandidates.splice(i,1);closeCropPreview();if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);document.getElementById('dehandStatus').textContent=(typeof OCR_RESULT!=='undefined'&&OCR_RESULT)?'已儲存手動修補。OCR 先前用舊稿跑過，要套用請到第 3 步按「沿用清稿，交給茲茲 OCR」重跑。':'已儲存手動修補，下載與後續步驟都會使用新版清稿。';return}item.src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
     function renderCropPreviewModal(){
       const i=cropPreviewIndex;const it=cropCandidates[i];if(!it)return;
+      // 清稿頁面＝整頁清除筆跡後的結果，不是某一題的裁切圖，所以不給「改題號／設為題組圖／AI 重製／手動修正／略過」這些裁切專用功能。
+      const isPage=it.kind==='清稿頁面'||Number.isInteger(it.dehandIndex);
       const canUpscale=it.rect&&Number.isInteger(it.page)&&cropFiles.pdf&&(it.renderScale||2)<MAX_CROP_RENDER_SCALE;
-      const upNote=it.rect?'':'（此圖來自 Word 原始檔，本來就是最高解析度，不需要放大）';
-      document.getElementById('cropModalBody').innerHTML=`
-        <div class="crop-modal-title">${esc(it.filename)}</div>
-        <img src="${it.src}" alt="${esc(it.filename)}">
-        <div class="crop-modal-meta">第 ${esc(it.page)} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}${it.renderScale?` · 目前解析度倍率 ${it.renderScale}x`:''}<br>${esc(it.reason||'')}${upNote?'<br>'+upNote:''}</div>
-        <div class="action-row">
-          <button class="btn primary" onclick="regenCropImage(${i})" title="用 Gemini 依原圖重新繪製一張乾淨高清版；會並排原圖／新圖讓你核對後再採用">🎨 AI 重製圖</button>
+      const upNote=(isPage||it.rect)?'':'（此圖來自 Word 原始檔，本來就是最高解析度，不需要放大）';
+      const meta=isPage
+        ?`第 ${esc(it.page)} 頁 · 清稿頁面（整頁清除筆跡後的結果）`
+        :`第 ${esc(it.page)} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}${it.renderScale?` · 目前解析度倍率 ${it.renderScale}x`:''}<br>${esc(it.reason||'')}${upNote?'<br>'+upNote:''}`;
+      const actions=isPage
+        ?`<button class="btn primary" onclick="openCropEraser(${i})" title="擦掉殘留筆跡或裁掉頁緣">🧽 橡皮擦／修補</button>
+          <button class="btn" onclick="rotateCropImage(${i},-1)" title="逆時針旋轉 90°">↺ 左轉90°</button>
+          <button class="btn" onclick="rotateCropImage(${i},1)" title="順時針旋轉 90°">↻ 右轉90°</button>
+          <a class="btn" href="${it.src}" download="${esc(it.filename)}">⬇ 下載這張</a>
+          <button class="btn" onclick="closeCropPreview()">關閉</button>`
+        :`<button class="btn primary" onclick="regenCropImage(${i})" title="用 Gemini 依原圖重新繪製一張乾淨高清版；會並排原圖／新圖讓你核對後再採用">🎨 AI 重製圖</button>
           ${canUpscale?`<button class="btn" id="cropUpscaleBtn" onclick="upscaleCropItem(${i})">🔎 提高解析度重新裁切</button>`:''}
           ${Number.isInteger(it.page)?`<button class="btn" onclick="closeCropPreview();fixCropItem(${i})">✂ 手動修正</button>`:''}
           <button class="btn" onclick="openCropEraser(${i})">🧽 橡皮擦／裁切</button>
@@ -665,8 +671,12 @@
           <button class="btn" onclick="toggleCropScope(${i});renderCropPreviewModal()" title="${it.scope==='group'?'改回只貼到單一題':'改成整個題組共用（貼到題組文章）'}">${it.scope==='group'?'改回單題':'🔗設為題組圖'}</button>
           <button class="btn" onclick="toggleCropSkip(${i});renderCropPreviewModal()">${it.skip?'恢復保留':'略過'}</button>
           <a class="btn" href="${it.src}" download="${esc(it.filename)}">⬇ 下載這張</a>
-          <button class="btn" onclick="closeCropPreview()">關閉</button>
-        </div>`;
+          <button class="btn" onclick="closeCropPreview()">關閉</button>`;
+      document.getElementById('cropModalBody').innerHTML=`
+        <div class="crop-modal-title">${esc(it.filename)}</div>
+        <img src="${it.src}" alt="${esc(it.filename)}">
+        <div class="crop-modal-meta">${meta}</div>
+        <div class="action-row">${actions}</div>`;
     }
     // 把裁切候選圖旋轉 90°（dir=1 順時針、dir=-1 逆時針）；用於橫的／歪的 PDF 圖。旋轉後寬高互換，存回 src。
     function rotateCropImage(i,dir){
