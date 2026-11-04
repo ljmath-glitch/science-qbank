@@ -10197,6 +10197,8 @@ async function downloadWordViaTemplate(kind,opts){
   const grade=(document.getElementById('pGrade').value||'').trim();
   const scope=(document.getElementById('pScope').value||'').trim();
   const examName=(document.getElementById('pExamName').value||'').trim();
+  // 題目出處：預覽會顯示（buildPaperInner），範本匯出以前漏接，導致勾了「顯示題目出處」預覽有、Word 卻不見。
+  const showSrc=(document.getElementById('pShowSource')||{}).checked,showSrcFull=(document.getElementById('pShowSourceFull')||{}).checked;
   const metadata=readPaperTemplateMetadata(kind==='abk',opts.ver);
   const chapter=(metadata.title||'自然科').trim();
   const book=metadata.book;
@@ -10240,6 +10242,9 @@ async function downloadWordViaTemplate(kind,opts){
       if(placement==='beside')qText=qText.replace(/\n(?=\([A-Ea-e]\))/, '\n'+PRE_IMG_SENTINEL);
       // 版面判定（選項字數、圖片位置）都用純文字；底線標記最後才加，避免私用字元被當成字數。
       qText=_markUnderlineKeywords(qText);
+      // 題目出處接在選項後、自成一行（與預覽一致）；底線標記之後才加，避免出處被加底線。
+      const _srcText=showSrcFull?getSource(it,true):(showSrc?getSource(it):'');
+      if(_srcText)qText+='\n［'+_srcText+'］';
       items.push({no:qno,text:qText,imgs:resolvedImgs,placement,passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
