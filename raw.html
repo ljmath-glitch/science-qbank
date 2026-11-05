@@ -1112,7 +1112,7 @@
     function finishRawWorkflow(){if(!examName.value){alert('找不到考卷名稱。');return}location.href='index.html?exam='+encodeURIComponent(examName.value)}
 
     // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字與題庫 Excel，不要求 Gemini ──
-    const OCR_IS_MAC=/Mac/.test(navigator.platform||navigator.userAgent);
+    const OCR_IS_MAC=/Mac|iPad|iPhone/.test(navigator.platform||navigator.userAgent);
     // 打包程式只有 Windows 版；Mac 的「本機」連它自己的 OCR 服務（Safari 擋 http://localhost，所以走 Tailscale https）
     const OCR_HOSTS={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
     function ocrHost(){return localStorage.getItem('ocrHost')==='local'?'local':'company'}

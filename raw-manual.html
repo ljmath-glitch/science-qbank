@@ -771,12 +771,13 @@
     // OCR 主機沿用「自動匯題」頁選的公司電腦／本機（存在 localStorage）
     async function autoCropByModel(){
       if(!cropFiles.pdf){alert('自動裁切需要清稿 PDF：請先在前面步驟上傳考卷（或清稿 PDF）。');return;}
-      const base=(()=>{const mac=/Mac/.test(navigator.platform||navigator.userAgent);const hosts={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:mac?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};return hosts[localStorage.getItem('ocrHost')==='local'?'local':'company'];})();const status=document.getElementById('cropReviewState'),btn=document.getElementById('autoCropBtn');
+      const base=(()=>{const mac=/Mac|iPad|iPhone/.test(navigator.platform||navigator.userAgent);const hosts={company:'https://ljm2222.tail3d3c18.ts.net:8443',local:mac?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};return hosts[localStorage.getItem('ocrHost')==='local'?'local':'company'];})();const status=document.getElementById('cropReviewState'),btn=document.getElementById('autoCropBtn');
       if(!base){status.textContent='找不到茲茲 OCR 主機設定。';return;}
       btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，每頁約數秒）…';
       try{
-        const bytes=new Uint8Array(await cropFiles.pdf.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)})});
+        // FileReader 直接產生 base64，不經過二進位字串：大 PDF 時 Safari 才不會因記憶體過高重新載入頁面
+        const dataBase64=await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=()=>no(fr.error);fr.readAsDataURL(cropFiles.pdf);});
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64})});
         let j={};try{j=await r.json();}catch(e){}
         if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
         cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
