@@ -1129,7 +1129,7 @@
 #composer .wz-qbody{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
 #composer .wz-q .wz-editbtn{flex:0 0 auto;border:1px solid #d9cfc0;background:#fff;color:#8a7f74;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 #composer .wz-q .wz-editbtn:hover{border-color:var(--red);color:var(--red)}
-#composer .wz-q .wz-delbtn{flex:0 0 auto;border:1px solid #e6c4c0;background:#fff;color:#b3453c;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px}
+#composer .wz-q .wz-delbtn{flex:0 0 auto;border:1px solid var(--red);background:#fff;color:var(--red);border-radius:7px;padding:3px 10px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;margin-left:4px}
 #composer .wz-q .wz-delbtn:hover{border-color:var(--red);background:var(--red);color:#fff}
 #composer .wz-q .wz-expand-hint{font-size:11px;color:#b7ad9f;margin-left:6px;font-weight:600}
 #composer .wz-qfull{margin-top:8px;padding-top:8px;border-top:1px dashed #e6ded3;font-size:13.5px;line-height:1.85;color:var(--ink)}
@@ -5590,8 +5590,8 @@ function wzEdit(id){if(typeof openEdit==='function')openEdit(id);else alert('找
 async function wzDelete(id){
   const it=DB.find(x=>x.id===id);if(!it)return;
   const grp=it.groupId?DB.filter(x=>x.groupId===it.groupId&&x.type!=='passage'):[];
-  let msg='確定要從題庫「永久刪除」這一題嗎？此動作無法復原。';
-  if(grp.length>1)msg='這題屬於一個題組（共 '+grp.length+' 小題）。\n\n按「確定」只刪除「這一小題」，其他小題與題組文章會保留。\n仍要刪除這一小題嗎？（無法復原）';
+  let msg='⚠️ 警告：刪除後無法復原！\n\n按下「確定」會把這一題直接從雲端資料庫永久刪除，之後救不回來、也無法還原。\n\n確定要刪除這一題嗎？';
+  if(grp.length>1)msg='⚠️ 警告：刪除後無法復原！\n\n這題屬於一個題組（共 '+grp.length+' 小題）。按「確定」只會把「這一小題」直接從雲端資料庫永久刪除（其他小題與題組文章會保留），之後救不回來。\n\n確定要刪除這一小題嗎？';
   if(!confirm(msg))return;
   if(!requireCloud())return;
   const {error}=await sb.from('questions').delete().eq('id',id);
