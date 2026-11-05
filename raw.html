@@ -852,8 +852,11 @@
       btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，每頁約數秒）…';
       try{
         const bytes=new Uint8Array(await cropFiles.pdf.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)})});
+        const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
+        status.textContent='正在等待 OCR 主機回傳裁切結果（最長 45 秒）…';
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)}),signal:ctl.signal});
         let j={};try{j=await r.json();}catch(e){}
+        clearTimeout(timer);
         if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
         cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
         for(const p of (j.pages||[]))for(const it of (p.items||[])){
@@ -864,7 +867,7 @@
         }
         await startManualCrop();renderCropCandidates();
         status.textContent=n?`自動裁切完成，共 ${n} 張，已畫在下方頁面上：游標移到框上可直接改題號、切換單題／題組、略過或刪除；漏掉的圖直接在頁面上拖曳框選補上。`:'沒有偵測到圖形或表格；可直接在下方頁面拖曳框選。';
-      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.message||e)+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
+      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.name==='AbortError'?'OCR 主機等待超過 45 秒，請確認主機已啟動後重試。':(e.message||e))+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
       finally{btn.disabled=false;}
     }
     // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
