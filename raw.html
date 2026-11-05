@@ -423,7 +423,7 @@
     let _dehandDragFrom=null,_dehandSaveTimer=null;
     function renderDehandGrid(){const pages=document.getElementById('dehandPages');if(!pages||!dehandResult||!dehandResult.pages)return;pages.innerHTML='';const total=dehandResult.pages.length;dehandResult.pages.forEach((page,i)=>{const card=document.createElement('div');card.className='dehand-card';card.draggable=true;card.dataset.idx=i;card.innerHTML=_dehandCardInner(page,i,total);card.addEventListener('dragstart',e=>{_dehandDragFrom=i;card.classList.add('dragging');if(e.dataTransfer){e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(i))}catch(_){}}});card.addEventListener('dragend',()=>{card.classList.remove('dragging');pages.querySelectorAll('.drag-over').forEach(c=>c.classList.remove('drag-over'))});card.addEventListener('dragover',e=>{e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect='move';card.classList.add('drag-over')});card.addEventListener('dragleave',()=>card.classList.remove('drag-over'));card.addEventListener('drop',e=>{e.preventDefault();card.classList.remove('drag-over');if(_dehandDragFrom!=null&&_dehandDragFrom!==i)moveDehandPage(_dehandDragFrom,i);_dehandDragFrom=null});pages.appendChild(card)})}
     function moveDehandPage(from,to){if(!dehandResult||!dehandResult.pages)return;const n=dehandResult.pages.length;if(from<0||from>=n||to<0||to>=n||from===to)return;const[p]=dehandResult.pages.splice(from,1);dehandResult.pages.splice(to,0,p);renderDehandGrid();const st=document.getElementById('dehandStatus');if(st)st.textContent='已調整頁序，正在重建乾淨 PDF…';clearTimeout(_dehandSaveTimer);_dehandSaveTimer=setTimeout(_dehandReorderSave,350)}
-    async function _dehandReorderSave(){if(!dehandResult||!dehandResult.pages.length||!window.Dehand)return;try{const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});if(typeof setCropFile==='function')setCropFile('pdf',dehandResult.file);try{cropFiles.pdf=dehandResult.file}catch(e){}if(typeof OCR_PDF_FILE!=='undefined')OCR_PDF_FILE=dehandResult.file;if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);const st=document.getElementById('dehandStatus');if(st)st.textContent='已更新頁序，下載與後續步驟都會使用新順序的清稿。'}catch(e){const st=document.getElementById('dehandStatus');if(st)st.textContent='頁序已調整，但重建 PDF 失敗：'+((e&&e.message)||e)}}
+    async function _dehandReorderSave(){if(!dehandResult||!dehandResult.pages.length||!window.Dehand)return;try{const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});if(typeof setCropFile==='function')setCropFile('pdf',dehandResult.file);try{cropFiles.pdf=dehandResult.file}catch(e){}ocrCleanReplaced(dehandResult.file);if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);const st=document.getElementById('dehandStatus');if(st)st.textContent='已更新頁序，下載與後續步驟都會使用新順序的清稿。'}catch(e){const st=document.getElementById('dehandStatus');if(st)st.textContent='頁序已調整，但重建 PDF 失敗：'+((e&&e.message)||e)}}
 
     async function loadZipJs(){if(window.JSZip)return window.JSZip;await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});return window.JSZip}
     async function loadMammothJs(){if(window.mammoth)return window.mammoth;await new Promise((ok,bad)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';s.onload=ok;s.onerror=bad;document.head.appendChild(s)});return window.mammoth}
@@ -717,7 +717,7 @@
     function _pushEraserHistory(ctx,canvas){try{_eraserHistory.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});if(_eraserHistory.length>20)_eraserHistory.shift();_eraserRedoStack=[];}catch(e){}}
     function _eraserUndo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserHistory.length)return;const ctx=canvas.getContext('2d');try{_eraserRedoStack.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});}catch(e){}const entry=_eraserHistory.pop();if(entry){canvas.width=entry.w;canvas.height=entry.h;ctx.putImageData(entry.img,0,0);}}
     function _eraserRedo(){const canvas=document.getElementById('eraserCanvas');if(!canvas||!_eraserRedoStack.length)return;const ctx=canvas.getContext('2d');try{_eraserHistory.push({img:ctx.getImageData(0,0,canvas.width,canvas.height),w:canvas.width,h:canvas.height});}catch(e){}const entry=_eraserRedoStack.pop();if(entry){canvas.width=entry.w;canvas.height=entry.h;ctx.putImageData(entry.img,0,0);}}
-    async function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas'),item=cropCandidates[i];if(!canvas||!item)return;if(Number.isInteger(item.dehandIndex)&&dehandResult){const copy=document.createElement('canvas');copy.width=canvas.width;copy.height=canvas.height;copy.getContext('2d').drawImage(canvas,0,0);const page=dehandResult.pages[item.dehandIndex];page.canvas=copy;page.after=copy.toDataURL('image/png');const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});setCropFile('pdf',dehandResult.file);OCR_PDF_FILE=dehandResult.file;cropCandidates.splice(i,1);closeCropPreview();if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);document.getElementById('dehandStatus').textContent=(typeof OCR_RESULT!=='undefined'&&OCR_RESULT)?'已儲存手動修補。OCR 先前用舊稿跑過，要套用請到第 3 步按「沿用清稿，交給茲茲 OCR」重跑。':'已儲存手動修補，下載與後續步驟都會使用新版清稿。';return}item.src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
+    async function saveCropEraser(i){const canvas=document.getElementById('eraserCanvas'),item=cropCandidates[i];if(!canvas||!item)return;if(Number.isInteger(item.dehandIndex)&&dehandResult){const copy=document.createElement('canvas');copy.width=canvas.width;copy.height=canvas.height;copy.getContext('2d').drawImage(canvas,0,0);const page=dehandResult.pages[item.dehandIndex];page.canvas=copy;page.after=copy.toDataURL('image/png');const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});setCropFile('pdf',dehandResult.file);ocrCleanReplaced(dehandResult.file);cropCandidates.splice(i,1);closeCropPreview();if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);document.getElementById('dehandStatus').textContent=(typeof OCR_RESULT!=='undefined'&&OCR_RESULT)?'已儲存手動修補。OCR 先前用舊稿跑過，要套用請到第 3 步按「沿用清稿，交給茲茲 OCR」重跑。':'已儲存手動修補，下載與後續步驟都會使用新版清稿。';return}item.src=canvas.toDataURL('image/png');renderCropCandidates();closeCropPreview();}
     function renderCropPreviewModal(){
       const i=cropPreviewIndex;const it=cropCandidates[i];if(!it)return;
       // 清稿頁面＝整頁清除筆跡後的結果，不是某一題的裁切圖，所以不給「改題號／設為題組圖／AI 重製／手動修正／略過」這些裁切專用功能。
@@ -1121,6 +1121,9 @@
     function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到公司電腦：請確認公司電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
+    let OCR_ACTIVE_RUN=null;
+    // 同一份考卷的清稿被修補或調頁序：辨識中的這輪仍算數，不能當成換了考卷（否則結果被丟掉、題庫 Excel 永遠不會開始）
+    function ocrCleanReplaced(f){if(OCR_ACTIVE_RUN&&OCR_ACTIVE_RUN.file===OCR_PDF_FILE){OCR_ACTIVE_RUN.file=f;OCR_ACTIVE_RUN.stale=true}OCR_PDF_FILE=f}
     function toggleOcrPanel(){
       const panel=document.getElementById('ocrDevPanel'),btn=document.getElementById('ocrToggleBtn');
       const opening=panel.classList.contains('hide');
@@ -1212,6 +1215,7 @@
       st.textContent=skipClean?'正在把清稿交給茲茲 OCR…':'正在交給茲茲 OCR 清稿、辨識並產生題庫 Excel…';
       document.getElementById('ocrResultWrap').classList.add('hide');
       OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供手動切圖步驟手動框選修正
+      const run=OCR_ACTIVE_RUN={file,stale:false};
       try{
         const data=await file.arrayBuffer();let binary='';const bytes=new Uint8Array(data);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
         const r=await fetch(base+'/api/py-ocr/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:btoa(binary),skipClean:skipClean===true,skipWord:true})});
@@ -1219,9 +1223,9 @@
         const started=await r.json();if(!started.ok||!started.jobId)throw new Error(started.error||'無法啟動辨識');
         let since=0,j=null;
         while(true){await new Promise(resolve=>setTimeout(resolve,1000));const p=await fetch(base+'/api/py-ocr/progress?job='+encodeURIComponent(started.jobId)+'&since='+since);if(!p.ok)throw new Error('茲茲 OCR 進度回應 '+p.status);j=await p.json();since=j.next==null?since+(j.events||[]).length:j.next;const ev=(j.events||[]).map(x=>x.msg||x.message||x.text||'').filter(Boolean);if(ev.length)st.textContent=ev[ev.length-1];if(j.done)break;}
-        if(OCR_PDF_FILE!==file)return;   // 這段期間已換了另一份考卷，舊結果不可蓋掉新的
+        if(OCR_PDF_FILE!==run.file)return;   // 這段期間已換了另一份考卷，舊結果不可蓋掉新的
         if(!j.ok)throw new Error(j.error||'辨識失敗');
-        OCR_RESULT={...j,pages:[],engine:'茲茲 OCR（本機）'};
+        OCR_RESULT={...j,pages:[],engine:'茲茲 OCR（本機）',forFile:file,staleClean:run.stale};
         if(!examName.value)syncExamNameFromFile(file);
         document.getElementById('ocrResultWrap').classList.remove('hide');
         document.getElementById('ocrSummary').textContent='茲茲 OCR 已完成文字辨識；可下載原文，或直接產生題庫 Excel。';
@@ -1421,7 +1425,7 @@
     watch('dehandProgressBar',()=>{const bar=document.getElementById('dehandProgressBar'),p=parseFloat(bar.style.width);if(!isNaN(p))pipeProgress(2,p,((document.getElementById('dehandPageMeta')||{}).textContent||'')+' · '+((document.getElementById('dehandProgressText')||{}).textContent||'').split('：')[0])});
     wrap('syncExamNameFromFile',function(o,a){const r=o.apply(this,a);const n=(document.getElementById('examName')||{}).value||(document.getElementById('rawName')||{}).value||'';if(a[0]){const keep=PIPE.sel;pipeStart(1,'');pipeDone(1,n.slice(0,22));if(pipeStep(2).state==='run')PIPE.sel=keep}return r});
     wrap('runAutoOcr',async function(o,a){if(!a[0])return o.apply(this,a);pipeSkip(2,'已略過（直接用乾淨 PDF）');pipeSkip(1,'');pipeStart(3,'送出中');let r;try{r=await o.apply(this,a)}catch(e){pipeFail(3,e&&e.message);throw e}
-      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_PDF_FILE===a[0]){pipeDone(3,'文字辨識完成');ocrMakeCsv(true)}return r});
+      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_RESULT.forFile===a[0]){pipeDone(3,OCR_RESULT.staleClean?'已完成（用更新前的清稿，可重新辨識）':'文字辨識完成');ocrMakeCsv(true)}return r});
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
@@ -1636,7 +1640,7 @@
     async function pgDone(){
       if(pgIsPage){
         pgBakeCurrentPage();
-        try{const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});if(typeof setCropFile==='function')setCropFile('pdf',dehandResult.file);if(typeof OCR_PDF_FILE!=='undefined')OCR_PDF_FILE=dehandResult.file;if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);const st=document.getElementById('dehandStatus');if(st)st.textContent=(typeof OCR_RESULT!=='undefined'&&OCR_RESULT)?'已儲存手動修補。OCR 先前用舊稿跑過，要套用請到第 3 步按「沿用清稿，交給茲茲 OCR」重跑。':'已儲存手動修補，下載與後續步驟都會使用新版清稿。'}catch(e){alert('儲存失敗：'+(e&&e.message||e));return}
+        try{const pdf=await window.Dehand.makePdfFromPages(dehandResult.pages);dehandResult.file=new File([pdf],dehandResult.file.name,{type:'application/pdf'});if(typeof setCropFile==='function')setCropFile('pdf',dehandResult.file);ocrCleanReplaced(dehandResult.file);if(typeof pipeSaveExamPdfs==='function')pipeSaveExamPdfs(null,dehandResult.file);const st=document.getElementById('dehandStatus');if(st)st.textContent=(typeof OCR_RESULT!=='undefined'&&OCR_RESULT)?'已儲存手動修補。OCR 先前用舊稿跑過，要套用請到第 3 步按「沿用清稿，交給茲茲 OCR」重跑。':'已儲存手動修補，下載與後續步驟都會使用新版清稿。'}catch(e){alert('儲存失敗：'+(e&&e.message||e));return}
         pgClose();
       }else{
         pgCommitEdit();pgBakeMarks();
