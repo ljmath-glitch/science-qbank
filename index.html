@@ -1129,6 +1129,8 @@
 #composer .wz-qbody{flex:1;min-width:0;overflow-wrap:anywhere;cursor:pointer}
 #composer .wz-q .wz-editbtn{flex:0 0 auto;border:1px solid #d9cfc0;background:#fff;color:#8a7f74;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
 #composer .wz-q .wz-editbtn:hover{border-color:var(--red);color:var(--red)}
+#composer .wz-q .wz-delbtn{flex:0 0 auto;border:1px solid #e6c4c0;background:#fff;color:#b3453c;border-radius:7px;padding:3px 10px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px}
+#composer .wz-q .wz-delbtn:hover{border-color:var(--red);background:var(--red);color:#fff}
 #composer .wz-q .wz-expand-hint{font-size:11px;color:#b7ad9f;margin-left:6px;font-weight:600}
 #composer .wz-qfull{margin-top:8px;padding-top:8px;border-top:1px dashed #e6ded3;font-size:13.5px;line-height:1.85;color:var(--ink)}
 #composer .wz-qfull .qimg{max-width:100%;border:1px solid #eee;border-radius:6px;margin:6px 0}
@@ -5535,6 +5537,7 @@ function wzRenderList(){
       +`<div class="wz-qfull" id="wzfull-${it.id}" hidden></div>`
       +`</div>`
       +`<button type="button" class="wz-editbtn" onclick="event.stopPropagation();wzEdit('${it.id}')">✎ 編輯</button>`
+      +`<button type="button" class="wz-delbtn" onclick="event.stopPropagation();wzDelete('${it.id}')" title="從題庫永久刪除這一題（屎題直接刪）">🗑 刪除</button>`
       +`</div></div>`;
   }).join('');
   let banner='';
@@ -5583,6 +5586,31 @@ function wzToggleExpand(id){
   }else{clearTimeout(full._wzBuildTimer);full.hidden=true;}
 }
 function wzEdit(id){if(typeof openEdit==='function')openEdit(id);else alert('找不到編輯功能');}
+// 組卷精靈內直接刪除屎題：永久從題庫刪，並即時刷新精靈與主系統。
+async function wzDelete(id){
+  const it=DB.find(x=>x.id===id);if(!it)return;
+  const grp=it.groupId?DB.filter(x=>x.groupId===it.groupId&&x.type!=='passage'):[];
+  let msg='確定要從題庫「永久刪除」這一題嗎？此動作無法復原。';
+  if(grp.length>1)msg='這題屬於一個題組（共 '+grp.length+' 小題）。\n\n按「確定」只刪除「這一小題」，其他小題與題組文章會保留。\n仍要刪除這一小題嗎？（無法復原）';
+  if(!confirm(msg))return;
+  if(!requireCloud())return;
+  const {error}=await sb.from('questions').delete().eq('id',id);
+  if(error){alert('刪除失敗：'+error.message);return}
+  PICKS.delete(id);
+  const idx=DB.findIndex(x=>x.id===id);if(idx>=0)DB.splice(idx,1);
+  // DB 變動 → 重算題組快取（難易度、最新章節）
+  if(typeof GROUP_MAXDIFF!=='undefined')GROUP_MAXDIFF=null;
+  if(typeof GROUP_LATEST!=='undefined')GROUP_LATEST=null;
+  // 刷新主系統篩選與精靈畫面
+  if(typeof buildFiltersKeep==='function')buildFiltersKeep();
+  if(WZ_MODE==='school'){if(typeof wzRenderSchoolTree==='function')wzRenderSchoolTree();}
+  else if(WZ_LEVEL&&typeof wzBuildTree==='function')wzBuildTree();
+  else if(typeof wzRenderTree==='function')wzRenderTree();
+  if(typeof wzRenderList==='function')wzRenderList();
+  if(typeof wzRenderScoreTable==='function')wzRenderScoreTable();
+  const n3=document.getElementById('wzStep3N');if(n3)n3.textContent=PICKS.size;
+  if(typeof wzUpdateFoot==='function')wzUpdateFoot();
+}
 function wzSyncPickStates(scoped){
   document.querySelectorAll('#wzList .wz-q').forEach(el=>{const id=el.dataset.id;const on=PICKS.has(id);el.classList.toggle('picked',on);const cb=el.querySelector('input[type=checkbox]');if(cb)cb.checked=on;});
   const poolAll=scoped||_wzPool().filter(wzInScope);
