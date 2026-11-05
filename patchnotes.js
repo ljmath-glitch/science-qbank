@@ -13,7 +13,7 @@
   var TAGC = { '新功能': '#1f8f4e', '修正': '#c06a12', '優化': '#2563c9', '公告': '#850103' };
   var TAGBG = { '新功能': '#e4f4ea', '修正': '#fbeedd', '優化': '#e7effb', '公告': '#f7e4e4' };
   // 白色線條圖示（放在品牌紅方塊裡，顏色統一、但「依功能類型換不同圖案」）
-  var IW = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">';
+  var IW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">';
   var ICONS = {
     '新功能': IW + '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/></svg>',        // 星星
     '優化':   IW + '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',                   // 向上趨勢
@@ -43,31 +43,33 @@
     + '.tzpn-btn:focus-visible{outline:3px solid rgba(133,1,3,.28);outline-offset:2px}'
     + '.tzpn-btn.tzpn-btn--absolute{position:absolute;top:50%;right:12px;transform:translateY(-50%);margin:0}'
     + '.tzpn-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ffcf33;color:#5e0102;font:800 11px/1 inherit;display:none;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.3)}'
-    + '.tzpn-mask{position:fixed;inset:0;z-index:10000;background:rgba(20,10,8,.55);display:none;align-items:center;justify-content:center;padding:16px}'
+    + '.tzpn-mask{position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px}'
     + '.tzpn-mask.show{display:flex}'
-    + '.tzpn-card{width:100%;max-width:460px;max-height:86vh;background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:inherit}'
-    + '.tzpn-head{background:linear-gradient(135deg,#7f0a0d 0%,#b1291e 55%,#c7492b 100%);color:#fff;padding:15px 17px;position:relative}'
+    + '.tzpn-head:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 20%,rgba(255,255,255,.35),transparent 45%);pointer-events:none}'
+    + '.tzpn-item.new .tzpn-ic{background:#b91c1c;color:#fff}'
+    + '.tzpn-card{width:100%;max-width:460px;max-height:86vh;background:#fff;border-radius:22px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.35);font-family:-apple-system,BlinkMacSystemFont,"PingFang TC","Microsoft JhengHei",sans-serif;color:#1e293b}'
+    + '.tzpn-head{flex-shrink:0;position:relative;padding:22px 22px 18px;background:linear-gradient(135deg,#7a0003 0%,#b91c1c 55%,#f59e0b 130%);color:#fff;overflow:hidden}'
     + '.tzpn-kicker{font-size:11px;letter-spacing:.25em;opacity:.85;font-weight:900}'
     + '.tzpn-title{font-size:22px;font-weight:900;margin:4px 0 0}'
     + '.tzpn-sub{font-size:12px;font-weight:700;margin-top:4px;opacity:.9;max-width:calc(100% - 50px)}'
-    + '.tzpn-gift{position:absolute;top:13px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;pointer-events:none}'
-    + '.tzpn-gift svg{width:21px;height:21px}'
-    + '.tzpn-x{position:absolute;top:56px;right:17px;width:25px;height:25px;border-radius:50%;border:none;background:rgba(0,0,0,.22);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
-    + '.tzpn-body{overflow:auto;padding:13px 15px;background:#faf7f4}'
-    + '.tzpn-row{margin-bottom:12px}'
-    + '.tzpn-daterow{display:flex;align-items:center;gap:6px;margin-bottom:7px}'
-    + '.tzpn-date{display:inline-block;background:#fff0f1;color:#ff2d3a;font:900 12px/1 inherit;border-radius:999px;padding:5px 10px;border:1px solid #ffd0d4;text-shadow:0 0 5px rgba(255,45,58,.45);box-shadow:0 0 6px rgba(255,45,58,.2)}'
-    + '.tzpn-new{background:#e4352b;color:#fff;font:800 11px/1 inherit;border-radius:999px;padding:4px 8px;letter-spacing:.5px;box-shadow:0 0 6px rgba(228,53,43,.35)}'
-    + '.tzpn-item{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid #ece6df;border-radius:13px;padding:12px}'
-    + '.tzpn-item.new{border-color:#f0c67a;box-shadow:0 0 0 2px rgba(240,198,122,.3)}'
-    + '.tzpn-ic{flex:0 0 36px;width:36px;height:36px;border-radius:10px;background:#9a1115;display:flex;align-items:center;justify-content:center}'
-    + '.tzpn-ic svg{width:19px;height:19px}'
+    + '.tzpn-gift{position:absolute;right:18px;top:16px;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:1}'
+    + '.tzpn-gift svg{width:24px;height:24px}'
+    + '.tzpn-x{position:absolute;right:12px;bottom:12px;z-index:2;border:0;background:rgba(0,0,0,.2);color:#fff;width:28px;height:28px;border-radius:999px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
+    + '.tzpn-body{flex:1 1 auto;min-height:0;padding:14px 18px 6px;overflow-y:auto;background:#fff}'
+    + '.tzpn-row{margin:6px 0 14px}'
+    + '.tzpn-daterow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:900;color:#64748b;margin-bottom:6px}'
+    + '.tzpn-date{background:#1e293b;color:#fff;border-radius:8px;padding:2px 8px;font-size:12px;font-weight:900}'
+    + '.tzpn-new{background:#ef4444;color:#fff;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:900}'
+    + '.tzpn-item{display:flex;gap:10px;padding:10px 12px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0;margin-bottom:6px}'
+    + '.tzpn-item.new{background:linear-gradient(90deg,#fffbeb,#fff);border-color:#fcd34d}'
+    + '.tzpn-ic{flex-shrink:0;width:34px;height:34px;border-radius:10px;background:#fef2f2;color:#b91c1c;display:flex;align-items:center;justify-content:center}'
+    + '.tzpn-ic svg{width:18px;height:18px}'
     + '.tzpn-main{flex:1;min-width:0}'
-    + '.tzpn-it{display:block;font-size:14px;font-weight:900;color:#20160f;line-height:1.45;margin-bottom:6px}'
-    + '.tzpn-tag{display:inline-block;font:900 10px/1.4 inherit;border-radius:6px;padding:1px 6px;margin-bottom:7px}'
-    + '.tzpn-ib{font-size:12.5px;font-weight:600;line-height:1.55;color:#475569}'
-    + '.tzpn-foot{padding:12px 16px;border-top:1px solid #eee;background:#fff}'
-    + '.tzpn-ok{width:100%;border:none;border-radius:12px;padding:13px;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:15px;font-weight:800;cursor:pointer}'
+    + '.tzpn-it{font-size:14px;font-weight:900;display:flex;align-items:center;gap:6px;flex-wrap:wrap}'
+    + '.tzpn-tag{font-size:10px;font-weight:900;border-radius:6px;padding:1px 6px}'
+    + '.tzpn-ib{font-size:12.5px;font-weight:600;color:#475569;margin-top:3px;line-height:1.55}'
+    + '.tzpn-foot{flex-shrink:0;padding:12px 18px 18px}'
+    + '.tzpn-ok{width:100%;border:0;border-radius:14px;padding:12px;font-size:15px;font-weight:900;color:#fff;background:linear-gradient(90deg,#7a0003,#b91c1c);cursor:pointer;box-shadow:0 6px 16px rgba(185,28,28,.35)}'
     + '.tzpn-toast{position:fixed;right:16px;bottom:16px;z-index:10001;max-width:300px;background:#fff;border:1px solid #e3d9cf;border-left:4px solid #960205;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 14px;display:none;font-family:inherit}'
     + '.tzpn-toast.show{display:block}'
     + '.tzpn-toast .tt{font-weight:800;color:#20160f;font-size:14px;margin-bottom:4px}'
@@ -119,12 +121,12 @@
       var isNew = (e.id || 0) > s0;
       var tagc = TAGC[e.tag] || '#850103';
       var tagbg = TAGBG[e.tag] || '#f1eae4';
-      return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + ' 更新</span>'
+      return '<div class="tzpn-row"><div class="tzpn-daterow"><span class="tzpn-date">' + esc(e.date) + '</span>更新'
         + (isNew ? '<span class="tzpn-new">NEW</span>' : '') + '</div>'
         + '<div class="tzpn-item' + (isNew ? ' new' : '') + '"><div class="tzpn-ic">' + iconFor(e.tag) + '</div>'
-        + '<div class="tzpn-main"><span class="tzpn-it">' + esc(e.title) + '</span>'
-        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagbg + ';color:' + tagc + '">' + esc(e.tag) + '</span>' : '')
-        + '<div class="tzpn-ib">' + esc(e.body) + '</div></div></div></div>';
+        + '<div class="tzpn-main"><div class="tzpn-it"><span>' + esc(e.title) + '</span>'
+        + (e.tag ? '<span class="tzpn-tag" style="background:' + tagbg + ';color:' + tagc + '">' + esc(e.tag) + '</span>' : '') + '</div>'
+        + '<div class="tzpn-ib">' + esc(e.body).replace(/&lt;(\/?)b&gt;/g, '<$1b>') + '</div></div></div></div>';
     }).join('');
     mask.querySelector('#tzpnBody').innerHTML = html || '<div style="padding:20px;text-align:center;color:#888">目前沒有更新紀錄</div>';
     refreshBadge();
@@ -170,6 +172,12 @@
           LOADED_BUILD = d.build || '';
           entries = (d.entries || []).slice().sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
           btn.classList.add('ready');
+          // 這個瀏覽器開過就不再累積數字：第一次用新版把舊公告全算看過；之後新公告只在本次開頁顯示，離開就算看過。
+          var topId = entries.length ? entries[0].id : 0;
+          try {
+            if (!localStorage.getItem('tz_patchnotes_visited')) { setSeen(topId); localStorage.setItem('tz_patchnotes_visited', '1'); }
+            window.addEventListener('pagehide', function () { setSeen(topId); });
+          } catch (e) {}
           renderBody();
           maybeAutoOpen();
         } else if (LOADED_BUILD && d.build && d.build !== LOADED_BUILD && !notified) {
