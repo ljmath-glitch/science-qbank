@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>iPad 清稿速度測試</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172033;font:16px -apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;overflow-x:hidden}main{max-width:760px;margin:auto;padding:20px 14px 44px}h1{font-size:24px;margin:0 0 8px}.note,.card{background:#fff;border:1px solid #dce3ed;border-radius:14px;padding:14px;margin:12px 0}.note{font-size:14px;line-height:1.55}input,button{font:inherit}input[type=file]{width:100%;padding:13px;background:#f5f7fa;border-radius:10px;border:1px dashed #9aa9bc}label.check{display:flex;gap:10px;align-items:center;margin:14px 0}input[type=checkbox]{width:22px;height:22px}button{min-height:48px;border:0;border-radius:12px;padding:10px 18px;background:#1367d1;color:#fff;font-weight:700;touch-action:manipulation}button:disabled{opacity:.5}#copy{background:#526071;margin-left:8px}pre{white-space:pre-wrap;word-break:break-word;margin:0;font:13px ui-monospace,SFMono-Regular,monospace;line-height:1.55}.pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.page{background:#fff;border:1px solid #dce3ed;border-radius:12px;padding:10px;min-width:0}.pair{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}.pair img{width:100%;height:135px;object-fit:contain;background:#eef2f7;border-radius:7px}.small{font-size:13px;color:#48566a}.ok{color:#08783f}.warn{color:#a34d00}
+</style>
+<main>
+ <h1>iPad 清稿速度測試</h1>
+ <div class="note">檔案只在此裝置的瀏覽器中處理，不會上傳。請以 HTTP/HTTPS 開啟本頁（不要直接用 <code>file://</code>），以便載入模型與 PDF.js。</div>
+ <div class="card"><input id="file" type="file" accept="application/pdf,image/*"><label class="check"><input id="wasm" type="checkbox">強制 WASM（CPU）跑一次比較</label><button id="start">開始測試</button><button id="copy" disabled>複製結果</button></div>
+ <div class="card"><b>裝置資訊</b><pre id="device"></pre></div>
+ <div class="card"><b>測試狀態／結果</b><pre id="result">尚未開始。</pre></div>
+ <section id="pages" class="pages"></section>
+</main>
+<script type="module">
+const $=s=>document.querySelector(s), out=$('#result'), pages=$('#pages');
+const key='ipad-bench-interrupted-page';
+$('#device').textContent=`userAgent: ${navigator.userAgent}\nhardwareConcurrency: ${navigator.hardwareConcurrency ?? '未知'}\ndeviceMemory: ${navigator.deviceMemory ?? '未提供'} GB\nWebGPU API: ${navigator.gpu?'可用':'未提供'}`;
+try { const old=localStorage.getItem(key); if(old) out.textContent=`提醒：上次可能在第 ${old} 頁處理時被重新載入或中斷。\n\n尚未開始。`; } catch(e) {}
+function sec(n){return (n/1000).toFixed(2)+' 秒'}
+async function loadPdfJs(){if(window.pdfjsLib)return window.pdfjsLib;const lib=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';window.pdfjsLib=lib;return lib}
+function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+async function imagePage(file){const u=URL.createObjectURL(file);try{const im=new Image();await new Promise((yes,no)=>{im.onload=yes;im.onerror=no;im.src=u});const c=canvas(im.naturalWidth,im.naturalHeight);c.getContext('2d').drawImage(im,0,0);return [async()=>c]}finally{URL.revokeObjectURL(u)}}
+async function getPages(file){if(!/\.pdf$/i.test(file.name))return imagePage(file);const pdf=await loadPdfJs(),doc=await pdf.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;return Array.from({length:doc.numPages},(_,i)=>async()=>{const p=await doc.getPage(i+1),v=p.getViewport({scale:3}),c=canvas(Math.ceil(v.width),Math.ceil(v.height));await p.render({canvasContext:c.getContext('2d'),viewport:v,intent:'print'}).promise;return c})}
+async function thumb(c){const s=Math.min(180/c.width,135/c.height,1),t=canvas(Math.max(1,Math.round(c.width*s)),Math.max(1,Math.round(c.height*s)));t.getContext('2d').drawImage(c,0,0,t.width,t.height);const u=URL.createObjectURL(await new Promise(r=>t.toBlob(r,'image/jpeg',.72)));t.width=t.height=0;return u}
+async function dehand(force){
+  // 直接載入既有 dehand.js；只替換 execution provider，模型與清稿邏輯本身不重寫。
+  const url=new URL('./tools/dehand.js',location.href), r=await fetch(url); if(!r.ok)throw new Error('讀取 tools/dehand.js 失敗');
+  let s=await r.text(), base=JSON.stringify(location.href);
+  s=s.replaceAll("new URL('./models/handwriting-eraser-v10.onnx',import.meta.url).href",`new URL('./tools/models/handwriting-eraser-v10.onnx',${base}).href`)
+     .replaceAll("new URL('./models/jwmask-r8.onnx',import.meta.url).href",`new URL('./tools/models/jwmask-r8.onnx',${base}).href`)
+     .replaceAll("ort.env.wasm.wasmPaths=","window.__ipadBenchOrt=ort;ort.env.wasm.wasmPaths=");
+  if(force)s=s.replaceAll("['webgpu','wasm']","['wasm']");
+  return import(URL.createObjectURL(new Blob([s],{type:'text/javascript'})));
+}
+function report(lines){out.textContent=lines.join('\n');$('#copy').disabled=false}
+$('#start').onclick=async()=>{
+ const file=$('#file').files[0], force=$('#wasm').checked;if(!file)return alert('請先選擇 PDF 或圖片。');if(!/\.pdf$/i.test(file.name)&&!file.type.startsWith('image/'))return alert('請選擇 PDF 或圖片檔。');
+ $('#start').disabled=true;$('#copy').disabled=true;pages.replaceChildren();let lines=[], rows=[];
+ try{out.textContent='準備檔案與模型中…';const mod=await dehand(force), load0=performance.now();await mod.preload('r8');const load=performance.now()-load0;
+  const jobs=await getPages(file);// ['webgpu','wasm'] 退回時 ORT 不丟錯，只能看 WebGPU 後端有沒有真的建立裝置
+  const gpu=window.__ipadBenchOrt?.env?.webgpu?.device;let provider=force?'WASM（CPU，強制）':(gpu?'WebGPU':'WASM（CPU，已從 WebGPU 退回）');
+  lines=[`檔案：${file.name}`,`執行後端：${provider}`,`模型載入：${sec(load)}`,`頁數：${jobs.length}`];report(lines.concat(['\n處理中…']));const all0=performance.now();
+  for(let i=0;i<jobs.length;i++){try{localStorage.setItem(key,String(i+1))}catch(e){} out.textContent=lines.concat(rows, [`\n正在處理第 ${i+1}/${jobs.length} 頁…`]).join('\n');const source=await jobs[i]();const before=await thumb(source);let last=0,tiles=0;const p0=performance.now();const clean=await mod.cleanCanvas(source,()=>{last=performance.now();tiles++},{mode:'r8'});const elapsed=performance.now()-p0, infer=last?last-p0:elapsed;const after=await thumb(clean);source.width=source.height=0;clean.width=clean.height=0;rows.push(`第 ${i+1} 頁：模型推論 ${sec(infer)}（${tiles} tiles；整頁處理 ${sec(elapsed)}）`);const card=document.createElement('article');card.className='page';card.innerHTML=`<b>第 ${i+1} 頁完成</b><div class="small">模型推論 ${sec(infer)}</div><div class="pair"><div>原圖<img alt="第 ${i+1} 頁原圖"></div><div>結果<img alt="第 ${i+1} 頁結果"></div></div>`;const imgs=card.querySelectorAll('img');for(const [img,url] of [[imgs[0],before],[imgs[1],after]]){img.onload=()=>URL.revokeObjectURL(url);img.src=url}pages.append(card);}
+  const total=performance.now()-all0, avg=total/jobs.length;try{localStorage.removeItem(key)}catch(e){} lines.push(...rows,`\n總秒數：${sec(total)}`,`平均每頁：${sec(avg)}`);report(lines);
+ }catch(e){console.error(e);lines.push(`\n失敗：${e.message||e}`);report(lines)}finally{$('#start').disabled=false}
+};
+$('#copy').onclick=async()=>{try{await navigator.clipboard.writeText(out.textContent);$('#copy').textContent='已複製';setTimeout(()=>$('#copy').textContent='複製結果',1200)}catch(e){alert('無法自動複製，請長按結果文字複製。')}};
+</script>
+</html>
