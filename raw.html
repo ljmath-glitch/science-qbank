@@ -849,12 +849,13 @@
       if(!cropFiles.pdf){alert('自動裁切需要清稿 PDF：請先在前面步驟上傳考卷（或清稿 PDF）。');return;}
       const base=ocrBase();const status=document.getElementById('cropReviewState'),btn=document.getElementById('autoCropBtn');
       if(!base){status.textContent='找不到茲茲 OCR 主機設定。';return;}
-      btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，每頁約數秒）…';
+      btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，一份約 1～2 分鐘）…';
       try{
-        const bytes=new Uint8Array(await cropFiles.pdf.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
-        const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
-        status.textContent='正在等待 OCR 主機回傳裁切結果（最長 45 秒）…';
-        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64:btoa(binary)}),signal:ctl.signal});
+        // FileReader 直接產生 base64，不經過二進位字串：大 PDF 時 Safari 才不會因記憶體過高重新載入頁面
+        const dataBase64=await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=()=>no(fr.error);fr.readAsDataURL(cropFiles.pdf);});
+        const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),300000);
+        status.textContent='正在等待 OCR 主機回傳裁切結果（一份約 1～2 分鐘，最長等 5 分鐘）…';
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64}),signal:ctl.signal});
         let j={};try{j=await r.json();}catch(e){}
         clearTimeout(timer);
         if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
@@ -1765,6 +1766,7 @@
     }
   })();
   </script>
+  <script src="tools/op-timer.js" defer></script>
   <script src="patchnotes.js" defer></script>
   <script src="refresh.js" defer></script>
 </body>
