@@ -868,7 +868,7 @@
         }
         await startManualCrop();renderCropCandidates();
         status.textContent=n?`自動裁切完成，共 ${n} 張，已畫在下方頁面上：游標移到框上可直接改題號、切換單題／題組、略過或刪除；漏掉的圖直接在頁面上拖曳框選補上。`:'沒有偵測到圖形或表格；可直接在下方頁面拖曳框選。';
-      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.name==='AbortError'?'OCR 主機等待超過 45 秒，請確認主機已啟動後重試。':(e.message||e))+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
+      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.name==='AbortError'?'OCR 主機等待超過 5 分鐘，請確認主機已啟動後重試。':(e.message||e))+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
       finally{btn.disabled=false;}
     }
     // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
