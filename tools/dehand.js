@@ -103,7 +103,7 @@ export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
     d[o]=d[o+1]=d[o+2]=v;d[o+3]=255}}
   fctx.putImageData(fd,0,0);return full
 }
-async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){const c=pg.canvas||pg,blob=pg.blob&&pg.blobOf===c?pg.blob:await toBlob(c,'image/jpeg',.92),png=await pdf.embedJpg(await blob.arrayBuffer()),p=pdf.addPage([c.width,c.height]);p.drawImage(png,{x:0,y:0,width:c.width,height:c.height})}return new Blob([await pdf.save()],{type:'application/pdf'})}
+async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){const c=pg.canvas||pg,blob=pg.blob&&pg.blobOf===c?pg.blob:await toBlob(c,'image/jpeg',.92),png=await pdf.embedJpg(await blob.arrayBuffer()),k=Math.min(1,Math.max(72/300,595/Math.min(c.width,c.height))),w=c.width*k,h=c.height*k,p=pdf.addPage([w,h]);p.drawImage(png,{x:0,y:0,width:w,height:h})}return new Blob([await pdf.save()],{type:'application/pdf'})}
 export function preload(mode='v10'){return getSession(mode).catch(e=>{console.warn('模型預載失敗',e)})}
 export async function cleanFile(file,{loadPdfJs,onProgress,onPage,mode='v10'}={}){const began=performance.now(),el=()=>((performance.now()-began)/1000).toFixed(1);let total=0;const emit=(stage,percent,page=0,message='')=>onProgress&&onProgress({stage,percent,page,total,message,elapsed:el()}),src=await (emit('讀取檔案',2,0,'正在讀取檔案'),filePages(file,loadPdfJs));total=src.count;const pages=[];
   emit('載入模型',8,0,'正在載入去筆跡模型');await getSession(mode);emit('逐頁轉影像',14,0,`共 ${total} 頁，準備轉為影像`);
