@@ -47,25 +47,25 @@
     + '.tzpn-mask.show{display:flex}'
     + '.tzpn-card{width:100%;max-width:460px;max-height:86vh;background:#fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.4);font-family:inherit}'
     + '.tzpn-head{background:linear-gradient(135deg,#7f0a0d 0%,#b1291e 55%,#c7492b 100%);color:#fff;padding:15px 17px;position:relative}'
-    + '.tzpn-kicker{font-size:10px;letter-spacing:2.5px;opacity:.85;font-weight:700}'
-    + '.tzpn-title{font-size:19px;font-weight:800;margin:2px 0}'
-    + '.tzpn-sub{font-size:11.5px;opacity:.92;max-width:calc(100% - 50px)}'
+    + '.tzpn-kicker{font-size:11px;letter-spacing:.25em;opacity:.85;font-weight:900}'
+    + '.tzpn-title{font-size:22px;font-weight:900;margin:4px 0 0}'
+    + '.tzpn-sub{font-size:12px;font-weight:700;margin-top:4px;opacity:.9;max-width:calc(100% - 50px)}'
     + '.tzpn-gift{position:absolute;top:13px;right:14px;width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;pointer-events:none}'
     + '.tzpn-gift svg{width:21px;height:21px}'
     + '.tzpn-x{position:absolute;top:56px;right:17px;width:25px;height:25px;border-radius:50%;border:none;background:rgba(0,0,0,.22);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
     + '.tzpn-body{overflow:auto;padding:13px 15px;background:#faf7f4}'
     + '.tzpn-row{margin-bottom:12px}'
     + '.tzpn-daterow{display:flex;align-items:center;gap:6px;margin-bottom:7px}'
-    + '.tzpn-date{display:inline-block;background:#fff0f1;color:#ff2d3a;font:800 12px/1 inherit;border-radius:999px;padding:5px 10px;border:1px solid #ffd0d4;text-shadow:0 0 5px rgba(255,45,58,.45);box-shadow:0 0 6px rgba(255,45,58,.2)}'
+    + '.tzpn-date{display:inline-block;background:#fff0f1;color:#ff2d3a;font:900 12px/1 inherit;border-radius:999px;padding:5px 10px;border:1px solid #ffd0d4;text-shadow:0 0 5px rgba(255,45,58,.45);box-shadow:0 0 6px rgba(255,45,58,.2)}'
     + '.tzpn-new{background:#e4352b;color:#fff;font:800 11px/1 inherit;border-radius:999px;padding:4px 8px;letter-spacing:.5px;box-shadow:0 0 6px rgba(228,53,43,.35)}'
     + '.tzpn-item{display:flex;align-items:flex-start;gap:10px;background:#fff;border:1px solid #ece6df;border-radius:13px;padding:12px}'
     + '.tzpn-item.new{border-color:#f0c67a;box-shadow:0 0 0 2px rgba(240,198,122,.3)}'
     + '.tzpn-ic{flex:0 0 36px;width:36px;height:36px;border-radius:10px;background:#9a1115;display:flex;align-items:center;justify-content:center}'
     + '.tzpn-ic svg{width:19px;height:19px}'
     + '.tzpn-main{flex:1;min-width:0}'
-    + '.tzpn-it{display:block;font-size:14.5px;font-weight:800;color:#20160f;line-height:1.45;margin-bottom:6px}'
-    + '.tzpn-tag{display:inline-block;font:800 11px/1 inherit;border-radius:999px;padding:4px 9px;margin-bottom:7px}'
-    + '.tzpn-ib{font-size:12.5px;line-height:1.65;color:#52463c}'
+    + '.tzpn-it{display:block;font-size:14px;font-weight:900;color:#20160f;line-height:1.45;margin-bottom:6px}'
+    + '.tzpn-tag{display:inline-block;font:900 10px/1.4 inherit;border-radius:6px;padding:1px 6px;margin-bottom:7px}'
+    + '.tzpn-ib{font-size:12.5px;font-weight:600;line-height:1.55;color:#475569}'
     + '.tzpn-foot{padding:12px 16px;border-top:1px solid #eee;background:#fff}'
     + '.tzpn-ok{width:100%;border:none;border-radius:12px;padding:13px;background:linear-gradient(180deg,#960205,#6d0002);color:#fff;font-size:15px;font-weight:800;cursor:pointer}'
     + '.tzpn-toast{position:fixed;right:16px;bottom:16px;z-index:10001;max-width:300px;background:#fff;border:1px solid #e3d9cf;border-left:4px solid #960205;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:12px 14px;display:none;font-family:inherit}'
@@ -157,7 +157,7 @@
     // 啟動流程（組卷精靈 / 匯入交接）進行中就不自動彈，只留角落徽章
     var s = location.search || '';
     if (s.indexOf('mode=compose') > -1 || s.indexOf('handoff=') > -1) return;
-    if (unseenCount() > 0) setTimeout(open, 1200);
+    // 使用者覺得太頻繁：不自動彈出，只留禮物鈕上的數字，要看再點。
   }
 
   // ---- load + update detection ----
