@@ -37,6 +37,16 @@
       rows.slice(0, 15).map(r => '<tr><td style="padding:2px 10px 2px 0">' + esc(r.at) + '</td><td style="padding:2px 10px 2px 0;max-width:220px;overflow:hidden;text-overflow:ellipsis">' + esc(r.file) + '</td><td style="padding:2px 10px 2px 0">' + esc(r.host) + '</td><td align="right" style="padding:2px 10px 2px 0">' + fmt(r.sec) + '</td><td>' + (r.ok ? '成功' : '失敗') + '</td></tr>').join('') + '</table>';
   }
 
+  // 頁面中途被瀏覽器重新載入（記憶體不足）時程式會整個消失，下次開頁才有機會告訴使用者。
+  const RUN = 'opTimerRunning';
+  function warnInterrupted() {
+    let run = null;
+    try { run = JSON.parse(localStorage.getItem(RUN)); localStorage.removeItem(RUN); } catch (e) {}
+    if (!run) return;
+    save([{ op: run.op, at: run.at, file: run.file, host: run.host, sec: 0, ok: false }, ...load()]);
+    alert(run.op + '被中斷了：頁面在處理「' + run.file + '」時被重新載入，通常是記憶體不足。請關掉其他分頁後再試一次。');
+  }
+
   OPS.forEach(op => {
     const original = window[op.fn];
     if (typeof original !== 'function') return;
@@ -46,6 +56,8 @@
       if (!file) return original.apply(this, args);   // 沒選檔案：原函式會自己提示，不算一次
       const box = ui(op), now = box && box.querySelector('[data-now]'), started = Date.now();
       const secs = () => Math.round((Date.now() - started) / 1000);
+      const stamp = () => { const d = new Date(), pad = n => String(n).padStart(2, '0'); return pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+      try { localStorage.setItem(RUN, JSON.stringify({ op: op.label, at: stamp(), file: file.name || '', host: hostName() })); } catch (e) {}
       const tick = () => { if (now) now.textContent = '⏱ ' + op.label + '進行中：' + fmt(secs()); };
       tick();
       const timer = setInterval(tick, 1000);
@@ -60,12 +72,13 @@
         const sec = secs();
         const statusEl = document.getElementById(op.statusId);
         const ok = !threw && !/失敗|連不到|找不到/.test(statusEl ? statusEl.textContent : '');
-        const d = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        save([{ op: op.label, at: pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()), file: file.name || '', host: hostName(), sec, ok }, ...load()]);
+        try { localStorage.removeItem(RUN); } catch (e) {}
+        save([{ op: op.label, at: stamp(), file: file.name || '', host: hostName(), sec, ok }, ...load()]);
         if (now) now.textContent = '⏱ ' + op.label + (ok ? '完成' : '失敗') + '，耗時 ' + fmt(sec);
         renderLog(op);
+        if (!ok) alert(op.label + '失敗（' + fmt(sec) + '）：' + (statusEl ? statusEl.textContent : '').slice(0, 300));
       }
     };
   });
+  warnInterrupted();
 })();
