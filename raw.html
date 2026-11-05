@@ -386,6 +386,10 @@
     function parseCSV(t){let rows=[],r=[],c='',q=false;for(let i=0;i<t.length;i++){let x=t[i];if(q){if(x==='"'){if(t[i+1]==='"'){c+='"';i++}else q=false}else c+=x}else if(x==='"')q=true;else if(x===','){r.push(c);c=''}else if(x==='\n'){r.push(c);rows.push(r);r=[];c=''}else if(x!=='\r')c+=x}if(c||r.length){r.push(c);rows.push(r)}return rows.filter(x=>x.some(y=>y.trim()))}
     function inspectCsv(){const rows=parseCSV(questionCsv.value);const p=csvPreview;if(!rows.length){p.style.display='none';return}const h=rows[0];p.style.display='block';p.textContent=`偵測到 ${Math.max(0,rows.length-1)} 題；欄位 ${h.length} 欄。${h.includes('考試名稱')&&h.includes('題號')?'已找到考試名稱與題號欄位。':'請確認第一列含有考試名稱、題號等標題。'}`}
     function loadXlsx(done){if(typeof XLSX!=='undefined'){done();return}const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';s.onload=done;s.onerror=()=>alert('Excel 讀取工具載入失敗，請確認網路後重試。');document.head.appendChild(s)}
+    function loadXlsxAsync(){
+      if(typeof XLSX!=='undefined')return Promise.resolve();
+      return new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js';s.onload=resolve;s.onerror=()=>reject(new Error('Excel 讀取工具載入失敗，請確認網路後重試。'));document.head.appendChild(s)});
+    }
     function readCsvFile(f){if(!f)return;if(/\.xlsx?$/i.test(f.name)){loadXlsx(()=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});questionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectCsv()}catch(err){alert('無法讀取 Excel：'+err.message)}};r.readAsArrayBuffer(f)});return}const r=new FileReader();r.onload=()=>{questionCsv.value=r.result;inspectCsv()};r.readAsText(f,'utf-8')}
     function inspectSolCsv(){const rows=parseCSV(solutionCsv.value);const p=solPreview;if(!rows.length){p.style.display='none';return}const h=rows[0];const ready=h.includes('考試名稱')&&h.includes('題號')&&h.includes('詳解');p.style.display='block';p.textContent=`偵測到 ${Math.max(0,rows.length-1)} 筆詳解；${ready?'已找到考試名稱、題號、詳解欄位。':'請確認第一列含有考試名稱、題號、詳解三個欄位。'}`}
     function readSolFile(f){if(!f)return;if(/\.xlsx?$/i.test(f.name)){loadXlsx(()=>{const r=new FileReader();r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});solutionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectSolCsv()}catch(err){alert('無法讀取 Excel：'+err.message)}};r.readAsArrayBuffer(f)});return}const r=new FileReader();r.onload=()=>{solutionCsv.value=r.result;inspectSolCsv()};r.readAsText(f,'utf-8')}
@@ -1300,7 +1304,8 @@
       const directStatus=document.getElementById('ocrStatus'),directBase=ocrBase();
       if(OCR_RESULT.qbankUrl){
         directStatus.textContent='正在取得茲茲 OCR 題庫 Excel…';
-        loadXlsx(async()=>{try{const rr=await fetch(directBase+OCR_RESULT.qbankUrl);if(!rr.ok)throw new Error('下載題庫 Excel 失敗（'+rr.status+'）');const wb=XLSX.read(await rr.arrayBuffer(),{type:'array'});questionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectCsv();directStatus.textContent='已從茲茲 OCR 取得題庫 Excel，轉成 CSV 填入第 4 步；請人工核對後匯入。';if(auto!==true){_revealQuestionCsv();if(document.getElementById('autoImportQuestions')?.checked)sendQuestionsToQbank()}}catch(e){directStatus.textContent='取得題庫 Excel 失敗：'+(e.message||e)}});
+        const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
+        try{await loadXlsxAsync();const rr=await fetch(directBase+OCR_RESULT.qbankUrl,{signal:ctl.signal});if(!rr.ok)throw new Error('下載題庫 Excel 失敗（'+rr.status+'）');const wb=XLSX.read(await rr.arrayBuffer(),{type:'array'});questionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectCsv();directStatus.textContent='已從茲茲 OCR 取得題庫 Excel，轉成 CSV 填入第 4 步；請人工核對後匯入。';if(auto!==true){_revealQuestionCsv();if(document.getElementById('autoImportQuestions')?.checked)sendQuestionsToQbank()}}catch(e){directStatus.textContent='取得題庫 Excel 失敗：'+(e.name==='AbortError'?'等待 OCR 主機超過 45 秒，請確認主機仍在運作後重試。':(e.message||e))}finally{clearTimeout(timer)}
         return;
       }
       const st=document.getElementById('ocrStatus');
@@ -1412,7 +1417,7 @@
     watch('dehandProgressBar',()=>{const bar=document.getElementById('dehandProgressBar'),p=parseFloat(bar.style.width);if(!isNaN(p))pipeProgress(2,p,((document.getElementById('dehandPageMeta')||{}).textContent||'')+' · '+((document.getElementById('dehandProgressText')||{}).textContent||'').split('：')[0])});
     wrap('syncExamNameFromFile',function(o,a){const r=o.apply(this,a);const n=(document.getElementById('examName')||{}).value||(document.getElementById('rawName')||{}).value||'';if(a[0]){const keep=PIPE.sel;pipeStart(1,'');pipeDone(1,n.slice(0,22));if(pipeStep(2).state==='run')PIPE.sel=keep}return r});
     wrap('runAutoOcr',async function(o,a){if(!a[0])return o.apply(this,a);pipeSkip(2,'已略過（直接用乾淨 PDF）');pipeSkip(1,'');pipeStart(3,'送出中');let r;try{r=await o.apply(this,a)}catch(e){pipeFail(3,e&&e.message);throw e}
-      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_PDF_FILE===a[0]){pipeDone(3,'文字辨識完成');if(OCR_RESULT.qbankUrl)ocrMakeCsv(true)}return r});
+      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_PDF_FILE===a[0]){pipeDone(3,'文字辨識完成');ocrMakeCsv(true)}return r});
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
