@@ -1173,10 +1173,10 @@
             <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
           </div>
           <div class="wz-chips" id="wzSylVerRow" style="margin-bottom:10px;display:none;align-items:center;flex-wrap:wrap;gap:6px">
-            <span style="font-weight:700;color:#6e6f74">生物課本版本：</span>
+            <span style="font-weight:700;color:#6e6f74">七上生物章節編排：</span>
             <button type="button" class="wz-chip on" data-sv="hanlin" onclick="wzSetSylVer(this,'hanlin')">翰林版</button>
             <button type="button" class="wz-chip" data-sv="laiyan" onclick="wzSetSylVer(this,'laiyan')">賴妍講義版</button>
-            <span style="font-size:12px;color:#9a8f83">同一批題目可切兩種章節編排（只有七上生物有差異，不影響資料庫）</span>
+            <span style="font-size:12px;color:#9a8f83">僅影響國中七上生物；理化、地科與其餘冊次固定採翰林課綱，不影響資料庫</span>
           </div>
           <div id="wzLevelGate" style="padding:34px 16px;text-align:center;color:#9a8f83;font-size:14.5px;line-height:1.9">請先選擇<b style="color:var(--red)">學制</b>（國中／高中），<br>再從課綱樹狀選擇章節範圍</div>
           <div id="wzScopeArea" hidden>
@@ -4854,6 +4854,9 @@ let WZ_UNITKEYS=[];     // 監控清單各節點 key（供點擊 index 對應）
 let WZ_MONEXPANDED=new Set(); // 監控樹已展開的節點 key（預設全收合）
 let WZ_SCOPE=new Set();          // 已勾選的葉節點 key（field|book|unit|sub）
 let WZ_TREEDATA=[];              // [{field,book,label,count,units:[{unit,count,subs:[{sub,count,key}]}]}]
+// 題組 ID 是匯入資料中的人工欄位，不能假定跨考卷全域唯一。組卷精靈另建
+// 「考卷＋冊次＋題組 ID」快取，避免同名題組把別科／別冊的最後章節借過來。
+let WZ_GROUP_LATEST=null;
 let WZ_COLLAPSED=new Set();      // 收合的節點 id
 let WZ_SCORE_TARGET=100;     // 自動配分的目標總分
 let WZ_SCORE_MANUAL=false;   // 使用者手動改過配分後，不再自動配成 100 分
@@ -4937,12 +4940,28 @@ function _wzLaiyanRefine(it){
   }
   return null;
 }
+function _wzGroupIdentity(it){
+  return [it.year||'',it.school||'',it.exam||'',it.book||'',it.groupId||''].join(WZ_SEP);
+}
+function _wzEffGroupUnitSub(it){
+  if(!it||!it.groupId)return {unit:(it&&it.unit)||'',sub:(it&&it.sub)||'',rep:it};
+  if(!WZ_GROUP_LATEST){
+    WZ_GROUP_LATEST={};
+    DB.forEach(row=>{
+      if(!row||!row.groupId||row.type==='passage')return;
+      const key=_wzGroupIdentity(row),r=_chapSecRank(row.unit,row.sub),cur=WZ_GROUP_LATEST[key];
+      if(!cur||r>cur.r)WZ_GROUP_LATEST[key]={r:r,unit:row.unit||'',sub:row.sub||'',rep:row};
+    });
+  }
+  return WZ_GROUP_LATEST[_wzGroupIdentity(it)]||{unit:it.unit||'',sub:it.sub||'',rep:it};
+}
 // 回傳某題在「目前選用版本」下的 (unit, sub)。賴妍版只對國中七上生物(JB1)做對應，其餘原樣。
 function _wzUS(it){
-  // 題組題跨章節時，整組統一用「最後章節」那一題的分類（組卷精靈分類樹／篩選用）。
-  const eff=effGroupUnitSub(it),rep=eff.rep||it,eu=eff.unit||'',es=eff.sub||'';
+  // 題組題跨章節時，整組統一用「同一份考卷、同一冊」最後章節；不能跨資料列借分類。
+  const eff=_wzEffGroupUnitSub(it),rep=eff.rep||it,eu=eff.unit||'',es=eff.sub||'';
   const book=(rep&&rep.book)||(it&&it.book);
-  if(WZ_SYLVER==='laiyan'&&book==='JB1'){
+  // 賴妍講義版僅有國七上「生物」的編排，絕不能套用到同冊的其他資料。
+  if(WZ_SYLVER==='laiyan'&&book==='JB1'&&_wzFieldFor(rep,eu,es)==='生物'){
     const sec=LAIYAN_BIO_SECMAP[eu+WZ_SEP+es];
     if(sec)return _wzLaiyanRefine(rep)||sec;
     const u=LAIYAN_BIO_UNITMAP[eu];
@@ -4953,14 +4972,15 @@ function _wzUS(it){
 const _WZ_BOOKLABEL={JB1:'第一冊',JB2:'第二冊',JB3:'第三冊',JB4:'第四冊',JB5:'第五冊',JB6:'第六冊'};
 function _wzLevelOf(b){if(!b)return '';if(/^JB[1-6]$/.test(b))return '國中';if(HS_BOOKS.includes(b))return '高中';return '';}
 function _wzBookOrder(b){const i=['JB1','JB2','JB3','JB4','JB5','JB6'].indexOf(b);if(i>=0)return i;const h=HS_BOOKS.indexOf(b);if(h>=0)return 100+h;return 500;}
-function _wzFieldFor(it){
+function _wzFieldFor(it,unit,sub){
   // 第五、六冊同時含理化與地科，不能僅用冊數或題目舊欄位判斷；以課綱的「冊＋單元＋子單元」為準。
-  const rec=SYL.find(k=>k.book===it.book&&k.unit===it.unit&&k.sub===it.sub)
-    ||SYL.find(k=>k.book===it.book&&k.unit===it.unit);
+  const u=unit===undefined?it.unit:unit,s=sub===undefined?it.sub:sub;
+  const rec=SYL.find(k=>k.book===it.book&&k.unit===u&&k.sub===s)
+    ||SYL.find(k=>k.book===it.book&&k.unit===u);
   return (rec&&rec.field)||it.field||'未分類';
 }
 function _wzFieldOrder(f){const i=['生物','理化','地科','物理','化學'].indexOf(f);return i<0?99:i;}
-function _wzLeafKey(it){const us=_wzUS(it);return _wzFieldFor(it)+WZ_SEP+(it.book||'')+WZ_SEP+us.unit+WZ_SEP+us.sub;}
+function _wzLeafKey(it){const us=_wzUS(it);return _wzFieldFor(it,us.unit,us.sub)+WZ_SEP+(it.book||'')+WZ_SEP+us.unit+WZ_SEP+us.sub;}
 function _wzPath(it){return _wzLeafKey(it)+WZ_SEP+(it.kp||'（未標知識點）');}
 function _wzExcludedQids(){
   const s=new Set();
@@ -5033,7 +5053,7 @@ function wzSetLevel(btn,lv){
   document.querySelectorAll('#composer .wz-chip[data-lv]').forEach(b=>b.classList.toggle('on',b===btn));
   document.getElementById('wzLevelGate').hidden=true;
   document.getElementById('wzScopeArea').hidden=false;
-  // 生物課本版本切換只對「國中」有意義（七上生物才有翰林／賴妍兩版）；高中隱藏並復原成翰林。
+  // 生物課本版本切換只對「國中七上生物」有意義；高中隱藏並復原成翰林。
   const svRow=document.getElementById('wzSylVerRow');
   if(svRow)svRow.style.display=(lv==='國中')?'':'none';
   if(lv!=='國中'&&WZ_SYLVER!=='hanlin'){WZ_SYLVER='hanlin';document.querySelectorAll('#composer .wz-chip[data-sv]').forEach(b=>b.classList.toggle('on',b.dataset.sv==='hanlin'));}
@@ -5049,10 +5069,12 @@ function wzSetSylVer(btn,ver){
 }
 // 依科目＋冊→大單元→子單元分組。國九第五、六冊同時有理化與地科，絕不可合成同一冊節點。
 function wzBuildTree(){
+  // DB 可能剛剛經過匯入、編輯或刪除；每次重建範圍樹都使用新的題組索引。
+  WZ_GROUP_LATEST=null;
   const pool=_wzPool().filter(it=>!WZ_LEVEL||_wzLevelOf(it.book)===WZ_LEVEL);
   const byBook={};
   pool.forEach(it=>{
-    const b=it.book||'（未分冊）',f=_wzFieldFor(it),us=_wzUS(it),u=us.unit,s=us.sub,key=f+WZ_SEP+b;
+    const b=it.book||'（未分冊）',us=_wzUS(it),f=_wzFieldFor(it,us.unit,us.sub),u=us.unit,s=us.sub,key=f+WZ_SEP+b;
     byBook[key]=byBook[key]||{book:b,field:f,units:{}};
     byBook[key].units[u]=byBook[key].units[u]||{subs:{}};
     byBook[key].units[u].subs[s]=(byBook[key].units[u].subs[s]||0)+1;
