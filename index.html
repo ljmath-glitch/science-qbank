@@ -4701,7 +4701,7 @@ function _mixLvl(it){return effDiffLvl(it)}
 // 題源（不含題組文章本身）；組卷精靈開啟時以精靈範圍(WZ_SCOPE)為題源，否則用題庫管理的篩選
 function _mixSelectablePool(){
   const wzOn=(typeof WZ_SCOPE!=='undefined')&&document.getElementById('composer')&&!document.getElementById('composer').hidden;
-  if(wzOn)return DB.filter(it=>it&&it.type!=='passage'&&wzInScope(it));
+  if(wzOn){const ex=(typeof _wzExcludedQids==='function')?_wzExcludedQids():new Set();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id)&&wzInScope(it));}
   return DB.filter(it=>it&&it.type!=='passage'&&matches(it));
 }
 function _mixSyncMode(){const m=document.getElementById('mixMode').value;
