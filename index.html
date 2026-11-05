@@ -5995,13 +5995,15 @@ function refreshPaperSettingsPreview(){
     if((mode==='inline'||mode==='full')&&it.ans)extra=`<div style="color:#a52b25;margin-left:16px">答案：${esc(it.ans)}</div>`;
     if(mode==='full'&&it.sol)extra+=`<div style="color:#286452;margin-left:16px">詳解：${applyRichMarks(esc(fixLatex(it.sol)).replace(/\n/g,'<br>'))}</div>`;
     const tag=showTag?`<div style="font-size:11px;color:#888;margin-bottom:3px">${esc(it.book||'')} ${esc(it.unit||'')}・${esc(it.sub||'')}</div>`:'';
-    const source=showSource||showSourceFull?`<div style="font-size:10px;color:#777;text-align:right">［${esc(getSource(it,showSourceFull))}］</div>`:'';
+    // 單題出處＝題末靠右；題組出處改放題組文章圖片下方（見下），不逐小題重複。
+    const source=(showSource||showSourceFull)&&section!=='group'?`<div style="font-size:10px;color:#777;text-align:right">［${esc(getSource(it,showSourceFull))}］</div>`:'';
     const imgs=(it.imgs||[]).filter(im=>im&&im.src).slice(0,2).map(im=>`<img src="${esc(im.src)}" alt="題目圖片" style="display:block;max-width:${Math.min(100,Math.max(15,Number(im.width)||65))}%;max-height:170px;object-fit:contain;margin:6px auto">`).join('');
     let passage='';
     if(sections.groupIds.has(it.groupId)&&!shownPassages.has(it.groupId)){
       shownPassages.add(it.groupId);const p=PASSAGES[it.groupId]||{};
       const pImgs=(p.imgs||[]).filter(im=>im&&im.src).slice(0,1).map(im=>`<img src="${esc(im.src)}" alt="題組圖片" style="display:block;max-width:65%;max-height:130px;object-fit:contain;margin:5px auto">`).join('');
-      passage=`<div class="pdoc-pass">${applyRichMarks(esc(fixLatex(p.q||'')).replace(/\n/g,'<br>'))}${pImgs}</div>`;
+      const pSrc=(showSource||showSourceFull)?`<div style="font-size:10px;color:#777;text-align:right">［${esc(getSource(it,showSourceFull))}］</div>`:'';
+      passage=`<div class="pdoc-pass">${applyRichMarks(esc(fixLatex(p.q||'')).replace(/\n/g,'<br>'))}${pImgs}${pSrc}</div>`;
     }
     if(paperKind==='abk'){
       const parts=rawQuestion.split(/\n(?=\s*\([A-Ea-e]\))/),stem=parts[0]||'',opts=parts.slice(1).filter(x=>/^\s*\([A-Ea-e]\)/.test(x));
@@ -9313,6 +9315,22 @@ function _preCenterInlineImages(xml){
 function _tplPassageLeftAlign(xml){
   return String(xml||'').replace(/<w:txbxContent\b[\s\S]*?<\/w:txbxContent>/g,box=>box.replace(/<w:jc w:val="both"\/>/g,'<w:jc w:val="left"/>'));
 }
+// 題目出處（單題）：把題末以  包住的出處拆成「自成一行、靠右、不編號」的獨立段落。
+function _tplSourceQuestion(xml){
+  const RE=/(?:<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:br\/>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>)?<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:t[^>]*>([^]*)<\/w:t>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/g;
+  return String(xml||'').replace(RE,(m,src)=>`</w:p><w:p><w:pPr><w:spacing w:after="120" w:line="288" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="DFPYuanMedium-B5"/><w:color w:val="808080"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="DFPYuanMedium-B5"/><w:color w:val="808080"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t xml:space="preserve">${src}</w:t></w:r>`);
+}
+// 題目出處（題組）：把以  包住的出處從題組文章段落中移除，改成在該文字方塊「圖片之後」新增一行靠右段落。
+function _tplSourcePassage(xml){
+  return String(xml||'').replace(/<w:txbxContent\b[\s\S]*?<\/w:txbxContent>/g,block=>{
+    const m=block.match(/([^]*)/);
+    if(!m)return block;
+    const src=m[1];
+    const b=block.replace(/(?:<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:br\/>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>)?<w:r\b[^>]*>(?:(?!<\/w:r>)[\s\S])*?<w:t[^>]*>[^]*<\/w:t>(?:(?!<\/w:r>)[\s\S])*?<\/w:r>/,'');
+    const para=`<w:p><w:pPr><w:spacing w:before="40" w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="right"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="DFPYuanMedium-B5"/><w:color w:val="808080"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="DFPYuanMedium-B5"/><w:color w:val="808080"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr><w:t xml:space="preserve">${src}</w:t></w:r></w:p>`;
+    return b.replace('</w:txbxContent>',para+'</w:txbxContent>');
+  });
+}
 // ABK 標題位於範本文字方塊；多行標題時擴大文字方塊並啟用自動適應，
 // 避免第二行被固定高度裁掉或壓到下方分隔線。
 function _abkFitMultilineTitle(xml){
@@ -10286,6 +10304,9 @@ async function downloadWordViaTemplate(kind,opts){
           const range=groupRanges.get(it.groupId);
           let text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'');   // 範本段落自帶「◎ 」開頭
           if(range&&!/根據.{0,12}回答以下/.test(text))text+='\n根據文章內容，請回答以下'+range.first+'～'+range.last+'題。';
+          // 題組出處：接在題組文章（含圖）之後、靠右自成一行（以  標記，後處理搬到圖片下方）。
+          const _psrc=showSrcFull?getSource(it,true):(showSrc?getSource(it):'');
+          if(_psrc)text+='\n［'+_psrc+'］';
           passage={text,imgs:await _tplResolveImgs(ps.imgs)};
         }
       }
@@ -10303,9 +10324,10 @@ async function downloadWordViaTemplate(kind,opts){
       if(placement==='beside')qText=qText.replace(/\n(?=\([A-Ea-e]\))/, '\n'+PRE_IMG_SENTINEL);
       // 版面判定（選項字數、圖片位置）都用純文字；底線標記最後才加，避免私用字元被當成字數。
       qText=_markUnderlineKeywords(qText);
-      // 題目出處接在選項後、自成一行（與預覽一致）；底線標記之後才加，避免出處被加底線。
+      // 題目出處（單題）接在選項後、自成一行靠右（後處理 _tplSourceQuestion 拆成獨立右對齊段落）；
+      // 題組題的出處改放在題組文章圖片下方，不逐小題重複，所以這裡略過 group。
       const _srcText=showSrcFull?getSource(it,true):(showSrc?getSource(it):'');
-      if(_srcText)qText+='\n［'+_srcText+'］';
+      if(k!=='group'&&_srcText)qText+='\n［'+_srcText+'］';
       items.push({no:qno,text:qText,imgs:resolvedImgs,placement,passage});
     }
     // ABK 大題的「一、二、…」由 Word 清單 numId 87 產生；資料只填名稱。
@@ -10368,6 +10390,10 @@ async function downloadWordViaTemplate(kind,opts){
     xml2=xml2.split(PRE_IMG_SENTINEL).join('');
     // 題組文字方塊內的段落一律靠左（不要兩端對齊）。
     xml2=_tplPassageLeftAlign(xml2);
+    // 題目出處：單題拆成題末靠右段落；題組搬到文章圖片下方靠右（需在答案框之前處理，避免影響答案 run）。
+    xml2=_tplSourcePassage(xml2);
+    xml2=_tplSourceQuestion(xml2);
+    xml2=xml2.split('').join('').split('').join('');   // 清掉殘留標記
     // 教用版答案使用紅色文字方塊；題組文章內的文字方塊會被 _tplAnswerBoxes 略過。
     if(opts.teacher)xml2=_tplAnswerBoxes(xml2);
     renderedZip.file('word/document.xml',xml2);
