@@ -184,14 +184,14 @@
         </li>
         <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
-            <div class="detail-title">題庫 Excel 已自動產生</div><p class="help">可直接匯入或下載；只有要人工修改內容時才展開原始資料。</p>
+            <div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「⬆ 匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
             <div class="enrich" id="enrichBox"><div class="enrich-head"><b>本機 AI 補齊明細</b><span class="help">批次補上：冊數、冊名、領域、大單元、子單元、知識點、題目摘要（已有的不會動）</span></div>
             <div class="row"><label class="help">AI 引擎 <select id="enrichEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="enrichConn"></span></div>
             <div class="row"><button class="btn green" id="enrichBtn" onclick="enrichQuestions()">批次補齊明細</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="enrichAuto" type="checkbox" checked> 題庫 Excel 產生後自動補齊</label></div>
             <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus">缺少明細的題目會分批交給本機 AI 判斷，不需要逐題操作。</div></div>
-            <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox" checked> 送出後直接開啟題庫匯入</label><button class="btn green" onclick="sendQuestionsToQbank()">⬆ 匯入題庫</button><button class="btn" onclick="downloadCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">⬇ 下載 Excel</button></div>
+            <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗（預設關閉，先讓你檢查）</label><button class="btn green" onclick="sendQuestionsToQbank()">⬆ 匯入題庫（核對後）</button><button class="btn" onclick="downloadCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">⬇ 下載 Excel</button></div>
           </div>
         </li>
       </ol>
@@ -397,7 +397,7 @@
     function sendSolutionsToQbank(){const c=solutionCsv.value.trim();if(!c){alert('請先貼上或選擇詳解 CSV');return}const h=parseCSV(c)[0]||[];if(!h.includes('考試名稱')||!h.includes('題號')||!h.includes('詳解')){alert('詳解 CSV 第一列必須包含：考試名稱、題號、詳解');return}localStorage.setItem('qbank_handoff_solutions',c);if(document.getElementById('autoImportSolutions')?.checked!==false)window.open('index.html?handoff=solutions','_blank');else document.getElementById('solPreview').textContent='已保留詳解資料；可下載 Excel，稍後再從題庫系統匯入。'}
     function downloadSolutionCsv(){const c=solutionCsv.value.trim();if(!c)return alert('請先貼上詳解 CSV');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}));a.download=(examName.value||'詳解')+'_詳解.csv';a.click()}
     function downloadSolutionXlsx(){const c=solutionCsv.value.trim();if(!c)return alert('請先貼上詳解 CSV');downloadSheetXlsx(c,(examName.value||'詳解')+'_詳解.xlsx','詳解')}
-    function sendQuestionsToQbank(){const c=questionCsv.value.trim();if(!c){alert('請先貼上或選擇題目 CSV');return}localStorage.setItem('qbank_handoff_questions',c);if(document.getElementById('autoImportQuestions')?.checked!==false)window.open('index.html?handoff=questions&exam='+encodeURIComponent(examName.value),'_blank');else document.getElementById('csvPreview').textContent='已保留題目資料；可下載 Excel，稍後再從題庫系統匯入。'}
+    function sendQuestionsToQbank(){const c=questionCsv.value.trim();if(!c){alert('請先貼上或選擇題目 CSV');return}localStorage.setItem('qbank_handoff_questions',c);window.open('index.html?handoff=questions&exam='+encodeURIComponent(examName.value),'_blank');}
     function downloadCsv(){const c=questionCsv.value.trim();if(!c)return alert('請先貼上 CSV');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+c],{type:'text/csv;charset=utf-8'}));a.download=(examName.value||'題目')+'.csv';a.click()}
     function downloadQuestionXlsx(){const c=questionCsv.value.trim();if(!c)return alert('請先貼上題目 CSV');downloadSheetXlsx(c,(examName.value||'題目')+'.xlsx','題目')}
     const cropFiles={pdf:null,word:null};const GEMINI_SESSION_KEY='qbank_gemini_api_key';let transientGeminiKey=sessionStorage.getItem(GEMINI_SESSION_KEY)||'';let cropCandidates=[];
