@@ -2053,7 +2053,8 @@ function precompute(it){
   it._examType=examType(it.exam,it.school);
   it._examRoundNum=examRoundNum(it.exam);
   it._grade=gradeFromExam(it.exam,it.book);
-  it._fixedQ=fixLatex(it.q||'');
+  // 注意：_fixedQ（fixLatex 修公式）改成「用到才算」（見 render），不在載入時對全部題目一次跑完，
+  // 否則 7000+ 題一次 fixLatex 會把主執行緒卡住數秒（Safari／弱機尤其明顯、整頁「沒有回應」）。
   return it;
 }
 
@@ -2111,7 +2112,12 @@ async function load(){
     PASSAGES={};
     all.filter(x=>x.type==='passage').forEach(x=>{if(x.groupId)PASSAGES[x.groupId]=x;});
     DB=all.filter(x=>x.type!=='passage');
-    DB.forEach(precompute);
+    // 分批 precompute 並讓出主執行緒：一次處理數千題會把畫面卡成「沒有回應」（Safari／弱機尤其明顯）。
+    for(let i=0;i<DB.length;i+=800){
+      const end=Math.min(DB.length,i+800);
+      for(let j=i;j<end;j++)precompute(DB[j]);
+      if(end<DB.length)await new Promise(r=>setTimeout(r,0));
+    }
     sortDB();
   }
   const {data:sylRow,error:e2}=await sb.from('syllabus_doc').select('content').eq('id',1).maybeSingle();
@@ -4567,7 +4573,7 @@ function renderPage(list,shown,start){
     }
     const d=calcDiff(it.step,it.mem,it.con);
     const gl=effDiffLvl(it); // 題組顯示整組統一難易度（最難那題）
-    const cleanQ=it._fixedQ!==undefined?it._fixedQ:fixLatex(it.q||'');
+    const cleanQ=it._fixedQ!==undefined?it._fixedQ:(it._fixedQ=fixLatex(it.q||''));
     const optEsc=applyRichMarks(esc(cleanQ)).replace(/\n/g,'<br>');
     const imgs=(it.imgs||[]).map(im=>imgHtml(im,true)).join('');
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
