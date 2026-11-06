@@ -103,7 +103,12 @@ export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
     d[o]=d[o+1]=d[o+2]=v;d[o+3]=255}}
   fctx.putImageData(fd,0,0);return full
 }
-async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){const c=pg.canvas||pg,blob=pg.blob&&pg.blobOf===c?pg.blob:await toBlob(c,'image/jpeg',.92),png=await pdf.embedJpg(await blob.arrayBuffer()),k=Math.min(1,Math.max(72/300,595/Math.min(c.width,c.height))),w=c.width*k,h=c.height*k,p=pdf.addPage([w,h]);p.drawImage(png,{x:0,y:0,width:w,height:h})}return new Blob([await pdf.save()],{type:'application/pdf'})}
+async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){
+    // 支援三種來源：已編輯頁（pg.canvas）、直接傳入的 canvas（pg 本身）、清稿頁（只有 pg.blob＋寬高，省記憶體）。
+    const cv=pg.canvas||(pg&&typeof pg.getContext==='function'?pg:null);let blob,cw,ch;
+    if(cv){cw=cv.width;ch=cv.height;blob=(pg.blob&&pg.blobOf===cv)?pg.blob:await toBlob(cv,'image/jpeg',.92)}
+    else{blob=pg.blob;cw=pg.w;ch=pg.h}
+    const png=await pdf.embedJpg(await blob.arrayBuffer()),k=Math.min(1,Math.max(72/300,595/Math.min(cw,ch))),w=cw*k,h=ch*k,p=pdf.addPage([w,h]);p.drawImage(png,{x:0,y:0,width:w,height:h})}return new Blob([await pdf.save()],{type:'application/pdf'})}
 export function preload(mode='v10'){return getSession(mode).catch(e=>{console.warn('模型預載失敗',e)})}
 export async function cleanFile(file,{loadPdfJs,onProgress,onPage,mode='v10'}={}){const began=performance.now(),el=()=>((performance.now()-began)/1000).toFixed(1);let total=0;const emit=(stage,percent,page=0,message='')=>onProgress&&onProgress({stage,percent,page,total,message,elapsed:el()}),src=await (emit('讀取檔案',2,0,'正在讀取檔案'),filePages(file,loadPdfJs));total=src.count;const pages=[];
   emit('載入模型',8,0,'正在載入去筆跡模型');await getSession(mode);emit('逐頁轉影像',14,0,`共 ${total} 頁，準備轉為影像`);
@@ -112,7 +117,9 @@ export async function cleanFile(file,{loadPdfJs,onProgress,onPage,mode='v10'}={}
   let next=src.get(0),shown=Promise.resolve();
   for(let i=0;i<total;i++){emit('逐頁轉影像',14+i/total*12,i+1,`正在轉換第 ${i+1}/${total} 頁`);const source=await next;if(i+1<total)next=src.get(i+1);const beforeP=blobUrl(source,'image/jpeg',.8),
     clean=await cleanCanvas(source,(n,t)=>emit('逐頁清除筆跡',26+(i+n/t)/total*62,i+1,`第 ${i+1}/${total} 頁，清稿切塊 ${n}/${t}`),{mode,wmBg}),blobP=toBlob(clean,'image/jpeg',.92);
-    shown=shown.then(async()=>{const blob=await blobP,page={before:await beforeP,after:URL.createObjectURL(blob),canvas:clean,blob,blobOf:clean};pages[i]=page;onPage&&onPage(page,i)})}
+    // 記憶體：不保留整頁原解析度 canvas（每頁約十幾 MB，多頁會累積上百 MB 把弱機/Safari 壓垮）。
+    // 只留輸出的 JPEG blob 與寬高；編輯器用 before/after 的 URL，匯出 PDF 用 blob，都不需要這張 canvas。
+    shown=shown.then(async()=>{const blob=await blobP,page={before:await beforeP,after:URL.createObjectURL(blob),blob,w:clean.width,h:clean.height};pages[i]=page;onPage&&onPage(page,i)})}
   await shown;
   emit('合成乾淨 PDF',92,total,'正在合成乾淨 PDF');const pdf=await pdfFromCanvases(pages);emit('合成乾淨 PDF',100,total,'乾淨 PDF 已完成');return{pages,file:new File([pdf],file.name.replace(/\.[^.]+$/,'')+'-清稿.pdf',{type:'application/pdf'})}}
 export async function makePdfFromPages(pages){return pdfFromCanvases(pages)}
