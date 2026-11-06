@@ -2,7 +2,7 @@
  * 茲茲數學工具嵌入（題庫端）：開啟工具、收發 postMessage、驗證訊息
  * ---------------------------------------------------------------------
  * 通訊格式：課務系統 repo 的 docs/mt-embed-protocol.md（v1）。
- * 題庫端說明：docs/mt-embed.md。
+ * 題庫端說明：docs/integrations/math-tool-embed.md。
  *
  * 這支檔案只負責「開工具 → 拿回結果」，不碰題庫資料；
  * 存圖、插公式等由 index.html 的「茲茲數學工具整合」區塊處理。

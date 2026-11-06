@@ -2,3 +2,9 @@
 tools/.venv/
 tools/__pycache__/
 *.pyc
+
+# 本機 OCR 模型、測試輸入與編輯器設定；不提交公開 GitHub。
+.claude/launch.json
+_t_local.jpg
+tools/models/handwriting-eraser-v10.onnx
+tools/models/ppocr/

@@ -2,7 +2,7 @@
 /* 本機 AI 橋接：讓題庫網頁（AI 健檢、批次補齊題目明細）改用你電腦上已安裝的 AI 命令列工具，不耗 API token。
  * 支援 agy（Antigravity／Google AI Pro）、claude（Claude Code CLI）、codex（Codex CLI）；請求可指定 engine，auto 依序挑第一個有安裝的。
  * 只聽 127.0.0.1，再用 `tailscale serve` 以 HTTPS 開放給你的 tailnet；每個請求都要帶 token。
- * 用法見 docs/AGY_BRIDGE.md。 */
+ * 用法見 docs/integrations/agy-bridge.md。 */
 const http=require('http'),fs=require('fs'),os=require('os'),path=require('path'),crypto=require('crypto');
 const {spawn}=require('child_process');
 const PORT=+process.env.PORT||8790;

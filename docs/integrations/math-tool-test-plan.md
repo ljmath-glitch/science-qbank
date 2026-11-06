@@ -99,7 +99,7 @@
 | 題庫分支 | `ljmath-glitch/science-qbank` → `claude/mt-embed-integration` |
 | 工具分支 | `ljmath-glitch/tzutzu-course-system` → `claude/mt-embed-qbank` |
 | 通訊格式（READY／INIT／DONE／CANCEL／ERROR，v1） | 工具 repo：`docs/mt-embed-protocol.md` |
-| 題庫端說明與 `imgs[].mt` 資料格式 | 題庫 repo：`docs/mt-embed.md`、`CLAUDE.md` §6.15 |
+| 題庫端說明與 `imgs[].mt` 資料格式 | 題庫 repo：`docs/integrations/math-tool-embed.md`、`CLAUDE.md` §6.15 |
 | 題庫端設定（工具網址白名單） | 題庫 repo：`mt-embed-client.js` 最上方 |
 
 圖片在 `questions.imgs` 中的格式：

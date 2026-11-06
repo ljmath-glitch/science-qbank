@@ -165,7 +165,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 | **Ollama（本機）** | 不需要 API Key | 見第 7 節，是這次新加的功能，細節最多 |
 
 固定的詳解撰寫規則（寫死在 `makeSolPrompt()`，`index.html:2551`）：
-- 只輸出【詳解】與內容；完整規則見 `docs/詳解輸出規則.md`。
+- 只輸出【詳解】與內容；完整規則見 `docs/answer-key/solution-output-rules.md`。
 - 選擇題每個選項要標「(X) 正確：」或「(X) 錯誤：」
 - LaTeX 一律只用單錢字號 `$...$`，絕對不能用 `$$...$$`
 - 如果原本沒有答案，AI 會先自行判斷正確答案，用「【AI 判斷答案】X」標示，程式會自動抓出來回填答案欄
@@ -348,7 +348,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 | **Ollama（本機）** | 不需要 API Key | 見第 7 節，是這次新加的功能，細節最多 |
 
 固定的詳解撰寫規則（寫死在 `makeSolPrompt()`，`index.html:2551`）：
-- 只輸出【詳解】與內容；完整規則見 `docs/詳解輸出規則.md`。
+- 只輸出【詳解】與內容；完整規則見 `docs/answer-key/solution-output-rules.md`。
 - 選擇題每個選項要標「(X) 正確：」或「(X) 錯誤：」
 - LaTeX 一律只用單錢字號 `$...$`，絕對不能用 `$$...$$`
 - 如果原本沒有答案，AI 會先自行判斷正確答案，用「【AI 判斷答案】X」標示，程式會自動抓出來回填答案欄
@@ -436,7 +436,7 @@ const SUPABASE_ANON_KEY = 'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf';
 - 通訊模組 `mt-embed-client.js`（`window.MTEmbed.open(mode,data)`）：開 iframe（備援「在新視窗開啟」），驗證 postMessage。工具網址白名單 `TOOL_ORIGINS` 與開發用 `TOOL_ORIGIN_OVERRIDE` 只在這支檔案。
 - `index.html` 的「茲茲數學工具整合」區塊：編輯視窗 `mtEditInsertFig`/`mtEditFig`/`mtEditInsertEq`，可編輯預覽 `pvMtInsertFig`/`pvMtEditFig`/`pvMtInsertEq`（直接回寫原題／題組文章那筆）。
 - 圖存在 `imgs[i].mt = {v:1, figureId, config, widthCm, pxW, pxH}`；`uploadImgs()` 現在只換 `src`、其他欄位全保留。
-- 詳細格式與測試步驟：`docs/mt-embed.md`。
+- 詳細格式與測試步驟：`docs/integrations/math-tool-embed.md`。
 
 ---
 
@@ -607,4 +607,4 @@ result=await callOllama(sys,msg,olUrl,olMdl,imgs);
 
 
 ## 2026-10-15 詳解規則更新
-以 docs/詳解輸出規則.md 與 solutionWritingRules() 為準。單題、批次及對話修正共用規則；只寫【詳解】，不產出解題關鍵或觀念補充，限國中課綱，計算題統一解說，否定題依敘述真偽判斷。解析Word為12pt、單行間距、單一連續無框線四欄表格；公式保留單錢號。以上取代本文件舊的三標題、雙錢號說明。
+以 docs/answer-key/solution-output-rules.md 與 solutionWritingRules() 為準。單題、批次及對話修正共用規則；只寫【詳解】，不產出解題關鍵或觀念補充，限國中課綱，計算題統一解說，否定題依敘述真偽判斷。解析Word為12pt、單行間距、單一連續無框線四欄表格；公式保留單錢號。以上取代本文件舊的三標題、雙錢號說明。
