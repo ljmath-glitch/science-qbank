@@ -1208,14 +1208,15 @@
         el.textContent=`✓ 已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR 與題庫 Excel 均由此主機處理。`;
       }catch(e){el.textContent='✗ '+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
     }
-    async function runAutoOcr(file,skipClean){
+    async function runAutoOcr(file,skipClean,cropFile){
       if(!file)return;const base=ocrBase();const st=document.getElementById('ocrStatus');
       if(!base){st.textContent='找不到茲茲 OCR 主機設定。';return}
       OCR_DEMO=false;
-      st.textContent=skipClean?'正在把清稿交給茲茲 OCR…':'正在交給茲茲 OCR 清稿、辨識並產生題庫 Excel…';
+      st.textContent=skipClean?'正在把清稿交給茲茲 OCR…':'正在把原稿交給茲茲 OCR 去筆跡、辨識…';
       document.getElementById('ocrResultWrap').classList.add('hide');
-      OCR_PDF_FILE=file;try{cropFiles.pdf=file;}catch(e){}   // 供手動切圖步驟手動框選修正
-      const run=OCR_ACTIVE_RUN={file,stale:false};
+      const forCrop=cropFile||file;   // OCR 用原稿時，切圖仍沿用清稿
+      OCR_PDF_FILE=forCrop;try{cropFiles.pdf=forCrop;}catch(e){}   // 供手動切圖步驟手動框選修正
+      const run=OCR_ACTIVE_RUN={file:forCrop,stale:false};
       try{
         const data=await file.arrayBuffer();let binary='';const bytes=new Uint8Array(data);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
         const r=await fetch(base+'/api/py-ocr/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:btoa(binary),skipClean:skipClean===true,skipWord:true})});
@@ -1436,7 +1437,7 @@
     const watch=(id,cb)=>{const el=document.getElementById(id);if(el)new MutationObserver(cb).observe(el,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['style']})};
     wrap('startDehand',async function(o,a){const f=a[0];if(!f||(!/\.pdf$/i.test(f.name)&&!/^image\//.test(f.type)))return o.apply(this,a);
       pipeReset();syncExamNameFromFile(f);pipeStart(2,'準備中');document.getElementById('pipeImport').classList.add('has');document.getElementById('pipeImportTitle').textContent='已匯入：'+f.name;document.getElementById('pipeImportHint').textContent='要換一份，再拖放或點此選檔';let r;try{r=await o.apply(this,a)}catch(e){pipeFail(2,e&&e.message);throw e}
-      if(typeof dehandResult!=='undefined'&&dehandResult&&dehandResult.file){pipeDone(2,dehandResult.pages.length+' 頁已清稿');pipeSaveExamPdfs(f,dehandResult.file);await window.runAutoOcr(dehandResult.file,true)}else pipeFail(2,(document.getElementById('dehandError')||{}).textContent||'清稿失敗');return r});
+      if(typeof dehandResult!=='undefined'&&dehandResult&&dehandResult.file){pipeDone(2,dehandResult.pages.length+' 頁已清稿');pipeSaveExamPdfs(f,dehandResult.file);const useOriginal=f.size<=34*1024*1024;await window.runAutoOcr(useOriginal?f:dehandResult.file,!useOriginal,dehandResult.file)}else pipeFail(2,(document.getElementById('dehandError')||{}).textContent||'清稿失敗');return r});
     watch('dehandProgressBar',()=>{const bar=document.getElementById('dehandProgressBar'),p=parseFloat(bar.style.width);if(!isNaN(p))pipeProgress(2,p,((document.getElementById('dehandPageMeta')||{}).textContent||'')+' · '+((document.getElementById('dehandProgressText')||{}).textContent||'').split('：')[0])});
     wrap('syncExamNameFromFile',function(o,a){const r=o.apply(this,a);const n=(document.getElementById('examName')||{}).value||(document.getElementById('rawName')||{}).value||'';if(a[0]){const keep=PIPE.sel;pipeStart(1,'');pipeDone(1,n.slice(0,22));if(pipeStep(2).state==='run')PIPE.sel=keep}return r});
     wrap('runAutoOcr',async function(o,a){if(!a[0])return o.apply(this,a);pipeSkip(2,'已略過（直接用乾淨 PDF）');pipeSkip(1,'');pipeStart(3,'送出中');let r;try{r=await o.apply(this,a)}catch(e){pipeFail(3,e&&e.message);throw e}
