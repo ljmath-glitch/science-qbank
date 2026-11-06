@@ -1235,6 +1235,21 @@
         st.textContent='茲茲 OCR 完成。第 4 步可直接抓取題庫 Excel，或下載原文。';
       }catch(e){st.textContent='辨識失敗：'+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
     }
+    // 練習用 Word：主機從同一份辨識結果組成，不重新上傳
+    async function ocrMakeWord(){
+      const r=OCR_RESULT,base=ocrBase();if(!r||!r.job||!base)return;
+      const anchor=document.getElementById('pipeImport');if(!anchor)return;
+      let box=document.getElementById('pipeWord');
+      if(!box){box=document.createElement('div');box.id='pipeWord';box.style.cssText='margin:12px 0;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fff;line-height:1.6';anchor.insertAdjacentElement('afterend',box)}
+      box.textContent='正在產生練習用 Word…';
+      try{
+        const res=await fetch(base+'/api/py-ocr/word',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({job:r.job})});
+        const j=await res.json().catch(()=>({ok:false,error:res.status===404?'這台主機還沒更新，請稍候再試':'主機回應 '+res.status}));
+        if(OCR_RESULT!==r)return;
+        if(!j.ok||!j.docxUrl)throw new Error(j.error||'主機沒有回傳 Word');
+        box.innerHTML='<a class="btn green" target="_blank" href="'+base+j.docxUrl+'">⬇ 下載練習用 Word</a>'+(j.reviewUrl?' <a class="btn" target="_blank" href="'+base+j.reviewUrl+'">確認清單</a>':'')+'<div class="help" style="margin-top:8px">由 OCR 自動組成，可能有錯字或圖片錯位，請對照原卷校對後再發給學生。</div>';
+      }catch(e){if(OCR_RESULT===r)box.textContent='Word 產生失敗：'+(e.message||e)}
+    }
     function ocrRenderResult(){
       const j=OCR_RESULT;if(!j)return;
       document.getElementById('ocrResultWrap').classList.remove('hide');
@@ -1363,7 +1378,7 @@
   function pipeDone(id,summary){const s=pipeStep(id);if(!PIPE.startedAt&&!s.opt)PIPE.startedAt=Date.now();if(!s.startedAt)s.startedAt=Date.now();const was=s.state;s.state='done';s.pct=100;s.elapsedMs=Date.now()-s.startedAt;s.summary=summary||'';s.detail='';if(was!=='done')s.snap=Date.now();PIPE.sel=id;pipeRender()}
   function pipeFail(id,msg){const s=pipeStep(id);s.state='fail';s.detail=String(msg||'失敗').slice(0,80);s.elapsedMs=s.startedAt?Date.now()-s.startedAt:0;PIPE.sel=id;pipeRender()}
   function pipeSkip(id,msg){const s=pipeStep(id);if(s.state!=='wait')return;s.state='skip';s.detail=msg||'已略過';pipeRender()}
-  function pipeReset(){PIPE.startedAt=0;PIPE.sel=1;PIPE.steps.forEach(s=>{s.state='wait';s.pct=null;s.detail='';s.summary='';s.startedAt=0;s.elapsedMs=0;s.snap=0});pipeRender()}
+  function pipeReset(){const w=document.getElementById('pipeWord');if(w)w.remove();PIPE.startedAt=0;PIPE.sel=1;PIPE.steps.forEach(s=>{s.state='wait';s.pct=null;s.detail='';s.summary='';s.startedAt=0;s.elapsedMs=0;s.snap=0});pipeRender()}
   function setStagesOpen(open){document.body.classList.toggle('stages-closed',!open);if(!open)document.querySelector('.auto-optional')?.classList.remove('active');const b=document.getElementById('stagesToggle');if(b){b.textContent=open?'收合下方操作區':'展開下方操作區';b.setAttribute('aria-expanded',String(open))}}
   setStagesOpen(false);
   function pipeGo(id){
@@ -1425,7 +1440,7 @@
     watch('dehandProgressBar',()=>{const bar=document.getElementById('dehandProgressBar'),p=parseFloat(bar.style.width);if(!isNaN(p))pipeProgress(2,p,((document.getElementById('dehandPageMeta')||{}).textContent||'')+' · '+((document.getElementById('dehandProgressText')||{}).textContent||'').split('：')[0])});
     wrap('syncExamNameFromFile',function(o,a){const r=o.apply(this,a);const n=(document.getElementById('examName')||{}).value||(document.getElementById('rawName')||{}).value||'';if(a[0]){const keep=PIPE.sel;pipeStart(1,'');pipeDone(1,n.slice(0,22));if(pipeStep(2).state==='run')PIPE.sel=keep}return r});
     wrap('runAutoOcr',async function(o,a){if(!a[0])return o.apply(this,a);pipeSkip(2,'已略過（直接用乾淨 PDF）');pipeSkip(1,'');pipeStart(3,'送出中');let r;try{r=await o.apply(this,a)}catch(e){pipeFail(3,e&&e.message);throw e}
-      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_RESULT.forFile===a[0]){pipeDone(3,OCR_RESULT.staleClean?'已完成（用更新前的清稿，可重新辨識）':'文字辨識完成');ocrMakeCsv(true)}return r});
+      const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(/^辨識失敗|^找不到茲茲 OCR/.test(t))pipeFail(3,t);else if(typeof OCR_RESULT!=='undefined'&&OCR_RESULT&&OCR_RESULT.forFile===a[0]){pipeDone(3,OCR_RESULT.staleClean?'已完成（用更新前的清稿，可重新辨識）':'文字辨識完成');ocrMakeWord();ocrMakeCsv(true)}return r});
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
