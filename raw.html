@@ -499,7 +499,7 @@
       const comma=imageData.indexOf(','),mime=(imageData.slice(0,comma).match(/data:([^;]+)/)||[])[1]||'image/jpeg';const payload={contents:[{parts:[{text:instruction},{inline_data:{mime_type:mime,data:imageData.slice(comma+1)}}]}],generationConfig:{temperature:0,responseMimeType:'application/json',maxOutputTokens:2048,thinkingConfig:{thinkingBudget:0}}};let last='';
       for(const model of ['gemini-3.5-flash-lite','gemini-3.5-flash']){const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':transientGeminiKey},body:JSON.stringify(payload)});if(res.ok){const body=await res.json();const raw=body.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'{"assets":[]}';return JSON.parse(raw.replace(/^```json\s*|\s*```$/g,''))}last=await res.text();if(res.status===403)throw new Error('Gemini 金鑰沒有 API 使用權限，或帳戶配額不足。');if(res.status!==429&&res.status!==503&&res.status!==404)throw new Error(`Gemini 無法使用（${res.status}）。請確認金鑰與 API 權限。`)}throw new Error('Gemini 目前繁忙或沒有可用配額；已用省錢模型與備援模型各嘗試一次，請稍後再試。')}
     function renderCropCandidates(){try{setTimeout(drawCropBoxes,0)}catch(e){}const grid=document.getElementById('cropPreviewGrid');const active=cropCandidates.filter(x=>!x.skip);const unknown=active.filter(x=>x.qno===null).length;const review=active.filter(x=>x.verdict!=='pass').length;const sum=document.getElementById('cropSummary');sum.classList.remove('hide');sum.textContent=`共偵測 ${cropCandidates.length} 張候選素材，保留 ${active.length} 張；其中 ${unknown} 張題號未知、${review} 張需人工確認。表格已包含在候選素材內。`;document.getElementById('clearCropResultsBtn').disabled=!cropCandidates.length;
-      grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}" onclick="openCropPreview(${i})"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span>${it.reason?`<div class="crop-meta">${esc(it.reason)}</div>`:''}<div class="crop-actions"><button class="btn" onclick="openCropPreview(${i})">✏️ 編輯</button><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length;
+      grid.innerHTML=cropCandidates.map((it,i)=>`<article class="crop-card ${it.verdict} ${it.skip?'reject':''}"><img src="${it.src}" alt="${esc(it.filename)}" onclick="openCropPreview(${i})"><div class="crop-name">${esc(it.filename)}</div><div class="crop-meta">第 ${it.page} 頁 · ${esc(it.kind)}${it.qno===null?' · 題號未知':(it.scope==='group'?` · 🔗題組共用（代表第 ${it.qno} 題）`:` · 第 ${it.qno} 題`)}</div><span class="crop-pill ${it.verdict}">${it.verdict==='pass'?'AI：可保留':it.verdict==='reject'?'AI：略過':'AI：需人工確認'}</span>${it.qno_conf==='low'?'<div class="crop-meta">⚠ 題號信心低，請確認</div>':''}${it.reason?`<div class="crop-meta">${esc(it.reason)}</div>`:''}<div class="crop-actions"><button class="btn" onclick="openCropPreview(${i})">✏️ 編輯</button><button class="btn" onclick="toggleCropSkip(${i})">${it.skip?'恢復保留':'略過'}</button></div></article>`).join('');document.getElementById('downloadCropZipBtn').disabled=!active.length;document.getElementById('toBatchImageBtn').disabled=!active.length;
       if(cropPreviewIndex!==null&&cropCandidates[cropPreviewIndex])renderCropPreviewModal();}
     function toggleCropSkip(i){cropCandidates[i].skip=!cropCandidates[i].skip;renderCropCandidates()}
     function clearCropResults(){if(!cropCandidates.length)return;if(!confirm('確定清除本次生成的所有縮圖、題號調整與待貼圖結果嗎？已選的 PDF、Word 與考卷名稱會保留。'))return;cropCandidates=[];pendingFixIndex=null;closeCropPreview();document.getElementById('cropPreviewGrid').innerHTML='';document.getElementById('cropSummary').classList.add('hide');document.getElementById('downloadCropZipBtn').disabled=true;document.getElementById('toBatchImageBtn').disabled=true;document.getElementById('clearCropResultsBtn').disabled=true;document.getElementById('batchImportState').textContent='';document.getElementById('cropReviewState').textContent='已清除本次結果；可重新開始截圖或匯入圖片。'}
@@ -851,19 +851,25 @@
       if(!base){status.textContent='找不到茲茲 OCR 主機設定。';return;}
       btn.disabled=true;status.textContent='正在用茲茲 OCR 主機自動裁切圖形與表格（本機模型，一份約 1～2 分鐘）…';
       try{
+        if(OCR_ACTIVE_RUN){
+          const until=Date.now()+300000;
+          while(OCR_ACTIVE_RUN&&Date.now()<until){status.textContent='OCR 還在辨識中；正在等它完成，之後會沿用原稿 OCR 題號來切圖…';await new Promise(ok=>setTimeout(ok,1000));}
+          if(OCR_ACTIVE_RUN){status.textContent='OCR 尚未完成，請等辨識結束後再按一次「自動裁切」。';return;}
+        }
         // FileReader 直接產生 base64，不經過二進位字串：大 PDF 時 Safari 才不會因記憶體過高重新載入頁面
         const dataBase64=await new Promise((ok,no)=>{const fr=new FileReader();fr.onload=()=>ok(String(fr.result).split(',')[1]);fr.onerror=()=>no(fr.error);fr.readAsDataURL(cropFiles.pdf);});
         const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),300000);
         status.textContent='正在等待 OCR 主機回傳裁切結果（一份約 1～2 分鐘，最長等 5 分鐘）…';
-        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64}),signal:ctl.signal});
+        const job=OCR_RESULT&&OCR_RESULT.job?OCR_RESULT.job:undefined;
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64,job}),signal:ctl.signal});
         let j={};try{j=await r.json();}catch(e){}
         clearTimeout(timer);
         if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
         cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
         for(const p of (j.pages||[]))for(const it of (p.items||[])){
-          const qno=Number.isInteger(it.qno)&&it.qno>0?it.qno:null;const label=`p${p.page}圖${++n}`;
+          const qno=Number.isInteger(it.qno)&&it.qno>0?it.qno:null;const group=Array.isArray(it.qno_group)&&Number.isInteger(it.qno_group[0])?it.qno_group:null;const scope=group?'group':'single';const low=it.qno_conf==='low';const label=`p${p.page}圖${++n}`;
           cropCandidates.push({src:'data:image/png;base64,'+it.png,page:p.page,rect:{x:it.x*2,y:it.y*2,w:it.w*2,h:it.h*2},renderScale:2,qno,kind:'自動裁切',label,
-            verdict:qno===null?'review':'pass',reason:qno===null?'找不到題號，請按「改題號」補上':'題號依圖上方最近的題號推測，請確認',skip:false,
+            scope,qno_group:group,qno_conf:it.qno_conf||null,verdict:qno===null||low?'review':'pass',reason:qno===null?'找不到題號，請按「改題號」補上':low?'題號信心低，請確認':'題號依圖上方最近的題號推測，請確認',skip:false,
             filename:`${qno===null?'Q未知':`Q${qno}`}_${label}${qno===null?'_請人工確認':''}.png`});
         }
         await startManualCrop();renderCropCandidates();
@@ -1221,7 +1227,7 @@
         const data=await file.arrayBuffer();let binary='';const bytes=new Uint8Array(data);for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
         const r=await fetch(base+'/api/py-ocr/start',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({filename:file.name,dataBase64:btoa(binary),skipClean:skipClean===true,skipWord:true})});
         if(!r.ok)throw new Error('茲茲 OCR 回應 '+r.status+'：'+(await r.text()).slice(0,200));
-        const started=await r.json();if(!started.ok||!started.jobId)throw new Error(started.error||'無法啟動辨識');
+        const started=await r.json();if(!started.ok||!started.jobId)throw new Error(started.error||'無法啟動辨識');run.job=started.jobId;
         let since=0,j=null;
         while(true){await new Promise(resolve=>setTimeout(resolve,1000));const p=await fetch(base+'/api/py-ocr/progress?job='+encodeURIComponent(started.jobId)+'&since='+since);if(!p.ok)throw new Error('茲茲 OCR 進度回應 '+p.status);j=await p.json();since=j.next==null?since+(j.events||[]).length:j.next;const ev=(j.events||[]).map(x=>x.msg||x.message||x.text||'').filter(Boolean);if(ev.length)st.textContent=ev[ev.length-1];if(j.done)break;}
         if(OCR_PDF_FILE!==run.file)return;   // 這段期間已換了另一份考卷，舊結果不可蓋掉新的
@@ -1235,6 +1241,7 @@
         const links=[];if(j.docxUrl)links.push(`<a class="btn green" target="_blank" href="${base+j.docxUrl}">⬇ 下載 Word</a>`);if(j.txtUrl)links.push(`<a class="btn" target="_blank" href="${base+j.txtUrl}">⬇ 下載辨識原文</a>`);if(j.qbankUrl)links.push(`<a class="btn" target="_blank" href="${base+j.qbankUrl}">⬇ 下載題庫 Excel</a>`);document.getElementById('ocrFigures').innerHTML=links.join(' ');
         st.textContent='茲茲 OCR 完成。第 4 步可直接抓取題庫 Excel，或下載原文。';
       }catch(e){st.textContent='辨識失敗：'+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
+      finally{if(OCR_ACTIVE_RUN===run)OCR_ACTIVE_RUN=null;}
     }
     // 練習用 Word：主機從同一份辨識結果組成，不重新上傳
     async function ocrMakeWord(){
