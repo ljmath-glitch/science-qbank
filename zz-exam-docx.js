@@ -394,20 +394,23 @@
   }
   const qfont = (o) => ({ font: F.body, s: 12, c: INK, ...(o || {}) });
 
+  // 題目出處：自成一行、靠右、小灰字（匯出視窗勾「顯示題目出處」才有）
+  const srcLine = (src, o) => P(R('［' + src + '］', { font: F.body, s: 8, c: '#808080' }), { jc: 'right', sb: 0, sa: 3, ...(o || {}) });
   function choiceQuestion(it, ctx) {
     const lay = it.options && it.options.length >= 2 ? optionLines(it.options, ctx.textW) : { cols: 0, lines: [] };
     let runs = RT(it.stem, qfont());
     const own = lay.cols === 1;   // 一行一個：每個選項自成一段，長選項換行時對齊在「(A)」後面
     if (!own) lay.lines.forEach((ln) => { runs += '<w:r><w:br/></w:r>' + RT(ln, qfont()); });
     if (ctx.teacher && it.ans) runs = answerBox(it.ans, it.no) + runs;
-    const more = own || !!(it.imgs && it.imgs.length);
+    const more = own || !!(it.imgs && it.imgs.length) || !!it.src;
     const two = lay.cols === 2 && lay.mid === Q_TABS[1] ? { tabs: [{ v: 'clear', tw: Q_TABS[0] }, { v: 'clear', tw: Q_TABS[2] }] } : {};
     let x = P(runs, { style: 'ZXQ', kl: true, kn: more, ...two, ...(own ? { sb: 3.6, sa: 0 } : {}) });
     if (own) lay.lines.forEach((ln, i) => {
-      x += P(RT(ln, qfont()), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) });
+      x += P(RT(ln, qfont()), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) || !!it.src });
     });
     // 同一題的圖排在同一行、置中（放不下 Word 會自動換行）
-    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3 });
+    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3, kn: !!it.src });
+    if (it.src) x += srcLine(it.src);
     if (ctx.teacher && it.sol && ctx.showSol) x += solutionNote(it.sol);
     return x;
   }
@@ -416,6 +419,7 @@
     const stem = String(it.stem).replace(/[＿_]{2,}/g, '【　　　　】');
     let x = P([R(it.no + '.', qfont()), R('\t', qfont()), RT(stem, qfont())], { indTw: { l: Q_LEFT, h: Q_LEFT - 60 }, tabs: [{ tw: Q_LEFT }], sb: 3.6, sa: 3.6, kl: true, kn: true });
     if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3, kn: true });
+    if (it.src) x += srcLine(it.src, { kn: true });
     if (ctx.teacher && it.ans) x += P([R('答：', qfont({ c: ANS, b: true, vanish: true })), RT(it.ans, qfont({ c: ANS, vanish: true }))], { indTw: { l: Q_LEFT }, sa: 3 });
     x += P('', { sa: it.lines ? it.lines * 12 : 24 });   // 作答空間
     return x;
@@ -440,11 +444,13 @@
       let x = P([tag, R('　'), ...head], { ...o, sb: 10 });
       paras.forEach((p) => { x += P(RT(p, { font: F.body, s: 10, c: INK }), o); });
       if ((ps.imgs || []).length) x += P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { ...o, jc: 'center' });
+      if (ps.src) x += P(R('［' + ps.src + '］', { font: F.body, s: 8, c: '#808080' }), { ...o, jc: 'right' });
       return x + P('', { sa: 4 });
     }
     const txt = [P(head, { sa: 3 })];
     paras.forEach((p) => txt.push(P(RT(p, { font: F.body, s: 10, c: INK }), { ls: 1.3, sa: 3 })));
     if ((ps.imgs || []).length) txt.push(P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', sa: 3 }));
+    if (ps.src) { txt.push(srcLine(ps.src, { sa: 0 })); estH += 0.45; }
     const spacer = P(R('', { s: 14 }), { sb: 0, sa: 0, kn: true });
     const bx = TH.box;
     const tagShape = bx === 'thin' ? { g: 'rect', fill: '#FFFFFF', ln: TH.ac, lw: 0.5, c: TH.ac } : bx === 'square' ? { g: 'rect', fill: TH.ac, c: '#FFFFFF' } : bx === 'tint' ? { r: 25, fill: TH.ac, c: '#FFFFFF' } : { g: 'parallelogram', av: { adj: 22000 }, fill: TH.ac, c: '#FFFFFF' };

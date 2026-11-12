@@ -10498,6 +10498,9 @@ async function _zzExamSpec(kind,opts){
     if(sec.kindOf(it)!=='group'||!it.groupId)return;
     const r=groupRanges.get(it.groupId)||{first:i+1,last:i+1};r.last=i+1;groupRanges.set(it.groupId,r);
   });
+  // 題目出處（勾「顯示題目出處」時）：單題印在題末靠右；題組只在題組框圖片下方印一次
+  const showSrc=(document.getElementById('pShowSource')||{}).checked,showSrcFull=(document.getElementById('pShowSourceFull')||{}).checked;
+  const srcOf=it=>showSrcFull?getSource(it,true):(showSrc?getSource(it):'');
   const shownG=new Set(),sections=[];let qno=0;
   for(const k of ['single','multi','group','nonchoice']){
     const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
@@ -10511,7 +10514,7 @@ async function _zzExamSpec(kind,opts){
         if(ps&&(ps.q||(ps.imgs||[]).length)){
           const r=groupRanges.get(it.groupId);
           const text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'').replace(/^閱讀下文[，,]?回答第.{0,12}題[：:]?\s*/,'');
-          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind)};
+          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind),src:srcOf(it)};
         }
       }
       // 非選擇題，或題組裡沒有選項的填充／計算小題：用「N.」題號、不印「(　　)」
@@ -10520,7 +10523,7 @@ async function _zzExamSpec(kind,opts){
       const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
       const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
       items.push({no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),
-        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0});
+        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
     }
     const sc=kind!=='golden'?wzKindScore(k,items.length):null;
     sections.push({title:_PAPER_SECTION_LABEL[k],score:sc?sc.text:'',items});
