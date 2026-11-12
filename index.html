@@ -960,11 +960,13 @@
       </div></details>
       <details class="paper-section" open><summary>基本設定 <span class="paper-section-summary">卷別與標題</span></summary><div class="paper-section-body">
         <div class="field"><label>卷別</label><div class="paper-kind-row">
-          <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)" checked><span>課前考<small>B4・單欄・灰階卷頭</small></span></label>
-          <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>B4・雙欄・淡色浮水印</small></span></label>
-          <label class="chk"><input type="radio" name="pPaperKind" value="golden" onchange="pvSetPaperKind(this.value)"><span>段考黃金模擬考<small>B4・單欄・學期考次卷頭</small></span></label>
-          <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>A4・封面＋單欄題本</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)" checked><span>課前考<small>單欄・閃電卷頭</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>雙欄・淡灰浮水印</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="golden" onchange="pvSetPaperKind(this.value)"><span>段考黃金模擬考<small>單欄・學期考次卷頭</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>封面＋單欄題本</small></span></label>
         </div></div>
+        <div class="field"><label for="pZZStyle">Word 考卷風格</label><select id="pZZStyle" onchange="try{localStorage.setItem('zzExamStyle',this.value)}catch(e){}"><option value="formal" selected>茲茲正式版（黑白灰・閃電卷頭）</option><option value="redgold">茲茲紅金（品牌紅・閃電卷頭）</option><option value="subject">科目彩色講義（依科目換色）</option><option value="simple">簡潔省墨（細線、不印色塊）</option><option value="exam">會考仿真（置中標題）</option></select></div><script>try{const v=localStorage.getItem('zzExamStyle');if(v)document.getElementById('pZZStyle').value=v;}catch(e){}</script>
+        <div class="field"><label for="pPaperSize">Word 紙張</label><select id="pPaperSize"><option value="A4" selected>A4（四邊 1 公分）</option><option value="B4">B4（四邊 1 公分）</option></select></div>
         <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
         <div id="paperGoldenFields" class="grid4" hidden>
           <div class="field"><label for="pGoldenYear">學年度</label><input id="pGoldenYear" placeholder="例如 115" maxlength="6"></div>
@@ -9991,6 +9993,12 @@ async function finalizeSolutionDocx(blob){
 }
 async function downloadSolutionWord(){
   if(!PICKS.size){alert('尚未選題');return;}
+  if(window.ZZExam){
+    // 茲茲詳解卷頭＋答案總表（zz-exam-docx.js）；下方舊流程保留作為後備。
+    try{await downloadZZSolutionWord();}catch(e){alert('詳解 Word 匯出失敗：'+e.message);}
+    try{paperDlg.close();}catch(_){}
+    return;
+  }
   const prog=document.createElement('div');prog.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;padding:13px 20px;border-radius:10px;font-family:inherit;font-size:14px;z-index:9999';prog.textContent='📝 正在產生詳解 Word…';document.body.appendChild(prog);
   try{
     await _ensureDocxLib();
@@ -10458,6 +10466,107 @@ async function downloadWordViaTemplate(kind,opts){
   const title=(document.getElementById('pTitle').value||'考卷').trim();
   const url=URL.createObjectURL(out);const a=document.createElement('a');a.href=url;a.download=title+(opts.suffix||'')+'_'+stamp()+'.docx';document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
+// ── 茲茲考卷 Word（新版）：照「茲茲講義素材」考卷範本直接產生 .docx（zz-exam-docx.js）。
+//    課前考／ABK／黃金模擬考／模考題本共用；預設 A4、四邊界 1 cm，可選 B4。
+//    一律輸出教用版：答案是隱藏文字（紅字），Word 關掉「顯示／隱藏 ¶」就是學生卷。 ──
+function _zzSplitChoice(text){
+  const parts=String(text).split(/\n(?=\([A-Ea-e]\))/);
+  const stem=parts.shift()||'';const options=[];
+  for(const p of parts){if(/^\([A-Ea-e]\)/.test(p))options.push(p.replace(/\n+/g,' ').trim());else if(options.length)options[options.length-1]+=' '+p.trim();}
+  return {stem:stem.trim(),options};
+}
+async function _zzImages(imgs,kind){
+  const out=[];
+  for(const im of await _tplResolveImgs(imgs)){
+    // 題內圖與舊版相同上限（寬 270 px、高 135 px，96 dpi），避免把題目撐開。
+    const [w,h]=_tplFitImage(im.width,im.height,kind);
+    out.push({bytes:_b64ToBytes(im.src),ext:'png',cx:Math.round(w*9525),cy:Math.round(h*9525)});
+  }
+  return out;
+}
+async function _zzExamSpec(kind,opts){
+  opts=opts||{};
+  const sec=paperQuestionSections(pickedItems());
+  const val=id=>((document.getElementById(id)||{}).value||'').trim();
+  const metadata=readPaperTemplateMetadata(kind==='abk',opts.ver);
+  const bookName=PAPER_BOOK_NAMES[Number(metadata.book)-1]||'';
+  const title=val('pTitle')||'自然科測驗卷',examName=val('pExamName'),scope=val('pScope');
+  const subject=val('pSubject')||(metadata.title||'').replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然';
+  const range=metadata.chapterRange||scope;
+  const groupRanges=new Map();
+  sec.ordered.forEach((it,i)=>{
+    if(sec.kindOf(it)!=='group'||!it.groupId)return;
+    const r=groupRanges.get(it.groupId)||{first:i+1,last:i+1};r.last=i+1;groupRanges.set(it.groupId,r);
+  });
+  const shownG=new Set(),sections=[];let qno=0;
+  for(const k of ['single','multi','group','nonchoice']){
+    const its=sec.ordered.filter(it=>sec.kindOf(it)===k);
+    if(!its.length)continue;
+    const items=[];
+    for(const it of its){
+      qno++;
+      let passage=null;
+      if(k==='group'&&it.groupId&&!shownG.has(it.groupId)){
+        shownG.add(it.groupId);const ps=PASSAGES[it.groupId];
+        if(ps&&(ps.q||(ps.imgs||[]).length)){
+          const r=groupRanges.get(it.groupId);
+          const text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'').replace(/^閱讀下文[，,]?回答第.{0,12}題[：:]?\s*/,'');
+          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind)};
+        }
+      }
+      // 非選擇題，或題組裡沒有選項的填充／計算小題：用「N.」題號、不印「(　　)」
+      const raw=_tplQuestionText(it,k!=='nonchoice');
+      const sp0=_zzSplitChoice(raw);
+      const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
+      const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
+      items.push({no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),
+        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0});
+    }
+    const sc=kind!=='golden'?wzKindScore(k,items.length):null;
+    sections.push({title:_PAPER_SECTION_LABEL[k],score:sc?sc.text:'',items});
+  }
+  const paper=val('pPaperSize')==='B4'?'B4':'A4';
+  const base={kind,paper,teacher:opts.teacher!==false,sections,title,style:val('pZZStyle')||'formal',field:_zzMainField()};
+  if(kind==='pre')return {...base,meta:{subject,book:bookName,label:examName||range},running:{left:subject+' 課前考',right:[bookName,range].filter(Boolean).join('　')},footer:[subject,bookName].filter(Boolean).join('·')};
+  if(kind==='abk')return {...base,meta:{variant:metadata.variant,chapter:examName||metadata.title||title,code:metadata.code},running:{left:'輔導課 '+metadata.variant+' 卷',right:metadata.code},footer:[subject,bookName].filter(Boolean).join('·')+(examName?'　'+examName:'')};
+  if(kind==='golden'){
+    const g=readGoldenMetadata();
+    return {...base,meta:{year:g.gold_year,semester:g.gold_semester,subject:g.gold_subject,examTitle:g.gold_exam_title,version:g.gold_version,scope:g.gold_scope},
+      running:{left:g.gold_subject+' 黃金模擬考',right:`${g.gold_year}-${g.gold_semester}　${g.gold_exam_title}`},footer:g.gold_subject};
+  }
+  // 模考題本
+  return {...base,meta:{bookTitle:'茲茲文教模考題本',subject:val('pSubject')||'自然科',exam:examName||title,scope,count:qno},
+    running:{left:[examName||title,val('pSubject')||'自然科'].join('　'),right:scope},footer:val('pSubject')||'自然科'};
+}
+// 選題裡最多的領域（理化／生物／地科），給「科目彩色講義」風格決定顏色；混合或沒填就用自然藍
+function _zzMainField(){
+  const n={};pickedItems().forEach(it=>{const f=String(it.field||'').trim();if(f)n[f]=(n[f]||0)+1;});
+  const top=Object.entries(n).sort((a,b)=>b[1]-a[1])[0];
+  return top&&['理化','生物','地科'].includes(top[0])?top[0]:'自然';
+}
+function _zzDownloadBlob(blob,name){
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+async function downloadZZExamWord(kind,opts){
+  opts=opts||{};
+  const spec=await _zzExamSpec(kind,opts);
+  const blob=await ZZExam.buildDocx(spec);
+  _zzDownloadBlob(blob,(spec.title||'考卷')+(opts.suffix||'')+'_'+stamp()+'.docx');
+}
+// 解析卷：茲茲詳解卷頭＋答案總表，內容維持「12 pt、單行、單一連續無框線四欄表格」規則。
+async function downloadZZSolutionWord(){
+  const val=id=>((document.getElementById(id)||{}).value||'').trim();
+  const title=val('pTitle')||'自然科測驗卷';
+  const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>{
+    const q=solutionExportQuestion(it,i+1);
+    return {...q,answer:normalizeWordLatex(q.answer),detail:normalizeWordLatex(q.detail||''),options:q.options.map(o=>({label:o.label,text:normalizeWordLatex(o.text)}))};
+  });
+  const subject=val('pSubject')||'自然科';
+  const scope=val('pScope')||readPaperTemplateMetadata().chapterRange;
+  const spec={kind:'solution',paper:val('pPaperSize')==='B4'?'B4':'A4',style:val('pZZStyle')||'formal',field:_zzMainField(),title:title+'_詳解',solutions:questions,
+    meta:{title,scope,answers:questions.map(q=>q.answer)},running:{left:title+'　詳解',right:scope},footer:subject+'　詳解'};
+  _zzDownloadBlob(await ZZExam.buildDocx(spec),title+'_詳解_'+stamp()+'.docx');
+}
 async function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
   _recordGeneratedPaper();   // 記錄本次產生的考卷（供組卷精靈過濾試卷排除已出題）
@@ -10471,15 +10580,14 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(['abk','pre','golden'].includes(paperKind)){
-    // ABK/課前考/黃金模擬：一律用「範本填入」產生（頁首/浮水印/卷頭/字型/兩欄＝範本本體，與預覽一致）。
-    // 教用版＝題目卷＋答案填在題號括弧中（10pt Times New Roman，無底色無邊框）；學用版＝空括弧題目卷。
+  if(['abk','pre','golden','mock'].includes(paperKind)){
+    // 課前考／ABK／黃金模擬／模考題本：照「茲茲講義素材」考卷範本直接產生（zz-exam-docx.js）。
+    // 一律輸出教用版：答案是隱藏文字，Word 關掉 ¶ 即為學生版。舊的範本填入流程（downloadWordViaTemplate）保留未刪。
     try{
       if(ansMode==='full'){await downloadSolutionWord();}
-      else if(ansMode==='both_full'){await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});await downloadSolutionWord();}
-      else if(ansMode==='inline'){await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});}
-      else{await downloadWordViaTemplate(paperKind,{teacher:true,suffix:'（教用版）'});}   // 一律輸出教用版：答案是隱藏文字，Word 關掉 ¶ 即為學生版
-    }catch(e){alert('範本匯出未完成：'+e.message);}
+      else if(ansMode==='both_full'){await downloadZZExamWord(paperKind,{teacher:true,suffix:'（教用版）'});await downloadSolutionWord();}
+      else{await downloadZZExamWord(paperKind,{teacher:true,suffix:'（教用版）'});}
+    }catch(e){alert('Word 匯出未完成：'+e.message);}
     return;
   }
   if(paperKind==='mock'){
@@ -10611,6 +10719,7 @@ async function downloadWordDoc(){
 </script>
   <script src="paper-metadata.js"></script>
   <script src="paper-output.js"></script>
+  <script src="zz-exam-docx.js"></script>
   <script src="mt-embed-client.js"></script>
   <script src="announce.js"></script>
   <script src="patchnotes.js" defer></script>
