@@ -17,7 +17,7 @@ from base64 import b64decode
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 PORT = int(os.environ.get("ZIZI_OCR_PORT", "18787"))   # 不用 8787：那是 OCR 主機的埠，有的電腦把它對外開放
 HOST = "127.0.0.1"
 MAX_BODY = 100 * 1024 * 1024
@@ -183,10 +183,10 @@ class Handler(BaseHTTPRequestHandler):
         if url.path == "/api/py-ocr/download" and state.get("txt"):
             return self.send_file(os.path.join(result_dir(job), state["txt"]), "text/plain; charset=utf-8", state["txt"])
         if url.path == "/api/py-ocr/qbank-xlsx" and state.get("txt"):
-            import to_qbank_xlsx
             name = os.path.splitext(state["txt"])[0]
             out = os.path.join(job_dir(job), "qbank.xlsx")
-            try:
+            try:   # import 也放進 try：缺模組時要回 500＋CORS，不然瀏覽器只看到 Failed to fetch
+                import to_qbank_xlsx
                 to_qbank_xlsx.write(to_qbank_xlsx.rows(result_dir(job), name), out)
             except Exception:
                 traceback.print_exc()

@@ -19,7 +19,7 @@
       box = document.createElement('div');
       box.id = 'opTimer-' + op.fn;
       box.style.cssText = 'margin:8px 0;font-size:14px;color:#7a5c2e';
-      box.innerHTML = '<div data-now style="font-weight:600"></div><details style="margin-top:4px"><summary style="cursor:pointer">⏱ 時間紀錄</summary><div data-log style="overflow-x:auto"></div></details>';
+      box.innerHTML = '<div data-now style="font-weight:600"></div><details style="margin-top:4px"><summary style="cursor:pointer">時間紀錄</summary><div data-log style="overflow-x:auto"></div></details>';
       status.insertAdjacentElement('afterend', box);
     }
     return box;
@@ -58,7 +58,7 @@
       const secs = () => Math.round((Date.now() - started) / 1000);
       const stamp = () => { const d = new Date(), pad = n => String(n).padStart(2, '0'); return pad(d.getMonth() + 1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
       try { localStorage.setItem(RUN, JSON.stringify({ op: op.label, at: stamp(), file: file.name || '', host: hostName() })); } catch (e) {}
-      const tick = () => { if (now) now.textContent = '⏱ ' + op.label + '進行中：' + fmt(secs()); };
+      const tick = () => { if (now) now.textContent = op.label + '進行中：' + fmt(secs()); };
       tick();
       const timer = setInterval(tick, 1000);
       let threw = false;
@@ -74,7 +74,7 @@
         const ok = !threw && !/失敗|連不到|找不到/.test(statusEl ? statusEl.textContent : '');
         try { localStorage.removeItem(RUN); } catch (e) {}
         save([{ op: op.label, at: stamp(), file: file.name || '', host: hostName(), sec, ok }, ...load()]);
-        if (now) now.textContent = '⏱ ' + op.label + (ok ? '完成' : '失敗') + '，耗時 ' + fmt(sec);
+        if (now) now.textContent = op.label + (ok ? '完成' : '失敗') + '，耗時 ' + fmt(sec);
         renderLog(op);
         if (!ok) alert(op.label + '失敗（' + fmt(sec) + '）：' + (statusEl ? statusEl.textContent : '').slice(0, 300));
       }
