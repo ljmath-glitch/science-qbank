@@ -66,7 +66,7 @@
     .intro.wf{position:relative;overflow:hidden;border:1px solid #e8d9b5;background:linear-gradient(135deg,#fffaf0 0%,#fff 55%,#fdf1f0 100%)}.intro.wf:before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:linear-gradient(180deg,var(--red),#c99a2e)}
     .wf-kicker{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.18em;color:#b8892b;margin-bottom:4px}.intro.wf h2{margin:0 0 6px}
     .pipe{margin-top:16px}.pipe-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}.pipe-total{font-size:13px;color:var(--muted);white-space:nowrap}.pipe-total b{color:var(--red);font-size:16px}.pipe-bar{flex:1;min-width:140px;height:10px;border-radius:999px;background:#efe6d2;overflow:hidden}.pipe-bar i{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--red),#c99a2e);transition:width .5s ease}
-    .pipe-board{display:grid;grid-template-columns:repeat(5,1fr);gap:0 20px;padding:10px 12px 6px 4px}
+    .pipe-board{display:grid;grid-template-columns:repeat(6,1fr);gap:0 20px;padding:10px 12px 6px 4px}
     .pipe-opt{display:grid;grid-template-columns:repeat(5,1fr);gap:0 20px;padding:4px 12px 6px 4px;margin-top:14px;position:relative}.pipe-optlabel{grid-column:1/-1;font-size:12px;font-weight:700;color:#8a7d6b;margin:0 0 8px;display:flex;align-items:center;gap:8px}.pipe-optlabel:after{content:"";flex:1;height:1px;background:repeating-linear-gradient(90deg,#d9c9a3 0 6px,transparent 6px 12px)}
     .pz{--c:#d9c9a3;--bg:#fffdf8;position:relative;min-height:118px;padding:12px 12px 10px;border:2px dashed var(--c);border-radius:14px;background:var(--bg);text-align:left;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:5px;transition:transform .25s,border-color .25s,background .25s,box-shadow .25s}
     .pz:hover{transform:translateY(-2px);box-shadow:0 8px 18px -12px #555}.pz.sel{box-shadow:0 0 0 3px rgba(133,1,3,.16)}
@@ -90,8 +90,8 @@
     .auto-review .btn,.auto-crop .btn{min-height:34px;padding:0 12px;font-size:13px;line-height:1.2;white-space:nowrap}.auto-review input,.auto-review select,.auto-crop input,.auto-crop select{min-height:34px;font-size:13px}.auto-review .action-row,.auto-crop .action-row{align-items:center;gap:8px}.auto-review .row,.auto-crop .row{align-items:center;gap:8px}
     .auto-review .steps,.auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.auto-review .steps>li,.auto-crop .steps>li{min-height:64px;padding:11px 36px 10px 48px}.auto-review .steps>li:before,.auto-crop .steps>li:before{left:10px;top:11px;width:29px;height:29px;font-size:12px}.auto-review .steps b,.auto-crop .steps b{font-size:13px}.auto-review .step-detail,.auto-crop .step-detail{margin:7px -24px -2px -38px;padding:9px;font-size:12px}.auto-crop .steps>li[data-step="5a"]{display:none}
     .auto-crop .steps,.review-pane .auto-crop .steps{grid-template-columns:1fr!important}.auto-crop .steps>li[data-step="5c"]:before{display:none}.auto-crop .steps>li[data-step="5c"]{padding-left:14px!important}.auto-crop .steps>li[data-step="5c"] .step-detail{margin-left:0!important;margin-right:0!important}
-    .review-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0}.review-tab{appearance:none;min-height:70px;padding:10px 12px;border:1px solid #e3d7ca;border-radius:14px;background:#fff;color:var(--ink);text-align:left;cursor:pointer;font:inherit;display:grid;grid-template-columns:31px 1fr;align-items:center;gap:9px}.review-tab:hover{border-color:#b58a3a;background:#fffaf2}.review-tab.on{border-color:var(--red);box-shadow:0 0 0 2px rgba(133,1,3,.10);background:#fff8f5}.review-tab-no{width:31px;height:31px;border:1.5px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:12px;font-weight:900}.review-tab b{font-size:13px;line-height:1.25}.review-tab small{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:500}.review-workspace{margin-top:10px;border:1px solid #e4d7ca;border-radius:16px;background:#fdfaf5;padding:14px;min-height:150px}.review-pane{display:none}.review-pane.on{display:block}.review-pane>.step-detail{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.review-pane .review-ocr{margin-top:12px;padding-top:12px;border-top:1px solid #e9ddd0}.review-pane .review-ocr:before{content:"OCR";display:inline-block;margin-bottom:8px;color:var(--red);font-size:11px;font-weight:900;letter-spacing:.12em}.review-pane .auto-crop{display:block!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}.review-pane .auto-crop>.head,.review-pane .auto-crop>.notice{display:none}.review-pane .auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr))}.auto-review.compact-ready>.steps{display:none!important}.dehand-grid{display:flex;overflow-x:auto;gap:10px;padding:4px 1px 8px;scroll-snap-type:x proximity}.dehand-card{flex:0 0 190px;scroll-snap-align:start}.dehand-card .dehand-pair{grid-template-columns:1fr}.dehand-card .dehand-pair>div:first-child{display:none}.dehand-card .dehand-pair img{height:210px}.dehand-card b{display:block;margin-bottom:5px}.dehand-card .btn{min-height:32px}.dehand-actions{position:sticky;bottom:0;z-index:4;padding:9px;background:rgba(255,253,249,.94);border-top:1px solid #eadfd3;backdrop-filter:blur(8px)}
-    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(5,minmax(165px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}.review-tabs{grid-template-columns:repeat(4,minmax(155px,1fr));overflow-x:auto;padding-bottom:5px}.review-tab{scroll-snap-align:start}.review-pane .auto-crop .steps{grid-template-columns:1fr}}
+    .review-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:0}.review-tab{appearance:none;min-height:70px;padding:10px 12px;border:1px solid #e3d7ca;border-radius:14px;background:#fff;color:var(--ink);text-align:left;cursor:pointer;font:inherit;display:grid;grid-template-columns:31px 1fr;align-items:center;gap:9px}.review-tab:hover{border-color:#b58a3a;background:#fffaf2}.review-tab.on{border-color:var(--red);box-shadow:0 0 0 2px rgba(133,1,3,.10);background:#fff8f5}.review-tab-no{width:31px;height:31px;border:1.5px solid var(--red);border-radius:50%;display:grid;place-items:center;color:var(--red);font-size:12px;font-weight:900}.review-tab b{font-size:13px;line-height:1.25}.review-tab small{display:block;margin-top:2px;color:var(--muted);font-size:11px;font-weight:500}.review-workspace{margin-top:10px;border:1px solid #e4d7ca;border-radius:16px;background:#fdfaf5;padding:14px;min-height:150px}.review-pane{display:none}.review-pane.on{display:block}.review-pane>.step-detail{display:block!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}.review-pane .review-ocr{margin-top:12px;padding-top:12px;border-top:1px solid #e9ddd0}.review-pane .review-ocr:before{content:"OCR";display:inline-block;margin-bottom:8px;color:var(--red);font-size:11px;font-weight:900;letter-spacing:.12em}.review-pane .auto-crop{display:block!important;margin:0!important;padding:0!important;border:0!important;box-shadow:none!important;background:transparent!important}.review-pane .auto-crop>.head,.review-pane .auto-crop>.notice{display:none}.review-pane .auto-crop .steps{grid-template-columns:repeat(2,minmax(0,1fr))}.auto-review.compact-ready>.steps{display:none!important}.dehand-grid{display:flex;overflow-x:auto;gap:10px;padding:4px 1px 8px;scroll-snap-type:x proximity}.dehand-card{flex:0 0 190px;scroll-snap-align:start}.dehand-card .dehand-pair{grid-template-columns:1fr}.dehand-card .dehand-pair>div:first-child{display:none}.dehand-card .dehand-pair img{height:210px}.dehand-card b{display:block;margin-bottom:5px}.dehand-card .btn{min-height:32px}.dehand-actions{position:sticky;bottom:0;z-index:4;padding:9px;background:rgba(255,253,249,.94);border-top:1px solid #eadfd3;backdrop-filter:blur(8px)}
+    @media(max-width:900px){.pipe-board{grid-template-columns:repeat(6,minmax(150px,1fr));overflow-x:auto;padding-bottom:12px;scroll-snap-type:x proximity}.pz{scroll-snap-align:start}.pipe-opt{grid-template-columns:repeat(2,minmax(165px,1fr))}.review-tabs{grid-template-columns:repeat(5,minmax(140px,1fr));overflow-x:auto;padding-bottom:5px}.review-tab{scroll-snap-align:start}.review-pane .auto-crop .steps{grid-template-columns:1fr}}
     @media(max-width:680px){header{padding:17px 20px}nav{padding:10px 18px}main{padding:22px 14px}.stage,.intro{padding:18px}.steps{grid-template-columns:1fr}.steps>li{min-height:0}.step-detail{margin-right:-30px}}
     /* ===== 全頁清稿修補編輯器（俊偉式） ===== */
     .pg-ed{position:fixed;inset:0;z-index:4000;display:flex;flex-direction:column;background:#f1ece4}
@@ -145,50 +145,69 @@
 .al-caret{margin-left:auto;flex:0 0 auto;font-size:12px;color:#8a7d6b}.al-caret::after{content:"展開"}body.admin-on .al-caret::after{content:"展開"}.admin-lock[open] .al-caret::after{content:"收合"}
 .al-body{padding:0 14px 12px}.al-bar{display:flex;justify-content:flex-end;margin-bottom:4px}.al-relock{min-height:28px!important;padding:0 10px;font-size:12px}
     main input[type=checkbox],main input[type=radio]{accent-color:var(--red)}
-    /* 匯入前檢查：左原卷／清稿，右題目卡片（2026-11-13） */
-    #rvDlg{position:fixed;inset:0;z-index:9000;background:var(--paper);display:none;flex-direction:column;color:var(--ink)}
-    #rvDlg.open{display:flex}
-    .rv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#fffefb;border-bottom:1px solid var(--line)}
-    .rv-top h3{margin:0;font-size:16px;color:var(--red)}.rv-top .rv-exam{font-size:13px;color:var(--muted);flex:1 1 160px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* 簡單模式：只留丟檔、進度、人工檢驗與一鍵匯入（2026-11-13） */
+    .sm-intro{display:none}
+    body.simple-mode .sm-intro{display:block;margin-bottom:14px}
+    .sm-steps{margin:8px 0 0;padding-left:22px;line-height:1.75;font-size:14px}.sm-steps b{color:var(--red);margin-right:8px}
+    body.simple-mode .wf-kicker,body.simple-mode .intro.wf>h2,body.simple-mode .intro.wf>p,body.simple-mode .pipe-board,body.simple-mode .pipe-opt,body.simple-mode #stagesToggle,body.simple-mode .auto-optional,body.simple-mode .auto-finish{display:none!important}
+    body.simple-mode .auto-review>.head,body.simple-mode .review-tabs,body.simple-mode .review-pane:not(#ivPane){display:none!important}
+    body.simple-mode #ivPane{display:block!important}
+    body.simple-mode:not(.sm-ready) main .stage.auto-review{display:none!important}
+    body.simple-mode.sm-ready main .stage.auto-review{display:block!important}
+    /* 人工檢驗（第 6 步）：左＝清稿＋切圖框／原卷，右＝全部題目卡片（2026-11-13） */
+    .iv{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    .iv.full{position:fixed;inset:0;z-index:9000;border-radius:0;display:flex;flex-direction:column}
+    .iv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#fffefb;border-bottom:1px solid var(--line)}
+    .iv-top #ivSum{flex:1 1 180px;min-width:0}
     .rv-seg{display:inline-flex;border:1px solid #e4d8c6;border-radius:10px;overflow:hidden}.rv-seg button{border:0;background:#fff;padding:6px 12px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}.rv-seg button.on{background:var(--red);color:#fff}
-    .rv-body{flex:1;display:grid;grid-template-columns:minmax(0,46fr) minmax(0,54fr);min-height:0}
-    .rv-left{overflow:auto;background:#efece6;border-right:1px solid var(--line);padding:10px;position:relative}
-    .rv-left .rv-ltools{position:sticky;top:0;z-index:2;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6ee;border-bottom:1px solid var(--line)}
-    .rv-left img{display:block;width:calc(100% * var(--rvz,1));max-width:none;margin:0 auto 10px;background:#fff;border:1px solid #d9d2c6;border-radius:4px}
-    .rv-left .rv-pg{font-size:12px;color:var(--muted);margin:4px 0}
-    .rv-right{overflow:auto;padding:12px 14px 90px}
+    .iv-body{display:grid;grid-template-columns:minmax(0,50fr) minmax(0,50fr);height:min(78vh,980px)}
+    .iv.full .iv-body{flex:1;height:auto;min-height:0}
+    .iv-left{overflow:auto;background:#efece6;border-right:1px solid var(--line);padding:10px;--rvz:1}
+    .iv-left .rv-ltools{position:sticky;top:-10px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6f2;border-bottom:1px solid var(--line)}
+    .iv-left .rv-ltools .help{flex:1 1 160px;margin:0}
+    #ivCropSlot #cropPageArea{width:calc(100% * var(--rvz,1))}
+    #ivCropSlot .crop-hint{display:none}
+    #ivOrig img{display:block;width:calc(100% * var(--rvz,1));max-width:none;margin:0 auto 10px;background:#fff;border:1px solid #d9d2c6;border-radius:4px}
+    .rv-pg{font-size:12px;color:var(--muted);margin:4px 0}
+    .iv-right{overflow:auto;padding:12px 14px 20px}
+    .iv-foot{padding:10px 12px;background:#fffefb;border-top:1px solid var(--line)}
+    .iv-foot .btn-even{margin-top:0}.iv-foot .status{margin:6px 0 0}
     .rv-sum{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
-    .rv-chip{padding:4px 10px;border-radius:999px;border:1px solid #e4d8c6;background:#fff;font-size:12.5px;cursor:pointer;color:var(--ink)}.rv-chip.on{background:var(--red);border-color:var(--red);color:#fff}.rv-chip b{margin-left:3px}
-    .rv-card{background:#fffefb;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 9px rgba(43,32,28,.045)}
-    .rv-card.bad{border-color:#d9a3a0;background:#fffaf9}
+    .rv-chip{padding:4px 10px;border-radius:999px;border:1px solid #e4d8c6;background:#fff;font-size:12.5px;cursor:pointer;color:var(--ink)}.rv-chip b{margin-left:3px}
+    .rv-chip.t-flag{background:#fff3d6;border-color:#e8c97a}.rv-chip.t-img{background:#e8f1fb;border-color:#a9c6e6}.rv-chip.t-ans{background:#fde8e6;border-color:#e7aaa4}.rv-chip.t-err{background:#f1e6f7;border-color:#c9a8dc}
+    .rv-chip.on{background:var(--red);border-color:var(--red);color:#fff}
+    .rv-card{background:#fffefb;border:1px solid var(--line);border-left:6px solid #d9d2c6;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 9px rgba(43,32,28,.045)}
+    .rv-card.tone-flag{background:#fff7e0;border-left-color:#d39b1e}
+    .rv-card.tone-img{background:#eef5fd;border-left-color:#5b8fc9}
+    .rv-card.tone-ans{background:#fdeeec;border-left-color:#c0392b}
+    .rv-card.tone-err{background:#f6eefa;border-left-color:#8e5bb0}
     .rv-passage{border:1px solid #8a8a8a;background:#fff;border-radius:6px;padding:10px 12px;margin-bottom:6px;font-size:14px;line-height:1.8}
     .rv-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
     .rv-no{font-weight:800;color:var(--red);font-size:15px}
     .rv-tag{font-size:11.5px;padding:2px 8px;border-radius:999px;background:#f3efe8;color:#5b4a33}
-    .rv-tag.warn{background:#fbe9e7;color:#a31515;font-weight:700}
+    .rv-tag.warn{background:#fff;color:#a31515;font-weight:700;border:1px solid #e7aaa4}
+    .rv-flag{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#9a6910;cursor:pointer;white-space:nowrap}
     .rv-q{font-size:14.5px;line-height:1.85;overflow-wrap:anywhere}
     .rv-ans{color:#c0392b;margin-top:5px;font-size:14px}
     .rv-imgs img{max-width:100%;display:block;margin:8px 0;border:1px solid #eee;border-radius:4px;background:#fff}
-    .rv-card .rv-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
-    .rv-edit label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
-    .rv-edit textarea,.rv-edit input{width:100%;box-sizing:border-box;border:1px solid #d8cfc2;border-radius:8px;padding:7px 9px;font-family:inherit;font-size:14px;line-height:1.6}
+    .rv-card .rv-actions,.rv-passage .rv-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+    .rv-edit label:not(.rv-flag){display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+    .rv-edit textarea,.rv-edit input:not([type=checkbox]){width:100%;box-sizing:border-box;border:1px solid #d8cfc2;border-radius:8px;padding:7px 9px;font-family:inherit;font-size:14px;line-height:1.6}
     .rv-edit textarea{min-height:120px;resize:vertical}
-    .rv-foot{position:absolute;left:0;right:0;bottom:0;display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end;padding:10px 14px;background:#fffefbf2;border-top:1px solid var(--line)}
-    .rv-foot .help{margin-right:auto}
-    .rv-rightwrap{position:relative;min-height:0;display:flex;flex-direction:column}
-    .rv-handle,.rv-scrim{display:none}
-    .rv-closeleft{display:none}
-    @media(max-width:899px){.rv-closeleft{display:inline-flex}}
+    .rv-handle,.rv-scrim,.rv-closeleft,.iv-openleft{display:none}
     @media(max-width:899px){
-      .rv-body{grid-template-columns:1fr}
-      .rv-left{position:fixed;top:0;bottom:0;left:0;width:min(88vw,520px);z-index:9002;transform:translateX(-100%);transition:transform .25s ease;box-shadow:6px 0 24px rgba(0,0,0,.18)}
-      #rvDlg.left-open .rv-left{transform:none}
+      .iv-body{grid-template-columns:1fr;height:auto}
+      .iv.full .iv-body{overflow:auto}
+      .iv-right{max-height:none;padding-left:30px}
+      .iv-left{position:fixed;top:0;bottom:0;left:0;width:min(90vw,560px);z-index:9002;transform:translateX(-100%);transition:transform .25s ease;box-shadow:6px 0 24px rgba(0,0,0,.18)}
+      .iv.left-open .iv-left{transform:none}
       .rv-scrim{display:block;position:fixed;inset:0;z-index:9001;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
-      #rvDlg.left-open .rv-scrim{opacity:1;pointer-events:auto}
-      .rv-handle{display:flex;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9001;flex-direction:column;align-items:center;gap:4px;line-height:1.1;padding:12px 8px;border:0;border-radius:0 10px 10px 0;background:var(--red);color:#fff;font-family:inherit;font-weight:700;font-size:14px;box-shadow:2px 2px 10px rgba(0,0,0,.2);cursor:pointer}
-      #rvDlg.left-open .rv-handle{display:none}
-      .rv-right{padding-left:34px}
-      .rv-top .btn#rvHideLeft{display:none}
+      .iv.left-open .rv-scrim{opacity:1;pointer-events:auto}
+      .rv-handle{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:8999;flex-direction:column;align-items:center;gap:4px;line-height:1.1;padding:12px 7px;border:0;border-radius:0 10px 10px 0;background:var(--red);color:#fff;font-family:inherit;font-weight:700;font-size:14px;box-shadow:2px 2px 10px rgba(0,0,0,.2);cursor:pointer}
+      .iv.inview .rv-handle{display:flex}
+      .iv.left-open .rv-handle{display:none}
+      .rv-closeleft,.iv-openleft{display:inline-flex}
+      #ivFullBtn{display:none}
     }
 .btn-even{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:6px;margin-top:8px;width:100%}
 main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-height:38px;font-size:13px;overflow:hidden;text-overflow:ellipsis;margin:0}
@@ -223,8 +242,10 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
 <body>
   <header><div class="brand-head"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><h1>茲茲文教｜自然題庫・考卷前處理</h1><div class="sub">TZUTZU SCIENCE QBANK · OCR WORKFLOW</div></div></div><div class="header-actions"><a class="home-link" href="home.html" aria-label="回到首頁" title="回到首頁"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a><a class="home-link" href="index.html" aria-label="題庫管理" title="題庫管理"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></a></div></header>
   <main>
-    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
-    <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel，最後手動切圖。詳解是可選項，可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
+    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html?mode=simple" id="tabSimple">簡單模式</a><a href="raw.html" id="tabAuto" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
+    <script>if(/[?&]mode=simple\b/.test(location.search)){document.body.classList.add("simple-mode");document.getElementById("tabSimple").classList.add("on");document.getElementById("tabAuto").classList.remove("on")}</script>
+    <div class="intro sm-intro"><h2>簡單模式：丟考卷 → 等處理 → 逐題檢查 → 一鍵匯入</h2><ol class="sm-steps"><li><b>丟入考卷</b>拖到下方框裡，或點一下選檔（PDF／照片）</li><li><b>等系統處理</b>自動命名、清稿、辨識、轉題目、切圖，約 3～10 分鐘，畫面保持開著</li><li><b>逐題檢查</b>左邊清稿、右邊題目；有顏色的題目要特別看，可直接修改、改圖的題號</li><li><b>一鍵匯入</b>檢查完按最下方的按鈕，題目和圖一起進題庫</li></ol></div>
+    <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel；切圖後在「人工檢驗」對照原卷逐題檢查，再一鍵匯入題庫。詳解可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
     <section class="stage auto-review">
       <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
       <div class="notice"><b>完成標準：</b>題庫內出現這份考卷的所有題目，且「考試名稱」與「題號」正確。</div>
@@ -265,14 +286,14 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         </li>
         <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
           <div class="step-detail">
-            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all;white-space:pre-line"></p><p class="help">請把原因截圖給福大，修好後按「重試」。</p><div class="row"><button class="btn primary" onclick="ocrMakeCsv()">重試抓 Excel</button></div><details class="admin-lock"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">用 AI 改產生題庫資料</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn" onclick="ocrCsvViaAI('gemini')">用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">複製指令＋辨識文字（貼到外部 AI）</button></div></div></details></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">題目還沒進題庫，檢查完再匯入。</p>
+            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all;white-space:pre-line"></p><p class="help">請把原因截圖給福大，修好後按「重試」。</p><div class="row"><button class="btn primary" onclick="ocrMakeCsv()">重試抓 Excel</button></div><details class="admin-lock"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">用 AI 改產生題庫資料</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn" onclick="ocrCsvViaAI('gemini')">用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">複製指令＋辨識文字（貼到外部 AI）</button></div></div></details></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">題目還沒進題庫，請到「人工檢驗」對照後一鍵匯入。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
             <details class="admin-lock enrich" id="enrichBox"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">本機 AI 補齊明細</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div>
             <div class="row"><label class="help">AI 引擎 <select id="enrichEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="enrichConn"></span></div>
             <div class="row"><button class="btn green" id="enrichBtn" onclick="enrichQuestions()">批次補齊明細</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="enrichAuto" type="checkbox" checked> 題庫 Excel 產生後自動補齊</label></div>
             <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus"></div></div></details>
-            <label class="help" style="display:flex;align-items:center;gap:5px;margin-top:10px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗</label><div class="btn-even"><button class="btn primary" onclick="openImportReview()">匯入前檢查</button><button class="btn green" onclick="sendQuestionsToQbank()">直接匯入</button><button class="btn" onclick="downloadCsv()">下載CSV</button><button class="btn" onclick="downloadQuestionXlsx()">下載Excel</button></div>
+            <div class="btn-even"><button class="btn primary" onclick="openImportReview()">人工檢驗</button><button class="btn" onclick="downloadCsv()">下載CSV</button><button class="btn" onclick="downloadQuestionXlsx()">下載Excel</button></div>
           </div>
         </li>
       </ol>
@@ -291,9 +312,9 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
             <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
           </div>
         </li>
-        <li data-step="5c"><b>框選需要的圖表，並貼入題庫</b>裁出題目要用的圖，確認題號後按「完成切圖」。
+        <li data-step="5c"><b>框選需要的圖表，並貼入題庫</b>裁出題目要用的圖並填題號；完成後到「人工檢驗」對照、匯入。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片、資料夾或 ZIP 到這裡</div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState"></div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><label class="help" style="display:flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><div class="btn-even"><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">下載ZIP</button><button class="btn primary" onclick="openImportReview()">匯入前檢查</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">完成切圖</button></div></div><div class="status" id="batchImportState"></div></div>
+          <div class="step-detail"><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片、資料夾或 ZIP 到這裡</div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState"></div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><div class="btn-even"><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">下載ZIP</button><button class="btn primary" onclick="openImportReview()">下一步：人工檢驗</button></div><button class="btn hide" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">完成切圖</button></div><div class="status" id="batchImportState"></div></div>
         </li>
 
       </ol>
@@ -325,10 +346,10 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       const section=document.querySelector('.auto-review'),list=section&&section.querySelector(':scope>.steps'),workspace=document.getElementById('reviewWorkspace'),crop=document.querySelector('.auto-crop');
       if(!section||!list||!workspace||!crop)return;
       const get=n=>list.querySelector(`li[data-step="${n}"] .step-detail`),name=get('1'),clean=get('2'),ocr=get('3'),excel=get('4');
-      const panes=[document.createElement('div'),document.createElement('div'),document.createElement('div'),document.createElement('div')];
+      const panes=[document.createElement('div'),document.createElement('div'),document.createElement('div'),document.createElement('div'),document.createElement('div')];
       panes.forEach((p,i)=>{p.className='review-pane';p.dataset.review=String(i+1)});
-      panes[0].append(name);panes[1].append(clean);ocr.classList.add('review-ocr');panes[1].append(ocr);panes[2].append(excel);crop.classList.add('merged-source');panes[3].append(crop);workspace.append(...panes);
-      const labels=[['確認考卷名稱','命名與對應'],['檢查清稿結果','下載・修補・OCR'],['題庫 Excel','匯入或下載'],['切圖','框選與貼圖']];
+      panes[0].append(name);panes[1].append(clean);ocr.classList.add('review-ocr');panes[1].append(ocr);panes[2].append(excel);crop.classList.add('merged-source');panes[3].append(crop);panes[4].id='ivPane';workspace.append(...panes);
+      const labels=[['確認考卷名稱','命名與對應'],['檢查清稿結果','下載・修補・OCR'],['題庫 Excel','匯入或下載'],['切圖','框選與修正'],['人工檢驗','對照・修改・匯入']];
       const tabs=document.createElement('div');tabs.className='review-tabs';tabs.setAttribute('role','tablist');
       labels.forEach((x,i)=>{const b=document.createElement('button');b.type='button';b.className='review-tab';b.dataset.review=String(i+1);b.setAttribute('role','tab');b.innerHTML=`<span class="review-tab-no">0${i+1}</span><span><b>${x[0]}</b><small>${x[1]}</small></span>`;b.onclick=()=>openReviewStep(i+1);tabs.appendChild(b)});
       section.insertBefore(tabs,workspace);section.classList.add('compact-ready');openReviewStep(1);
@@ -915,7 +936,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
           const box=document.createElement('div');box.className='box'+(it.skip?' skipped':'')+(it.qno===null&&!it.skip?' unknown':'');
           box.style.left=pct(r.x,canvas.width);box.style.top=pct(r.y,canvas.height);box.style.width=pct(r.w,canvas.width);box.style.height=pct(r.h,canvas.height);
           const name=it.skip?'已略過':(it.qno?(it.scope==='group'?'題組第'+it.qno+'題':'第'+it.qno+'題'):'題號？');
-          box.innerHTML=`<span class="lbl">${name}</span><div class="box-tools" onmousedown="event.stopPropagation()"><input type="number" min="1" inputmode="numeric" value="${it.qno??''}" placeholder="題號" title="改題號（Enter 確定）" onkeydown="if(event.key==='Enter')this.blur()" onchange="setCropQno(${i},this.value)"><button type="button" title="切換單題圖／題組共用圖" onclick="setCropScope(${i})">${it.scope==='group'?'題組':'單題'}</button><button type="button" onclick="toggleCropSkip(${i})">${it.skip?'恢復':'略過'}</button><button type="button" title="刪除這個框" onclick="deleteCrop(${i})">關閉</button></div>`;
+          box.innerHTML=`<span class="lbl">${name}</span><div class="box-tools" onmousedown="event.stopPropagation()"><input type="number" min="1" inputmode="numeric" value="${it.qno??''}" placeholder="題號" title="改題號（Enter 確定）" onkeydown="if(event.key==='Enter')this.blur()" onchange="setCropQno(${i},this.value)"><button type="button" title="切換單題圖／題組共用圖" onclick="setCropScope(${i})">${it.scope==='group'?'題組':'單題'}</button><button type="button" onclick="toggleCropSkip(${i})">${it.skip?'恢復':'略過'}</button><button type="button" title="刪除這個框" onclick="deleteCrop(${i})">刪除</button></div>`;
           wrap.appendChild(box);
         });
       });
@@ -1500,10 +1521,10 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 考卷匯入工作流：必要 5 步（1 清除筆跡→2 自動命名→3 OCR→4 題庫 Excel→5 手動切圖）＋可選 2 步（詳解、詳解 Excel）。
      PIPE 狀態＋ pipeStart/pipeProgress/pipeDone/pipeFail/pipeSkip；既有函式以 wrapper 接上，不改原邏輯。 */
   const PIPE={startedAt:0,sel:1,steps:[
-    {id:1,nm:'自動命名'},{id:2,nm:'清除筆跡'},{id:3,nm:'OCR 辨識'},{id:4,nm:'題庫 Excel'},{id:5,nm:'手動切圖'},
-    {id:6,nm:'詳解',opt:1},{id:7,nm:'詳解 Excel',opt:1}
+    {id:1,nm:'自動命名'},{id:2,nm:'清除筆跡'},{id:3,nm:'OCR 辨識'},{id:4,nm:'題庫 Excel'},{id:5,nm:'手動切圖'},{id:6,nm:'人工檢驗'},
+    {id:7,nm:'詳解',opt:1},{id:8,nm:'詳解 Excel',opt:1}
   ].map(x=>({...x,state:'wait',pct:null,detail:'',summary:'',startedAt:0,elapsedMs:0}))};
-  const PIPE_REQ=5;
+  const PIPE_REQ=6;
   const PIPE_TXT={wait:'等待中',run:'進行中',manual:'等你操作',done:'完成',fail:'失敗',skip:'已略過'};
   function pipeStep(id){return PIPE.steps[id-1]}
   function pipeFmt(ms){const s=ms/1000;if(s<60)return s.toFixed(1)+' 秒';const m=Math.floor(s/60);return m+' 分 '+Math.round(s-m*60)+' 秒'}
@@ -1517,9 +1538,9 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   setStagesOpen(false);
   function pipeGo(id){
     setStagesOpen(true);
-    const optional=document.querySelector('.auto-optional');if(optional)optional.classList.toggle('active',id>=6);
-    if(id<=5){openReviewStep({1:1,2:2,3:2,4:3,5:4}[id]);PIPE.sel=id;pipeRender();document.querySelector('.auto-review')?.scrollIntoView({behavior:'smooth',block:'start'});return}
-    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],6:[2,'6'],7:[2,'6']};
+    const optional=document.querySelector('.auto-optional');if(optional)optional.classList.toggle('active',id>=7);
+    if(id<=6){openReviewStep({1:1,2:2,3:2,4:3,5:4,6:5}[id]);PIPE.sel=id;pipeRender();document.querySelector('.auto-review')?.scrollIntoView({behavior:'smooth',block:'start'});return}
+    const stages=document.querySelectorAll('main .stage');const map={1:[0,'1'],2:[0,'2'],3:[0,'3'],4:[0,'4'],5:[1,'5c'],7:[2,'6'],8:[2,'6']};
     const m=map[id];if(!m)return;const st=stages[m[0]];const el=st&&st.querySelector('li[data-step="'+m[1]+'"]');
     if(!el)return;PIPE.sel=id;pipeRender();const d=el.querySelector('.step-detail');const b=el.querySelector('.toggle-detail');if(d&&!d.classList.contains('open')&&b)b.click();el.scrollIntoView({behavior:'smooth',block:'start'});el.style.transition='box-shadow .4s';el.style.boxShadow='0 0 0 3px rgba(133,1,3,.25)';setTimeout(()=>el.style.boxShadow='',1400)}
   async function pipeSaveExamPdfs(original,clean){
@@ -1534,11 +1555,11 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     pipeRender();
   }
   function pipeCheckDehand(){pipeGo(2);document.getElementById('dehandPages').scrollIntoView({behavior:'smooth',block:'start'})}
-  const PIPE_ACT={2:['人工檢查','pipeCheckDehand()'],4:['匯入題庫','sendQuestionsToQbank()']};
+  const PIPE_ACT={2:['人工檢查','pipeCheckDehand()']};
   function pipeActHtml(id){const x=PIPE_ACT[id];return x?`<span class="pz-act" role="button" tabindex="0" onclick="event.stopPropagation();${x[1]}" onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();${x[1]}}">${x[0]}</span>`:''}
   function pipePieceHtml(s,knob){return `<button type="button" class="pz wait${knob?' knob':''}" data-id="${s.id}" onclick="pipeGo(${s.id})"><span class="pzn"><span>STEP ${s.id}</span>${s.opt?'<em>可選</em>':''}</span><span class="nm">${s.nm}</span><span class="st"></span><span class="pb"><i></i></span><span class="tm"></span>${pipeActHtml(s.id)}</button>`}
   function pipeBuild(){const box=document.getElementById('pipe');if(!box)return;
-    box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/5</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
+    box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/6</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-host"><b>OCR 運算主機</b><label><input type="radio" name="ocrHost" value="company" onchange="setOcrHost(this.value)"> 公司電腦</label><label><input type="radio" name="ocrHost" value="local" onchange="setOcrHost(this.value)"> 本機</label><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.1/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
@@ -1578,10 +1599,9 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
-    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始手動切圖',true)}}catch(e){}return r});
-    wrap('batchImportToQbank',function(o,a){const n=(typeof cropCandidates!=='undefined'?cropCandidates.filter(x=>!x.skip).length:0);const r=o.apply(this,a);if(n)pipeDone(5,n+' 張圖已送入題庫');return r});
-    wrap('copySolutionPrompt',function(o,a){pipeStart(6,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
-    wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(7).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(7,n+' 題詳解');if(pipeStep(6).state!=='done'&&pipeStep(6).state!=='run')pipeDone(6,'已取得詳解')}}catch(e){}return r});
+    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始手動切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
+        wrap('copySolutionPrompt',function(o,a){pipeStart(7,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
+    wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(8).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(8,n+' 題詳解');if(pipeStep(7).state!=='done'&&pipeStep(7).state!=='run')pipeDone(7,'已取得詳解')}}catch(e){}return r});
   })();
   </script>
   <script id="enrichScript">
@@ -1651,12 +1671,12 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     const qs=rows.filter(r=>r.length>=20&&String(r[19]||'').trim());if(!qs.length){st.textContent='題庫資料裡沒有題目內容可寫詳解。';return}
     SOL_BUSY=true;btn.disabled=true;bar.style.width='2%';const t0=Date.now();const out=[];let failed=0;
     try{
-      if(typeof pipeStart==='function')pipeStart(6,'生成中',false);
+      if(typeof pipeStart==='function')pipeStart(7,'生成中',false);
       const w=promptSource.contentWindow;await waitForPromptBuilder('buildSolBatchPrompt');
       const eng=document.getElementById('solEngine').value;const SIZE=5,batches=[];for(let i=0;i<qs.length;i+=SIZE)batches.push(qs.slice(i,i+SIZE));
       for(let b=0;b<batches.length;b++){
         st.textContent='生成詳解中：第 '+(b+1)+'/'+batches.length+' 批（共 '+qs.length+' 題）・已完成 '+out.length+' 題・已耗時 '+Math.round((Date.now()-t0)/1000)+' 秒';bar.style.width=Math.max(3,Math.round(b/batches.length*100))+'%';
-        if(typeof pipeProgress==='function')pipeProgress(6,Math.round(b/batches.length*100),'第 '+(b+1)+'/'+batches.length+' 批');
+        if(typeof pipeProgress==='function')pipeProgress(7,Math.round(b/batches.length*100),'第 '+(b+1)+'/'+batches.length+' 批');
         const items=batches[b].map(r=>({exam:r[2],no:r[3],ans:r[4],field:r[7],unit:r[8],kp:r[10],q:(String(r[21]||'').trim()?'【題組文章】'+r[21]+'\n\n':'')+r[19],imgs:[],groupId:''}));
         const ex=w.buildSolBatchPrompt(items);let prompt='【系統指令 system】\n'+ex.sys+'\n\n'+'─'.repeat(40)+'\n\n【使用者訊息 user】\n'+ex.msg;
         const exam=(document.getElementById('examName')||{}).value||'';if(exam)prompt='【本次指定考試名稱】'+exam+'\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n'+prompt;
@@ -1668,8 +1688,8 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         document.getElementById('solutionCsv').value=[['考試名稱','題號','詳解']].concat(out).map(r=>r.map(_csvCell).join(',')).join('\n');inspectSolCsv();
       }
       bar.style.width='100%';st.textContent='詳解生成完成：'+out.length+' 題'+(failed?'，'+failed+' 題沒生成（可再按一次補）':'')+'・用時 '+Math.round((Date.now()-t0)/1000)+' 秒。請抽查後按「匯入詳解」。';
-      if(typeof pipeDone==='function'){pipeDone(6,out.length+' 題詳解')}
-    }catch(e){st.textContent='生成詳解失敗：'+(e.message||e);bar.style.width='0%';if(typeof pipeFail==='function')pipeFail(6,e.message||e)}
+      if(typeof pipeDone==='function'){pipeDone(7,out.length+' 題詳解')}
+    }catch(e){st.textContent='生成詳解失敗：'+(e.message||e);bar.style.width='0%';if(typeof pipeFail==='function')pipeFail(7,e.message||e)}
     finally{SOL_BUSY=false;btn.disabled=false}}
   enrichConnCheck();
   </script>
@@ -1924,9 +1944,10 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   <script src="patchnotes.js" defer></script>
   <script src="refresh.js" defer></script>
 <script id="importReviewScript">
-  /* 匯入前檢查：左＝原卷／清稿（手機版從左側彈出），右＝題庫題目卡片；可直接改題目、答案、題組文章，改動寫回題目資料 */
+  /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
+     切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
   (function(){
-    let RV=null;const PAGE_CACHE=new WeakMap();let _katexP=null;
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,data:null};const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
     const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
     function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
       _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
@@ -1954,70 +1975,124 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       const seen={};
       items.forEach(it=>{const w=[];
         if(!it.q.trim())w.push('題目空白');
+        if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
         if(!it.ans)w.push('沒有答案');
         const needFig=FIG.test(it.q)||(it.gid&&FIG.test(passages[it.gid]||''));
         if(needFig&&!it.imgs.length&&!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length))w.push('缺圖');
-        if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
         if(it.flag)w.push('待確認');
-        it.warns=w});
+        it.warns=w;
+        it.tone=w.includes('題目空白')||w.includes('題號重複')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
       return {rows,header,ix,items,passages,passageRow,gImgs,loose}}
     function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;return it.warns.includes(f)}
+    const gattr=g=>`data-g="${esc(g)}"`;
     function renderRight(keepY){
-      const box=document.getElementById('rvRight');const y=box.scrollTop;const D=RV.data;
-      if(!D){box.innerHTML='<div class="status">還沒有題目資料。請先等「題庫 Excel」產生，或在「查看／修改題目原始資料」貼上題目資料。</div>';return}
+      const box=document.getElementById('rvRight');if(!box)return;const y=box.scrollTop;const D=RV.data;
+      if(!D){box.innerHTML='<div class="status">還沒有題目資料。請等「題庫 Excel」產生後再回來。</div>';setSum('');return}
       const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,bad=D.items.filter(it=>it.warns.length).length;
-      const chip=(k,l,n)=>`<button type="button" class="rv-chip${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
-      let h='<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('缺圖','缺圖',cnt('缺圖'))+chip('沒有答案','沒有答案',cnt('沒有答案'))+chip('待確認','待確認',cnt('待確認'))+(cnt('題號重複')?chip('題號重複','題號重複',cnt('題號重複')):'')+'</div>';
-      if(D.loose.length)h+=`<div class="rv-card bad"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">這些圖的題號在題目資料裡找不到，請到「切圖」分頁修改題號。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">標的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
+      const chip=(k,l,n,t)=>`<button type="button" class="rv-chip${t?' t-'+t:''}${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
+      let h='<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')?chip('題號重複','題號重複',cnt('題號重複'),'err'):'')+'</div>';
+      if(D.loose.length)h+=`<div class="rv-card tone-err"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">在左邊清稿的框上把題號改對，就會自動放進對應題目。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">框上的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
       const shownG=new Set();let n=0;
       D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
         if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
-          const pe=RV.edit==='p:'+it.gid;
-          h+=pe?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span><span class="rv-tag">${esc(it.gid)}</span></div><label>題組文章</label><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" data-g="${esc(it.gid)}" onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
-            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div>${D.passageRow[it.gid]?`<div class="rv-actions"><button type="button" class="btn" data-g="${esc(it.gid)}" onclick="_rvEdit('p:'+this.dataset.g)">修改題組文章</button></div>`:''}</div>`}
-        const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+(it.chart&&it.chart!=='無'?`<span class="rv-tag">${esc(it.chart)}</span>`:'')+it.warns.map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
-        if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
-        h+=`<div class="rv-card${it.warns.length?' bad':''}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('q:${k}')">修改</button></div></div>`});
+          h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
+            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div>${D.passageRow[it.gid]?`<div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvEdit('p:'+this.dataset.g)">修改題組文章</button></div>`:''}</div>`}
+        const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
+        const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
+        if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
+        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('q:${k}')">修改</button></div></div>`});
       if(!n)h+='<div class="status">這個分類目前沒有題目。</div>';
       box.innerHTML=h;rvMath(box);if(keepY)box.scrollTop=y;
-      const s=document.getElementById('rvSum');if(s)s.textContent=`共 ${D.items.length} 題，${bad?bad+' 題需要確認':'沒有發現問題'}`;
+      setSum(`共 ${D.items.length} 題・${bad?bad+' 題要注意':'沒有發現問題'}・圖 ${(typeof cropCandidates!=='undefined'?cropCandidates.filter(c=>!c.skip).length:0)} 張`);
     }
+    function setSum(t){const s=document.getElementById('ivSum');if(s)s.textContent=t}
     function saveRows(){questionCsv.value=_rowsToCsv(RV.data.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.edit='';renderRight(true)}
+    function refresh(){if(!document.getElementById('rvRight'))return;if(RV.edit)return;RV.data=build();renderRight(true)}
+    window._ivSync=function(){clearTimeout(_tmr);_tmr=setTimeout(refresh,120)};
     window._rvFilter=f=>{RV.filter=f;RV.edit='';renderRight(false);document.getElementById('rvRight').scrollTop=0};
     window._rvEdit=k=>{RV.edit=k;renderRight(true);const t=document.querySelector('#rvRight textarea');if(t)t.focus()};
     window._rvSaveQ=k=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;r[ix.q]=document.getElementById('rvEditQ').value;r[ix.ans]=document.getElementById('rvEditA').value.trim();saveRows()};
     window._rvSaveP=gid=>{const pr=RV.data.passageRow[gid];if(!pr)return;RV.data.rows[pr.ri][pr.col]=document.getElementById('rvEditP').value;saveRows()};
-    function srcFiles(){const clean=(typeof dehandResult!=='undefined'&&dehandResult&&dehandResult.file)||(typeof OCR_PDF_FILE!=='undefined'&&OCR_PDF_FILE)||null;return {orig:window.RAW_ORIG_FILE||null,clean}}
+    window._rvFlag=(k,on)=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;while(r.length<=ix.flag)r.push('');r[ix.flag]=on?'Y':'';const keep=RV.edit;
+      if(keep){const q=document.getElementById('rvEditQ'),a=document.getElementById('rvEditA');if(q)r[ix.q]=q.value;if(a)r[ix.ans]=a.value.trim()}
+      questionCsv.value=_rowsToCsv(RV.data.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.edit=keep;renderRight(true)};
+    // 左側：清稿＋切圖框（把切圖分頁的頁面區搬過來，兩邊永遠是同一份）或原卷
+    function cropArea(){return document.getElementById('cropPageArea')}
+    function moveCropIn(){const a=cropArea(),slot=document.getElementById('ivCropSlot');if(!a||!slot||a.parentNode===slot)return;if(!_cropHome){_cropHome=document.createComment('cropPageArea-home');a.parentNode.insertBefore(_cropHome,a)}slot.appendChild(a)}
+    function moveCropBack(){const a=cropArea();if(a&&_cropHome&&_cropHome.parentNode&&a.parentNode!==_cropHome.parentNode)_cropHome.parentNode.insertBefore(a,_cropHome.nextSibling)}
     async function renderLeft(){
-      const F=srcFiles(),f=F[RV.src],box=document.getElementById('rvPages');
-      document.querySelectorAll('#rvSrc button').forEach(b=>{b.classList.toggle('on',b.dataset.src===RV.src);b.disabled=!F[b.dataset.src]});
-      if(!f){box.innerHTML=`<div class="status">${RV.src==='orig'?'沒有原卷檔案':'沒有清稿檔案'}。檔案只存在這次開啟的頁面，重新整理後要重新丟入考卷。</div>`;return}
-      if(/^image\//.test(f.type)){box.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`;return}
+      const crop=RV.src==='crop',slot=document.getElementById('ivCropSlot'),orig=document.getElementById('ivOrig');
+      document.querySelectorAll('#ivSrc button').forEach(b=>b.classList.toggle('on',b.dataset.src===RV.src));
+      slot.hidden=!crop;orig.hidden=crop;
+      if(crop){moveCropIn();
+        if(!cropFiles.pdf){slot.querySelector('.iv-empty')||slot.insertAdjacentHTML('afterbegin','<div class="status iv-empty">沒有清稿 PDF。請先在最上方丟入考卷跑完流程。</div>');return}
+        slot.querySelector('.iv-empty')?.remove();
+        if(!(manualPagesFile===cropFiles.pdf&&manualPageWraps.size)){setState('正在載入清稿頁面…');await startManualCrop();moveCropIn();setState('')}
+        return}
+      const f=window.RAW_ORIG_FILE;
+      if(!f){orig.innerHTML='<div class="status">沒有原卷檔案（重新整理後要重新丟入考卷）。</div>';return}
+      if(/^image\//.test(f.type)){orig.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`;return}
       let pages=PAGE_CACHE.get(f);
-      if(!pages){box.innerHTML='<div class="status" id="rvPdfState">正在載入原卷…</div>';try{pages=await _pdfPagesToImages(f,document.getElementById('rvPdfState'));PAGE_CACHE.set(f,pages)}catch(e){box.innerHTML='<div class="status">原卷載入失敗：'+esc(e.message||e)+'</div>';return}}
-      if(srcFiles()[RV.src]!==f)return;
-      box.innerHTML=pages.map((u,i)=>`<div class="rv-pg">第 ${i+1} 頁</div><img src="${u}" alt="第 ${i+1} 頁">`).join('');
+      if(!pages){orig.innerHTML='<div class="status" id="rvPdfState">正在載入原卷…</div>';try{pages=await _pdfPagesToImages(f,document.getElementById('rvPdfState'));PAGE_CACHE.set(f,pages)}catch(e){orig.innerHTML='<div class="status">原卷載入失敗：'+esc(e.message||e)+'</div>';return}}
+      orig.innerHTML=pages.map((u,i)=>`<div class="rv-pg">第 ${i+1} 頁</div><img src="${u}" alt="第 ${i+1} 頁">`).join('');
     }
-    function ensureDlg(){if(document.getElementById('rvDlg'))return;const d=document.createElement('div');d.id='rvDlg';d.setAttribute('role','dialog');d.setAttribute('aria-label','匯入前檢查');
-      d.innerHTML=`<div class="rv-top"><h3>匯入前檢查</h3><span class="rv-exam" id="rvExam"></span><span class="help" id="rvSum"></span><button type="button" class="btn" id="rvHideLeft" onclick="_rvToggleLeft()">隱藏原卷</button><button type="button" class="btn" onclick="closeImportReview()">關閉</button></div>
-        <div class="rv-body"><div class="rv-left" id="rvLeft"><div class="rv-ltools"><div class="rv-seg" id="rvSrc"><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button><button type="button" data-src="clean" onclick="_rvSrc('clean')">清稿</button></div><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button></div><div id="rvPages"></div></div>
-          <div class="rv-rightwrap"><div class="rv-right" id="rvRight"></div><div class="rv-foot"><span class="help">檢查無誤後依序：</span><button type="button" class="btn primary" onclick="sendQuestionsToQbank()">1. 匯入題目</button><button type="button" class="btn green" id="rvImgBtn" onclick="batchImportToQbank()">2. 貼入切好的圖</button></div></div></div>
-        <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開原卷"><span>原</span><span>卷</span></button>`;
-      document.body.appendChild(d);
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'&&d.classList.contains('open')){if(d.classList.contains('left-open'))_rvLeft(false);else closeImportReview()}})}
-    window._rvLeft=open=>document.getElementById('rvDlg').classList.toggle('left-open',open);
-    window._rvToggleLeft=()=>{const b=document.querySelector('#rvDlg .rv-body'),hide=!b.classList.contains('hide-left');b.classList.toggle('hide-left',hide);document.getElementById('rvLeft').style.display=hide&&innerWidth>=900?'none':'';b.style.gridTemplateColumns=hide&&innerWidth>=900?'1fr':'';document.getElementById('rvHideLeft').textContent=hide?'顯示原卷':'隱藏原卷'};
+    function setState(t){const s=document.getElementById('ivState');if(s)s.textContent=t}
     window._rvSrc=s=>{RV.src=s;renderLeft()};
-    window._rvZoom=d=>{RV.zoom=Math.max(1,Math.min(3,(RV.zoom||1)+d*0.5));document.getElementById('rvLeft').style.setProperty('--rvz',RV.zoom)};
-    window.openImportReview=async function(){
-      ensureDlg();const F=srcFiles();
-      RV={filter:'all',edit:'',src:F.orig?'orig':'clean',zoom:1,data:build()};
-      document.getElementById('rvExam').textContent=(examName.value||'').trim()||'（尚未命名）';
-      const ib=document.getElementById('rvImgBtn');if(ib)ib.disabled=!(typeof cropCandidates!=='undefined'&&cropCandidates.some(c=>!c.skip));
-      const d=document.getElementById('rvDlg');d.classList.add('open');d.classList.remove('left-open');document.body.style.overflow='hidden';
-      renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));renderLeft();
+    window._rvZoom=d=>{RV.zoom=Math.max(1,Math.min(3,(RV.zoom||1)+d*0.5));document.getElementById('ivLeft').style.setProperty('--rvz',RV.zoom)};
+    window._rvLeft=open=>{const v=document.getElementById('ivWrap');if(v)v.classList.toggle('left-open',open)};
+    window._ivFull=()=>{const v=document.getElementById('ivWrap');const on=!v.classList.contains('full');v.classList.toggle('full',on);document.body.style.overflow=on?'hidden':'';document.getElementById('ivFullBtn').textContent=on?'結束全螢幕':'全螢幕'};
+    function ensurePane(){const pane=document.getElementById('ivPane');if(!pane||pane.dataset.ready)return pane;pane.dataset.ready='1';
+      pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
+        <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><span class="help">框上可直接改題號、單題／題組、略過；也可拖曳補框</span><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
+        <div class="iv-right" id="rvRight"></div></div>
+        <div class="iv-foot"><div class="btn-even"><button type="button" class="btn primary" id="ivImportBtn" onclick="oneClickImport()">檢查完成，一鍵匯入題庫</button></div><div class="status" id="ivState"></div></div>
+        <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
+      try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
+      return pane}
+    async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
+      try{if(cropCandidates.some(c=>!c.skip)&&pipeStep(5).state!=='done')pipeDone(5,cropCandidates.filter(c=>!c.skip).length+' 張圖');if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+    // 切到第 5 分頁＝進人工檢驗；離開就把切圖頁面區搬回切圖分頁
+    const _open=window.openReviewStep;
+    window.openReviewStep=function(n){_open(n);if(String(n)==='5')enter();else moveCropBack()};
+    window.openImportReview=function(){setStagesOpen&&setStagesOpen(true);openReviewStep(5);document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'})};
+    window.closeImportReview=function(){};
+    // 切圖、題目資料一變動就同步右側（不必按重新整理）
+    const _rc=window.renderCropCandidates;window.renderCropCandidates=function(...a){const r=_rc.apply(this,a);window._ivSync();return r};
+    // 簡單模式：題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
+    let smFired=false;const isSimple=()=>document.body.classList.contains('simple-mode');
+    async function simpleNext(){if(!isSimple()||smFired)return;smFired=true;document.body.classList.add('sm-ready');setStagesOpen(true);openReviewStep(5);
+      setTimeout(()=>document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'}),300);
+      if(cropFiles.pdf&&!cropCandidates.some(c=>c.kind==='自動裁切')){setState('正在自動切圖（約 1～2 分鐘），切好的圖會自動出現在左邊清稿和右邊題目上…');
+        try{await autoCropByModel()}catch(e){}
+        const msg=(document.getElementById('cropReviewState')||{}).textContent||'';setState(/失敗/.test(msg)?msg+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
+        if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}}
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(isSimple()&&pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
+    const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;document.body.classList.remove('sm-ready');return _pr.apply(this,a)};
+    if(isSimple())try{setStagesOpen(false);document.body.classList.remove('stages-closed')}catch(e){}
+    // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
+    window.oneClickImport=async function(){
+      const csv=(questionCsv.value||'').trim();if(!csv){alert('還沒有題目資料。');return}
+      if(!examName.value.trim()){alert('找不到考卷名稱，請到「確認考卷名稱」分頁填寫。');openReviewStep(1);return}
+      const D=RV.data||build();const bad=D?D.items.filter(it=>it.warns.length&&!it.warns.every(w=>w==='待確認')).length:0;
+      if(bad&&!confirm(`還有 ${bad} 題有缺圖、沒答案或題號問題。\n要先照現況匯入嗎？（這些題目在題庫會標成待確認，之後可再修）`))return;
+      const btn=document.getElementById('ivImportBtn');btn.disabled=true;
+      try{
+        const w=promptSource.contentWindow;await waitForPromptBuilder('doImport');
+        if(!w.csvArea)throw new Error('題庫匯入程式尚未載入完成，請稍候再按一次');
+        setState('正在匯入題目…');let loaded=false;const _ld=w.load;w.load=async function(...a){loaded=true;return _ld.apply(this,a)};
+        try{w.csvArea.value=csv;await w.doImport()}finally{w.load=_ld}
+        if(!loaded){setState('題目沒有匯入（已取消或發生錯誤）。');return}
+        const imgs=cropCandidates.filter(x=>!x.skip);let note='';
+        if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
+          const importer=await waitForPromptBuilder('importBatchHandoffImages');
+          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
+          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');
+          note=bits.length?'（圖片：'+bits.join('；')+'）':'，圖片已全部貼入';}
+        setState('匯入完成'+note+'。');try{pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,'已匯入題庫')}catch(e){}
+        if(confirm('匯入完成'+note+'。\n要前往題庫查看這份考卷嗎？'))finishRawWorkflow();
+      }catch(e){setState('匯入失敗：'+(e.message||e))}
+      finally{btn.disabled=false}
     };
-    window.closeImportReview=function(){const d=document.getElementById('rvDlg');if(d)d.classList.remove('open','left-open');document.body.style.overflow=''};
   })();
 </script>
 </body>
