@@ -184,7 +184,7 @@
         </li>
         <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
-            <div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「⬆ 匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
+            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗，改用備援方式</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all"></p><p class="help">文字辨識已完成，只是 Excel 轉換這一步壞了。可擇一：</p><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn primary" onclick="ocrCsvViaAI('gemini')">🤖 用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">📋 複製指令＋辨識文字（貼到外部 AI）</button><button class="btn" onclick="ocrMakeCsv()">🔁 重試抓 Excel</button></div><p class="help" style="margin-top:6px">外部 AI 回傳的 CSV 貼到下方「查看／修改題目原始資料」即可，之後流程相同。</p></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「⬆ 匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
             <div class="enrich" id="enrichBox"><div class="enrich-head"><b>本機 AI 補齊明細</b><span class="help">批次補上：冊數、冊名、領域、大單元、子單元、知識點、題目摘要（已有的不會動）</span></div>
@@ -1274,7 +1274,7 @@
       document.getElementById('ocrSummary').textContent=`共 ${j.pages.length} 頁、偵測到 ${figs} 張圖／表（引擎：${j.engine}）。可按「產生題目 CSV」出題目，或「送圖到手動切圖步驟」把這些圖交給批次貼圖去改題號/手動框選/略過。`;
       document.getElementById('ocrMarkdown').textContent=md.join('\n');
     }
-    function ocrAllMarkdown(){return (OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');}
+    function ocrAllMarkdown(){const md=(OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');return md.trim()?md:((OCR_RESULT&&OCR_RESULT.text)||'');}
     // 把 OCR 出來的圖／表，送進手動切圖步驟「批次貼圖」的可編輯清單（改題號/手動框選/略過）
     function ocrToBatch(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
@@ -1337,18 +1337,22 @@
       if(OCR_RESULT.qbankUrl){
         directStatus.textContent='正在取得茲茲 OCR 題庫 Excel…';
         const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),45000);
-        try{await loadXlsxAsync();const rr=await fetch(directBase+OCR_RESULT.qbankUrl,{signal:ctl.signal});if(!rr.ok)throw new Error('下載題庫 Excel 失敗（'+rr.status+'）');const wb=XLSX.read(await rr.arrayBuffer(),{type:'array'});questionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectCsv();directStatus.textContent='已從茲茲 OCR 取得題庫 Excel，轉成 CSV 填入第 4 步；請人工核對後匯入。';if(auto!==true){_revealQuestionCsv();if(document.getElementById('autoImportQuestions')?.checked)sendQuestionsToQbank()}}catch(e){directStatus.textContent='取得題庫 Excel 失敗：'+(e.name==='AbortError'?'等待 OCR 主機超過 45 秒，請確認主機仍在運作後重試。':(e.message||e))}finally{clearTimeout(timer)}
+        try{await loadXlsxAsync();const rr=await fetch(directBase+OCR_RESULT.qbankUrl,{signal:ctl.signal});if(!rr.ok){let d='';try{const t=await rr.text();try{d=JSON.parse(t).error||t}catch(_){d=t}}catch(_){}const err=new Error('下載題庫 Excel 失敗（'+rr.status+'）');err.detail=String(d||'').replace(/\s+/g,' ').trim();throw err}const wb=XLSX.read(await rr.arrayBuffer(),{type:'array'});questionCsv.value=XLSX.utils.sheet_to_csv(wb.Sheets[wb.SheetNames[0]],{RS:'\n',FS:','});inspectCsv();_qbankFallback(null);directStatus.textContent='已從茲茲 OCR 取得題庫 Excel，轉成 CSV 填入第 4 步；請人工核對後匯入。';if(auto!==true){_revealQuestionCsv();if(document.getElementById('autoImportQuestions')?.checked)sendQuestionsToQbank()}}catch(e){const why=e.name==='AbortError'?'等待 OCR 主機超過 45 秒，請確認主機仍在運作後重試。':e instanceof TypeError?'連不到 OCR 主機（主機程式可能在轉 Excel 時當掉，或已關閉）':(e.message||String(e));directStatus.textContent='取得題庫 Excel 失敗：'+why+'。可改用下方備援方式產生。';_qbankFallback(why+(e.detail?'｜主機訊息：'+e.detail.slice(-300):''))}finally{clearTimeout(timer)}
         return;
       }
+      return ocrCsvViaAI();
+    }
+    function _qbankFallback(why){const box=document.getElementById('qbankFallback');if(!box)return;if(why==null){box.classList.add('hide');return}document.getElementById('qbankFallbackWhy').textContent='原因：'+why;box.classList.remove('hide');if(typeof setStagesOpen==='function')try{setStagesOpen(true)}catch(_){}if(typeof openReviewStep==='function')try{openReviewStep(3)}catch(_){}_revealQuestionCsv();setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'center'}),350)}
+    async function _ocrQuestionPrompt(){const w=promptSource.contentWindow;const build=await waitForPromptBuilder('buildPrompt');let instruction=build.call(w);if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;const text=ocrAllMarkdown();if(!text.trim())throw new Error('找不到辨識文字，請先完成 OCR。');return instruction+'\n\n════════\n以下是 OCR 從清稿考卷自動辨識出的內容（含 LaTeX 公式）。請「完全依照上述規則」輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字：\n\n'+text}
+    async function copyOcrQuestionPrompt(){try{const p=await _ocrQuestionPrompt();await navigator.clipboard.writeText(p);alert('已複製「題庫指令＋辨識文字」。貼到 Gemini／ChatGPT／Claude，把回傳的 CSV 貼回「查看／修改題目原始資料」。建議同時附上清稿 PDF 讓 AI 對照。')}catch(e){alert('複製失敗：'+(e.message||e))}}
+    async function ocrCsvViaAI(forceEngine){
+      if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
       const st=document.getElementById('ocrStatus');
-      const engine=document.getElementById('ocrClassifier').value;
+      const engine=forceEngine||(document.getElementById('ocrClassifier')||{}).value||'gemini';
       st.textContent='正在用 '+(engine==='gemini'?'Gemini':'Ollama')+' 分類、產生 23 欄 CSV…';
       try{
         const w=promptSource.contentWindow;
-        const build=await waitForPromptBuilder('buildPrompt');
-        let instruction=build.call(w);
-        if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;
-        const msg=instruction+'\n\n════════\n以下是 OCR 從清稿考卷自動辨識出的內容（含 LaTeX 公式）。請「完全依照上述規則」輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字：\n\n'+ocrAllMarkdown();
+        const msg=await _ocrQuestionPrompt();
         let csv;
         if(engine==='gemini'){
           const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
@@ -1363,7 +1367,7 @@
         }
         csv=(csv||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
         if(!csv){st.textContent='分類引擎沒有回傳內容，請重試或改用另一個引擎。';return}
-        questionCsv.value=csv;inspectCsv();
+        questionCsv.value=csv;inspectCsv();_qbankFallback(null);
         st.textContent='CSV 已產生並填入第 4 步，請人工核對後再匯入題庫。';
         _revealQuestionCsv();
       }catch(e){st.textContent='產生 CSV 失敗：'+(e.message||e);}
