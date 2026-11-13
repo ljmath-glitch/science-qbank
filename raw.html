@@ -137,6 +137,32 @@
     .dehand-card .dh-mv{display:inline-flex;gap:4px}
     .dehand-card .dh-mv button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:22px;cursor:pointer;color:var(--red);font-size:11px;line-height:1;padding:0}
     .dehand-card .dh-mv button:disabled{opacity:.3;cursor:default}
+.enrich-fold>summary{list-style:none;cursor:pointer}.enrich-fold>summary::-webkit-details-marker{display:none}.enrich-sum{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.fu-tag{display:inline-block;padding:2px 9px;border-radius:999px;background:#850103;color:#fff;font-size:12px;font-weight:700}.enrich-fold>summary .help{font-weight:400}.enrich-caret{margin-left:auto;font-size:12px;color:#8a7d6b}.enrich-fold[open] .enrich-caret{font-size:0}.enrich-fold[open] .enrich-caret::after{content:"收合 ▴";font-size:12px}.enrich-fold:not([open])>summary{margin-bottom:0}
+.vfy-entry{border-top:1px dashed #e0d4c4;padding-top:12px;margin-top:10px}.vfy-how{margin:6px 0 8px;padding-left:20px;font-size:13px;line-height:1.65;color:var(--muted)}.vfy-how b{color:var(--ink)}
+    /* 手機版防跑版（2026-11-13）：所有控制項不超出畫面、工作流拼圖改兩欄、面板不再往右凸出 */
+    @media(max-width:680px){
+      main .stage,main .intro,.step-detail,.steps>li,.review-pane{min-width:0;max-width:100%;box-sizing:border-box}
+      .auto-review .step-detail,.auto-crop .step-detail,.auto-optional .step-detail,.step-detail{margin-right:0}
+      main select,main input:not([type=checkbox]):not([type=radio]),main textarea{max-width:100%;box-sizing:border-box}
+      main label.help{white-space:normal;flex-wrap:wrap;max-width:100%;line-height:1.5}
+      main label.help>select{width:100%;margin-top:4px}
+      main .row{flex-wrap:wrap;min-width:0}
+      main .row>*{min-width:0;max-width:100%}
+      main .btn{white-space:normal;height:auto;min-height:36px}
+      main .status,main .help,main p{overflow-wrap:anywhere}
+      main table{display:block;max-width:100%;overflow-x:auto}
+      .pipe-board,.pipe-opt{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;overflow-x:visible;padding:6px 0}
+      .pz{min-height:96px;padding:10px}
+      .pz.knob::after{display:none}
+      .pz .st{overflow-wrap:anywhere}
+      .review-tabs{grid-template-columns:repeat(2,minmax(0,1fr));overflow-x:visible}
+      .review-tab{min-height:58px;padding:8px 10px}
+      header{flex-wrap:wrap;gap:8px}
+      header h1{font-size:18px;line-height:1.35}
+      header .sub{font-size:10px;letter-spacing:.06em}
+      .brand-head{min-width:0;flex:1 1 220px}
+      .enrich-head{flex-wrap:wrap}
+    }
   </style>
 </head>
 <body>
@@ -184,14 +210,14 @@
         </li>
         <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">⌄</button>
           <div class="step-detail">
-            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗，改用備援方式</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all"></p><p class="help">文字辨識已完成，只是 Excel 轉換這一步壞了。可擇一：</p><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn primary" onclick="ocrCsvViaAI('gemini')">🤖 用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">📋 複製指令＋辨識文字（貼到外部 AI）</button><button class="btn" onclick="ocrMakeCsv()">🔁 重試抓 Excel</button></div><p class="help" style="margin-top:6px">外部 AI 回傳的 CSV 貼到下方「查看／修改題目原始資料」即可，之後流程相同。</p></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「⬆ 匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
+            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗，改用備援方式</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all;white-space:pre-line"></p><p class="help">文字辨識已完成，只是 Excel 轉換這一步壞了。可擇一：</p><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn primary" onclick="ocrCsvViaAI('gemini')">🤖 用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">📋 複製指令＋辨識文字（貼到外部 AI）</button><button class="btn" onclick="ocrMakeCsv()">🔁 重試抓 Excel</button></div><p class="help" style="margin-top:6px">外部 AI 回傳的 CSV 貼到下方「查看／修改題目原始資料」即可，之後流程相同。</p></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「⬆ 匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
-            <div class="enrich" id="enrichBox"><div class="enrich-head"><b>本機 AI 補齊明細</b><span class="help">批次補上：冊數、冊名、領域、大單元、子單元、知識點、題目摘要（已有的不會動）</span></div>
+            <details class="enrich enrich-fold" id="enrichBox"><summary class="enrich-head"><span class="enrich-sum"><b>本機 AI 補齊明細</b><span class="fu-tag">福大專用</span><span class="enrich-caret">展開 ▾</span></span><span class="help">需在福大電腦啟動「AI 橋接」才能用；其他人可略過。批次補上冊數、冊名、領域、大單元、子單元、知識點、題目摘要（已有的不會動）</span></summary>
             <div class="row"><label class="help">AI 引擎 <select id="enrichEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="enrichConn"></span></div>
             <div class="row"><button class="btn green" id="enrichBtn" onclick="enrichQuestions()">批次補齊明細</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="enrichAuto" type="checkbox" checked> 題庫 Excel 產生後自動補齊</label></div>
-            <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus">缺少明細的題目會分批交給本機 AI 判斷，不需要逐題操作。</div></div>
-            <div class="row" style="border-top:1px dashed #e0d4c4;padding-top:10px;margin-top:6px"><button class="btn" id="ocrVfyBtn" onclick="ocrVerify()">🔍 AI 自動核對（逐題跟原卷比對）</button><span class="help">把原卷每一頁送給 AI，逐題檢查題號／答案／選項文字／公式有沒有抄錯或漏字，再讓你<b>一題一題確認</b>後才套用。需用同一份 PDF 辨識並已在題庫首頁設定 Gemini 金鑰。</span></div>
+            <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus">缺少明細的題目會分批交給本機 AI 判斷，不需要逐題操作。</div></details>
+            <div class="vfy-entry"><div class="detail-title">🔍 逐題核對（AI 對照原卷找錯字）</div><ol class="vfy-how"><li>按下方按鈕，AI 會把<b>原卷每一頁</b>跟上面辨識出的題目逐題比對（題號、答案、選項文字、公式）。約 1～3 分鐘，進度顯示在按鈕下方。</li><li>比對完會跳出<b>「逐題核對」視窗</b>：左邊是題目（原辨識 vs AI 建議），右邊是原卷圖片。</li><li>每題按「✓ 採用修正」或「保留原辨識」，最後按「完成並套用到 CSV」才會真的改資料。</li></ol><div class="row"><button class="btn primary" id="ocrVfyBtn" onclick="ocrVerify()">🔍 開始逐題核對</button><button class="btn hide" id="ocrVfyReopen" onclick="_ocrVfyOpen()">↩ 重新打開逐題核對視窗</button></div><div class="status" id="ocrVfyStatus">需要：①上方已有題目資料　②題庫首頁已設定 Gemini 金鑰。</div></div>
             <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗（預設關閉，先讓你檢查）</label><button class="btn green" onclick="sendQuestionsToQbank()">⬆ 匯入題庫（核對後）</button><button class="btn" onclick="downloadCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">⬇ 下載 Excel</button></div>
           </div>
         </li>
@@ -1342,7 +1368,7 @@
       }
       return ocrCsvViaAI();
     }
-    function _qbankFallback(why){const box=document.getElementById('qbankFallback');if(!box)return;if(why==null){box.classList.add('hide');return}document.getElementById('qbankFallbackWhy').textContent='原因：'+why;box.classList.remove('hide');if(typeof setStagesOpen==='function')try{setStagesOpen(true)}catch(_){}if(typeof openReviewStep==='function')try{openReviewStep(3)}catch(_){}_revealQuestionCsv();setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'center'}),350)}
+    function _qbankFallback(why){const box=document.getElementById('qbankFallback');if(!box)return;if(why==null){box.classList.add('hide');return}if(/Traceback/.test(why)){const m=/(\w+(?:Error|Exception)\b[:：][^\n]*)\s*$/.exec(why);if(m)why=why.split('｜')[0]+'｜主機訊息：'+m[1].trim()}const mod=/No module named ['"]?([\w.]+)/.exec(why||'');document.getElementById('qbankFallbackWhy').textContent='原因：'+why+(mod?`\n👉 OCR 主機缺少 Python 套件「${mod[1]}」。請在 OCR 主機執行：%USERPROFILE%\\.venvs\\zizi-exam\\Scripts\\python.exe -m pip install ${mod[1]==='docx'?'python-docx':mod[1]}　裝好後按「🔁 重試抓 Excel」即可（不必重跑 OCR）。`:'');box.classList.remove('hide');if(typeof setStagesOpen==='function')try{setStagesOpen(true)}catch(_){}if(typeof openReviewStep==='function')try{openReviewStep(3)}catch(_){}_revealQuestionCsv();setTimeout(()=>box.scrollIntoView({behavior:'smooth',block:'center'}),350)}
     async function _ocrQuestionPrompt(){const w=promptSource.contentWindow;const build=await waitForPromptBuilder('buildPrompt');let instruction=build.call(w);if(examName.value)instruction=`【本次指定考試名稱】${examName.value}\n此名稱必須逐字寫入 CSV 的「考試名稱」欄。\n\n`+instruction;const text=ocrAllMarkdown();if(!text.trim())throw new Error('找不到辨識文字，請先完成 OCR。');return instruction+'\n\n════════\n以下是 OCR 從清稿考卷自動辨識出的內容（含 LaTeX 公式）。請「完全依照上述規則」輸出 23 欄 CSV，只輸出 CSV 本身、不要任何其他說明文字：\n\n'+text}
     async function copyOcrQuestionPrompt(){try{const p=await _ocrQuestionPrompt();await navigator.clipboard.writeText(p);alert('已複製「題庫指令＋辨識文字」。貼到 Gemini／ChatGPT／Claude，把回傳的 CSV 貼回「查看／修改題目原始資料」。建議同時附上清稿 PDF 讓 AI 對照。')}catch(e){alert('複製失敗：'+(e.message||e))}}
     async function ocrCsvViaAI(forceEngine){
@@ -1398,29 +1424,30 @@
     }
     async function ocrVerify(){
       const c=(questionCsv.value||'').trim();
-      if(!c){alert('請先產生或貼上題目 CSV（展開「查看／修改題目原始資料」）。');return;}
-      if(!OCR_PDF_FILE){alert('找不到原卷 PDF。請先在上方用同一份 PDF 執行辨識，才能跟原卷逐題比對。');return;}
+      const st=document.getElementById('ocrVfyStatus')||{};const say=m=>{st.textContent=m;try{st.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}};
+      if(!c){say('⚠ 還沒有題目資料，無法核對。題庫 Excel 失敗時，請先用上方紅框的「用 Gemini 自動產生」或貼上 AI 回傳的 CSV，再回來按。');return;}
+      if(!OCR_PDF_FILE){say('⚠ 找不到原卷 PDF。請先在最上方匯入這份考卷跑完 OCR，才能跟原卷逐題比對。');return;}
       const w=promptSource.contentWindow;
       const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
-      if(!key){alert('找不到 Gemini API Key，請先到題庫首頁的「AI 設定」填入 Gemini 金鑰。');return;}
-      if(typeof w.callGemini!=='function'){alert('題庫尚未載入完成，請稍候幾秒再試。');return;}
+      if(!key){say('⚠ 找不到 Gemini 金鑰。請先到題庫首頁「AI 設定」填入 Gemini 金鑰。');return;}
+      if(typeof w.callGemini!=='function'){say('題庫尚未載入完成，請稍候幾秒再按一次。');return;}
       const btn=document.getElementById('ocrVfyBtn');if(btn)btn.disabled=true;
-      const st=document.getElementById('ocrStatus')||{};
+      say('準備中…');
       try{
         const rows=parseCSV(c);
-        if(rows.length<2){alert('CSV 看起來沒有題目資料。');return;}
+        if(rows.length<2){say('⚠ 題目資料是空的。');return;}
         const header=rows[0],idx=_vfyCsvIdx(header);
         const qrows=[];
         for(let i=1;i<rows.length;i++){const r=rows[i];if((r[idx.type]||'').trim()==='passage')continue;if(!(r[idx.q]||'').trim()&&!(r[idx.no]||'').trim())continue;qrows.push(i);}
-        if(!qrows.length){alert('沒有可核對的題目。');return;}
+        if(!qrows.length){say('⚠ 沒有可核對的題目。');return;}
         st.textContent='正在把原卷轉成圖片…';
         const imgs=await _pdfPagesToImages(OCR_PDF_FILE,st);
-        if(!imgs.length){alert('原卷 PDF 沒有可讀取的頁面。');return;}
+        if(!imgs.length){say('⚠ 原卷 PDF 沒有可讀取的頁面。');return;}
         const imgObjs=imgs.map(s=>({src:s}));
         const items=[];const BATCH=18;
         for(let b=0;b<qrows.length;b+=BATCH){
           const slice=qrows.slice(b,b+BATCH);
-          st.textContent=`AI 核對中…（${Math.min(b+BATCH,qrows.length)}/${qrows.length} 題）`;
+          st.textContent=`⏳ AI 正在對照原卷核對第 ${b+1}～${Math.min(b+BATCH,qrows.length)} 題（共 ${qrows.length} 題），請稍候…`;
           const payload=slice.map(ri=>({no:(rows[ri][idx.no]||'').trim(),ans:(rows[ri][idx.ans]||'').trim(),q:(rows[ri][idx.q]||'').trim()}));
           const sys='你是嚴謹的考卷校對員。附圖是一份考卷原卷的每一頁。下面 JSON 是從這份考卷辨識出的題目，請你逐題跟原卷圖片比對，找出辨識錯誤。';
           const msg='請逐題核對下列題目與附圖原卷是否一致，重點檢查：\n'+
@@ -1449,9 +1476,11 @@
           });
         }
         OCR_VFY={rows,header,idx,items,cur:0,imgs};
-        st.textContent='AI 核對完成，請逐題檢查後套用。';
+        const nf=items.filter(x=>x.status==='已修正').length,nw=items.filter(x=>x.status==='待確認').length;
+        st.textContent=`✓ 核對完成：${items.length} 題中，AI 建議修正 ${nf} 題、待確認 ${nw} 題。已打開逐題核對視窗；關掉後可按「重新打開」。`;
+        document.getElementById('ocrVfyReopen')?.classList.remove('hide');
         _ocrVfyOpen();
-      }catch(e){alert('自動核對失敗：'+(e.message||e));}
+      }catch(e){say('✗ 核對失敗：'+(e.message||e)+'（可再按一次重試）');}
       finally{if(btn)btn.disabled=false;}
     }
     function _ocrVfyEnsure(){
