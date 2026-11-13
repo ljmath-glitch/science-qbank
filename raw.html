@@ -137,15 +137,13 @@
     .dehand-card .dh-mv{display:inline-flex;gap:4px}
     .dehand-card .dh-mv button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:22px;cursor:pointer;color:var(--red);font-size:11px;line-height:1;padding:0}
     .dehand-card .dh-mv button:disabled{opacity:.3;cursor:default}
-.vfy-entry{border-top:1px dashed #e0d4c4;padding-top:12px;margin-top:10px}.vfy-how{margin:6px 0 8px;padding-left:20px;font-size:13px;line-height:1.65;color:var(--muted)}.vfy-how b{color:var(--ink)}
-.admin-lock{margin-top:12px;border:1px solid #e3d2b4;border-radius:12px;background:#fffaf0;padding:0}
-.admin-lock>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 14px;font-size:14px;color:#5b4a33}
+.admin-lock{margin-top:8px;border:1px solid #e3d2b4;border-radius:10px;background:#fffaf0;padding:0}
+.admin-lock>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:nowrap;white-space:nowrap;padding:7px 12px;font-size:13px;line-height:1.3;color:#5b4a33}.admin-lock>summary .al-name{overflow:hidden;text-overflow:ellipsis;min-width:0}
 .admin-lock>summary::-webkit-details-marker{display:none}
 .admin-lock>summary b{color:#850103}
 .al-lock{display:none}
-.al-caret{margin-left:auto;font-size:12px;color:#8a7d6b}.al-caret::after{content:"輸入密碼展開"}body.admin-on .al-caret::after{content:"展開"}.admin-lock[open] .al-caret::after{content:"收合"}
+.al-caret{margin-left:auto;flex:0 0 auto;font-size:12px;color:#8a7d6b}.al-caret::after{content:"展開"}body.admin-on .al-caret::after{content:"展開"}.admin-lock[open] .al-caret::after{content:"收合"}
 .al-body{padding:0 14px 12px}.al-bar{display:flex;justify-content:flex-end;margin-bottom:4px}.al-relock{min-height:28px!important;padding:0 10px;font-size:12px}
-.admin-lock.vfy-entry{border-top:1px solid #e3d2b4;padding-top:0}
     main input[type=checkbox],main input[type=radio]{accent-color:var(--red)}
     /* 匯入前檢查：左原卷／清稿，右題目卡片（2026-11-13） */
     #rvDlg{position:fixed;inset:0;z-index:9000;background:var(--paper);display:none;flex-direction:column;color:var(--ink)}
@@ -192,6 +190,8 @@
       .rv-right{padding-left:34px}
       .rv-top .btn#rvHideLeft{display:none}
     }
+.btn-even{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:6px;margin-top:8px;width:100%}
+main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-height:38px;font-size:13px;overflow:hidden;text-overflow:ellipsis;margin:0}
     /* 手機版防跑版（2026-11-13）：所有控制項不超出畫面、工作流拼圖改兩欄、面板不再往右凸出 */
     @media(max-width:680px){
       main .stage,main .intro,.step-detail,.steps>li,.review-pane{min-width:0;max-width:100%;box-sizing:border-box}
@@ -265,15 +265,14 @@
         </li>
         <li data-step="4"><b>題庫 Excel</b>匯入或下載。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
           <div class="step-detail">
-            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all;white-space:pre-line"></p><p class="help">文字辨識已完成，只是 OCR 主機轉 Excel 這一步出錯。請把上面的原因截圖給福大處理，修好後按「重試」即可，不必重跑 OCR。</p><div class="row"><button class="btn primary" onclick="ocrMakeCsv()">重試抓 Excel</button></div><details class="admin-lock"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員專用</b>｜用 AI 改產生題庫資料<span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><p class="help">用 OCR 辨識文字改由 AI 產生 23 欄題庫資料。</p><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn" onclick="ocrCsvViaAI('gemini')">用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">複製指令＋辨識文字（貼到外部 AI）</button></div><p class="help" style="margin-top:6px">外部 AI 回傳的 CSV 貼到下方「查看／修改題目原始資料」即可。</p></div></details></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">OCR 產生的題目<b>不會自動進題庫</b>。請先展開下方「查看／修改題目原始資料」核對 OCR 內容，確認無誤後再按「匯入題庫」（會開啟匯入視窗，仍需在那裡按一次「匯入」才真的寫入）。</p>
+            <div id="qbankFallback" class="hide" style="border:1px solid #e7b7b7;background:#fff6f5;border-radius:10px;padding:10px 12px;margin-bottom:10px"><div class="detail-title" style="color:#8b1a1a">OCR 主機產生題庫 Excel 失敗</div><p class="help" id="qbankFallbackWhy" style="word-break:break-all;white-space:pre-line"></p><p class="help">請把原因截圖給福大，修好後按「重試」。</p><div class="row"><button class="btn primary" onclick="ocrMakeCsv()">重試抓 Excel</button></div><details class="admin-lock"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">用 AI 改產生題庫資料</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><div class="row" style="flex-wrap:wrap;gap:6px"><button class="btn" onclick="ocrCsvViaAI('gemini')">用 Gemini 自動產生</button><button class="btn" onclick="ocrCsvViaAI('ollama')">用 Ollama 產生</button><button class="btn" onclick="copyOcrQuestionPrompt()">複製指令＋辨識文字（貼到外部 AI）</button></div></div></details></div><div class="detail-title">題庫 Excel 已自動產生</div><p class="help">題目還沒進題庫，檢查完再匯入。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <details class="status" style="margin-top:10px"><summary>查看／修改題目原始資料</summary><textarea id="questionCsv" placeholder="題庫資料會自動出現在這裡…" oninput="inspectCsv()" style="margin-top:8px"></textarea><div class="preview" id="csvPreview"></div></details>
-            <details class="admin-lock enrich" id="enrichBox"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員專用</b>｜本機 AI 補齊明細<span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><p class="help">需在管理員電腦啟動「AI 橋接」。批次補上冊數、冊名、領域、大單元、子單元、知識點、題目摘要（已有的不會動）。</p>
+            <details class="admin-lock enrich" id="enrichBox"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">本機 AI 補齊明細</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div>
             <div class="row"><label class="help">AI 引擎 <select id="enrichEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="enrichConn"></span></div>
             <div class="row"><button class="btn green" id="enrichBtn" onclick="enrichQuestions()">批次補齊明細</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="enrichAuto" type="checkbox" checked> 題庫 Excel 產生後自動補齊</label></div>
-            <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus">缺少明細的題目會分批交給本機 AI 判斷，不需要逐題操作。</div></div></details>
-            <details class="admin-lock vfy-entry"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員專用</b>｜逐題核對（AI 對照原卷找錯字）<span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><ol class="vfy-how"><li>按下方按鈕，AI 會把<b>原卷每一頁</b>跟上面辨識出的題目逐題比對（題號、答案、選項文字、公式）。約 1～3 分鐘，進度顯示在按鈕下方。</li><li>比對完會跳出<b>「逐題核對」視窗</b>：左邊是題目（原辨識 vs AI 建議），右邊是原卷圖片。</li><li>每題按「採用修正」或「保留原辨識」，最後按「完成並套用到 CSV」才會真的改資料。</li></ol><div class="row"><button class="btn primary" id="ocrVfyBtn" onclick="ocrVerify()">開始逐題核對</button><button class="btn hide" id="ocrVfyReopen" onclick="_ocrVfyOpen()">重新打開逐題核對視窗</button></div><div class="status" id="ocrVfyStatus">需要：①上方已有題目資料　②題庫首頁已設定 Gemini 金鑰。</div></div></details>
-            <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗（預設關閉，先讓你檢查）</label><button class="btn primary" onclick="openImportReview()">匯入前檢查（原卷對照）</button><button class="btn green" onclick="sendQuestionsToQbank()">直接匯入題庫</button><button class="btn" onclick="downloadCsv()">下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">下載 Excel</button></div>
+            <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus"></div></div></details>
+            <label class="help" style="display:flex;align-items:center;gap:5px;margin-top:10px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗</label><div class="btn-even"><button class="btn primary" onclick="openImportReview()">匯入前檢查</button><button class="btn green" onclick="sendQuestionsToQbank()">直接匯入</button><button class="btn" onclick="downloadCsv()">下載CSV</button><button class="btn" onclick="downloadQuestionXlsx()">下載Excel</button></div>
           </div>
         </li>
       </ol>
@@ -292,9 +291,9 @@
             <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
           </div>
         </li>
-        <li data-step="5c"><b>框選需要的圖表，並貼入題庫</b>只裁切題庫中需要保留的圖、表格或題組共用圖；確認題號後，按最下方「完成切圖」一次貼入對應題目。
+        <li data-step="5c"><b>框選需要的圖表，並貼入題庫</b>裁出題目要用的圖，確認題號後按「完成切圖」。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><p class="help"><b>與手動匯題相同：</b>可從清稿 PDF 逐張框選，也可上傳已裁好的單張、多張、整個資料夾或 ZIP。完成後可逐張預覽、修改題號、重新框選或略過。</p><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片檔案或 ZIP 到這裡（也可以直接拖整個資料夾）<br><span class="help">支援單張／多張圖片，或已裁切圖片打包的 ZIP</span></div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState">等待選擇檔案。按「自動裁切」讓系統自動找圖表，或「手動框選裁切」自己框，也可直接上傳已裁切好的圖片。</div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">下載圖表素材 ZIP</button><button class="btn primary" onclick="openImportReview()">匯入前檢查（原卷對照）</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">完成切圖</button></div><div class="status" id="batchImportState"></div></div>
+          <div class="step-detail"><div class="action-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px"><button class="btn primary" id="autoCropBtn" onclick="autoCropByModel()" title="用茲茲 OCR 主機的本機模型自動找出圖形與表格並裁切；結果可逐張改題號、手動修正或略過">自動裁切</button><button class="btn primary" id="manualCropBtn" onclick="startManualCrop()">手動框選裁切</button><input type="file" id="croppedImgInput" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,.png,.jpg,.jpeg,.webp,.gif,.bmp" multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgInput').click()">上傳已裁切圖片</button><input type="file" id="croppedImgFolderInput" webkitdirectory directory multiple style="display:none" onchange="loadCroppedImages(this.files);this.value=''"><button class="btn" onclick="document.getElementById('croppedImgFolderInput').click()">上傳圖片資料夾</button><button class="btn" id="clearCropResultsBtn" onclick="clearCropResults()" disabled>清除本次結果</button><button class="btn" onclick="refreshQbankIframe(true)" title="重新抓取最新題庫資料，不會清除已裁切圖片">重新整理題庫資料</button></div><div class="drop" style="margin-top:8px" onclick="document.getElementById('croppedImgInput').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleCropDrop(event,this)">拖曳圖片、資料夾或 ZIP 到這裡</div><details class="status"><summary>查看裁圖與檔名說明</summary><div style="margin-top:6px;line-height:1.7">框選時不要包含題幹、選項、題號與頁首頁尾。圖片檔名若以 Q3、第3題或 3_ 開頭，會自動辨識題號；辨識不到時可在卡片上補上。</div></details><div class="status" id="cropReviewState"></div><div id="cropSummary" class="crop-summary hide"></div><div id="cropPreviewGrid" class="crop-grid"></div><div id="cropPageArea" class="crop-pages"></div><div class="action-row" style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><label class="help" style="display:flex;align-items:center;gap:5px"><input id="autoImportImages" type="checkbox" checked> 完成後直接貼入題庫</label><div class="btn-even"><button class="btn" id="downloadCropZipBtn" disabled onclick="downloadCropZip()">下載ZIP</button><button class="btn primary" onclick="openImportReview()">匯入前檢查</button><button class="btn green" id="toBatchImageBtn" disabled onclick="batchImportToQbank()">完成切圖</button></div></div><div class="status" id="batchImportState"></div></div>
         </li>
 
       </ol>
@@ -306,10 +305,10 @@
       <ol class="steps">
         <li data-step="6"><b>詳解（可選）</b>匯入詳解 CSV／Excel；AI 生成詳解為管理員專用。
           <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><details class="admin-lock enrich" id="solBox"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員專用</b>｜本機 AI 批次生成詳解<span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><p class="help">依上方題庫資料，分批（每批 5 題）交給本機 AI 寫詳解，結果自動填入下方並可直接匯入題庫。</p>
+          <div class="step-detail"><details class="admin-lock enrich" id="solBox"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">本機 AI 批次生成詳解</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><p class="help">依上方題庫資料，分批（每批 5 題）交給本機 AI 寫詳解，結果自動填入下方並可直接匯入題庫。</p>
             <div class="row"><label class="help">AI 引擎 <select id="solEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="solConn"></span></div>
             <div class="row"><button class="btn green" id="solBtn" onclick="solGenerate()">批次生成詳解</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="solAuto" type="checkbox"> 題庫 Excel 完成後自動生成詳解</label></div>
-            <div class="enrich-bar"><i id="solBar"></i></div><div class="status" id="solStatus">需要先有題庫資料（上一步的題庫 Excel）。詳解是可選項，可以事後再做。</div></div></details><details class="admin-lock" style="margin-top:10px"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員專用</b>｜手動方式：複製詳解指令貼到外部 AI<span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><div style="margin-top:8px"><button class="btn primary" onclick="copySolutionPrompt()">一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT </a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini </a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude </a></div></div></div></details><div style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><div class="detail-title">匯入詳解 CSV／Excel</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="event.preventDefault();this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportSolutions" type="checkbox" checked> 送出後直接開啟題庫詳解匯入</label><button class="btn green" onclick="sendSolutionsToQbank()">匯入詳解</button><button class="btn" onclick="downloadSolutionCsv()">下載 CSV</button><button class="btn" onclick="downloadSolutionXlsx()">下載 Excel</button></div></div></div>
+            <div class="enrich-bar"><i id="solBar"></i></div><div class="status" id="solStatus">需要先有題庫資料（上一步的題庫 Excel）。詳解是可選項，可以事後再做。</div></div></details><details class="admin-lock" style="margin-top:10px"><summary onclick="return adminGate(event,this)"><span class="al-lock"></span><b>管理員</b><span class="al-name">手動方式：複製詳解指令貼到外部 AI</span><span class="al-caret"></span></summary><div class="al-body"><div class="al-bar"><button type="button" class="btn al-relock" onclick="adminLock()">鎖回</button></div><div style="margin-top:8px"><button class="btn primary" onclick="copySolutionPrompt()">一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT </a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini </a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude </a></div></div></div></details><div style="margin-top:14px;padding-top:12px;border-top:1px solid #eadfd3"><div class="detail-title">匯入詳解 CSV／Excel</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="event.preventDefault();this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportSolutions" type="checkbox" checked> 送出後直接開啟題庫詳解匯入</label><button class="btn green" onclick="sendSolutionsToQbank()">匯入詳解</button><button class="btn" onclick="downloadSolutionCsv()">下載 CSV</button><button class="btn" onclick="downloadSolutionXlsx()">下載 Excel</button></div></div></div>
         </li>
       </ol>
     </section>
@@ -1463,13 +1462,7 @@
     }
 
     // ─────────────────────────────────────────────────────────────
-    // AI 自動核對：把辨識出的 CSV 逐題跟原卷頁面比對，再一題一題檢查
-    // ─────────────────────────────────────────────────────────────
-    let OCR_VFY=null;
-    function _vfyCsvIdx(header){
-      const find=(name,fb)=>{const i=header.findIndex(h=>(h||'').trim()===name);return i>=0?i:fb;};
-      return {no:find('題號',3),ans:find('答案',4),type:find('題型',12),q:find('題目',19)};
-    }
+    // 匯入前檢查共用：CSV 寫回、PDF 轉頁面圖
     function _vfyCell(v){v=(v==null?'':String(v));return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
     function _rowsToCsv(rows){return rows.map(r=>r.map(_vfyCell).join(',')).join('\n');}
     async function _pdfPagesToImages(file,st){
@@ -1485,174 +1478,6 @@
         if(st)st.textContent=`正在把原卷轉成圖片…（${p}/${doc.numPages}）`;
       }
       return imgs;
-    }
-    async function ocrVerify(){
-      const c=(questionCsv.value||'').trim();
-      const st=document.getElementById('ocrVfyStatus')||{};const say=m=>{st.textContent=m;try{st.scrollIntoView({behavior:'smooth',block:'center'})}catch(_){}};
-      if(!c){say('還沒有題目資料，無法核對。請等題庫 Excel 成功產生後再按。');return;}
-      if(!OCR_PDF_FILE){say('找不到原卷 PDF。請先在最上方匯入這份考卷跑完 OCR，才能跟原卷逐題比對。');return;}
-      const w=promptSource.contentWindow;
-      const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
-      if(!key){say('找不到 Gemini 金鑰。請先到題庫首頁「AI 設定」填入 Gemini 金鑰。');return;}
-      if(typeof w.callGemini!=='function'){say('題庫尚未載入完成，請稍候幾秒再按一次。');return;}
-      const btn=document.getElementById('ocrVfyBtn');if(btn)btn.disabled=true;
-      say('準備中…');
-      try{
-        const rows=parseCSV(c);
-        if(rows.length<2){say('題目資料是空的。');return;}
-        const header=rows[0],idx=_vfyCsvIdx(header);
-        const qrows=[];
-        for(let i=1;i<rows.length;i++){const r=rows[i];if((r[idx.type]||'').trim()==='passage')continue;if(!(r[idx.q]||'').trim()&&!(r[idx.no]||'').trim())continue;qrows.push(i);}
-        if(!qrows.length){say('沒有可核對的題目。');return;}
-        st.textContent='正在把原卷轉成圖片…';
-        const imgs=await _pdfPagesToImages(OCR_PDF_FILE,st);
-        if(!imgs.length){say('原卷 PDF 沒有可讀取的頁面。');return;}
-        const imgObjs=imgs.map(s=>({src:s}));
-        const items=[];const BATCH=18;
-        for(let b=0;b<qrows.length;b+=BATCH){
-          const slice=qrows.slice(b,b+BATCH);
-          st.textContent=`AI 正在對照原卷核對第 ${b+1}～${Math.min(b+BATCH,qrows.length)} 題（共 ${qrows.length} 題），請稍候…`;
-          const payload=slice.map(ri=>({no:(rows[ri][idx.no]||'').trim(),ans:(rows[ri][idx.ans]||'').trim(),q:(rows[ri][idx.q]||'').trim()}));
-          const sys='你是嚴謹的考卷校對員。附圖是一份考卷原卷的每一頁。下面 JSON 是從這份考卷辨識出的題目，請你逐題跟原卷圖片比對，找出辨識錯誤。';
-          const msg='請逐題核對下列題目與附圖原卷是否一致，重點檢查：\n'+
-            '1. 題號是否正確。\n2. 答案是否與原卷一致（原卷若沒有作答痕跡，就看題目本身有沒有標答案；不確定就標「待確認」，不要亂猜）。\n'+
-            '3. 每個選項的文字、數字、符號有沒有抄錯或漏字。\n4. 數學式／化學式是否正確（LaTeX 一律只用單個 $ 包住，不可用 $$）。\n'+
-            '5. 題幹有沒有漏字、亂碼、把兩題黏在一起或把一題拆成兩題。\n\n'+
-            '輸出規則：只輸出一個 JSON 陣列，不要任何其他文字，也不要 ```。每題一個物件：\n'+
-            '{"no":"題號","status":"相符|已修正|待確認","q":"修正後的完整題目(含所有選項，格式與輸入相同；沒有要改就原樣回傳)","ans":"修正後答案(沒改就回傳原答案)","note":"用一句話說明哪裡不同；相符就留空"}\n'+
-            'status：完全沒問題=相符；你有把握找到並修正了錯誤=已修正；圖片裡找不到這題或沒把握=待確認。\n\n'+
-            '辨識出的題目 JSON：\n'+JSON.stringify(payload);
-          let out=await w.callGemini(sys,msg,key,imgObjs);
-          out=(out||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
-          let arr=[];try{arr=JSON.parse(out);}catch(e){const m=out.match(/\[[\s\S]*\]/);if(m){try{arr=JSON.parse(m[0]);}catch(_){}}}
-          slice.forEach((ri,k)=>{
-            const oN=(rows[ri][idx.no]||'').trim(),oA=(rows[ri][idx.ans]||'').trim(),oQ=(rows[ri][idx.q]||'').trim();
-            let v=arr[k];
-            if(!v||String(v.no||'').trim()!==oN){const f=arr.find(x=>x&&String(x.no||'').trim()===oN&&oN);if(f)v=f;}
-            if(!v){items.push({ri,no:oN,status:'待確認',origNo:oN,origAns:oA,origQ:oQ,sugAns:oA,sugQ:oQ,note:'AI 沒有回傳這題的核對結果，請人工確認。',decision:'keep',editNo:oN,editAns:oA,editQ:oQ});return;}
-            const sQ=(v.q!=null&&String(v.q).trim())?String(v.q):oQ;
-            const sA=(v.ans!=null)?String(v.ans):oA;
-            const changed=(sQ!==oQ)||((sA||'')!==(oA||''));
-            let status=['相符','已修正','待確認'].includes(v.status)?v.status:(changed?'已修正':'相符');
-            if(status==='相符'&&changed)status='已修正';
-            const accept=(status==='已修正'&&changed);
-            items.push({ri,no:oN,status,origNo:oN,origAns:oA,origQ:oQ,sugAns:sA,sugQ:sQ,note:v.note||'',changed,decision:accept?'accept':'keep',editNo:oN,editAns:accept?sA:oA,editQ:accept?sQ:oQ});
-          });
-        }
-        OCR_VFY={rows,header,idx,items,cur:0,imgs};
-        const nf=items.filter(x=>x.status==='已修正').length,nw=items.filter(x=>x.status==='待確認').length;
-        st.textContent=`核對完成：${items.length} 題中，AI 建議修正 ${nf} 題、待確認 ${nw} 題。已打開逐題核對視窗；關掉後可按「重新打開」。`;
-        document.getElementById('ocrVfyReopen')?.classList.remove('hide');
-        _ocrVfyOpen();
-      }catch(e){say('核對失敗：'+(e.message||e)+'（可再按一次重試）');}
-      finally{if(btn)btn.disabled=false;}
-    }
-    function _ocrVfyEnsure(){
-      if(document.getElementById('ocrVfyDlg'))return;
-      const css=document.createElement('style');css.textContent=
-      '#ocrVfyDlg{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:none}'+
-      '#ocrVfyDlg.open{display:flex}'+
-      '.vfy-panel{margin:auto;background:#fff;width:min(1120px,96vw);height:min(92vh,920px);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}'+
-      '.vfy-top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #eee;flex-wrap:wrap}'+
-      '.vfy-top h3{margin:0;font-size:16px}'+
-      '.vfy-prog{font-size:13px;color:#666}'+
-      '.vfy-badge{padding:3px 10px;border-radius:20px;font-size:13px;font-weight:700}'+
-      '.vfy-badge.ok{background:#e3f6e8;color:#1e7a37}.vfy-badge.fix{background:#fff4de;color:#9a6b00}.vfy-badge.warn{background:#fde3e3;color:#b02a2a}'+
-      '.vfy-body{flex:1;display:flex;min-height:0}'+
-      '.vfy-left{flex:1 1 55%;padding:14px 16px;overflow:auto;border-right:1px solid #eee}'+
-      '.vfy-right{flex:1 1 45%;background:#f3f3f3;overflow:auto;padding:10px}'+
-      '.vfy-right img{width:100%;display:block;margin-bottom:8px;border:1px solid #ddd;border-radius:6px;background:#fff}'+
-      '.vfy-field{margin-bottom:12px}'+
-      '.vfy-field label{display:block;font-size:12px;color:#888;margin-bottom:3px}'+
-      '.vfy-field .old{background:#fafafa;border:1px dashed #ddd;border-radius:6px;padding:6px 8px;font-size:13px;white-space:pre-wrap;color:#555;max-height:140px;overflow:auto}'+
-      '.vfy-field textarea,.vfy-field input{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:6px;padding:6px 8px;font-size:14px;font-family:inherit}'+
-      '.vfy-field textarea{min-height:120px;resize:vertical}'+
-      '.vfy-note{background:#fff8e6;border:1px solid #f0e2b8;border-radius:6px;padding:8px 10px;font-size:13px;color:#7a5a00;margin-bottom:12px}'+
-      '.vfy-bot{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #eee;flex-wrap:wrap}'+
-      '.vfy-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}'+
-      '@media(max-width:760px){.vfy-body{flex-direction:column}.vfy-left{border-right:none;border-bottom:1px solid #eee;flex:0 0 auto;max-height:60%}.vfy-right{flex:1 1 auto}}';
-      document.head.appendChild(css);
-      const d=document.createElement('div');d.id='ocrVfyDlg';
-      d.innerHTML='<div class="vfy-panel">'+
-        '<div class="vfy-top"><h3>逐題核對</h3><span class="vfy-prog" id="vfyProg"></span><span class="vfy-badge" id="vfyBadge"></span>'+
-          '<span style="flex:1"></span><span class="vfy-prog" id="vfySummary"></span>'+
-          '<button class="btn" onclick="_ocrVfyClose()">關閉</button></div>'+
-        '<div class="vfy-body">'+
-          '<div class="vfy-left">'+
-            '<div class="vfy-note" id="vfyNote" style="display:none"></div>'+
-            '<div class="vfy-field"><label>題號（可直接改）</label><input id="vfyNo"></div>'+
-            '<div class="vfy-field"><label>答案　原辨識：<span id="vfyOldAns" style="color:#555"></span></label><input id="vfyAns" placeholder="採用的答案"></div>'+
-            '<div class="vfy-field"><label>題目（原辨識）</label><div class="old" id="vfyOldQ"></div></div>'+
-            '<div class="vfy-field"><label>題目（採用值，可直接編輯）</label><textarea id="vfyQ"></textarea></div>'+
-          '</div>'+
-          '<div class="vfy-right" id="vfyImgs"></div>'+
-        '</div>'+
-        '<div class="vfy-bot">'+
-          '<button class="btn" onclick="_ocrVfyNav(-1)">上一題</button>'+
-          '<button class="btn" onclick="_ocrVfyNav(1)">下一題 </button>'+
-          '<button class="btn" onclick="_ocrVfyNextFlag()">下一個待確認</button>'+
-          '<span style="flex:1"></span>'+
-          '<button class="btn" id="vfyKeepBtn" onclick="_ocrVfySetDecision(\'keep\')">保留原辨識</button>'+
-          '<button class="btn green" id="vfyAcceptBtn" onclick="_ocrVfySetDecision(\'accept\')">採用修正</button>'+
-          '<button class="btn green" onclick="_ocrVfyApply()">完成並套用到 CSV</button>'+
-        '</div>'+
-      '</div>';
-      document.body.appendChild(d);
-      ['vfyNo','vfyAns','vfyQ'].forEach(id=>document.getElementById(id).addEventListener('input',_ocrVfyEdited));
-    }
-    function _ocrVfyOpen(){
-      _ocrVfyEnsure();
-      const V=OCR_VFY;if(!V)return;
-      document.getElementById('vfyImgs').innerHTML=V.imgs.map((s,i)=>'<img src="'+s+'" alt="原卷第'+(i+1)+'頁">').join('');
-      V.cur=0;_ocrVfyRender();
-      document.getElementById('ocrVfyDlg').classList.add('open');
-    }
-    function _ocrVfyClose(){const d=document.getElementById('ocrVfyDlg');if(d)d.classList.remove('open');}
-    function _ocrVfyEdited(){const it=OCR_VFY&&OCR_VFY.items[OCR_VFY.cur];if(!it)return;it.editNo=document.getElementById('vfyNo').value;it.editAns=document.getElementById('vfyAns').value;it.editQ=document.getElementById('vfyQ').value;it.decision='accept';_ocrVfyPaintButtons(it);}
-    function _ocrVfySave(){const it=OCR_VFY&&OCR_VFY.items[OCR_VFY.cur];if(!it)return;it.editNo=document.getElementById('vfyNo').value;it.editAns=document.getElementById('vfyAns').value;it.editQ=document.getElementById('vfyQ').value;}
-    function _ocrVfyPaintButtons(it){
-      const k=document.getElementById('vfyKeepBtn'),a=document.getElementById('vfyAcceptBtn');
-      if(!k||!a)return;
-      k.style.outline=it.decision==='keep'?'2px solid #9a6b00':'';
-      a.style.outline=it.decision==='accept'?'2px solid #1e7a37':'';
-    }
-    function _ocrVfyRender(){
-      const V=OCR_VFY;if(!V)return;const it=V.items[V.cur];if(!it)return;
-      document.getElementById('vfyProg').textContent='第 '+(V.cur+1)+' / '+V.items.length+' 題';
-      const badge=document.getElementById('vfyBadge');
-      badge.className='vfy-badge '+(it.status==='相符'?'ok':it.status==='已修正'?'fix':'warn');
-      badge.textContent=it.status;
-      const note=document.getElementById('vfyNote');
-      if(it.note){note.style.display='';note.textContent='AI 說明：'+it.note;}else{note.style.display='none';}
-      document.getElementById('vfyNo').value=it.editNo;
-      document.getElementById('vfyOldAns').textContent=it.origAns||'（空白）';
-      document.getElementById('vfyAns').value=it.editAns;
-      document.getElementById('vfyOldQ').textContent=it.origQ||'（空白）';
-      document.getElementById('vfyQ').value=it.editQ;
-      let ok=0,fix=0,warn=0;V.items.forEach(x=>{if(x.status==='相符')ok++;else if(x.status==='已修正')fix++;else warn++;});
-      document.getElementById('vfySummary').innerHTML='<span class="vfy-dot" style="background:#1e7a37"></span>相符 '+ok+'　<span class="vfy-dot" style="background:#9a6b00"></span>已修正 '+fix+'　<span class="vfy-dot" style="background:#b02a2a"></span>待確認 '+warn;
-      _ocrVfyPaintButtons(it);
-    }
-    function _ocrVfyNav(d){const V=OCR_VFY;if(!V)return;_ocrVfySave();V.cur=Math.max(0,Math.min(V.items.length-1,V.cur+d));_ocrVfyRender();}
-    function _ocrVfyNextFlag(){const V=OCR_VFY;if(!V)return;_ocrVfySave();for(let n=1;n<=V.items.length;n++){const i=(V.cur+n)%V.items.length;if(V.items[i].status==='待確認'){V.cur=i;_ocrVfyRender();return;}}alert('沒有其他「待確認」的題目了。');}
-    function _ocrVfySetDecision(dec){const V=OCR_VFY;if(!V)return;const it=V.items[V.cur];if(!it)return;it.decision=dec;if(dec==='accept'){it.editNo=it.origNo;it.editAns=it.sugAns;it.editQ=it.sugQ;}else{it.editNo=it.origNo;it.editAns=it.origAns;it.editQ=it.origQ;}_ocrVfyRender();}
-    function _ocrVfyApply(){
-      const V=OCR_VFY;if(!V)return;_ocrVfySave();
-      let n=0;
-      V.items.forEach(it=>{
-        const diff=(it.editQ!==it.origQ)||((it.editAns||'')!==(it.origAns||''))||((it.editNo||'')!==(it.origNo||''));
-        if(it.decision==='accept'||diff){
-          const r=V.rows[it.ri];
-          r[V.idx.q]=it.editQ;r[V.idx.ans]=it.editAns;r[V.idx.no]=it.editNo;
-          n++;
-        }
-      });
-      questionCsv.value=_rowsToCsv(V.rows);
-      try{inspectCsv();}catch(e){}
-      try{_revealQuestionCsv();}catch(e){}
-      _ocrVfyClose();
-      const st=document.getElementById('ocrStatus');if(st)st.textContent='已套用 '+n+' 題的核對修正到 CSV，請再整體檢查後匯入題庫。';
-      alert('已套用 '+n+' 題修正到 CSV。\n（相符且未改動的題目保持原樣。）請整體再看一次後再按「匯入題庫」。');
     }
   </script>
   <script type="module" src="tools/dehand.js"></script>
