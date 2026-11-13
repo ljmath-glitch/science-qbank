@@ -191,6 +191,7 @@
             <div class="row"><label class="help">AI 引擎 <select id="enrichEngine"><option value="auto">本機自動（agy → Claude → Codex）</option><option value="agy">Antigravity（agy）</option><option value="claude">Claude Code</option><option value="codex">Codex CLI</option><option value="ollama">Ollama（本機模型）</option></select></label><button class="btn" onclick="enrichBridgeSetup()">連線本機 AI</button><span class="help" id="enrichConn"></span></div>
             <div class="row"><button class="btn green" id="enrichBtn" onclick="enrichQuestions()">批次補齊明細</button><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="enrichAuto" type="checkbox" checked> 題庫 Excel 產生後自動補齊</label></div>
             <div class="enrich-bar"><i id="enrichBar"></i></div><div class="status" id="enrichStatus">缺少明細的題目會分批交給本機 AI 判斷，不需要逐題操作。</div></div>
+            <div class="row" style="border-top:1px dashed #e0d4c4;padding-top:10px;margin-top:6px"><button class="btn" id="ocrVfyBtn" onclick="ocrVerify()">🔍 AI 自動核對（逐題跟原卷比對）</button><span class="help">把原卷每一頁送給 AI，逐題檢查題號／答案／選項文字／公式有沒有抄錯或漏字，再讓你<b>一題一題確認</b>後才套用。需用同一份 PDF 辨識並已在題庫首頁設定 Gemini 金鑰。</span></div>
             <div class="row"><label class="help" style="display:inline-flex;align-items:center;gap:5px"><input id="autoImportQuestions" type="checkbox"> OCR 完成後自動開啟匯入視窗（預設關閉，先讓你檢查）</label><button class="btn green" onclick="sendQuestionsToQbank()">⬆ 匯入題庫（核對後）</button><button class="btn" onclick="downloadCsv()">⬇ 下載 CSV</button><button class="btn" onclick="downloadQuestionXlsx()">⬇ 下載 Excel</button></div>
           </div>
         </li>
@@ -1366,6 +1367,195 @@
         st.textContent='CSV 已產生並填入第 4 步，請人工核對後再匯入題庫。';
         _revealQuestionCsv();
       }catch(e){st.textContent='產生 CSV 失敗：'+(e.message||e);}
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // AI 自動核對：把辨識出的 CSV 逐題跟原卷頁面比對，再一題一題檢查
+    // ─────────────────────────────────────────────────────────────
+    let OCR_VFY=null;
+    function _vfyCsvIdx(header){
+      const find=(name,fb)=>{const i=header.findIndex(h=>(h||'').trim()===name);return i>=0?i:fb;};
+      return {no:find('題號',3),ans:find('答案',4),type:find('題型',12),q:find('題目',19)};
+    }
+    function _vfyCell(v){v=(v==null?'':String(v));return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+    function _rowsToCsv(rows){return rows.map(r=>r.map(_vfyCell).join(',')).join('\n');}
+    async function _pdfPagesToImages(file,st){
+      const pdfjs=await loadPdfJs();
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise;
+      const imgs=[];
+      for(let p=1;p<=doc.numPages;p++){
+        const page=await doc.getPage(p);const vp=page.getViewport({scale:2.0});
+        const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+        await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+        imgs.push(cv.toDataURL('image/jpeg',0.85));
+        if(st)st.textContent=`正在把原卷轉成圖片…（${p}/${doc.numPages}）`;
+      }
+      return imgs;
+    }
+    async function ocrVerify(){
+      const c=(questionCsv.value||'').trim();
+      if(!c){alert('請先產生或貼上題目 CSV（展開「查看／修改題目原始資料」）。');return;}
+      if(!OCR_PDF_FILE){alert('找不到原卷 PDF。請先在上方用同一份 PDF 執行辨識，才能跟原卷逐題比對。');return;}
+      const w=promptSource.contentWindow;
+      const key=(w.AI_CFG&&w.AI_CFG.gemini)||localStorage.getItem('aiKey_gemini')||'';
+      if(!key){alert('找不到 Gemini API Key，請先到題庫首頁的「AI 設定」填入 Gemini 金鑰。');return;}
+      if(typeof w.callGemini!=='function'){alert('題庫尚未載入完成，請稍候幾秒再試。');return;}
+      const btn=document.getElementById('ocrVfyBtn');if(btn)btn.disabled=true;
+      const st=document.getElementById('ocrStatus')||{};
+      try{
+        const rows=parseCSV(c);
+        if(rows.length<2){alert('CSV 看起來沒有題目資料。');return;}
+        const header=rows[0],idx=_vfyCsvIdx(header);
+        const qrows=[];
+        for(let i=1;i<rows.length;i++){const r=rows[i];if((r[idx.type]||'').trim()==='passage')continue;if(!(r[idx.q]||'').trim()&&!(r[idx.no]||'').trim())continue;qrows.push(i);}
+        if(!qrows.length){alert('沒有可核對的題目。');return;}
+        st.textContent='正在把原卷轉成圖片…';
+        const imgs=await _pdfPagesToImages(OCR_PDF_FILE,st);
+        if(!imgs.length){alert('原卷 PDF 沒有可讀取的頁面。');return;}
+        const imgObjs=imgs.map(s=>({src:s}));
+        const items=[];const BATCH=18;
+        for(let b=0;b<qrows.length;b+=BATCH){
+          const slice=qrows.slice(b,b+BATCH);
+          st.textContent=`AI 核對中…（${Math.min(b+BATCH,qrows.length)}/${qrows.length} 題）`;
+          const payload=slice.map(ri=>({no:(rows[ri][idx.no]||'').trim(),ans:(rows[ri][idx.ans]||'').trim(),q:(rows[ri][idx.q]||'').trim()}));
+          const sys='你是嚴謹的考卷校對員。附圖是一份考卷原卷的每一頁。下面 JSON 是從這份考卷辨識出的題目，請你逐題跟原卷圖片比對，找出辨識錯誤。';
+          const msg='請逐題核對下列題目與附圖原卷是否一致，重點檢查：\n'+
+            '1. 題號是否正確。\n2. 答案是否與原卷一致（原卷若沒有作答痕跡，就看題目本身有沒有標答案；不確定就標「待確認」，不要亂猜）。\n'+
+            '3. 每個選項的文字、數字、符號有沒有抄錯或漏字。\n4. 數學式／化學式是否正確（LaTeX 一律只用單個 $ 包住，不可用 $$）。\n'+
+            '5. 題幹有沒有漏字、亂碼、把兩題黏在一起或把一題拆成兩題。\n\n'+
+            '輸出規則：只輸出一個 JSON 陣列，不要任何其他文字，也不要 ```。每題一個物件：\n'+
+            '{"no":"題號","status":"相符|已修正|待確認","q":"修正後的完整題目(含所有選項，格式與輸入相同；沒有要改就原樣回傳)","ans":"修正後答案(沒改就回傳原答案)","note":"用一句話說明哪裡不同；相符就留空"}\n'+
+            'status：完全沒問題=相符；你有把握找到並修正了錯誤=已修正；圖片裡找不到這題或沒把握=待確認。\n\n'+
+            '辨識出的題目 JSON：\n'+JSON.stringify(payload);
+          let out=await w.callGemini(sys,msg,key,imgObjs);
+          out=(out||'').replace(/^```[a-z]*\n?/i,'').replace(/```\s*$/,'').trim();
+          let arr=[];try{arr=JSON.parse(out);}catch(e){const m=out.match(/\[[\s\S]*\]/);if(m){try{arr=JSON.parse(m[0]);}catch(_){}}}
+          slice.forEach((ri,k)=>{
+            const oN=(rows[ri][idx.no]||'').trim(),oA=(rows[ri][idx.ans]||'').trim(),oQ=(rows[ri][idx.q]||'').trim();
+            let v=arr[k];
+            if(!v||String(v.no||'').trim()!==oN){const f=arr.find(x=>x&&String(x.no||'').trim()===oN&&oN);if(f)v=f;}
+            if(!v){items.push({ri,no:oN,status:'待確認',origNo:oN,origAns:oA,origQ:oQ,sugAns:oA,sugQ:oQ,note:'AI 沒有回傳這題的核對結果，請人工確認。',decision:'keep',editNo:oN,editAns:oA,editQ:oQ});return;}
+            const sQ=(v.q!=null&&String(v.q).trim())?String(v.q):oQ;
+            const sA=(v.ans!=null)?String(v.ans):oA;
+            const changed=(sQ!==oQ)||((sA||'')!==(oA||''));
+            let status=['相符','已修正','待確認'].includes(v.status)?v.status:(changed?'已修正':'相符');
+            if(status==='相符'&&changed)status='已修正';
+            const accept=(status==='已修正'&&changed);
+            items.push({ri,no:oN,status,origNo:oN,origAns:oA,origQ:oQ,sugAns:sA,sugQ:sQ,note:v.note||'',changed,decision:accept?'accept':'keep',editNo:oN,editAns:accept?sA:oA,editQ:accept?sQ:oQ});
+          });
+        }
+        OCR_VFY={rows,header,idx,items,cur:0,imgs};
+        st.textContent='AI 核對完成，請逐題檢查後套用。';
+        _ocrVfyOpen();
+      }catch(e){alert('自動核對失敗：'+(e.message||e));}
+      finally{if(btn)btn.disabled=false;}
+    }
+    function _ocrVfyEnsure(){
+      if(document.getElementById('ocrVfyDlg'))return;
+      const css=document.createElement('style');css.textContent=
+      '#ocrVfyDlg{position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);display:none}'+
+      '#ocrVfyDlg.open{display:flex}'+
+      '.vfy-panel{margin:auto;background:#fff;width:min(1120px,96vw);height:min(92vh,920px);border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}'+
+      '.vfy-top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #eee;flex-wrap:wrap}'+
+      '.vfy-top h3{margin:0;font-size:16px}'+
+      '.vfy-prog{font-size:13px;color:#666}'+
+      '.vfy-badge{padding:3px 10px;border-radius:20px;font-size:13px;font-weight:700}'+
+      '.vfy-badge.ok{background:#e3f6e8;color:#1e7a37}.vfy-badge.fix{background:#fff4de;color:#9a6b00}.vfy-badge.warn{background:#fde3e3;color:#b02a2a}'+
+      '.vfy-body{flex:1;display:flex;min-height:0}'+
+      '.vfy-left{flex:1 1 55%;padding:14px 16px;overflow:auto;border-right:1px solid #eee}'+
+      '.vfy-right{flex:1 1 45%;background:#f3f3f3;overflow:auto;padding:10px}'+
+      '.vfy-right img{width:100%;display:block;margin-bottom:8px;border:1px solid #ddd;border-radius:6px;background:#fff}'+
+      '.vfy-field{margin-bottom:12px}'+
+      '.vfy-field label{display:block;font-size:12px;color:#888;margin-bottom:3px}'+
+      '.vfy-field .old{background:#fafafa;border:1px dashed #ddd;border-radius:6px;padding:6px 8px;font-size:13px;white-space:pre-wrap;color:#555;max-height:140px;overflow:auto}'+
+      '.vfy-field textarea,.vfy-field input{width:100%;box-sizing:border-box;border:1px solid #ccc;border-radius:6px;padding:6px 8px;font-size:14px;font-family:inherit}'+
+      '.vfy-field textarea{min-height:120px;resize:vertical}'+
+      '.vfy-note{background:#fff8e6;border:1px solid #f0e2b8;border-radius:6px;padding:8px 10px;font-size:13px;color:#7a5a00;margin-bottom:12px}'+
+      '.vfy-bot{display:flex;align-items:center;gap:8px;padding:10px 16px;border-top:1px solid #eee;flex-wrap:wrap}'+
+      '.vfy-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}'+
+      '@media(max-width:760px){.vfy-body{flex-direction:column}.vfy-left{border-right:none;border-bottom:1px solid #eee;flex:0 0 auto;max-height:60%}.vfy-right{flex:1 1 auto}}';
+      document.head.appendChild(css);
+      const d=document.createElement('div');d.id='ocrVfyDlg';
+      d.innerHTML='<div class="vfy-panel">'+
+        '<div class="vfy-top"><h3>🔍 逐題核對</h3><span class="vfy-prog" id="vfyProg"></span><span class="vfy-badge" id="vfyBadge"></span>'+
+          '<span style="flex:1"></span><span class="vfy-prog" id="vfySummary"></span>'+
+          '<button class="btn" onclick="_ocrVfyClose()">關閉</button></div>'+
+        '<div class="vfy-body">'+
+          '<div class="vfy-left">'+
+            '<div class="vfy-note" id="vfyNote" style="display:none"></div>'+
+            '<div class="vfy-field"><label>題號（可直接改）</label><input id="vfyNo"></div>'+
+            '<div class="vfy-field"><label>答案　原辨識：<span id="vfyOldAns" style="color:#555"></span></label><input id="vfyAns" placeholder="採用的答案"></div>'+
+            '<div class="vfy-field"><label>題目（原辨識）</label><div class="old" id="vfyOldQ"></div></div>'+
+            '<div class="vfy-field"><label>題目（採用值，可直接編輯）</label><textarea id="vfyQ"></textarea></div>'+
+          '</div>'+
+          '<div class="vfy-right" id="vfyImgs"></div>'+
+        '</div>'+
+        '<div class="vfy-bot">'+
+          '<button class="btn" onclick="_ocrVfyNav(-1)">◀ 上一題</button>'+
+          '<button class="btn" onclick="_ocrVfyNav(1)">下一題 ▶</button>'+
+          '<button class="btn" onclick="_ocrVfyNextFlag()">⚠ 下一個待確認</button>'+
+          '<span style="flex:1"></span>'+
+          '<button class="btn" id="vfyKeepBtn" onclick="_ocrVfySetDecision(\'keep\')">保留原辨識</button>'+
+          '<button class="btn green" id="vfyAcceptBtn" onclick="_ocrVfySetDecision(\'accept\')">✓ 採用修正</button>'+
+          '<button class="btn green" onclick="_ocrVfyApply()">完成並套用到 CSV</button>'+
+        '</div>'+
+      '</div>';
+      document.body.appendChild(d);
+      ['vfyNo','vfyAns','vfyQ'].forEach(id=>document.getElementById(id).addEventListener('input',_ocrVfyEdited));
+    }
+    function _ocrVfyOpen(){
+      _ocrVfyEnsure();
+      const V=OCR_VFY;if(!V)return;
+      document.getElementById('vfyImgs').innerHTML=V.imgs.map((s,i)=>'<img src="'+s+'" alt="原卷第'+(i+1)+'頁">').join('');
+      V.cur=0;_ocrVfyRender();
+      document.getElementById('ocrVfyDlg').classList.add('open');
+    }
+    function _ocrVfyClose(){const d=document.getElementById('ocrVfyDlg');if(d)d.classList.remove('open');}
+    function _ocrVfyEdited(){const it=OCR_VFY&&OCR_VFY.items[OCR_VFY.cur];if(!it)return;it.editNo=document.getElementById('vfyNo').value;it.editAns=document.getElementById('vfyAns').value;it.editQ=document.getElementById('vfyQ').value;it.decision='accept';_ocrVfyPaintButtons(it);}
+    function _ocrVfySave(){const it=OCR_VFY&&OCR_VFY.items[OCR_VFY.cur];if(!it)return;it.editNo=document.getElementById('vfyNo').value;it.editAns=document.getElementById('vfyAns').value;it.editQ=document.getElementById('vfyQ').value;}
+    function _ocrVfyPaintButtons(it){
+      const k=document.getElementById('vfyKeepBtn'),a=document.getElementById('vfyAcceptBtn');
+      if(!k||!a)return;
+      k.style.outline=it.decision==='keep'?'2px solid #9a6b00':'';
+      a.style.outline=it.decision==='accept'?'2px solid #1e7a37':'';
+    }
+    function _ocrVfyRender(){
+      const V=OCR_VFY;if(!V)return;const it=V.items[V.cur];if(!it)return;
+      document.getElementById('vfyProg').textContent='第 '+(V.cur+1)+' / '+V.items.length+' 題';
+      const badge=document.getElementById('vfyBadge');
+      badge.className='vfy-badge '+(it.status==='相符'?'ok':it.status==='已修正'?'fix':'warn');
+      badge.textContent=it.status;
+      const note=document.getElementById('vfyNote');
+      if(it.note){note.style.display='';note.textContent='AI 說明：'+it.note;}else{note.style.display='none';}
+      document.getElementById('vfyNo').value=it.editNo;
+      document.getElementById('vfyOldAns').textContent=it.origAns||'（空白）';
+      document.getElementById('vfyAns').value=it.editAns;
+      document.getElementById('vfyOldQ').textContent=it.origQ||'（空白）';
+      document.getElementById('vfyQ').value=it.editQ;
+      let ok=0,fix=0,warn=0;V.items.forEach(x=>{if(x.status==='相符')ok++;else if(x.status==='已修正')fix++;else warn++;});
+      document.getElementById('vfySummary').innerHTML='<span class="vfy-dot" style="background:#1e7a37"></span>相符 '+ok+'　<span class="vfy-dot" style="background:#9a6b00"></span>已修正 '+fix+'　<span class="vfy-dot" style="background:#b02a2a"></span>待確認 '+warn;
+      _ocrVfyPaintButtons(it);
+    }
+    function _ocrVfyNav(d){const V=OCR_VFY;if(!V)return;_ocrVfySave();V.cur=Math.max(0,Math.min(V.items.length-1,V.cur+d));_ocrVfyRender();}
+    function _ocrVfyNextFlag(){const V=OCR_VFY;if(!V)return;_ocrVfySave();for(let n=1;n<=V.items.length;n++){const i=(V.cur+n)%V.items.length;if(V.items[i].status==='待確認'){V.cur=i;_ocrVfyRender();return;}}alert('沒有其他「待確認」的題目了。');}
+    function _ocrVfySetDecision(dec){const V=OCR_VFY;if(!V)return;const it=V.items[V.cur];if(!it)return;it.decision=dec;if(dec==='accept'){it.editNo=it.origNo;it.editAns=it.sugAns;it.editQ=it.sugQ;}else{it.editNo=it.origNo;it.editAns=it.origAns;it.editQ=it.origQ;}_ocrVfyRender();}
+    function _ocrVfyApply(){
+      const V=OCR_VFY;if(!V)return;_ocrVfySave();
+      let n=0;
+      V.items.forEach(it=>{
+        const diff=(it.editQ!==it.origQ)||((it.editAns||'')!==(it.origAns||''))||((it.editNo||'')!==(it.origNo||''));
+        if(it.decision==='accept'||diff){
+          const r=V.rows[it.ri];
+          r[V.idx.q]=it.editQ;r[V.idx.ans]=it.editAns;r[V.idx.no]=it.editNo;
+          n++;
+        }
+      });
+      questionCsv.value=_rowsToCsv(V.rows);
+      try{inspectCsv();}catch(e){}
+      try{_revealQuestionCsv();}catch(e){}
+      _ocrVfyClose();
+      const st=document.getElementById('ocrStatus');if(st)st.textContent='已套用 '+n+' 題的核對修正到 CSV，請再整體檢查後匯入題庫。';
+      alert('已套用 '+n+' 題修正到 CSV。\n（相符且未改動的題目保持原樣。）請整體再看一次後再按「匯入題庫」。');
     }
   </script>
   <script type="module" src="tools/dehand.js"></script>
