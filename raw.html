@@ -942,10 +942,24 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),300000);
         status.textContent='正在等待 OCR 主機回傳裁切結果（一份約 1～2 分鐘，最長等 5 分鐘）…';
         const job=OCR_RESULT&&OCR_RESULT.job?OCR_RESULT.job:undefined;
-        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64,job}),signal:ctl.signal});
+        const r=await fetch(base+'/api/py-ocr/figcrop',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataBase64,job,async:true}),signal:ctl.signal});
         let j={};try{j=await r.json();}catch(e){}
         clearTimeout(timer);
+        if(r.status===404&&ocrHost()==='local')throw new Error('本機程式沒有自動裁切功能，請把 OCR 運算主機改選「公司電腦」，或改用手動框選');
         if(!r.ok||!j.ok)throw new Error(j.error||('主機回應 '+r.status+'（主機可能還沒更新到有自動裁切的版本）'));
+        if(j.cropJob){
+          // 新版主機：背景切圖，這裡每 2 秒問一次；手機 4G、鎖螢幕造成的短暫斷線會自動重試，不會整個失敗
+          const cropJob=j.cropJob,until=Date.now()+600000;let miss=0,t0=Date.now();j=null;
+          while(Date.now()<until){
+            await new Promise(ok=>setTimeout(ok,2000));
+            let d=null;try{const q=await fetch(base+'/api/py-ocr/figcrop-status?id='+encodeURIComponent(cropJob),{cache:'no-store'});d=await q.json();}catch(e){d=null}
+            if(!d){if(++miss>=60)throw new Error('連線中斷超過 2 分鐘，請確認網路後再按一次自動裁切');status.textContent='網路暫時中斷，正在重新連線主機…';continue}
+            miss=0;
+            if(d.done){if(!d.ok)throw new Error(d.error||'主機切圖失敗');j=d;break}
+            status.textContent=(d.queued?'主機正在處理其他考卷，排隊中… ':'主機正在自動裁切… ')+'已等 '+Math.round((Date.now()-t0)/1000)+' 秒（一份約 1～2 分鐘）';
+          }
+          if(!j)throw new Error('主機超過 10 分鐘沒有完成，請確認主機狀態後重試');
+        }
         cropCandidates=cropCandidates.filter(x=>x.kind!=='自動裁切');let n=0;
         for(const p of (j.pages||[]))for(const it of (p.items||[])){
           const qno=Number.isInteger(it.qno)&&it.qno>0?it.qno:null;const group=Array.isArray(it.qno_group)&&Number.isInteger(it.qno_group[0])?it.qno_group:null;const scope=group?'group':'single';const low=it.qno_conf==='low';const label=`p${p.page}圖${++n}`;
@@ -955,7 +969,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         }
         await startManualCrop();renderCropCandidates();
         status.textContent=n?`自動裁切完成，共 ${n} 張，已畫在下方頁面上：游標移到框上可直接改題號、切換單題／題組、略過或刪除；漏掉的圖直接在頁面上拖曳框選補上。`:'沒有偵測到圖形或表格；可直接在下方頁面拖曳框選。';
-      }catch(e){console.error(e);status.textContent='自動裁切失敗：'+(e.name==='AbortError'?'OCR 主機等待超過 5 分鐘，請確認主機已啟動後重試。':(e.message||e))+'。'+(/fetch|network/i.test(String(e))?ocrConnectHint():'');}
+      }catch(e){console.error(e);const net=e instanceof TypeError||/load failed|failed to fetch|networkerror/i.test(String(e&&e.message||e));status.textContent='自動裁切失敗：'+(e.name==='AbortError'?'OCR 主機等待超過 5 分鐘，請確認主機已啟動後重試。':net?'連線中斷（手機網路不穩、螢幕關閉或切到別的 App 都會造成），請保持畫面開著再試一次。'+ocrConnectHint():(e.message||e))+(net?'':'。');}
       finally{btn.disabled=false;}
     }
     // ── 手動框選裁切：最可靠，能處理題組共用圖／整張表格(含ABCD)／整組選項圖(含標籤不含題幹) ──
