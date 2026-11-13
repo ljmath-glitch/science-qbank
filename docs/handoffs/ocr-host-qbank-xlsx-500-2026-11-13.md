@@ -21,3 +21,9 @@
 
 ## 前端（science-qbank raw.html）已做
 500 時讀出主機錯誤，偵測到 `No module named 'xxx'` 會直接顯示上面的安裝指令；另提供 Gemini／複製指令／重試備援。
+
+## 已處理（2026-11-13）
+已推 Boss-fu/exam-answer-key-formatter `main` b3458f3：`to_qbank_xlsx.py` 缺 openpyxl 時自動 `pip install`，`setup_env.ps1/.sh` 補上 openpyxl。
+公司主機的 `auto-update.ps1` 每 5 分鐘快轉 main，之後第一次產生題庫 Excel 會先花幾秒補裝。
+若主機本機有未提交修改，自動更新會略過（見 `local-app/output/auto-update.log`），此時仍需手動 pip install。
+本機版 ZiziOCR.exe（PyInstaller 打包）不吃這個修正，要重新打包才會有 openpyxl。
