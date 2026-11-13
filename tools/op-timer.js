@@ -34,7 +34,7 @@
     box.querySelector('[data-log]').innerHTML = !rows.length ? '<p style="margin:6px 0">還沒有紀錄。</p>' :
       '<p style="margin:6px 0">' + (avg === null ? '還沒有成功紀錄' : '成功 ' + ok.length + ' 次，平均 ' + fmt(avg)) + '（只存在這個瀏覽器）</p>' +
       '<table style="border-collapse:collapse;font-size:13px;white-space:nowrap"><tr><th align="left">時間</th><th align="left">檔案</th><th align="left">主機</th><th align="right">耗時</th><th align="left">結果</th></tr>' +
-      rows.slice(0, 15).map(r => '<tr><td style="padding:2px 10px 2px 0">' + esc(r.at) + '</td><td style="padding:2px 10px 2px 0;max-width:220px;overflow:hidden;text-overflow:ellipsis">' + esc(r.file) + '</td><td style="padding:2px 10px 2px 0">' + esc(r.host) + '</td><td align="right" style="padding:2px 10px 2px 0">' + fmt(r.sec) + '</td><td>' + (r.ok ? '成功' : '失敗') + '</td></tr>').join('') + '</table>';
+      rows.slice(0, 15).map(r => '<tr><td style="padding:2px 10px 2px 0">' + esc(r.at) + '</td><td style="padding:2px 10px 2px 0;max-width:220px;overflow:hidden;text-overflow:ellipsis">' + esc(r.file) + '</td><td style="padding:2px 10px 2px 0">' + esc(r.host) + '</td><td align="right" style="padding:2px 10px 2px 0">' + fmt(r.sec) + '</td><td>' + (r.ok ? '成功' : '失敗') + '</td></tr>' + (!r.ok && r.why ? '<tr><td colspan="5" style="padding:0 0 6px;color:#a31515;font-size:12px;overflow-wrap:anywhere">原因：' + esc(r.why) + '</td></tr>' : '')).join('') + '</table>';
   }
 
   // 頁面中途被瀏覽器重新載入（記憶體不足）時程式會整個消失，下次開頁才有機會告訴使用者。
@@ -73,7 +73,7 @@
         const statusEl = document.getElementById(op.statusId);
         const ok = !threw && !/失敗|連不到|找不到/.test(statusEl ? statusEl.textContent : '');
         try { localStorage.removeItem(RUN); } catch (e) {}
-        save([{ op: op.label, at: stamp(), file: file.name || '', host: hostName(), sec, ok }, ...load()]);
+        save([{ op: op.label, at: stamp(), file: file.name || '', host: hostName(), sec, ok, why: ok ? '' : String(statusEl ? statusEl.textContent : '').replace(/^.*?失敗[:：]?/, '').slice(0, 160) }, ...load()]);
         if (now) now.textContent = op.label + (ok ? '完成' : '失敗') + '，耗時 ' + fmt(sec);
         renderLog(op);
         if (!ok) alert(op.label + '失敗（' + fmt(sec) + '）：' + (statusEl ? statusEl.textContent : '').slice(0, 300));
