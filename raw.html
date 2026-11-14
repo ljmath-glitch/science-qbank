@@ -75,8 +75,8 @@
     .pz .pb{height:6px;border-radius:999px;background:#efe6d2;overflow:hidden;visibility:hidden}.pz .pb i{display:block;height:100%;width:0;border-radius:999px;background:var(--red);transition:width .3s}
     .pz.run{--c:var(--red);--bg:#fff4f0;border-style:solid}.pz.run .pb{visibility:visible}.pz.run .pb.ind i{width:40%;animation:pzflow 1.1s ease-in-out infinite alternate}.pz.run .st{color:var(--red);font-weight:700}
     .pz.manual{--c:#d08700;--bg:#fff9ec;border-style:solid;animation:pzpulse 1.6s ease-in-out infinite}.pz.manual .st{color:#9a6500;font-weight:700}
-    .pz.done{--c:#c99a2e;--bg:#fdf3d8;border-style:solid}.pz.done .st{color:#7a5a12;font-weight:700}.pz.done .nm::after{content:"完成";margin-left:8px;padding:1px 7px;border-radius:999px;background:#850103;color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
-    .pz.fail{--c:#a31515;--bg:#fff0ee;border-style:solid}.pz.fail .st{color:#a31515;font-weight:700}.pz.fail .nm::after{content:"失敗";margin-left:8px;padding:1px 7px;border-radius:999px;background:#a31515;color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
+    .pz.done{--c:#c99a2e;--bg:#fdf3d8;border-style:solid}.pz.done .st{color:#7a5a12;font-weight:700}.pz.done .nm::after{content:"完成";display:inline-block;white-space:nowrap;margin-left:8px;padding:1px 7px;border-radius:999px;background:#850103;color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
+    .pz.fail{--c:#a31515;--bg:#fff0ee;border-style:solid}.pz.fail .st{color:#a31515;font-weight:700}.pz.fail .nm::after{content:"失敗";display:inline-block;white-space:nowrap;margin-left:8px;padding:1px 7px;border-radius:999px;background:#a31515;color:#fff;font-size:11px;font-weight:700;vertical-align:2px}
     .pz.skip{--c:#7da7d9;--bg:#f2f7fd;border-style:solid}.pz.skip .st{color:#4a79ad}
     .pz.snap{animation:pzsnap .55s cubic-bezier(.2,1.4,.4,1)}.pz.snap.knob::after{animation:pzknob .55s cubic-bezier(.2,1.4,.4,1)}.pz.run.knob::after,.pz.manual.knob::after,.pz.done.knob::after,.pz.fail.knob::after,.pz.skip.knob::after{border-style:solid}
     @keyframes pzflow{from{margin-left:0}to{margin-left:60%}}@keyframes pzpulse{50%{box-shadow:0 0 0 4px rgba(208,135,0,.18)}}@keyframes pzsnap{0%{transform:scale(.94)}60%{transform:scale(1.05)}100%{transform:scale(1)}}@keyframes pzknob{0%{right:-34px;opacity:.2}100%{right:-17px;opacity:1}}
@@ -1616,7 +1616,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
-    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
+    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')(typeof cropFiles!=='undefined'&&cropFiles.pdf)?pipeStart(5,'Excel 完成，自動切圖',false):pipeStart(5,'沒有清稿 PDF，請手動切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
         wrap('copySolutionPrompt',function(o,a){pipeStart(7,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
     wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(8).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(8,n+' 題詳解');if(pipeStep(7).state!=='done'&&pipeStep(7).state!=='run')pipeDone(7,'已取得詳解')}}catch(e){}return r});
   })();
@@ -2136,13 +2136,16 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       if(exam)startDehand(exam)};
     // 簡單模式：題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
     let smFired=false;const isSimple=()=>document.body.classList.contains('simple-mode');
-    async function simpleNext(){if(!isSimple()||smFired)return;smFired=true;document.body.classList.add('sm-ready');setStagesOpen(true);openReviewStep(5);
+    async function simpleNext(){if(smFired)return;smFired=true;document.body.classList.add('sm-ready');setStagesOpen(true);openReviewStep(5);
       setTimeout(()=>document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'}),300);
       if(cropFiles.pdf&&!cropCandidates.some(c=>c.kind==='自動裁切')){setState('正在自動切圖（約 1～2 分鐘），切好的圖會自動出現在左邊清稿和右邊題目上…');
+        try{pipeStart(5,'自動切圖中',false)}catch(e){}
         try{await autoCropByModel()}catch(e){}
-        const msg=(document.getElementById('cropReviewState')||{}).textContent||'';setState(/失敗/.test(msg)?msg+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
+        const msg=(document.getElementById('cropReviewState')||{}).textContent||'';const failed=/失敗/.test(msg)||!cropCandidates.some(c=>c.kind==='自動裁切');
+        setState(failed?(msg||'自動切圖沒有切到圖')+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
+        try{const n=cropCandidates.filter(c=>!c.skip).length;if(failed)pipeStart(5,'自動切圖未完成，可在人工檢驗補框',true);else pipeDone(5,n+' 張圖');if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}
         if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}}
-    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(isSimple()&&pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
     const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;document.body.classList.remove('sm-ready');return _pr.apply(this,a)};
     if(isSimple())try{setStagesOpen(false);document.body.classList.remove('stages-closed')}catch(e){}
     // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
