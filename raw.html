@@ -145,20 +145,6 @@
 .al-caret{margin-left:auto;flex:0 0 auto;font-size:12px;color:#8a7d6b}.al-caret::after{content:"展開"}body.admin-on .al-caret::after{content:"展開"}.admin-lock[open] .al-caret::after{content:"收合"}
 .al-body{padding:0 14px 12px}.al-bar{display:flex;justify-content:flex-end;margin-bottom:4px}.al-relock{min-height:28px!important;padding:0 10px;font-size:12px}
     main input[type=checkbox],main input[type=radio]{accent-color:var(--red)}
-    /* 簡單模式：只留丟檔、進度、人工檢驗與一鍵匯入（2026-11-13） */
-    .sm-intro{display:none}
-    body.simple-mode .sm-intro{display:block;margin-bottom:14px}
-    body.simple-mode .sm-intro{padding:12px}
-    .sm-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-    .sm-flow>div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;background:#fffaf3;border:1px solid #eadfce;text-align:center}
-    .sm-flow b{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:13px}
-    .sm-key{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.sm-key .help{margin:0}
-    .sm-flow span{font-weight:800;font-size:13.5px;white-space:nowrap}.sm-flow small{font-size:11px;color:var(--muted);white-space:nowrap}
-    body.simple-mode .wf-kicker,body.simple-mode .intro.wf>h2,body.simple-mode .intro.wf>p,body.simple-mode .pipe-board,body.simple-mode .pipe-opt,body.simple-mode #stagesToggle,body.simple-mode .auto-optional,body.simple-mode .auto-finish{display:none!important}
-    body.simple-mode .auto-review>.head,body.simple-mode .review-tabs,body.simple-mode .review-pane:not(#ivPane){display:none!important}
-    body.simple-mode #ivPane{display:block!important}
-    body.simple-mode:not(.sm-ready) main .stage.auto-review{display:none!important}
-    body.simple-mode.sm-ready main .stage.auto-review{display:block!important}
     /* 人工檢驗（第 6 步）：左＝清稿＋切圖框／原卷，右＝全部題目卡片（2026-11-13） */
     .iv{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
     .iv.full{position:fixed;inset:0;z-index:9000;border-radius:0;display:flex;flex-direction:column}
@@ -245,7 +231,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   <style id="mobile-steps-fix">
     /* 手機版：步驟卡展開內容撐滿卡片寬度；「展開／收合」改成橫排小按鈕（2026-11-14） */
     .toggle-detail{width:auto!important;height:auto!important;min-height:0!important;padding:3px 10px!important;border:1px solid #e3d7ca!important;border-radius:999px!important;background:#fff!important;font-size:12px!important;line-height:1.4!important;white-space:nowrap}
-    .modetabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;box-sizing:border-box}
+    .modetabs{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));width:100%!important;box-sizing:border-box}
     .modetabs a{justify-content:center;padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
     @media(max-width:680px){
       .steps>li{padding:16px 64px 14px 58px}
@@ -262,9 +248,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
 <body>
   <header><div class="brand-head"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><h1>茲茲文教｜自然題庫・考卷前處理</h1><div class="sub">TZUTZU SCIENCE QBANK · OCR WORKFLOW</div></div></div><div class="header-actions"><a class="home-link" href="home.html" aria-label="回到首頁" title="回到首頁"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a><a class="home-link" href="index.html" aria-label="題庫管理" title="題庫管理"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></a></div></header>
   <main>
-    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html?mode=simple" id="tabSimple">簡單模式</a><a href="raw.html" id="tabAuto" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
-    <script>if(/[?&]mode=simple\b/.test(location.search)){document.body.classList.add("simple-mode");document.getElementById("tabSimple").classList.add("on");document.getElementById("tabAuto").classList.remove("on")}</script>
-    <div class="intro sm-intro"><div class="sm-flow"><div><b>1</b><span>丟考卷</span></div><div><b>2</b><span>等處理</span><small>約 3～10 分</small></div><div><b>3</b><span>逐題檢查</span></div><div><b>4</b><span>一鍵匯入</span></div></div><div class="sm-key"><button type="button" class="btn" onclick="akFile.click()">有簡答卷？點此匯入</button><span class="help" id="akState"></span></div></div>
+    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
     <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel；切圖後在「人工檢驗」對照原卷逐題檢查，再一鍵匯入題庫。詳解可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
     <section class="stage auto-review">
       <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
@@ -1550,7 +1534,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   const PIPE_TXT={wait:'等待中',run:'進行中',manual:'等你操作',done:'完成',fail:'失敗',skip:'已略過'};
   function pipeStep(id){return PIPE.steps[id-1]}
   function pipeFmt(ms){const s=ms/1000;if(s<60)return s.toFixed(1)+' 秒';const m=Math.floor(s/60);return m+' 分 '+Math.round(s-m*60)+' 秒'}
-  function pipeStart(id,detail,manual){const s=pipeStep(id);if(!PIPE.startedAt&&!s.opt)PIPE.startedAt=Date.now();s.state=manual?'manual':'run';s.startedAt=Date.now();s.pct=null;s.detail=detail||'';s.summary='';PIPE.sel=id;pipeRender()}
+  function pipeStart(id,detail,manual){const s=pipeStep(id);if(!PIPE.startedAt&&!s.opt&&!manual)PIPE.startedAt=Date.now();s.state=manual?'manual':'run';s.startedAt=Date.now();s.pct=null;s.detail=detail||'';s.summary='';PIPE.sel=id;pipeRender()}
   function pipeProgress(id,pct,detail){const s=pipeStep(id);if(s.state!=='run')return;if(pct!=null)s.pct=Math.max(0,Math.min(100,pct));if(detail!=null)s.detail=detail;pipeRender()}
   function pipeDone(id,summary){const s=pipeStep(id);if(!PIPE.startedAt&&!s.opt)PIPE.startedAt=Date.now();if(!s.startedAt)s.startedAt=Date.now();const was=s.state;s.state='done';s.pct=100;s.elapsedMs=Date.now()-s.startedAt;s.summary=summary||'';s.detail='';if(was!=='done')s.snap=Date.now();PIPE.sel=id;pipeRender()}
   function pipeFail(id,msg){const s=pipeStep(id);s.state='fail';s.detail=String(msg||'失敗').slice(0,80);s.elapsedMs=s.startedAt?Date.now()-s.startedAt:0;PIPE.sel=id;pipeRender()}
@@ -1596,16 +1580,18 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       let line=PIPE_TXT[s.state];if((s.state==='run'||s.state==='manual')&&s.detail)line=s.detail;else if(s.state==='done'&&s.summary)line=s.summary;else if((s.state==='fail'||s.state==='skip')&&s.detail)line=s.detail;
       if(st.textContent!==line)st.textContent=line;
       pb.classList.toggle('ind',s.state==='run'&&s.pct==null);bar.style.width=(s.state==='run'&&s.pct!=null?s.pct:s.state==='done'?100:0)+'%';
-      const t=s.state==='run'||s.state==='manual'?(s.startedAt?'已耗時 '+pipeFmt(now-s.startedAt):''):(s.state==='done'?'用時 '+pipeFmt(s.elapsedMs):(s.state==='fail'&&s.elapsedMs?'耗時 '+pipeFmt(s.elapsedMs):''));
+      const human=s.id===6||s.state==='manual';/* 人工作業不計時 */
+      const t=human?'':s.state==='run'?(s.startedAt?'已耗時 '+pipeFmt(now-s.startedAt):''):(s.state==='done'?'用時 '+pipeFmt(s.elapsedMs):(s.state==='fail'&&s.elapsedMs?'耗時 '+pipeFmt(s.elapsedMs):''));
       if(tm.textContent!==t)tm.textContent=t});
     const all=done===PIPE_REQ;document.getElementById('pipeCount').textContent=done+'/'+PIPE_REQ;
     document.getElementById('pipeFill').style.width=(done/PIPE_REQ*100)+'%';
-    const last=PIPE.steps.filter(s=>!s.opt).reduce((m,s)=>Math.max(m,s.startedAt?s.startedAt+s.elapsedMs:0),0);
-    document.getElementById('pipeElapsed').textContent=PIPE.startedAt?'總用時 '+pipeFmt((all?last:now)-PIPE.startedAt):'尚未開始';
+    const mach=PIPE.steps.filter(s=>!s.opt&&s.id!==6).every(s=>s.state==='done'||s.state==='skip');
+    const last=PIPE.steps.filter(s=>!s.opt&&s.id!==6).reduce((m,s)=>Math.max(m,s.startedAt?s.startedAt+s.elapsedMs:0),0);
+    document.getElementById('pipeElapsed').textContent=PIPE.startedAt?'系統處理用時 '+pipeFmt((mach?last:now)-PIPE.startedAt):'尚未開始';
     const dn=document.getElementById('pipeDone');dn.classList.toggle('show',all);if(all)document.getElementById('pipeDoneTxt').textContent='必要流程全部完成・總用時 '+pipeFmt(last-PIPE.startedAt);
     }
   setInterval(()=>{if(PIPE.steps.some(s=>s.state==='run'||s.state==='manual'||(s.snap&&Date.now()-s.snap<700)))pipeRender();
-    try{if(typeof cropCandidates!=='undefined'&&cropCandidates.length&&pipeStep(5).state==='wait'){pipeStart(5,'已有 '+cropCandidates.filter(x=>!x.skip).length+' 張圖，等你確認',true)}}catch(e){}},250);
+    },250);
   pipeBuild();
   /* ---- 接上既有步驟（wrapper，不改原函式內容） ---- */
   (function(){
@@ -1621,7 +1607,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
-    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')(typeof cropFiles!=='undefined'&&cropFiles.pdf)?pipeStart(5,'Excel 完成，自動切圖',false):pipeStart(5,'沒有清稿 PDF，請手動切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
+    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')if(typeof cropFiles!=='undefined'&&cropFiles.pdf)pipeStart(5,'Excel 完成，自動切圖',false);else{pipeSkip(5,'沒有清稿 PDF，略過自動切圖');if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}}catch(e){}return r});
         wrap('copySolutionPrompt',function(o,a){pipeStart(7,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
     wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(8).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(8,n+' 題詳解');if(pipeStep(7).state!=='done'&&pipeStep(7).state!=='run')pipeDone(7,'已取得詳解')}}catch(e){}return r});
   })();
@@ -2085,7 +2071,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
       return pane}
     async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
-      try{if(cropCandidates.some(c=>!c.skip)&&pipeStep(5).state!=='done')pipeDone(5,cropCandidates.filter(c=>!c.skip).length+' 張圖');if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+      try{if(pipeStep(4).state==='done'&&pipeStep(5).state!=='run'&&pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
 
     // ── 修改：開啟「題庫管理」同一個編輯題目視窗（借用背景載入的題庫頁），儲存時只寫回這裡的題目資料與切圖，不會寫進雲端題庫 ──
     window._rvOpenEditG=gid=>{const k=RV.data.items.findIndex(x=>x.gid===gid);if(k>=0)_rvOpenEdit(k)};
@@ -2213,20 +2199,20 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       if(!exam&&teachers.length)exam=teachers[0];   // 只有教用版：它本身就是考卷，也是答案來源
       for(const t of teachers)await loadTeacherAnswers(t);
       if(exam)startDehand(exam)};
-    // 簡單模式：題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
-    let smFired=false;const isSimple=()=>document.body.classList.contains('simple-mode');
-    async function simpleNext(){if(smFired)return;smFired=true;document.body.classList.add('sm-ready');setStagesOpen(true);openReviewStep(5);
+    // 題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
+    let smFired=false;
+    async function autoReviewNext(){if(smFired)return;smFired=true;setStagesOpen(true);openReviewStep(5);
       setTimeout(()=>document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'}),300);
       if(cropFiles.pdf&&!cropCandidates.some(c=>c.kind==='自動裁切')){setState('正在自動切圖（約 1～2 分鐘），切好的圖會自動出現在左邊清稿和右邊題目上…');
-        try{pipeStart(5,'自動切圖中',false)}catch(e){}
+        try{if(pipeStep(5).state!=='run')pipeStart(5,'自動切圖中',false)}catch(e){}
         try{await autoCropByModel()}catch(e){}
         const msg=(document.getElementById('cropReviewState')||{}).textContent||'';const failed=/失敗/.test(msg)||!cropCandidates.some(c=>c.kind==='自動裁切');
         setState(failed?(msg||'自動切圖沒有切到圖')+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
-        try{const n=cropCandidates.filter(c=>!c.skip).length;if(failed)pipeStart(5,'自動切圖未完成，可在人工檢驗補框',true);else pipeDone(5,n+' 張圖');if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}
-        if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}}
-    const _ic=window.inspectCsv;window.inspectCsv=function(...a){try{const v=questionCsv.value,f=fixOcrChars(v);if(f!==v)questionCsv.value=f}catch(e){}const r=_ic.apply(this,a);try{if(AK_TEACHER_PENDING&&(questionCsv.value||'').trim())applyTeacherFromOcr()}catch(e){}try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
-    const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;document.body.classList.remove('sm-ready');return _pr.apply(this,a)};
-    if(isSimple())try{setStagesOpen(false);document.body.classList.remove('stages-closed')}catch(e){}
+        try{const n=cropCandidates.filter(c=>!c.skip).length;if(failed)pipeFail(5,'自動切圖未完成');else pipeDone(5,n+' 張圖');if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}
+        if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}
+      else try{const st=pipeStep(5).state;if(st==='run'||st==='wait'){const n=cropCandidates.filter(c=>!c.skip).length;if(n)pipeDone(5,n+' 張圖');else pipeSkip(5,'略過自動切圖')}if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){try{const v=questionCsv.value,f=fixOcrChars(v);if(f!==v)questionCsv.value=f}catch(e){}const r=_ic.apply(this,a);try{if(AK_TEACHER_PENDING&&(questionCsv.value||'').trim())applyTeacherFromOcr()}catch(e){}try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())autoReviewNext()}catch(e){}return r};
+    const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;return _pr.apply(this,a)};
     // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
     window.oneClickImport=async function(){
       const csv=(questionCsv.value||'').trim();if(!csv){alert('還沒有題目資料。');return}
