@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#850103">
+<title>茲茲文教｜教學影片</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<script>(()=>{const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
+<style>
+  :root{--ink:#2d3038;--paper:#f8f7f4;--card:#fffefb;--line:#e5dfd5;--red:#850103;--muted:#807a73;--ui:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;--shadow:0 2px 9px rgba(43,32,28,.045)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:var(--paper);color:var(--ink);font-family:var(--ui);font-weight:500;line-height:1.75}
+  header{height:72px;background:#fffefb;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .bar{width:min(1040px,calc(100% - 32px));margin:auto;display:flex;align-items:center;gap:12px}
+  .brand-logo{width:38px;height:38px;object-fit:contain}
+  .brand-name{font-size:17px;font-weight:800;color:var(--red);letter-spacing:.5px}
+  .brand-sub{font-size:10px;color:#a0978d;letter-spacing:1px}
+  .home{margin-left:auto;display:inline-flex;align-items:center;gap:6px;color:var(--ink);text-decoration:none;font-size:13px;font-weight:700;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  main{width:min(1040px,calc(100% - 32px));margin:0 auto;padding:30px 0 64px}
+  .hero{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:26px 28px;margin-bottom:18px;border-top:4px solid var(--red)}
+  .badge{display:inline-block;background:var(--red);color:#fff;font-size:12px;font-weight:800;letter-spacing:1px;padding:2px 10px;border-radius:999px;vertical-align:middle}
+  .hero h1{font-size:25px;margin:8px 0 4px;font-weight:800}
+  .hero p{color:var(--muted);font-size:14.5px}
+  .path{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+  .path a{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);font-size:13.5px;font-weight:700;padding:7px 13px;border:1px solid #e6ded3;border-radius:999px;background:#fff}
+  .path a b{width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:12px}
+  .vcard{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:22px 24px;margin-bottom:18px;scroll-margin-top:16px}
+  .vhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .vno{width:34px;height:34px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:17px;font-weight:800;flex:0 0 auto}
+  .vhead h2{font-size:19px;font-weight:800}
+  .vlen{margin-left:auto;font-size:12.5px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:#fff}
+  .vbody{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+  video{width:100%;aspect-ratio:16/9;background:#1c1c22;border-radius:12px;display:block}
+  .vtxt h3{font-size:14px;color:var(--red);margin-bottom:6px;font-weight:800}
+  .vtxt ul,.vtxt ol{padding-left:20px;font-size:14px;color:#454952}
+  .vtxt li{margin-bottom:3px}
+  .vtxt p{font-size:13px;color:var(--muted);margin-top:8px}
+  details{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px 14px}
+  summary{cursor:pointer;font-weight:800;font-size:14px;color:var(--ink)}
+  details ol,details ul{margin:10px 0 2px;padding-left:22px;font-size:14px;color:#454952}
+  details li{margin-bottom:6px}
+  details a{color:var(--red);word-break:break-all}
+  .note{margin-top:10px;font-size:13px;color:#6a5a2a;background:#fff8e6;border:1px solid #efdcaa;border-radius:10px;padding:9px 12px}
+  .soon{background:var(--card);border:1px dashed #d8cdb8;border-radius:15px;padding:18px 24px;margin-bottom:18px}
+  .soon h2{font-size:16px;margin-bottom:8px}
+  .soon ul{display:flex;flex-wrap:wrap;gap:8px;list-style:none}
+  .soon li{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 12px;background:#fff}
+  .doc{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:22px 24px;margin-bottom:18px}
+  .doc h2{font-size:18px;font-weight:800;margin-bottom:4px}
+  .doc>p{font-size:13.5px;color:var(--muted);margin-bottom:6px}
+  .doc a.go{display:inline-block;margin-top:10px;padding:8px 14px;border-radius:10px;background:var(--red);color:#fff;text-decoration:none;font-weight:800;font-size:14px}
+  @media(max-width:760px){.vbody{grid-template-columns:1fr}.hero{padding:20px 18px}.hero h1{font-size:21px}.vcard,.doc{padding:18px 16px}.vlen{margin-left:0}}
+</style>
+</head>
+<body>
+  <header><div class="bar"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><div class="brand-name">茲茲文教｜自然題庫</div><div class="brand-sub">TUTORIAL · 教學影片</div></div><a class="home" href="home.html">回首頁</a></div></header>
+  <main>
+    <section class="hero">
+      <span class="badge">教學</span>
+      <h1>第一次使用，請先看這裡</h1>
+      <p>不會用沒關係，照順序看下面 3 支影片（共約 4 分鐘），就知道怎麼把紙本考卷變成題庫題目。影片有字幕，沒開聲音也看得懂。</p>
+      <div class="path">
+        <a href="#v0"><b>1</b>連線設定</a>
+        <a href="#v1"><b>2</b>匯卷：自動匯題</a>
+        <a href="#v2"><b>3</b>切圖工具怎麼用</a>
+        <a href="#sol"><b>4</b>詳解系統</a>
+      </div>
+    </section>
+
+    <section class="vcard" id="v0">
+      <div class="vhead"><span class="vno">1</span><h2>第一次使用：連線設定</h2><span class="badge">教學</span><span class="vlen">約 1 分 10 秒</span></div>
+      <div class="vbody">
+        <video controls preload="metadata" playsinline poster="videos/00-setup.jpg" src="videos/00-setup.mp4"></video>
+        <div class="vtxt">
+          <h3>這支影片會教你</h3>
+          <ul>
+            <li>「OCR 運算主機」是什麼</li>
+            <li>選公司電腦、分部電腦，按「測試連線」</li>
+            <li>想在自己電腦處理：下載並開啟 ZiziOCR（Windows）</li>
+          </ul>
+          <p>一般老師選「公司電腦」就好，不需要下載任何東西。</p>
+        </div>
+      </div>
+      <details>
+        <summary>文字版：怎麼連上公司電腦（只需做一次）</summary>
+        <ol>
+          <li><b>安裝 Tailscale</b>：<a href="https://tailscale.com/download" target="_blank" rel="noopener">https://tailscale.com/download</a>。安裝後，用自己的 Google、Microsoft 或 Apple 帳號登入。</li>
+          <li><b>接受公司電腦連線分享</b>：用同一個帳號登入後，開啟這個連結：<a href="https://login.tailscale.com/admin/invite/nJ2D4hGy3RAdf9AAfyF721" target="_blank" rel="noopener">https://login.tailscale.com/admin/invite/nJ2D4hGy3RAdf9AAfyF721</a>，按「Accept」。</li>
+          <li><b>確認連線</b>：開啟 Tailscale，再打開「匯卷」，OCR 運算主機選「公司電腦」，按「測試連線」，顯示「已連線」就完成了。</li>
+        </ol>
+        <div class="note">
+          ・瀏覽器詢問「區域網路存取」時，請按「允許」。<br>
+          ・iPhone／iPad 請先開啟 Tailscale，再開網頁。<br>
+          ・顯示「未連線」時，請確認 Tailscale 已開啟並連線。<br>
+          ・連線分享連結是公司專用的，請不要轉貼到公開場合；仍無法使用時請告訴管理員。
+        </div>
+      </details>
+    </section>
+
+    <section class="vcard" id="v1">
+      <div class="vhead"><span class="vno">2</span><h2>匯卷：自動匯題</h2><span class="badge">教學</span><span class="vlen">約 1 分 30 秒</span></div>
+      <div class="vbody">
+        <video controls preload="metadata" playsinline poster="videos/01-auto-import.jpg" src="videos/01-auto-import.mp4"></video>
+        <div class="vtxt">
+          <h3>四步把紙本考卷變成題庫題目</h3>
+          <ol>
+            <li>把考卷 PDF 或照片丟進框裡</li>
+            <li>等系統自動處理（約 3～10 分鐘，頁面不要關）</li>
+            <li>在「人工檢驗」逐題檢查：點「有問題」只看要處理的題目，按「修改」邊看原稿邊改</li>
+            <li>按「檢查完成，一鍵匯入題庫」</li>
+          </ol>
+          <p>影片使用題庫裡的 114 年會考題示範。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="vcard" id="v2">
+      <div class="vhead"><span class="vno">3</span><h2>人工檢驗：切圖工具怎麼用</h2><span class="badge">教學</span><span class="vlen">約 1 分 25 秒</span></div>
+      <div class="vbody">
+        <video controls preload="metadata" playsinline poster="videos/02-crop-tools.jpg" src="videos/02-crop-tools.mp4"></video>
+        <div class="vtxt">
+          <h3>自動切圖漏了或切錯時怎麼補救</h3>
+          <ul>
+            <li>點「缺圖」找出少了圖的題目</li>
+            <li>「框選切圖」：在清稿上拖曳框起來，輸入題號（單題或題組共用）</li>
+            <li>框錯了：在框上改題號、略過或刪除</li>
+            <li>放大後用「手掌移動」（或按住空白鍵）移動頁面</li>
+            <li>整份很亂：按「重新自動切圖」</li>
+          </ul>
+          <p>框的時候只框圖或表格，不要框到題幹和選項。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="soon">
+      <h2>更多教學影片，陸續加入</h2>
+      <ul><li>手動匯題</li><li>題庫管理</li><li>組卷精靈（出題）</li><li>考卷進度</li></ul>
+    </section>
+
+    <section class="doc" id="sol">
+      <h2>詳解系統（文字教學）</h2>
+      <p>上傳考卷後，系統自動產出茲茲格式的「簡答＋詳解」Word。需要先完成上方「連線設定」。</p>
+      <details open>
+        <summary>每次使用的步驟</summary>
+        <ol>
+          <li>開啟 Tailscale，再打開詳解系統。</li>
+          <li>確認頁首顯示「已連線」。</li>
+          <li>上傳空白題目卷，支援 PDF、Word、圖片，PDF 最多 12 頁。</li>
+          <li>官方答案為選填，例如：D C B CE A。沒有答案也可以使用，系統會自行解題並交叉核對。</li>
+          <li>想在 Word 上方加標題，可填「講義標題」和「單元」，沒填就不顯示。</li>
+          <li>按「產生詳解」，約需 1～5 分鐘，請不要關閉頁面。</li>
+          <li>優先檢查有標記的題目，可直接修改；確認答案與詳解內容後，按「下載 Word」。</li>
+          <li>公式在 Word 裡可用 MathType 的「Toggle TeX」轉換。</li>
+        </ol>
+        <div class="note">
+          ・全站每天共 10 份，同一時間只處理 1 份；遇到「處理中」請稍後再試。<br>
+          ・顯示「未連線」時，請確認 Tailscale 已開啟並連線。
+        </div>
+      </details>
+      <a class="go" href="https://tzutzu-ocr.vercel.app/answer.html" target="_blank" rel="noopener">開啟詳解系統</a>
+    </section>
+  </main>
+<script src="nav.js" defer></script>
+</body>
+</html>
