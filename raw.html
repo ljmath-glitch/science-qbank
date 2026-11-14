@@ -381,7 +381,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     initReviewWorkspace();
     function esc(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
     function readPaperFile(f){if(!f)return;syncExamNameFromFile(f);const lower=f.name.toLowerCase();if(lower.endsWith('.pdf'))setCropFile('pdf',f);else if(/\.(docx?|odt)$/i.test(f.name))setCropFile('word',f)}
-    function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name;normalizeName();autoMatchExamName()}
+    function syncExamNameFromFile(f){if(!f)return;rawName.value=f.name.replace(/(教用版|教師版|教師用版)/g,'').replace(/([-_＿])[-_＿]+/g,'$1').replace(/^[-_＿\s]+/,'').replace(/[-_＿\s]+(\.[A-Za-z0-9]+)$/,'$1');normalizeName();autoMatchExamName()}
     // 拿目前 examName 猜測值去題庫做模糊比對；能唯一對應就自動改成題庫裡完全一致的名稱，
     // 有多個候選（例如同一次段考分理化/生物/地科分別建檔）就列出按鈕讓人一鍵挑選，避免要等手動切圖步驟批次貼圖失敗才發現名稱對不上。
     async function autoMatchExamName(){
@@ -1417,7 +1417,9 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       document.getElementById('ocrSummary').textContent=`共 ${j.pages.length} 頁、偵測到 ${figs} 張圖／表（引擎：${j.engine}）。可按「產生題目 CSV」出題目，或「送圖到手動切圖步驟」把這些圖交給批次貼圖去改題號/手動框選/略過。`;
       document.getElementById('ocrMarkdown').textContent=md.join('\n');
     }
-    function ocrAllMarkdown(){const md=(OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');return md.trim()?md:((OCR_RESULT&&OCR_RESULT.text)||'');}
+    /* OCR 常輸出的特殊字元（㈲㈬ ㆗㆙㆚㆛ 等）換成一般字；只動這幾個區段，全形標點不動。㈠～㈩ 保留括號 */
+    function fixOcrChars(s){return String(s==null?'':s).replace(/[\u3190-\u319f\u3220-\u3243\u3280-\u32b0\u2f00-\u2fd5\uf900-\ufaff]/g,ch=>{const n=ch.normalize('NFKC');if(n===ch)return ch;const m=/^\(([^()])\)$/.exec(n),c=ch.charCodeAt(0);return m&&!(c>=0x3220&&c<=0x3229)?m[1]:n})}
+    function ocrAllMarkdown(){const md=(OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');return fixOcrChars(md.trim()?md:((OCR_RESULT&&OCR_RESULT.text)||''));}
     // 把 OCR 出來的圖／表，送進手動切圖步驟「批次貼圖」的可編輯清單（改題號/手動框選/略過）
     function ocrToBatch(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}
@@ -1967,7 +1969,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
      切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
   (function(){
-    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null};const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
     const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
     function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
       _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
@@ -2101,12 +2103,15 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       w.eval('DB.push('+JSON.stringify(item)+')');
       if(gid)w.eval('PASSAGES['+JSON.stringify(gid)+']='+JSON.stringify({id:'__rv_ps__',groupId:gid,type:'passage',q:psText,imgs:((D.gImgs[gid]||[]).map(im=>({src:im.src,width:60,align:'left'})))}));
       // 顯示：把背景的題庫頁撐滿畫面，只露出編輯視窗
-      const doc=w.document;if(!doc.getElementById('rvEditStyle')){const st=doc.createElement('style');st.id='rvEditStyle';st.textContent='html.rv-edit-only,html.rv-edit-only body{background:transparent!important}html.rv-edit-only body{visibility:hidden}html.rv-edit-only dialog[open]{visibility:visible}';doc.head.appendChild(st)}
-      doc.documentElement.classList.add('rv-edit-only');promptSource.classList.remove('hide');promptSource.style.cssText='position:fixed;inset:0;width:100vw;height:100dvh;border:0;z-index:100000;background:transparent';
+      const doc=w.document;if(!doc.getElementById('rvEditStyle')){const st=doc.createElement('style');st.id='rvEditStyle';st.textContent='html.rv-edit-only,html.rv-edit-only body{background:#fffefb!important;overflow:hidden}html.rv-edit-only body{visibility:hidden}html.rv-edit-only dialog#editDlg[open]{visibility:visible;position:fixed;inset:0;margin:0;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column}html.rv-edit-only #editDlg .dlg-head,html.rv-edit-only #editDlg .dlg-foot{flex:0 0 auto}html.rv-edit-only #editDlg .dlg-body{flex:1 1 auto;min-height:0;max-height:none;overflow:auto}';doc.head.appendChild(st)}
+      doc.documentElement.classList.add('rv-edit-only');promptSource.classList.remove('hide');
+      const place=()=>{const host=document.getElementById('rvRight');if(!host)return;const rc=host.getBoundingClientRect();promptSource.style.cssText=`position:fixed;left:${rc.left}px;top:${rc.top}px;width:${rc.width}px;height:${rc.height}px;border:0;z-index:${innerWidth>=900?9005:8990};background:#fffefb`};
+      place();addEventListener('scroll',place,true);addEventListener('resize',place);
       const origSave=w.saveEdit;let done=false;
       const cleanup=()=>{if(done)return;done=true;w.saveEdit=origSave;try{w.eval('(()=>{const i=DB.findIndex(x=>x.id==="__rv_tmp__");if(i>=0)DB.splice(i,1)})()');if(gid)w.eval('delete PASSAGES['+JSON.stringify(gid)+']')}catch(e){}
+        removeEventListener('scroll',place,true);removeEventListener('resize',place);RV_EDIT_CLOSE=null;try{delete dlgEl.showModal}catch(e){}
         doc.documentElement.classList.remove('rv-edit-only');promptSource.classList.add('hide');promptSource.removeAttribute('style')};
-      w.document.getElementById('editDlg').addEventListener('close',cleanup,{once:true});
+      const dlgEl=w.document.getElementById('editDlg');dlgEl.addEventListener('close',cleanup,{once:true});dlgEl.showModal=function(){this.show()};RV_EDIT_CLOSE=()=>{try{dlgEl.close()}catch(e){}};
       w.saveEdit=async function(){
         const E=id=>doc.getElementById(id),fix=v=>{try{return w.fixControlCharEatenLatex(v)}catch(e){return v}};
         const q=fix(E('eQ').value.trim()),summary=E('eSummary').value.trim();if(!q&&!summary){w.alert('題目或摘要至少填一個');return}
@@ -2127,7 +2132,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     };
     // 切到第 5 分頁＝進人工檢驗；離開就把切圖頁面區搬回切圖分頁
     const _open=window.openReviewStep;
-    window.openReviewStep=function(n){_open(n);if(String(n)==='5')enter();else moveCropBack()};
+    window.openReviewStep=function(n){if(String(n)!=='5'&&RV_EDIT_CLOSE)RV_EDIT_CLOSE();_open(n);if(String(n)==='5')enter();else moveCropBack()};
     window.openImportReview=function(){setStagesOpen&&setStagesOpen(true);openReviewStep(5);document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'})};
     window.closeImportReview=function(){};
     // 切圖、題目資料一變動就同步右側（不必按重新整理）
@@ -2182,14 +2187,31 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       akSay(`簡答已套用：填入 ${filled} 題`+(changed.length?`（其中第 ${changed.join('、')} 題原本答案不同，已改成簡答卷的答案）`:'')+(extra.length?`；簡答卷第 ${extra.join('、')} 題在題目資料裡找不到`:'')+'。')}
     window.loadAnswerKeyFile=async function(f){if(!f)return;akSay('正在讀取簡答卷…');try{const r=await akParse(f);applyAnswerKey(r.map)}catch(e){akSay('讀取簡答失敗：'+(e.message||e))}};
     window.pasteAnswerKey=function(){const t=prompt('貼上簡答，例如「1.C 2.D 3.A」或一排題號＋一排答案：');if(t)applyAnswerKey(akFromText(t))};
+
+    // ── 教用版：檔名寫明「教用版」時，每題前面括號裡印的答案就是正解（例如「（C）1.」）──
+    const isTeacherName=n=>/教用版|教師版|教師用版/.test(n||'');
+    let AK_TEACHER_PENDING=false;
+    function akFromParens(text){const t=fw(text),map={},re=/[（(]\s*([A-Ea-e]{1,5})\s*[)）]\s*(\d{1,3})\s*[.、．:：](?!\d)/g;let m;while((m=re.exec(t)))if(+m[2]>0&&+m[2]<=200&&map[+m[2]]==null)map[+m[2]]=m[1].toUpperCase();return map}
+    async function pdfFullText(f,maxPages){const pdfjs=await loadPdfJs(),PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PJ+'cmaps/',cMapPacked:true}).promise;let all='';
+      for(let pn=1;pn<=Math.min(doc.numPages,maxPages||20);pn++){const tc=await(await doc.getPage(pn)).getTextContent();tc.items.forEach(it=>{all+=it.str+(it.hasEOL?'\n':' ')});all+='\n'}return all}
+    async function loadTeacherAnswers(f){akSay('偵測到教用版：正在讀取括號裡的答案…');let text='';
+      if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){try{text=await pdfFullText(f)}catch(e){}}
+      const map=akFromParens(text);if(Object.keys(map).length>=3){AK_TEACHER_PENDING=false;applyAnswerKey(map);return true}
+      AK_TEACHER_PENDING=true;akSay('教用版是掃描檔（讀不到文字），辨識完成後會從辨識出的文字讀括號裡的答案。');return false}
+    function applyTeacherFromOcr(){if(!AK_TEACHER_PENDING)return;const t=(typeof ocrAllMarkdown==='function'?ocrAllMarkdown():'')||'';if(!t.trim())return;AK_TEACHER_PENDING=false;
+      const map=akFromParens(t);if(Object.keys(map).length>=3)applyAnswerKey(map);else akSay('教用版的辨識文字裡讀不到括號答案，請改用「匯入簡答」或「貼上簡答」。')}
     // 拖放／選檔：一次可放考卷＋簡答卷，自動分辨
     async function isAnswerKey(f){
       if(/簡答|答案|解答|answer/i.test(f.name))return true;
       if(!(/\.pdf$/i.test(f.name)||f.type==='application/pdf'))return /\.(txt|csv)$/i.test(f.name);
       try{const r=await akFromPdf(f);return r.pages<=2&&Object.keys(r.map).length>=5&&/答案|簡答|解答/.test(r.text)}catch(e){return false}}
     window.routeExamFiles=async function(list){
-      const files=[...(list||[])];if(!files.length)return;let exam=null;
-      for(const f of files){if(files.length>1||/簡答|答案|解答|answer/i.test(f.name)||/\.(txt|csv)$/i.test(f.name)){if(await isAnswerKey(f)){await loadAnswerKeyFile(f);continue}}if(!exam)exam=f}
+      const files=[...(list||[])];if(!files.length)return;let exam=null;const teachers=[];
+      for(const f of files){if(isTeacherName(f.name)){teachers.push(f);continue}
+        if(files.length>1||/簡答|答案|解答|answer/i.test(f.name)||/\.(txt|csv)$/i.test(f.name)){if(await isAnswerKey(f)){await loadAnswerKeyFile(f);continue}}if(!exam)exam=f}
+      if(!exam&&teachers.length)exam=teachers[0];   // 只有教用版：它本身就是考卷，也是答案來源
+      for(const t of teachers)await loadTeacherAnswers(t);
       if(exam)startDehand(exam)};
     // 簡單模式：題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
     let smFired=false;const isSimple=()=>document.body.classList.contains('simple-mode');
@@ -2202,7 +2224,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         setState(failed?(msg||'自動切圖沒有切到圖')+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
         try{const n=cropCandidates.filter(c=>!c.skip).length;if(failed)pipeStart(5,'自動切圖未完成，可在人工檢驗補框',true);else pipeDone(5,n+' 張圖');if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}
         if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}}
-    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){try{const v=questionCsv.value,f=fixOcrChars(v);if(f!==v)questionCsv.value=f}catch(e){}const r=_ic.apply(this,a);try{if(AK_TEACHER_PENDING&&(questionCsv.value||'').trim())applyTeacherFromOcr()}catch(e){}try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
     const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;document.body.classList.remove('sm-ready');return _pr.apply(this,a)};
     if(isSimple())try{setStagesOpen(false);document.body.classList.remove('stages-closed')}catch(e){}
     // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
