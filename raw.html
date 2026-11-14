@@ -168,8 +168,11 @@
     .iv-body{display:grid;grid-template-columns:minmax(0,50fr) minmax(0,50fr);height:min(78vh,980px)}
     .iv.full .iv-body{flex:1;height:auto;min-height:0}
     .iv-left{overflow:auto;background:#efece6;border-right:1px solid var(--line);padding:10px;--rvz:1}
-    .iv-left .rv-ltools{position:sticky;top:-10px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6f2;border-bottom:1px solid var(--line)}
-    .iv-left .rv-ltools .help{flex:1 1 160px;margin:0}
+    .iv-left .rv-ltools{position:sticky;top:-10px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6;border-bottom:1px solid var(--line)}
+    .iv-left .rv-ltools .help{flex:1 1 100%;margin:0;font-size:12px}
+    .iv-left.tool-hand{cursor:grab;touch-action:none;user-select:none}.iv-left.tool-hand.grabbing{cursor:grabbing}
+    .iv-left.tool-hand #ivCropSlot *,.iv-left.tool-hand #ivOrig *{pointer-events:none!important}
+    .iv-left .rv-ltools,.iv-left .rv-ltools *{pointer-events:auto!important}
     #ivCropSlot #cropPageArea{width:calc(100% * var(--rvz,1))}
     #ivCropSlot .crop-hint{display:none}
     #ivOrig img{display:block;width:calc(100% * var(--rvz,1));max-width:none;margin:0 auto 10px;background:#fff;border:1px solid #d9d2c6;border-radius:4px}
@@ -1964,7 +1967,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
      切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
   (function(){
-    let RV={filter:'all',edit:'',src:'crop',zoom:1,data:null};const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null};const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
     const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
     function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
       _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
@@ -2013,11 +2016,11 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
         if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
           h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
-            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div>${D.passageRow[it.gid]?`<div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvEdit('p:'+this.dataset.g)">修改題組文章</button></div>`:''}</div>`}
+            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
         const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
         const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
         if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
-        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('q:${k}')">修改</button></div></div>`});
+        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
       if(!n)h+='<div class="status">這個分類目前沒有題目。</div>';
       box.innerHTML=h;rvMath(box);if(keepY)box.scrollTop=y;
       setSum(`共 ${D.items.length} 題・${bad?bad+' 題要注意':'沒有發現問題'}・圖 ${(typeof cropCandidates!=='undefined'?cropCandidates.filter(c=>!c.skip).length:0)} 張`);
@@ -2055,12 +2058,25 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     }
     function setState(t){const s=document.getElementById('ivState');if(s)s.textContent=t}
     window._rvSrc=s=>{RV.src=s;renderLeft()};
-    window._rvZoom=d=>{RV.zoom=Math.max(1,Math.min(3,(RV.zoom||1)+d*0.5));document.getElementById('ivLeft').style.setProperty('--rvz',RV.zoom)};
+    window._rvZoom=d=>{RV.zoom=d===0?1:Math.max(1,Math.min(4,(RV.zoom||1)+d*0.5));document.getElementById('ivLeft').style.setProperty('--rvz',RV.zoom)};
+    window._rvTool=t=>{RV.tool=t;const L=document.getElementById('ivLeft');L.classList.toggle('tool-hand',t==='hand');document.querySelectorAll('#ivTool button').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));
+      const h=document.getElementById('ivToolHint');if(h)h.textContent=t==='hand'?'手掌移動：按住頁面拖曳即可移動；要畫框請切回「框選切圖」。':'框選切圖：在清稿上拖曳畫框，放開後輸入題號；框上可改題號、單題／題組、略過、刪除。放大後按「手掌移動」拖曳頁面（按住空白鍵也可暫時移動）。'};
+    window._rvAutoCrop=async()=>{if(!cropFiles.pdf){alert('沒有清稿 PDF，無法自動切圖。');return}
+      if(!confirm('重新自動切圖會取代目前「自動裁切」的框（你自己畫的框會保留，但已改的自動框題號會重來）。繼續？'))return;
+      setState('正在重新自動切圖（約 1～2 分鐘）…');try{await autoCropByModel()}catch(e){}
+      const msg=(document.getElementById('cropReviewState')||{}).textContent||'';setState(/失敗/.test(msg)?msg:'自動切圖完成，請逐題檢查。');if(document.getElementById('ivPane').classList.contains('on'))renderLeft()};
+    // 手掌：拖曳移動左側頁面（也支援觸控與空白鍵暫時切換）
+    (function(){let drag=null;const L=()=>document.getElementById('ivLeft');
+      document.addEventListener('pointerdown',e=>{const l=L();if(!l||!l.classList.contains('tool-hand')||!l.contains(e.target)||e.target.closest('.rv-ltools'))return;drag={x:e.clientX,y:e.clientY,sl:l.scrollLeft,st:l.scrollTop};l.classList.add('grabbing');try{l.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+      document.addEventListener('pointermove',e=>{if(!drag)return;const l=L();l.scrollLeft=drag.sl-(e.clientX-drag.x);l.scrollTop=drag.st-(e.clientY-drag.y)});
+      const end=()=>{if(!drag)return;drag=null;const l=L();l&&l.classList.remove('grabbing')};document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+      let spaceOn=false;document.addEventListener('keydown',e=>{if(e.code!=='Space'||spaceOn||/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'')||!document.getElementById('ivPane')?.classList.contains('on'))return;const l=L();if(!l||l.classList.contains('tool-hand'))return;spaceOn=true;l.classList.add('tool-hand','tool-space');e.preventDefault()});
+      document.addEventListener('keyup',e=>{if(e.code!=='Space'||!spaceOn)return;spaceOn=false;const l=L();l&&l.classList.remove('tool-space');if(l&&RV.tool!=='hand')l.classList.remove('tool-hand')})})();
     window._rvLeft=open=>{const v=document.getElementById('ivWrap');if(v)v.classList.toggle('left-open',open)};
     window._ivFull=()=>{const v=document.getElementById('ivWrap');const on=!v.classList.contains('full');v.classList.toggle('full',on);document.body.style.overflow=on?'hidden':'';document.getElementById('ivFullBtn').textContent=on?'結束全螢幕':'全螢幕'};
     function ensurePane(){const pane=document.getElementById('ivPane');if(!pane||pane.dataset.ready)return pane;pane.dataset.ready='1';
       pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><button type="button" class="btn" onclick="akFile.click()">匯入簡答</button><button type="button" class="btn" onclick="pasteAnswerKey()">貼上簡答</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
-        <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><span class="help">框上可直接改題號、單題／題組、略過；也可拖曳補框</span><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
+        <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><div class="rv-seg" id="ivTool"><button type="button" data-tool="crop" class="on" onclick="_rvTool('crop')">框選切圖</button><button type="button" data-tool="hand" onclick="_rvTool('hand')">手掌移動</button></div><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn" onclick="_rvZoom(0)">還原</button><button type="button" class="btn" onclick="_rvAutoCrop()">重新自動切圖</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button><span class="help" id="ivToolHint">框選切圖：在清稿上拖曳畫框，放開後輸入題號；框上可改題號、單題／題組、略過、刪除。放大後按「手掌移動」拖曳頁面（按住空白鍵也可暫時移動）。</span></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
         <div class="iv-right" id="rvRight"></div></div>
         <div class="iv-foot"><div class="btn-even"><button type="button" class="btn primary" id="ivImportBtn" onclick="oneClickImport()">檢查完成，一鍵匯入題庫</button></div><div class="status" id="ivState"></div></div>
         <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
@@ -2068,6 +2084,47 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       return pane}
     async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
       try{if(cropCandidates.some(c=>!c.skip)&&pipeStep(5).state!=='done')pipeDone(5,cropCandidates.filter(c=>!c.skip).length+' 張圖');if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+
+    // ── 修改：開啟「題庫管理」同一個編輯題目視窗（借用背景載入的題庫頁），儲存時只寫回這裡的題目資料與切圖，不會寫進雲端題庫 ──
+    window._rvOpenEditG=gid=>{const k=RV.data.items.findIndex(x=>x.gid===gid);if(k>=0)_rvOpenEdit(k)};
+    window._rvOpenEdit=async function(k){
+      const D=RV.data,it=D&&D.items[k];if(!it)return;const w=promptSource.contentWindow;
+      try{await waitForPromptBuilder('openEdit')}catch(e){alert('題庫編輯視窗還在載入，請等幾秒再按一次。');return}
+      let ready=0;try{ready=w.eval('SYL.length')}catch(e){}if(!ready){alert('題庫資料還在載入，請等幾秒再按一次。');return}
+      const hd=D.header,r=D.rows[it.ri],col=(n,fb)=>{const i=hd.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb};
+      const has23=hd.some(h=>(h||'').trim()==='題組文章')||hd.length>=23;
+      const C={year:col('年度',0),school:col('來源學校',1),exam:col('考試名稱',2),no:col('題號',3),ans:col('答案',4),book:col('冊數',5),bookName:col('冊名',6),field:col('領域',7),unit:col('大單元',8),sub:col('子單元',9),kp:col('知識點',10),summary:col('題目摘要',11),type:col('題型',12),step:col('步驟分',13),mem:col('記憶分',14),con:col('概念分',15),chart:col('圖表類型',16),basis:col('判斷依據',17),flag:col('待確認',18),q:col('題目',19),sol:col('詳解',20),passage:has23?col('題組文章',21):-1,gid:col('題組ID',has23?22:21)};
+      const g=i=>i>=0?String(r[i]==null?'':r[i]).trim():'';const gid=g(C.gid);
+      const origImgs=it.imgs.map(im=>({ci:im.ci,src:im.src}));
+      const item={id:'__rv_tmp__',year:g(C.year),school:g(C.school),exam:g(C.exam)||(examName.value||'').trim(),no:g(C.no),ans:g(C.ans),book:g(C.book),bookName:g(C.bookName),field:g(C.field),unit:g(C.unit),sub:g(C.sub),kp:g(C.kp),summary:g(C.summary),type:g(C.type),step:+g(C.step)||0,mem:+g(C.mem)||0,con:+g(C.con)||0,chart:g(C.chart),basis:g(C.basis),flag:/^(y|yes|true|1|是)$/i.test(g(C.flag)),q:C.q>=0?String(r[C.q]||''):'',sol:C.sol>=0?String(r[C.sol]||''):'',groupId:gid,imgs:origImgs.map(im=>({src:im.src,width:60,align:'left'}))};
+      const psText=gid?(D.passages[gid]||''):'';
+      w.eval('DB.push('+JSON.stringify(item)+')');
+      if(gid)w.eval('PASSAGES['+JSON.stringify(gid)+']='+JSON.stringify({id:'__rv_ps__',groupId:gid,type:'passage',q:psText,imgs:((D.gImgs[gid]||[]).map(im=>({src:im.src,width:60,align:'left'})))}));
+      // 顯示：把背景的題庫頁撐滿畫面，只露出編輯視窗
+      const doc=w.document;if(!doc.getElementById('rvEditStyle')){const st=doc.createElement('style');st.id='rvEditStyle';st.textContent='html.rv-edit-only,html.rv-edit-only body{background:transparent!important}html.rv-edit-only body{visibility:hidden}html.rv-edit-only dialog[open]{visibility:visible}';doc.head.appendChild(st)}
+      doc.documentElement.classList.add('rv-edit-only');promptSource.classList.remove('hide');promptSource.style.cssText='position:fixed;inset:0;width:100vw;height:100dvh;border:0;z-index:100000;background:transparent';
+      const origSave=w.saveEdit;let done=false;
+      const cleanup=()=>{if(done)return;done=true;w.saveEdit=origSave;try{w.eval('(()=>{const i=DB.findIndex(x=>x.id==="__rv_tmp__");if(i>=0)DB.splice(i,1)})()');if(gid)w.eval('delete PASSAGES['+JSON.stringify(gid)+']')}catch(e){}
+        doc.documentElement.classList.remove('rv-edit-only');promptSource.classList.add('hide');promptSource.removeAttribute('style')};
+      w.document.getElementById('editDlg').addEventListener('close',cleanup,{once:true});
+      w.saveEdit=async function(){
+        const E=id=>doc.getElementById(id),fix=v=>{try{return w.fixControlCharEatenLatex(v)}catch(e){return v}};
+        const q=fix(E('eQ').value.trim()),summary=E('eSummary').value.trim();if(!q&&!summary){w.alert('題目或摘要至少填一個');return}
+        const syl=w.eval('(SYL.find(k=>k.book===eBook.value)||{})'),df=w.eval('({step:diff.step,mem:diff.mem,con:diff.con})'),imgsNow=w.eval('curImgs.map(x=>({src:x.src}))');
+        let basis=E('eBasis').value.trim();const flag=E('eFlag').checked;if(flag&&basis&&!basis.startsWith('[回報]'))basis='[回報] '+basis;
+        const set=(i,v)=>{if(i>=0){while(r.length<=i)r.push('');r[i]=v}};
+        set(C.year,E('eYear').value.trim());set(C.school,E('eSchool').value.trim());set(C.exam,E('eExam').value.trim());set(C.no,E('eNo').value.trim());set(C.ans,E('eAns').value.trim());
+        set(C.book,E('eBook').value);set(C.bookName,syl.bookName||'');set(C.field,syl.field||'');set(C.unit,E('eUnit').value);set(C.sub,E('eSub').value);set(C.kp,E('eKp').value.trim());set(C.summary,summary);set(C.type,E('eType').value);
+        set(C.step,String(df.step||''));set(C.mem,String(df.mem||''));set(C.con,String(df.con||''));set(C.chart,E('eChart').value.trim());set(C.basis,basis);set(C.flag,flag?'Y':'');set(C.q,q);set(C.sol,fix(E('eSol').value.trim()));
+        const newGid=E('eGroupId').value.trim();set(C.gid,newGid);
+        if(newGid&&C.passage>=0){const pt=fix(E('ePassage').value.trim()),pr=D.passageRow[newGid];if(pr)D.rows[pr.ri][pr.col]=pt;else set(C.passage,pt)}
+        // 圖片：視窗裡刪掉的 → 略過那張切圖；新加的 → 變成這題的新切圖
+        const keep=new Set(imgsNow.map(x=>x.src));origImgs.forEach(im=>{if(!keep.has(im.src)&&cropCandidates[im.ci])cropCandidates[im.ci].skip=true});
+        const had=new Set(origImgs.map(im=>im.src)),no=parseInt(E('eNo').value,10);imgsNow.forEach((im,n)=>{if(had.has(im.src))return;cropCandidates.push({src:im.src,qno:Number.isInteger(no)?no:null,scope:'single',kind:'人工補圖',label:'編輯視窗新增',verdict:'pass',reason:'在編輯視窗新增',skip:false,filename:'Q'+(Number.isInteger(no)?no:'未知')+'_edit'+(n+1)+'.png'})});
+        doc.getElementById('editDlg').close();
+        questionCsv.value=_rowsToCsv(D.rows);try{inspectCsv()}catch(e){}try{renderCropCandidates()}catch(e){}RV.data=build();RV.edit='';renderRight(true)};
+      w.openEdit('__rv_tmp__');
+    };
     // 切到第 5 分頁＝進人工檢驗；離開就把切圖頁面區搬回切圖分頁
     const _open=window.openReviewStep;
     window.openReviewStep=function(n){_open(n);if(String(n)==='5')enter();else moveCropBack()};
