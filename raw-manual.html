@@ -112,11 +112,27 @@
     .dehand-card .dh-mv button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:22px;cursor:pointer;color:var(--red);font-size:11px;line-height:1;padding:0}
     .dehand-card .dh-mv button:disabled{opacity:.3;cursor:default}
   </style>
+  <style id="mobile-steps-fix">
+    /* 手機版：步驟卡展開內容撐滿卡片寬度；「展開／收合」改成橫排小按鈕（2026-11-14） */
+    .toggle-detail{width:auto!important;height:auto!important;min-height:0!important;padding:3px 10px!important;border:1px solid #e3d7ca!important;border-radius:999px!important;background:#fff!important;font-size:12px!important;line-height:1.4!important;white-space:nowrap}
+    .modetabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;box-sizing:border-box}
+    .modetabs a{justify-content:center;padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
+    @media(max-width:680px){
+      .steps>li{padding:16px 64px 14px 58px}
+      .steps>li:before{left:12px!important;top:15px!important;width:34px!important;height:34px!important;font-size:14px!important}
+      .step-detail{max-width:none!important;margin:12px -50px 0 -44px!important}
+      .manual-clean-drop{margin:10px -50px 0 -44px!important;max-width:none!important}
+      main select,main input:not([type=checkbox]):not([type=radio]),main textarea{max-width:100%;box-sizing:border-box}
+      main label.help{white-space:normal;max-width:100%}
+      main label.help>select{width:100%;margin-top:4px}
+      .step-detail .drop,.step-detail .row,.step-detail .action-row,.step-detail .crop-grid,.step-detail .dehand-grid{max-width:none;width:auto}
+    }
+  </style>
 </head>
 <body>
   <header><div class="brand-head"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><h1>茲茲文教｜自然題庫・考卷前處理</h1><div class="sub">TZUTZU SCIENCE QBANK · MANUAL IMPORT</div></div></div><div class="header-actions"><a class="home-link" href="home.html" aria-label="回到首頁" title="回到首頁"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a><a class="home-link" href="index.html" aria-label="題庫管理" title="題庫管理"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></a></div></header>
   <main>
-    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html">自動匯題</a><a href="raw-manual.html" class="on">手動匯題</a></nav>
+    <nav class="modetabs" aria-label="匯題方式"><a href="raw.html?mode=simple">簡單模式</a><a href="raw.html">自動匯題</a><a href="raw-manual.html" class="on">手動匯題</a></nav>
     <div class="intro"><h2>手動匯題・考卷匯入工作單</h2><p>逐步自行操作：先自動命名並在本機清除筆跡，再交由 AI 產生題目 CSV；本頁不會自動執行 OCR。</p></div>
     <section class="stage">
       <div class="head"><div class="no">I</div><div><h2>匯入考卷題目</h2><p>茲茲清稿 → AI 題目 CSV → 匯入題庫</p></div></div>
@@ -1492,5 +1508,6 @@
   })();
   </script>
   <script src="tools/ipad-download.js" defer></script>
+<script src="nav.js" defer></script>
 </body>
 </html>

@@ -6,8 +6,8 @@
 | --- | --- |
 | `index.html` | 題庫管理、匯入、詳解、組卷與 Word 匯出主系統 |
 | `raw.html`、`raw-manual.html` | 考卷前處理與手動匯題流程 |
-| `analysis.html`、`analytics.html`、`daily.html`、`progress.html` | 分析、儀表板、每日一題與共編進度頁 |
-| `paper-*.js`、`analysis-core.js`、`mt-embed-client.js` | 可重用的考卷輸出、分析與數學工具模組 |
+| `analytics.html`、`daily.html`、`progress.html` | 儀表板、每日一題與共編進度頁 |
+| `paper-*.js`、`mt-embed-client.js`、`nav.js` | 可重用的考卷輸出、數學工具模組與各頁共用的系統切換列 |
 | `templates/` | Word 模板與模板資產 |
 | `tools/` | OCR、去筆跡、橋接、模板建立與測試工具 |
 | `docs/` | 規格、操作文件、整合說明與歷史交接 |
