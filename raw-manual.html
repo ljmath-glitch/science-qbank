@@ -111,6 +111,71 @@
     .dehand-card .dh-mv{display:inline-flex;gap:4px}
     .dehand-card .dh-mv button{appearance:none;border:1px solid var(--line);background:#fff;border-radius:6px;width:26px;height:22px;cursor:pointer;color:var(--red);font-size:11px;line-height:1;padding:0}
     .dehand-card .dh-mv button:disabled{opacity:.3;cursor:default}
+    /* 人工檢驗（從自動匯題移植） */
+    .mv-pane{display:none}.mv-pane.on{display:block}
+    details.opt-sol>summary.head{list-style:none;cursor:pointer}details.opt-sol>summary.head::-webkit-details-marker{display:none}
+    details.opt-sol>summary.head::after{content:"展開";margin-left:auto;font-size:12px;color:#8a7d6b;white-space:nowrap}
+    details.opt-sol[open]>summary.head::after{content:"收合"}
+    /* 人工檢驗（第 6 步）：左＝清稿＋切圖框／原卷，右＝全部題目卡片（2026-11-13） */
+    .iv{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+    .iv.full{position:fixed;inset:0;z-index:9000;border-radius:0;display:flex;flex-direction:column}
+    .iv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#fffefb;border-bottom:1px solid var(--line)}
+    .iv-top #ivSum{flex:1 1 180px;min-width:0}
+    .rv-seg{display:inline-flex;border:1px solid #e4d8c6;border-radius:10px;overflow:hidden}.rv-seg button{border:0;background:#fff;padding:6px 12px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}.rv-seg button.on{background:var(--red);color:#fff}
+    .iv-body{display:grid;grid-template-columns:minmax(0,50fr) minmax(0,50fr);height:min(78vh,980px)}
+    .iv.full .iv-body{flex:1;height:auto;min-height:0}
+    .iv-left{overflow:auto;background:#efece6;border-right:1px solid var(--line);padding:10px;--rvz:1}
+    .iv-left .rv-ltools{position:sticky;top:-10px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6;border-bottom:1px solid var(--line)}
+    .iv-left .rv-ltools .help{flex:1 1 100%;margin:0;font-size:12px}
+    .iv-left.tool-hand{cursor:grab;touch-action:none;user-select:none}.iv-left.tool-hand.grabbing{cursor:grabbing}
+    .iv-left.tool-hand #ivCropSlot *,.iv-left.tool-hand #ivOrig *{pointer-events:none!important}
+    .iv-left .rv-ltools,.iv-left .rv-ltools *{pointer-events:auto!important}
+    #ivCropSlot #cropPageArea{width:calc(100% * var(--rvz,1))}
+    #ivCropSlot .crop-hint{display:none}
+    #ivOrig img{display:block;width:calc(100% * var(--rvz,1));max-width:none;margin:0 auto 10px;background:#fff;border:1px solid #d9d2c6;border-radius:4px}
+    .rv-pg{font-size:12px;color:var(--muted);margin:4px 0}
+    .iv-right{overflow:auto;padding:12px 14px 20px}
+    .iv-foot{padding:10px 12px;background:#fffefb;border-top:1px solid var(--line)}
+    .iv-foot .btn-even{margin-top:0}.iv-foot .status{margin:6px 0 0}
+    .rv-sum{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+    .rv-chip{padding:4px 10px;border-radius:999px;border:1px solid #e4d8c6;background:#fff;font-size:12.5px;cursor:pointer;color:var(--ink)}.rv-chip b{margin-left:3px}
+    .rv-chip.t-flag{background:#fff3d6;border-color:#e8c97a}.rv-chip.t-img{background:#e8f1fb;border-color:#a9c6e6}.rv-chip.t-ans{background:#fde8e6;border-color:#e7aaa4}.rv-chip.t-err{background:#f1e6f7;border-color:#c9a8dc}
+    .rv-chip.on{background:var(--red);border-color:var(--red);color:#fff}
+    .rv-card{background:#fffefb;border:1px solid var(--line);border-left:6px solid #d9d2c6;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 2px 9px rgba(43,32,28,.045)}
+    .rv-card.tone-flag{background:#fff7e0;border-left-color:#d39b1e}
+    .rv-card.tone-img{background:#eef5fd;border-left-color:#5b8fc9}
+    .rv-card.tone-ans{background:#fdeeec;border-left-color:#c0392b}
+    .rv-card.tone-err{background:#f6eefa;border-left-color:#8e5bb0}
+    .rv-passage{border:1px solid #8a8a8a;background:#fff;border-radius:6px;padding:10px 12px;margin-bottom:6px;font-size:14px;line-height:1.8}
+    .rv-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+    .rv-no{font-weight:800;color:var(--red);font-size:15px}
+    .rv-tag{font-size:11.5px;padding:2px 8px;border-radius:999px;background:#f3efe8;color:#5b4a33}
+    .rv-tag.warn{background:#fff;color:#a31515;font-weight:700;border:1px solid #e7aaa4}
+    .rv-flag{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#9a6910;cursor:pointer;white-space:nowrap}
+    .rv-q{font-size:14.5px;line-height:1.85;overflow-wrap:anywhere}
+    .rv-ans{color:#c0392b;margin-top:5px;font-size:14px}
+    .rv-imgs img{max-width:100%;display:block;margin:8px 0;border:1px solid #eee;border-radius:4px;background:#fff}
+    .rv-card .rv-actions,.rv-passage .rv-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+    .rv-edit label:not(.rv-flag){display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+    .rv-edit textarea,.rv-edit input:not([type=checkbox]){width:100%;box-sizing:border-box;border:1px solid #d8cfc2;border-radius:8px;padding:7px 9px;font-family:inherit;font-size:14px;line-height:1.6}
+    .rv-edit textarea{min-height:120px;resize:vertical}
+    .rv-handle,.rv-scrim,.rv-closeleft,.iv-openleft{display:none}
+    @media(max-width:899px){
+      .iv-body{grid-template-columns:1fr;height:auto}
+      .iv.full .iv-body{overflow:auto}
+      .iv-right{max-height:none;padding-left:30px}
+      .iv-left{position:fixed;top:0;bottom:0;left:0;width:min(90vw,560px);z-index:9002;transform:translateX(-100%);transition:transform .25s ease;box-shadow:6px 0 24px rgba(0,0,0,.18)}
+      .iv.left-open .iv-left{transform:none}
+      .rv-scrim{display:block;position:fixed;inset:0;z-index:9001;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .25s}
+      .iv.left-open .rv-scrim{opacity:1;pointer-events:auto}
+      .rv-handle{display:none;position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:8999;flex-direction:column;align-items:center;gap:4px;line-height:1.1;padding:12px 7px;border:0;border-radius:0 10px 10px 0;background:var(--red);color:#fff;font-family:inherit;font-weight:700;font-size:14px;box-shadow:2px 2px 10px rgba(0,0,0,.2);cursor:pointer}
+      .iv.inview .rv-handle{display:flex}
+      .iv.left-open .rv-handle{display:none}
+      .rv-closeleft,.iv-openleft{display:inline-flex}
+      #ivFullBtn{display:none}
+    }
+.btn-even{display:grid;grid-auto-columns:minmax(0,1fr);grid-auto-flow:column;gap:6px;margin-top:8px;width:100%}
+main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-height:38px;font-size:13px;overflow:hidden;text-overflow:ellipsis;margin:0}
   </style>
   <style id="mobile-steps-fix">
     /* 手機版：步驟卡展開內容撐滿卡片寬度；「展開／收合」改成橫排小按鈕（2026-11-14） */
@@ -166,43 +231,24 @@
             <textarea id="promptPreview" class="hide" readonly></textarea>
           </div>
         </li>
-        <li data-step="4"><b>貼回 AI 產生的 CSV</b>確認題目、題號與考試名稱正確後，直接送到題庫匯入。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
+        <li data-step="4"><b>貼回 AI 產生的 CSV</b>丟入或貼上後，自動切圖並進入人工檢驗。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
           <div class="step-detail">
-            <div class="detail-title">匯入題目 CSV</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。送出後會開啟題庫既有的完整匯入視窗。</p>
+            <div class="detail-title">匯入題目 CSV</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。丟入檔案後會自動切圖，並進入下方「人工檢驗」逐題對照、編輯，確認後一鍵匯入題庫。</p>
             <input id="csvFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readCsvFile(this.files[0])">
             <div class="drop" style="margin-top:10px" onclick="csvFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readCsvFile(event.dataTransfer.files[0])">點此選擇 CSV／Excel，或拖放檔案到這裡</div>
-            <textarea id="questionCsv" placeholder="貼上 AI 回傳的完整題目 CSV…" oninput="inspectCsv()" style="margin-top:10px"></textarea><div class="preview" id="csvPreview"></div>
-            <div class="row"><button class="btn green" onclick="sendQuestionsToQbank()">直接開啟題庫匯入</button><button class="btn" onclick="downloadCsv()">下載 CSV 備份</button></div>
+            <input id="akFile" type="file" accept="application/pdf,.pdf,.txt,.csv,text/plain" class="hide" onchange="loadAnswerKeyFile(this.files[0]);this.value=''"><textarea id="questionCsv" placeholder="貼上 AI 回傳的完整題目 CSV…" oninput="inspectCsv()" style="margin-top:10px"></textarea><div class="preview" id="csvPreview"></div>
+            <div class="row"><button class="btn green" onclick="startManualReview()">自動切圖並進入人工檢驗</button><button class="btn" onclick="downloadCsv()">下載 CSV 備份</button></div>
           </div>
         </li>
       </ol>
     </section>
 
-    <section class="stage" style="margin-top:20px">
-      <div class="head"><div class="no">II</div><div><h2>生成詳解</h2><p>題庫勾選題目 → AI 撰寫詳解 → 匯入詳解 CSV</p></div></div>
-      <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
-      <ol class="steps">
-        <li data-step="1"><b>確認清稿檔案</b>可只提供乾淨 PDF、只提供Word 清稿檔，或兩個都提供；此處與第 III 區的清稿檔案會自動同步。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail">
-            <input id="solutionAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
-            <div class="drop" onclick="document.getElementById('solutionAll').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');dropExamFiles(event.dataTransfer.files)">拖入或選擇清稿檔案<br><span class="help">可一次拖入 PDF、Word，或只拖其中一種；選取後會同步至第 III 區，並依檔名自動校正考卷名稱。</span></div>
-            <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
-          </div>
-        </li>
-        <li data-step="2"><b>複製詳解指令並交給 AI</b>複製完整詳解指令（含格式、LaTeX 規則與三欄 CSV 輸出規則），開啟其中一個 AI，貼上指令並同時附上第 2 步的乾淨 PDF；AI 會輸出三欄 CSV。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><button class="btn primary" onclick="copySolutionPrompt()">一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT </a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini </a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude </a></div></div>
-        </li>
-        <li data-step="3"><b>貼回 AI 產生的詳解 CSV</b>確認 AI 回傳的考試名稱、題號未被改動後，送入題庫詳解匯入。
-          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><div class="detail-title">匯入詳解 CSV</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><button class="btn green" onclick="sendSolutionsToQbank()">直接開啟題庫詳解匯入</button><button class="btn" onclick="downloadSolutionCsv()">下載 CSV 備份</button></div></div>
-        </li>
-      </ol>
+    <section class="stage mv-review" id="mvReview" style="margin-top:20px" hidden>
+      <div class="head"><div class="no">人工</div><div><h2>人工檢驗</h2><p>題目 CSV 載入後，先自動切圖，再在這裡對照清稿逐題檢查、編輯，最後一鍵匯入題庫</p></div></div>
+      <div class="review-pane mv-pane" id="ivPane"></div>
     </section>
-
     <section class="stage" style="margin-top:20px">
-      <div class="head"><div class="no">III</div><div><h2>批次貼圖</h2><p>清稿 PDF → 手動框選裁切 → 批次貼入題庫</p></div></div>
+      <div class="head"><div class="no">II</div><div><h2>批次貼圖</h2><p>清稿 PDF → 手動框選裁切 → 批次貼入題庫</p></div></div>
       <div class="notice"><b>完成標準：</b>每一張要保留的圖或表格都有正確題號，裁切範圍不含題幹、選項、題號與頁首頁尾。</div>
       <ol class="steps">
         <li data-step="1"><b>選擇清稿檔案</b>可只提供乾淨 PDF、只提供Word 清稿檔，或兩個都提供；系統會自動辨識檔案類型後進入下一步。
@@ -223,6 +269,29 @@
         </li>
       </ol>
     </section>
+    <details class="stage opt-sol" style="margin-top:20px">
+      <summary class="head"><div class="no">選填</div><div><h2>生成詳解（選填）</h2><p>題庫勾選題目 → AI 撰寫詳解 → 匯入詳解 CSV；不需要可以略過</p></div></summary>
+      <div class="notice"><b>完成標準：</b>詳解與原題目的「考試名稱＋題號」正確對應，並由題庫系統標示找不到或需覆蓋的資料。</div>
+      <ol class="steps">
+        <li data-step="1"><b>確認清稿檔案</b>可只提供乾淨 PDF、只提供Word 清稿檔，或兩個都提供；此處與「批次貼圖」區的清稿檔案會自動同步。
+          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
+          <div class="step-detail">
+            <input id="solutionAll" type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hide" onchange="dropExamFiles(this.files);this.value=''">
+            <div class="drop" onclick="document.getElementById('solutionAll').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');dropExamFiles(event.dataTransfer.files)">拖入或選擇清稿檔案<br><span class="help">可一次拖入 PDF、Word，或只拖其中一種；選取後會同步至第 III 區，並依檔名自動校正考卷名稱。</span></div>
+            <div class="file-state"><span id="solutionPdfDot" class="ready-dot"></span><span id="solutionPdfState">尚未選擇 PDF</span><br><span id="solutionWordDot" class="ready-dot"></span><span id="solutionWordState">尚未選擇 Word</span></div><div id="solutionPrecisionWarn" class="precision-warn">尚未選擇清稿檔案。建議同時提供 PDF 與 Word，才能提升後續處理的精準度。</div>
+          </div>
+        </li>
+        <li data-step="2"><b>複製詳解指令並交給 AI</b>複製完整詳解指令（含格式、LaTeX 規則與三欄 CSV 輸出規則），開啟其中一個 AI，貼上指令並同時附上第 2 步的乾淨 PDF；AI 會輸出三欄 CSV。
+          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
+          <div class="step-detail"><button class="btn primary" onclick="copySolutionPrompt()">一鍵複製詳解製作指令</button><p class="help" style="margin-top:8px">AI 必須維持考試名稱與題號原樣，最後輸出三欄：考試名稱、題號、詳解。</p><textarea id="solutionPromptPreview" class="hide" readonly></textarea><div class="row" style="align-items:center;margin-top:10px"><span class="help">開啟 AI：</span><a class="btn tool-link" href="https://chatgpt.com" target="_blank" rel="noopener" onclick="return openAppOrWeb('chatgpt://','https://chatgpt.com',event)">OpenAI ChatGPT </a><a class="btn tool-link" href="https://gemini.google.com/app" target="_blank" rel="noopener" onclick="return openAppOrWeb('googlegemini://','https://gemini.google.com/app',event)">Google Gemini </a><a class="btn tool-link" href="https://claude.ai/new" target="_blank" rel="noopener" onclick="return openAppOrWeb('claude://','https://claude.ai/new',event)">Anthropic Claude </a></div></div>
+        </li>
+        <li data-step="3"><b>貼回 AI 產生的詳解 CSV</b>確認 AI 回傳的考試名稱、題號未被改動後，送入題庫詳解匯入。
+          <br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
+          <div class="step-detail"><div class="detail-title">匯入詳解 CSV</div><p class="help">可貼上 AI 回傳的 CSV，或拖入／選擇 CSV、Excel 檔。題庫會依「考試名稱＋題號」比對，只更新詳解欄位。</p><input id="solFile" type="file" accept=".csv,.txt,.xlsx,.xls" class="hide" onchange="readSolFile(this.files[0])"><div class="drop" style="margin-top:10px" onclick="solFile.click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');readSolFile(event.dataTransfer.files[0])">點此選擇詳解 CSV／Excel，或拖放檔案到這裡</div><textarea id="solutionCsv" placeholder="貼上 AI 回傳的完整詳解 CSV…" oninput="inspectSolCsv()" style="margin-top:10px"></textarea><div class="preview" id="solPreview"></div><div class="row"><button class="btn green" onclick="sendSolutionsToQbank()">直接開啟題庫詳解匯入</button><button class="btn" onclick="downloadSolutionCsv()">下載 CSV 備份</button></div></div>
+        </li>
+      </ol>
+    </details>
+
     <div class="intro" style="margin-top:20px;text-align:center"><h2>完成本份考卷前處理</h2><p>提醒：回題庫系統人工審核題目、詳解、題組、公式與圖片。</p><button class="btn primary" id="finishRawBtn" onclick="finishRawWorkflow()" style="margin-top:14px" disabled>考卷前處理完成</button></div>
   </main>
   <div class="crop-modal-overlay" id="cropModalOverlay" onclick="if(event.target===this)closeCropPreview()"><div class="crop-modal" id="cropModalBody"></div></div>
@@ -1508,6 +1577,341 @@
   })();
   </script>
   <script src="tools/ipad-download.js" defer></script>
+<script id="manualReviewShim">
+/* 手動匯題：接上人工檢驗（程式從自動匯題頁移植）。流程狀態列在這頁沒有，相關呼叫給空函式 */
+const PIPE_STUB={state:'wait'};
+function pipeStep(){return PIPE_STUB}function pipeStart(){}function pipeDone(){}function pipeFail(){}function pipeSkip(){}function setStagesOpen(){}
+    function fixOcrChars(s){return String(s==null?'':s).replace(/[\u3190-\u319f\u3220-\u3243\u3280-\u32b0\u2f00-\u2fd5\uf900-\ufaff]/g,ch=>{const n=ch.normalize('NFKC');if(n===ch)return ch;const m=/^\(([^()])\)$/.exec(n),c=ch.charCodeAt(0);return m&&!(c>=0x3220&&c<=0x3229)?m[1]:n})}
+    function _vfyCell(v){v=(v==null?'':String(v));return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+    function _rowsToCsv(rows){return rows.map(r=>r.map(_vfyCell).join(',')).join('\n');}
+    async function _pdfPagesToImages(file,st){
+      const pdfjs=await loadPdfJs();
+      const PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await file.arrayBuffer()),cMapUrl:PJ+'cmaps/',cMapPacked:true,standardFontDataUrl:PJ+'standard_fonts/'}).promise;
+      const imgs=[];
+      for(let p=1;p<=doc.numPages;p++){
+        const page=await doc.getPage(p);const vp=page.getViewport({scale:2.0});
+        const cv=document.createElement('canvas');cv.width=Math.ceil(vp.width);cv.height=Math.ceil(vp.height);
+        await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+        imgs.push(cv.toDataURL('image/jpeg',0.85));
+        if(st)st.textContent=`正在把原卷轉成圖片…（${p}/${doc.numPages}）`;
+      }
+      return imgs;
+    }
+window.openReviewStep=function(n){const p=document.getElementById('ivPane');if(p)p.classList.toggle('on',String(n)==='5')};
+</script>
+<script id="importReviewScript">
+  /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
+     切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
+  (function(){
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
+    const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
+    function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
+      _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
+        const a=document.createElement('script');a.src=KATEX+'katex.min.js';a.onerror=bad;a.onload=()=>{const b=document.createElement('script');b.src=KATEX+'contrib/auto-render.min.js';b.onload=ok;b.onerror=bad;document.head.appendChild(b)};document.head.appendChild(a)});
+      return _katexP.catch(()=>{})}
+    function rvMath(el){try{if(window.renderMathInElement)renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}
+    function fmt(t){const w=(promptSource&&promptSource.contentWindow)||{};let x=t||'';try{if(typeof w.fixLatex==='function')x=w.fixLatex(x)}catch(e){}x=esc(x);try{if(typeof w.applyRichMarks==='function')x=w.applyRichMarks(x)}catch(e){}return x.replace(/\n/g,'<br>')}
+    const FIG=/〔(?:含圖|表格)\s*\d*〕/;
+    function idxOf(header){const f=(n,fb)=>{const i=header.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb};const has23=header.some(h=>(h||'').trim()==='題組文章')||header.length>=23;
+      return {no:f('題號',3),ans:f('答案',4),type:f('題型',12),chart:f('圖表類型',16),basis:f('判斷依據',17),flag:f('待確認',18),q:f('題目',19),passage:has23?f('題組文章',21):-1,gid:f('題組ID',has23?22:21)}}
+    function build(){
+      const rows=parseCSV((questionCsv.value||'').trim());if(rows.length<2)return null;
+      const header=rows[0],ix=idxOf(header);const cell=(r,k)=>ix[k]>=0?String(r[ix[k]]||'').trim():'';
+      const items=[],passages={},passageRow={};
+      for(let i=1;i<rows.length;i++){const r=rows[i];if(!r||!r.some(c=>String(c||'').trim()))continue;
+        const gid=cell(r,'gid'),ps=ix.passage>=0?String(r[ix.passage]||''):'';
+        if(cell(r,'type')==='passage'){if(gid){passages[gid]=String(r[ix.q]||'');passageRow[gid]={ri:i,col:ix.q}}continue}
+        if(gid&&ps.trim()&&!passages[gid]){passages[gid]=ps;passageRow[gid]={ri:i,col:ix.passage}}
+        items.push({ri:i,no:cell(r,'no'),ans:cell(r,'ans'),q:String(r[ix.q]||''),gid,chart:cell(r,'chart'),type:cell(r,'type'),flag:/^(y|yes|true|1|是)$/i.test(cell(r,'flag')),basis:cell(r,'basis'),imgs:[]})}
+      const byNo={};items.forEach(it=>{if(it.no&&!byNo[it.no])byNo[it.no]=it});
+      const gImgs={},loose=[];
+      (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim();const it=byNo[no];const im={src:c.src,ci};
+        if(!it){loose.push({...im,no});return}
+        if((c.scope||'single')==='group'&&it.gid)(gImgs[it.gid]=gImgs[it.gid]||[]).push(im);else it.imgs.push(im)});
+      const seen={};
+      items.forEach(it=>{const w=[];
+        if(!it.q.trim())w.push('題目空白');
+        if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
+        if(!it.ans)w.push('沒有答案');
+        const needFig=FIG.test(it.q)||(it.gid&&FIG.test(passages[it.gid]||''));
+        if(needFig&&!it.imgs.length&&!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length))w.push('缺圖');
+        if(it.flag)w.push('待確認');
+        it.warns=w;
+        it.tone=w.includes('題目空白')||w.includes('題號重複')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
+      return {rows,header,ix,items,passages,passageRow,gImgs,loose}}
+    function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;return it.warns.includes(f)}
+    const gattr=g=>`data-g="${esc(g)}"`;
+    function renderRight(keepY){
+      const box=document.getElementById('rvRight');if(!box)return;const y=box.scrollTop;const D=RV.data;
+      if(!D){box.innerHTML='<div class="status">還沒有題目資料。請等「題庫 Excel」產生後再回來。</div>';setSum('');return}
+      const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,bad=D.items.filter(it=>it.warns.length).length;
+      const chip=(k,l,n,t)=>`<button type="button" class="rv-chip${t?' t-'+t:''}${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
+      let h='<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')?chip('題號重複','題號重複',cnt('題號重複'),'err'):'')+'</div>';
+      if(D.loose.length)h+=`<div class="rv-card tone-err"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">在左邊清稿的框上把題號改對，就會自動放進對應題目。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">框上的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
+      const shownG=new Set();let n=0;
+      D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
+        if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
+          h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
+            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
+        const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
+        const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
+        if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
+        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
+      if(!n)h+='<div class="status">這個分類目前沒有題目。</div>';
+      box.innerHTML=h;rvMath(box);if(keepY)box.scrollTop=y;
+      setSum(`共 ${D.items.length} 題・${bad?bad+' 題要注意':'沒有發現問題'}・圖 ${(typeof cropCandidates!=='undefined'?cropCandidates.filter(c=>!c.skip).length:0)} 張`);
+    }
+    function setSum(t){const s=document.getElementById('ivSum');if(s)s.textContent=t}
+    function saveRows(){questionCsv.value=_rowsToCsv(RV.data.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.edit='';renderRight(true)}
+    function refresh(){if(!document.getElementById('rvRight'))return;if(RV.edit)return;RV.data=build();renderRight(true)}
+    window._ivSync=function(){clearTimeout(_tmr);_tmr=setTimeout(refresh,120)};
+    window._rvFilter=f=>{RV.filter=f;RV.edit='';renderRight(false);document.getElementById('rvRight').scrollTop=0};
+    window._rvEdit=k=>{RV.edit=k;renderRight(true);const t=document.querySelector('#rvRight textarea');if(t)t.focus()};
+    window._rvSaveQ=k=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;r[ix.q]=document.getElementById('rvEditQ').value;r[ix.ans]=document.getElementById('rvEditA').value.trim();saveRows()};
+    window._rvSaveP=gid=>{const pr=RV.data.passageRow[gid];if(!pr)return;RV.data.rows[pr.ri][pr.col]=document.getElementById('rvEditP').value;saveRows()};
+    window._rvFlag=(k,on)=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;while(r.length<=ix.flag)r.push('');r[ix.flag]=on?'Y':'';const keep=RV.edit;
+      if(keep){const q=document.getElementById('rvEditQ'),a=document.getElementById('rvEditA');if(q)r[ix.q]=q.value;if(a)r[ix.ans]=a.value.trim()}
+      questionCsv.value=_rowsToCsv(RV.data.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.edit=keep;renderRight(true)};
+    // 左側：清稿＋切圖框（把切圖分頁的頁面區搬過來，兩邊永遠是同一份）或原卷
+    function cropArea(){return document.getElementById('cropPageArea')}
+    function moveCropIn(){const a=cropArea(),slot=document.getElementById('ivCropSlot');if(!a||!slot||a.parentNode===slot)return;if(!_cropHome){_cropHome=document.createComment('cropPageArea-home');a.parentNode.insertBefore(_cropHome,a)}slot.appendChild(a)}
+    function moveCropBack(){const a=cropArea();if(a&&_cropHome&&_cropHome.parentNode&&a.parentNode!==_cropHome.parentNode)_cropHome.parentNode.insertBefore(a,_cropHome.nextSibling)}
+    async function renderLeft(){
+      const crop=RV.src==='crop',slot=document.getElementById('ivCropSlot'),orig=document.getElementById('ivOrig');
+      document.querySelectorAll('#ivSrc button').forEach(b=>b.classList.toggle('on',b.dataset.src===RV.src));
+      slot.hidden=!crop;orig.hidden=crop;
+      if(crop){moveCropIn();
+        if(!cropFiles.pdf){slot.querySelector('.iv-empty')||slot.insertAdjacentHTML('afterbegin','<div class="status iv-empty">沒有清稿 PDF。請先在第 1、2 步選擇原稿並完成清稿，再按「重新自動切圖」。</div>');return}
+        slot.querySelector('.iv-empty')?.remove();
+        if(!(manualPagesFile===cropFiles.pdf&&manualPageWraps.size)){setState('正在載入清稿頁面…');await startManualCrop();moveCropIn();setState('')}
+        return}
+      const f=window.RAW_ORIG_FILE;
+      if(!f){orig.innerHTML='<div class="status">沒有原卷檔案（重新整理後要重新丟入考卷）。</div>';return}
+      if(/^image\//.test(f.type)){orig.innerHTML=`<img src="${URL.createObjectURL(f)}" alt="">`;return}
+      let pages=PAGE_CACHE.get(f);
+      if(!pages){orig.innerHTML='<div class="status" id="rvPdfState">正在載入原卷…</div>';try{pages=await _pdfPagesToImages(f,document.getElementById('rvPdfState'));PAGE_CACHE.set(f,pages)}catch(e){orig.innerHTML='<div class="status">原卷載入失敗：'+esc(e.message||e)+'</div>';return}}
+      orig.innerHTML=pages.map((u,i)=>`<div class="rv-pg">第 ${i+1} 頁</div><img src="${u}" alt="第 ${i+1} 頁">`).join('');
+    }
+    function setState(t){const s=document.getElementById('ivState');if(s)s.textContent=t}
+    window._rvSrc=s=>{RV.src=s;renderLeft()};
+    window._rvZoom=d=>{RV.zoom=d===0?1:Math.max(1,Math.min(4,(RV.zoom||1)+d*0.5));document.getElementById('ivLeft').style.setProperty('--rvz',RV.zoom)};
+    window._rvTool=t=>{RV.tool=t;const L=document.getElementById('ivLeft');L.classList.toggle('tool-hand',t==='hand');document.querySelectorAll('#ivTool button').forEach(b=>b.classList.toggle('on',b.dataset.tool===t));
+      const h=document.getElementById('ivToolHint');if(h)h.textContent=t==='hand'?'手掌移動：按住頁面拖曳即可移動；要畫框請切回「框選切圖」。':'框選切圖：在清稿上拖曳畫框，放開後輸入題號；框上可改題號、單題／題組、略過、刪除。放大後按「手掌移動」拖曳頁面（按住空白鍵也可暫時移動）。'};
+    window._rvAutoCrop=async()=>{if(!cropFiles.pdf){alert('沒有清稿 PDF，無法自動切圖。');return}
+      if(!confirm('重新自動切圖會取代目前「自動裁切」的框（你自己畫的框會保留，但已改的自動框題號會重來）。繼續？'))return;
+      setState('正在重新自動切圖（約 1～2 分鐘）…');try{await autoCropByModel()}catch(e){}
+      const msg=(document.getElementById('cropReviewState')||{}).textContent||'';setState(/失敗/.test(msg)?msg:'自動切圖完成，請逐題檢查。');if(document.getElementById('ivPane').classList.contains('on'))renderLeft()};
+    // 手掌：拖曳移動左側頁面（也支援觸控與空白鍵暫時切換）
+    (function(){let drag=null;const L=()=>document.getElementById('ivLeft');
+      document.addEventListener('pointerdown',e=>{const l=L();if(!l||!l.classList.contains('tool-hand')||!l.contains(e.target)||e.target.closest('.rv-ltools'))return;drag={x:e.clientX,y:e.clientY,sl:l.scrollLeft,st:l.scrollTop};l.classList.add('grabbing');try{l.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+      document.addEventListener('pointermove',e=>{if(!drag)return;const l=L();l.scrollLeft=drag.sl-(e.clientX-drag.x);l.scrollTop=drag.st-(e.clientY-drag.y)});
+      const end=()=>{if(!drag)return;drag=null;const l=L();l&&l.classList.remove('grabbing')};document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+      let spaceOn=false;document.addEventListener('keydown',e=>{if(e.code!=='Space'||spaceOn||/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'')||!document.getElementById('ivPane')?.classList.contains('on'))return;const l=L();if(!l||l.classList.contains('tool-hand'))return;spaceOn=true;l.classList.add('tool-hand','tool-space');e.preventDefault()});
+      document.addEventListener('keyup',e=>{if(e.code!=='Space'||!spaceOn)return;spaceOn=false;const l=L();l&&l.classList.remove('tool-space');if(l&&RV.tool!=='hand')l.classList.remove('tool-hand')})})();
+    window._rvLeft=open=>{const v=document.getElementById('ivWrap');if(v)v.classList.toggle('left-open',open)};
+    window._ivFull=()=>{const v=document.getElementById('ivWrap');const on=!v.classList.contains('full');v.classList.toggle('full',on);document.body.style.overflow=on?'hidden':'';document.getElementById('ivFullBtn').textContent=on?'結束全螢幕':'全螢幕'};
+    function ensurePane(){const pane=document.getElementById('ivPane');if(!pane||pane.dataset.ready)return pane;pane.dataset.ready='1';
+      pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><button type="button" class="btn" onclick="akFile.click()">匯入簡答</button><button type="button" class="btn" onclick="pasteAnswerKey()">貼上簡答</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
+        <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><div class="rv-seg" id="ivTool"><button type="button" data-tool="crop" class="on" onclick="_rvTool('crop')">框選切圖</button><button type="button" data-tool="hand" onclick="_rvTool('hand')">手掌移動</button></div><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn" onclick="_rvZoom(0)">還原</button><button type="button" class="btn" onclick="_rvAutoCrop()">重新自動切圖</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button><span class="help" id="ivToolHint">框選切圖：在清稿上拖曳畫框，放開後輸入題號；框上可改題號、單題／題組、略過、刪除。放大後按「手掌移動」拖曳頁面（按住空白鍵也可暫時移動）。</span></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
+        <div class="iv-right" id="rvRight"></div></div>
+        <div class="iv-foot"><div class="btn-even"><button type="button" class="btn primary" id="ivImportBtn" onclick="oneClickImport()">檢查完成，一鍵匯入題庫</button></div><div class="status" id="ivState"></div></div>
+        <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
+      try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
+      return pane}
+    async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
+      try{if(pipeStep(4).state==='done'&&pipeStep(5).state!=='run'&&pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+
+    // ── 修改：開啟「題庫管理」同一個編輯題目視窗（借用背景載入的題庫頁），儲存時只寫回這裡的題目資料與切圖，不會寫進雲端題庫 ──
+    window._rvOpenEditG=gid=>{const k=RV.data.items.findIndex(x=>x.gid===gid);if(k>=0)_rvOpenEdit(k)};
+    window._rvOpenEdit=async function(k){
+      const D=RV.data,it=D&&D.items[k];if(!it)return;const w=promptSource.contentWindow;
+      try{await waitForPromptBuilder('openEdit')}catch(e){alert('題庫編輯視窗還在載入，請等幾秒再按一次。');return}
+      let ready=0;try{ready=w.eval('SYL.length')}catch(e){}if(!ready){alert('題庫資料還在載入，請等幾秒再按一次。');return}
+      const hd=D.header,r=D.rows[it.ri],col=(n,fb)=>{const i=hd.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb};
+      const has23=hd.some(h=>(h||'').trim()==='題組文章')||hd.length>=23;
+      const C={year:col('年度',0),school:col('來源學校',1),exam:col('考試名稱',2),no:col('題號',3),ans:col('答案',4),book:col('冊數',5),bookName:col('冊名',6),field:col('領域',7),unit:col('大單元',8),sub:col('子單元',9),kp:col('知識點',10),summary:col('題目摘要',11),type:col('題型',12),step:col('步驟分',13),mem:col('記憶分',14),con:col('概念分',15),chart:col('圖表類型',16),basis:col('判斷依據',17),flag:col('待確認',18),q:col('題目',19),sol:col('詳解',20),passage:has23?col('題組文章',21):-1,gid:col('題組ID',has23?22:21)};
+      const g=i=>i>=0?String(r[i]==null?'':r[i]).trim():'';const gid=g(C.gid);
+      const origImgs=it.imgs.map(im=>({ci:im.ci,src:im.src}));
+      const item={id:'__rv_tmp__',year:g(C.year),school:g(C.school),exam:g(C.exam)||(examName.value||'').trim(),no:g(C.no),ans:g(C.ans),book:g(C.book),bookName:g(C.bookName),field:g(C.field),unit:g(C.unit),sub:g(C.sub),kp:g(C.kp),summary:g(C.summary),type:g(C.type),step:+g(C.step)||0,mem:+g(C.mem)||0,con:+g(C.con)||0,chart:g(C.chart),basis:g(C.basis),flag:/^(y|yes|true|1|是)$/i.test(g(C.flag)),q:C.q>=0?String(r[C.q]||''):'',sol:C.sol>=0?String(r[C.sol]||''):'',groupId:gid,imgs:origImgs.map(im=>({src:im.src,width:60,align:'left'}))};
+      const psText=gid?(D.passages[gid]||''):'';
+      w.eval('DB.push('+JSON.stringify(item)+')');
+      if(gid)w.eval('PASSAGES['+JSON.stringify(gid)+']='+JSON.stringify({id:'__rv_ps__',groupId:gid,type:'passage',q:psText,imgs:((D.gImgs[gid]||[]).map(im=>({src:im.src,width:60,align:'left'})))}));
+      // 顯示：把背景的題庫頁撐滿畫面，只露出編輯視窗
+      const doc=w.document;if(!doc.getElementById('rvEditStyle')){const st=doc.createElement('style');st.id='rvEditStyle';st.textContent='html.rv-edit-only,html.rv-edit-only body{background:#fffefb!important;overflow:hidden}html.rv-edit-only body{visibility:hidden}html.rv-edit-only dialog#editDlg[open]{visibility:visible;position:fixed;inset:0;margin:0;width:100%!important;max-width:none!important;height:100%!important;max-height:none!important;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column}html.rv-edit-only #editDlg .dlg-head,html.rv-edit-only #editDlg .dlg-foot{flex:0 0 auto}html.rv-edit-only #editDlg .dlg-body{flex:1 1 auto;min-height:0;max-height:none;overflow:auto}';doc.head.appendChild(st)}
+      doc.documentElement.classList.add('rv-edit-only');promptSource.classList.remove('hide');
+      const place=()=>{const host=document.getElementById('rvRight');if(!host)return;const rc=host.getBoundingClientRect();promptSource.style.cssText=`position:fixed;left:${rc.left}px;top:${rc.top}px;width:${rc.width}px;height:${rc.height}px;border:0;z-index:${innerWidth>=900?9005:8990};background:#fffefb`};
+      place();addEventListener('scroll',place,true);addEventListener('resize',place);
+      const origSave=w.saveEdit;let done=false;
+      const cleanup=()=>{if(done)return;done=true;w.saveEdit=origSave;try{w.eval('(()=>{const i=DB.findIndex(x=>x.id==="__rv_tmp__");if(i>=0)DB.splice(i,1)})()');if(gid)w.eval('delete PASSAGES['+JSON.stringify(gid)+']')}catch(e){}
+        removeEventListener('scroll',place,true);removeEventListener('resize',place);RV_EDIT_CLOSE=null;try{delete dlgEl.showModal}catch(e){}
+        doc.documentElement.classList.remove('rv-edit-only');promptSource.classList.add('hide');promptSource.removeAttribute('style')};
+      const dlgEl=w.document.getElementById('editDlg');dlgEl.addEventListener('close',cleanup,{once:true});dlgEl.showModal=function(){this.show()};RV_EDIT_CLOSE=()=>{try{dlgEl.close()}catch(e){}};
+      w.saveEdit=async function(){
+        const E=id=>doc.getElementById(id),fix=v=>{try{return w.fixControlCharEatenLatex(v)}catch(e){return v}};
+        const q=fix(E('eQ').value.trim()),summary=E('eSummary').value.trim();if(!q&&!summary){w.alert('題目或摘要至少填一個');return}
+        const syl=w.eval('(SYL.find(k=>k.book===eBook.value)||{})'),df=w.eval('({step:diff.step,mem:diff.mem,con:diff.con})'),imgsNow=w.eval('curImgs.map(x=>({src:x.src}))');
+        let basis=E('eBasis').value.trim();const flag=E('eFlag').checked;if(flag&&basis&&!basis.startsWith('[回報]'))basis='[回報] '+basis;
+        const set=(i,v)=>{if(i>=0){while(r.length<=i)r.push('');r[i]=v}};
+        set(C.year,E('eYear').value.trim());set(C.school,E('eSchool').value.trim());set(C.exam,E('eExam').value.trim());set(C.no,E('eNo').value.trim());set(C.ans,E('eAns').value.trim());
+        set(C.book,E('eBook').value);set(C.bookName,syl.bookName||'');set(C.field,syl.field||'');set(C.unit,E('eUnit').value);set(C.sub,E('eSub').value);set(C.kp,E('eKp').value.trim());set(C.summary,summary);set(C.type,E('eType').value);
+        set(C.step,String(df.step||''));set(C.mem,String(df.mem||''));set(C.con,String(df.con||''));set(C.chart,E('eChart').value.trim());set(C.basis,basis);set(C.flag,flag?'Y':'');set(C.q,q);set(C.sol,fix(E('eSol').value.trim()));
+        const newGid=E('eGroupId').value.trim();set(C.gid,newGid);
+        if(newGid&&C.passage>=0){const pt=fix(E('ePassage').value.trim()),pr=D.passageRow[newGid];if(pr)D.rows[pr.ri][pr.col]=pt;else set(C.passage,pt)}
+        // 圖片：視窗裡刪掉的 → 略過那張切圖；新加的 → 變成這題的新切圖
+        const keep=new Set(imgsNow.map(x=>x.src));origImgs.forEach(im=>{if(!keep.has(im.src)&&cropCandidates[im.ci])cropCandidates[im.ci].skip=true});
+        const had=new Set(origImgs.map(im=>im.src)),no=parseInt(E('eNo').value,10);imgsNow.forEach((im,n)=>{if(had.has(im.src))return;cropCandidates.push({src:im.src,qno:Number.isInteger(no)?no:null,scope:'single',kind:'人工補圖',label:'編輯視窗新增',verdict:'pass',reason:'在編輯視窗新增',skip:false,filename:'Q'+(Number.isInteger(no)?no:'未知')+'_edit'+(n+1)+'.png'})});
+        doc.getElementById('editDlg').close();
+        questionCsv.value=_rowsToCsv(D.rows);try{inspectCsv()}catch(e){}try{renderCropCandidates()}catch(e){}RV.data=build();RV.edit='';renderRight(true)};
+      w.openEdit('__rv_tmp__');
+    };
+    // 切到第 5 分頁＝進人工檢驗；離開就把切圖頁面區搬回切圖分頁
+    const _open=window.openReviewStep;
+    window.openReviewStep=function(n){if(String(n)!=='5'&&RV_EDIT_CLOSE)RV_EDIT_CLOSE();_open(n);if(String(n)==='5')enter();else moveCropBack()};
+    window.openImportReview=function(){setStagesOpen&&setStagesOpen(true);openReviewStep(5);document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'})};
+    window.closeImportReview=function(){};
+    // 切圖、題目資料一變動就同步右側（不必按重新整理）
+    const _rc=window.renderCropCandidates;window.renderCropCandidates=function(...a){const r=_rc.apply(this,a);window._ivSync();return r};
+
+    // ── 匯入簡答（答案卷）：PDF 文字層／文字檔 → {題號:答案}，填進題目資料；題目還沒產生時先暫存，產生後自動填 ──
+    let AK_PENDING=null;
+    const fw=s=>String(s||'').replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+    function akNorm(s){s=fw(s).trim().replace(/^[（(\[]|[)）\]]$/g,'').toUpperCase();return /^[A-E]{1,5}$/.test(s)?s:null}
+    function akFromText(t){
+      t=fw(t);const map={};let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
+      while((m=re.exec(t)))map[+m[1]]=m[2].toUpperCase();
+      if(Object.keys(map).length<3){ // 表格：一排題號、下一排答案
+        const tk=t.split(/\s+/).filter(Boolean);let i=0;
+        while(i<tk.length){const nums=[];while(i<tk.length&&/^\d{1,3}$/.test(tk[i]))nums.push(+tk[i++]);const ans=[];while(i<tk.length&&akNorm(tk[i]))ans.push(akNorm(tk[i++]));
+          if(nums.length&&nums.length===ans.length)nums.forEach((n,k)=>map[n]=ans[k]);if(!nums.length&&!ans.length)i++}
+      }
+      return map}
+    async function akFromPdf(f){
+      const pdfjs=await loadPdfJs();const PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PJ+'cmaps/',cMapPacked:true}).promise;
+      const map={};let all='';
+      for(let pn=1;pn<=Math.min(doc.numPages,4);pn++){
+        const page=await doc.getPage(pn),vp=page.getViewport({scale:1}),tc=await page.getTextContent();const toks=[];
+        tc.items.forEach(it=>{const str=(it.str||'').trim();if(!str)return;all+=it.str+(it.hasEOL?'\n':' ');const parts=str.split(/\s+/),w=(it.width||8)/Math.max(1,str.length),h=Math.abs(it.transform[3])||10;let x=it.transform[4];
+          parts.forEach(pt=>{toks.push({s:pt,x,cx:x+pt.length*w/2,y:vp.height-it.transform[5],h});x+=(pt.length+1)*w})});
+        const nums=toks.filter(t=>/^\d{1,3}$/.test(t.s)&&+t.s>0&&+t.s<=200),ans=toks.filter(t=>akNorm(t.s));
+        const pairs=[];
+        ans.forEach(a=>nums.forEach(n=>{const dy=a.y-n.y,dx=Math.abs(a.cx-n.cx);
+          if(Math.abs(dy)<a.h*0.7&&n.x<a.x&&a.x-n.x<90)pairs.push({a,n,sc:a.x-n.x});           // 同一行：「1. C」
+          else if(dy>2&&dy<70&&dx<a.h*1.6)pairs.push({a,n,sc:200+dy+dx*3})}));                 // 上下：題號在答案正上方
+        pairs.sort((p,q)=>p.sc-q.sc);const ua=new Set(),un=new Set();
+        pairs.forEach(p=>{if(ua.has(p.a)||un.has(p.n))return;ua.add(p.a);un.add(p.n);if(map[+p.n.s]==null)map[+p.n.s]=akNorm(p.a.s)});
+      }
+      if(Object.keys(map).length<3)Object.assign(map,akFromText(all));
+      return {map,text:all,pages:doc.numPages}}
+    async function akParse(f){
+      if(/\.pdf$/i.test(f.name)||f.type==='application/pdf')return akFromPdf(f);
+      if(/\.(txt|csv)$/i.test(f.name)||/^text\//.test(f.type)){const t=await f.text();return {map:akFromText(t),text:t,pages:1}}
+      throw new Error('簡答請用有文字的 PDF、文字檔，或按「貼上簡答」貼上文字（照片版簡答卷目前讀不到）')}
+    function akSay(t){['akState','ivState'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t})}
+    function applyAnswerKey(map){
+      const nos=Object.keys(map);if(!nos.length){akSay('簡答卷裡沒有讀到「題號＋答案」，請改用「貼上簡答」。');return}
+      const csv=(questionCsv.value||'').trim();
+      if(!csv){AK_PENDING=map;akSay(`已讀取 ${nos.length} 題答案，題目產生後會自動填入。`);return}
+      const rows=parseCSV(csv),hd=rows[0]||[],f=(n,fb)=>{const i=hd.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb},iNo=f('題號',3),iAns=f('答案',4);
+      let filled=0,changed=[],seen=new Set();
+      for(let i=1;i<rows.length;i++){const r=rows[i];if(!r)continue;const no=parseInt(String(r[iNo]||'').replace(/\D/g,''),10);if(!(no in map))continue;seen.add(no);
+        const old=String(r[iAns]||'').trim().toUpperCase();if(old===map[no])continue;if(old)changed.push(no);while(r.length<=iAns)r.push('');r[iAns]=map[no];filled++}
+      questionCsv.value=_rowsToCsv(rows);try{inspectCsv()}catch(e){}AK_PENDING=null;window._ivSync&&_ivSync();
+      const extra=nos.map(Number).filter(n=>!seen.has(n));
+      akSay(`簡答已套用：填入 ${filled} 題`+(changed.length?`（其中第 ${changed.join('、')} 題原本答案不同，已改成簡答卷的答案）`:'')+(extra.length?`；簡答卷第 ${extra.join('、')} 題在題目資料裡找不到`:'')+'。')}
+    window.loadAnswerKeyFile=async function(f){if(!f)return;akSay('正在讀取簡答卷…');try{const r=await akParse(f);applyAnswerKey(r.map)}catch(e){akSay('讀取簡答失敗：'+(e.message||e))}};
+    window.pasteAnswerKey=function(){const t=prompt('貼上簡答，例如「1.C 2.D 3.A」或一排題號＋一排答案：');if(t)applyAnswerKey(akFromText(t))};
+
+    // ── 教用版：檔名寫明「教用版」時，每題前面括號裡印的答案就是正解（例如「（C）1.」）──
+    const isTeacherName=n=>/教用版|教師版|教師用版/.test(n||'');
+    let AK_TEACHER_PENDING=false;
+    function akFromParens(text){const t=fw(text),map={},re=/[（(]\s*([A-Ea-e]{1,5})\s*[)）]\s*(\d{1,3})\s*[.、．:：](?!\d)/g;let m;while((m=re.exec(t)))if(+m[2]>0&&+m[2]<=200&&map[+m[2]]==null)map[+m[2]]=m[1].toUpperCase();return map}
+    async function pdfFullText(f,maxPages){const pdfjs=await loadPdfJs(),PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PJ+'cmaps/',cMapPacked:true}).promise;let all='';
+      for(let pn=1;pn<=Math.min(doc.numPages,maxPages||20);pn++){const tc=await(await doc.getPage(pn)).getTextContent();tc.items.forEach(it=>{all+=it.str+(it.hasEOL?'\n':' ')});all+='\n'}return all}
+    async function loadTeacherAnswers(f){akSay('偵測到教用版：正在讀取括號裡的答案…');let text='';
+      if(/\.pdf$/i.test(f.name)||f.type==='application/pdf'){try{text=await pdfFullText(f)}catch(e){}}
+      const map=akFromParens(text);if(Object.keys(map).length>=3){AK_TEACHER_PENDING=false;applyAnswerKey(map);return true}
+      AK_TEACHER_PENDING=true;akSay('教用版是掃描檔（讀不到文字），辨識完成後會從辨識出的文字讀括號裡的答案。');return false}
+    function applyTeacherFromOcr(){if(!AK_TEACHER_PENDING)return;const t=(typeof ocrAllMarkdown==='function'?ocrAllMarkdown():'')||'';if(!t.trim())return;AK_TEACHER_PENDING=false;
+      const map=akFromParens(t);if(Object.keys(map).length>=3)applyAnswerKey(map);else akSay('教用版的辨識文字裡讀不到括號答案，請改用「匯入簡答」或「貼上簡答」。')}
+    // 拖放／選檔：一次可放考卷＋簡答卷，自動分辨
+    async function isAnswerKey(f){
+      if(/簡答|答案|解答|answer/i.test(f.name))return true;
+      if(!(/\.pdf$/i.test(f.name)||f.type==='application/pdf'))return /\.(txt|csv)$/i.test(f.name);
+      try{const r=await akFromPdf(f);return r.pages<=2&&Object.keys(r.map).length>=5&&/答案|簡答|解答/.test(r.text)}catch(e){return false}}
+    window.routeExamFiles=async function(list){
+      const files=[...(list||[])];if(!files.length)return;let exam=null;const teachers=[];
+      for(const f of files){if(isTeacherName(f.name)){teachers.push(f);continue}
+        if(files.length>1||/簡答|答案|解答|answer/i.test(f.name)||/\.(txt|csv)$/i.test(f.name)){if(await isAnswerKey(f)){await loadAnswerKeyFile(f);continue}}if(!exam)exam=f}
+      if(!exam&&teachers.length)exam=teachers[0];   // 只有教用版：它本身就是考卷，也是答案來源
+      for(const t of teachers)await loadTeacherAnswers(t);
+      if(exam)startDehand(exam)};
+    // 題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
+    let smFired=false;
+    async function autoReviewNext(){if(smFired)return;smFired=true;setStagesOpen(true);openReviewStep(5);
+      setTimeout(()=>document.getElementById('ivPane')?.scrollIntoView({behavior:'smooth',block:'start'}),300);
+      if(cropFiles.pdf&&!cropCandidates.some(c=>c.kind==='自動裁切')){setState('正在自動切圖（約 1～2 分鐘），切好的圖會自動出現在左邊清稿和右邊題目上…');
+        try{if(pipeStep(5).state!=='run')pipeStart(5,'自動切圖中',false)}catch(e){}
+        try{await autoCropByModel()}catch(e){}
+        const msg=(document.getElementById('cropReviewState')||{}).textContent||'';const failed=/失敗/.test(msg)||!cropCandidates.some(c=>c.kind==='自動裁切');
+        setState(failed?(msg||'自動切圖沒有切到圖')+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
+        try{const n=cropCandidates.filter(c=>!c.skip).length;if(failed)pipeFail(5,'自動切圖未完成');else pipeDone(5,n+' 張圖');if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}
+        if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}
+      else try{const st=pipeStep(5).state;if(st==='run'||st==='wait'){const n=cropCandidates.filter(c=>!c.skip).length;if(n)pipeDone(5,n+' 張圖');else pipeSkip(5,'略過自動切圖')}if(pipeStep(6).state==='wait'||pipeStep(6).state==='manual')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){try{const v=questionCsv.value,f=fixOcrChars(v);if(f!==v)questionCsv.value=f}catch(e){}const r=_ic.apply(this,a);try{if(AK_TEACHER_PENDING&&(questionCsv.value||'').trim())applyTeacherFromOcr()}catch(e){}try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(pipeStep(4).state==='done'&&(questionCsv.value||'').trim())autoReviewNext()}catch(e){}return r};
+    const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;return _pr.apply(this,a)};
+    // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
+    window.oneClickImport=async function(){
+      const csv=(questionCsv.value||'').trim();if(!csv){alert('還沒有題目資料。');return}
+      if(!examName.value.trim()){alert('找不到考卷名稱，請到「確認考卷名稱」分頁填寫。');openReviewStep(1);return}
+      const D=RV.data||build();const bad=D?D.items.filter(it=>it.warns.length&&!it.warns.every(w=>w==='待確認')).length:0;
+      if(bad&&!confirm(`還有 ${bad} 題有缺圖、沒答案或題號問題。\n要先照現況匯入嗎？（這些題目在題庫會標成待確認，之後可再修）`))return;
+      const btn=document.getElementById('ivImportBtn');btn.disabled=true;
+      try{
+        const w=promptSource.contentWindow;await waitForPromptBuilder('doImport');
+        if(!w.csvArea)throw new Error('題庫匯入程式尚未載入完成，請稍候再按一次');
+        setState('正在匯入題目…');let loaded=false;const _ld=w.load;w.load=async function(...a){loaded=true;return _ld.apply(this,a)};
+        try{w.csvArea.value=csv;await w.doImport()}finally{w.load=_ld}
+        if(!loaded){setState('題目沒有匯入（已取消或發生錯誤）。');return}
+        const imgs=cropCandidates.filter(x=>!x.skip);let note='';
+        if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
+          const importer=await waitForPromptBuilder('importBatchHandoffImages');
+          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
+          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');
+          note=bits.length?'（圖片：'+bits.join('；')+'）':'，圖片已全部貼入';}
+        setState('匯入完成'+note+'。');try{pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,'已匯入題庫')}catch(e){}
+        if(confirm('匯入完成'+note+'。\n要前往題庫查看這份考卷嗎？'))finishRawWorkflow();
+      }catch(e){setState('匯入失敗：'+(e.message||e))}
+      finally{btn.disabled=false}
+    };
+  })();
+</script>
+<script id="manualReviewGlue">
+(function(){
+  let FROM_FILE=false,BUSY=false;
+  const orf=window.readCsvFile;if(typeof orf==='function')window.readCsvFile=function(f){FROM_FILE=true;return orf.apply(this,arguments)};
+  const oic=window.inspectCsv;
+  window.inspectCsv=function(...a){try{const v=questionCsv.value,f=fixOcrChars(v);if(f!==v)questionCsv.value=f}catch(e){}const r=oic.apply(this,a);try{if(FROM_FILE&&(questionCsv.value||'').trim()){FROM_FILE=false;setTimeout(()=>startManualReview(),0)}}catch(e){}return r};
+  window.startManualReview=async function(){
+    if(BUSY)return;const csv=(questionCsv.value||'').trim();if(!csv){alert('請先貼上或選擇題目 CSV');return}
+    BUSY=true;const sec=document.getElementById('mvReview');sec.hidden=false;
+    try{
+      const pane=document.getElementById('ivPane');pane.classList.add('on');
+      sec.scrollIntoView({behavior:'smooth',block:'start'});
+      if(typeof cropFiles!=='undefined'&&cropFiles.pdf&&!cropCandidates.some(c=>c.kind==='自動裁切')){
+        pane.innerHTML='<div class="status" id="mvCropMsg" style="padding:14px">正在自動切圖（約 1～2 分鐘），切好之後會自動進入人工檢驗…</div>';
+        try{await autoCropByModel()}catch(e){}
+        const msg=(document.getElementById('cropReviewState')||{}).textContent||'';
+        pane.dataset.ready='';pane.innerHTML='';
+        window.openReviewStep(5);
+        const n=document.getElementById('ivState');if(n&&/失敗/.test(msg))n.textContent=msg+' 可以直接在左邊清稿上拖曳框選補圖。'
+      }else{pane.dataset.ready='';pane.innerHTML='';window.openReviewStep(5)}
+    }finally{BUSY=false}
+  };
+})();
+</script>
 <script src="nav.js" defer></script>
 </body>
 </html>
