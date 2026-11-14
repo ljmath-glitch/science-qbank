@@ -34,6 +34,53 @@ os.environ["OCR_SKIP_CLEAN"] = "1"   # 清稿在瀏覽器做完了；這裡只�
 JOBS_DIR = os.path.join(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir(), "ZiziOCR", "jobs")
 jobs = {}
 work = queue.Queue()
+heavy = threading.Lock()   # OCR 與自動裁切一次只跑一個（同公司主機的 hostSerial），避免記憶體爆掉
+crop_jobs = {}
+
+
+def run_figcrop(pdf_bytes, job=None, state=None):
+    """自動裁切：在子程序跑 crop.py（同一支 exe 的 --figcrop 模式），版面模型偶爾在結束時才當掉也不拖垮本機程式。"""
+    import subprocess
+    tmp = tempfile.mkdtemp(prefix="figcrop-", dir=JOBS_DIR)
+    try:
+        pdf = os.path.join(tmp, "source.pdf")
+        with open(pdf, "wb") as f:
+            f.write(pdf_bytes)
+        if getattr(sys, "frozen", False):
+            cmd = [sys.executable, "--figcrop"]
+        else:
+            cmd = [sys.executable, os.path.abspath(__file__), "--figcrop"]
+        cmd += [pdf, "-o", os.path.join(tmp, "out"), "--json"]
+        ocr_dir = result_dir(job) if job in jobs else None
+        if ocr_dir and os.path.isdir(ocr_dir) and any(n.lower().endswith("_ocr_boxes.json") for n in os.listdir(ocr_dir)):
+            cmd += ["--ocr-dir", ocr_dir]
+        with heavy:
+            if state is not None:
+                state["status"] = "running"
+            p = subprocess.run(cmd, capture_output=True, timeout=10 * 60,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        out = p.stdout.decode("utf-8", "replace")
+        try:
+            data = json.loads(out[out.index("{"):])
+        except ValueError:
+            data = None
+        if data and data.get("ok"):   # 結果已完整輸出，結束時才當掉就照樣採用
+            return data
+        err = p.stderr.decode("utf-8", "replace") or f"結束碼 {p.returncode}"
+        return {"ok": False, "error": "自動截圖失敗：" + err[-400:]}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "自動截圖失敗：超過 10 分鐘"}
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+def figcrop_cli(argv):
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="replace")
+    import crop
+    sys.argv = ["crop.py"] + argv
+    crop.main()
+    sys.stdout.flush()
 
 
 def job_dir(job):
@@ -49,9 +96,10 @@ def worker():
     while True:
         job, source = work.get()
         state = jobs[job]
-        state["status"] = "running"
         try:
-            r = pyexam.process(source, result_dir(job), dpi=350)
+            with heavy:
+                state["status"] = "running"
+                r = pyexam.process(source, result_dir(job), dpi=350)
             state["txt"] = os.path.basename(r["txt"])
             state["status"] = "done"
         except Exception:
@@ -163,7 +211,14 @@ class Handler(BaseHTTPRequestHandler):
         query = parse_qs(url.query)
         if url.path == "/api/health":
             return self.send_json(200, {"ok": True, "service": "tzutzu-ocr", "host": "本機", "revision": VERSION,
-                                        "ocrEngine": "PP-OCRv5（本機）", "capabilities": ["ocr", "qbank-xlsx"]})
+                                        "ocrEngine": "PP-OCRv5（本機）", "capabilities": ["ocr", "qbank-xlsx", "figcrop"]})
+        if url.path == "/api/py-ocr/figcrop-status":
+            state = crop_jobs.get((query.get("id") or [""])[0])
+            if not state:
+                return self.send_json(404, {"ok": False, "done": True, "error": "找不到這筆切圖工作（本機程式可能重開過），請再按一次自動裁切"})
+            if state["status"] == "done":
+                return self.send_json(200, {"done": True, **state["result"]})
+            return self.send_json(200, {"ok": True, "done": False, "queued": state["status"] == "queued"})
         job = self.known_job(query)
         if not job:
             return self.send_json(404, {"ok": False, "error": "找不到這筆工作"})
@@ -197,12 +252,29 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self.cors():
             return
-        if urlparse(self.path).path != "/api/py-ocr/start":
+        path = urlparse(self.path).path
+        if path not in ("/api/py-ocr/start", "/api/py-ocr/figcrop"):
             return self.send_json(404, {"ok": False, "error": "Not found"})
         size = int(self.headers.get("Content-Length") or 0)
         if size > MAX_BODY:
             return self.send_json(413, {"ok": False, "error": "檔案太大"})
         body = json.loads(self.rfile.read(size) or b"{}")
+        if path == "/api/py-ocr/figcrop":
+            if not body.get("dataBase64"):
+                return self.send_json(400, {"ok": False, "error": "缺少 PDF"})
+            pdf_bytes = b64decode(body["dataBase64"])
+            job = str(body.get("job") or "")
+            if not body.get("async"):
+                data = run_figcrop(pdf_bytes, job)
+                return self.send_json(200 if data.get("ok") else 500, data)
+            crop_job = secrets.token_hex(12)
+            state = crop_jobs[crop_job] = {"status": "queued"}
+
+            def bg():
+                state["result"] = run_figcrop(pdf_bytes, job, state)
+                state["status"] = "done"
+            threading.Thread(target=bg, daemon=True).start()
+            return self.send_json(200, {"ok": True, "cropJob": crop_job})
         if not body.get("dataBase64"):
             return self.send_json(400, {"ok": False, "error": "缺少考卷檔案"})
         filename = os.path.basename(str(body.get("filename") or "考卷.pdf"))
@@ -219,8 +291,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    import multiprocessing
+    multiprocessing.freeze_support()   # pyexam 多頁並行用 spawn 子程序；打包成 exe 沒這行，子程序會重跑整支程式而卡住
+    if len(sys.argv) > 1 and sys.argv[1] == "--figcrop":
+        return figcrop_cli(sys.argv[2:])
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8", errors="replace")
+    os.makedirs(JOBS_DIR, exist_ok=True)
     clean_old_jobs()
     try:
         server = ThreadingHTTPServer((HOST, PORT), Handler)
