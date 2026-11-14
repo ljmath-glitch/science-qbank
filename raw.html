@@ -152,6 +152,7 @@
     .sm-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
     .sm-flow>div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;background:#fffaf3;border:1px solid #eadfce;text-align:center}
     .sm-flow b{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:13px}
+    .sm-key{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}.sm-key .help{margin:0}
     .sm-flow span{font-weight:800;font-size:13.5px;white-space:nowrap}.sm-flow small{font-size:11px;color:var(--muted);white-space:nowrap}
     body.simple-mode .wf-kicker,body.simple-mode .intro.wf>h2,body.simple-mode .intro.wf>p,body.simple-mode .pipe-board,body.simple-mode .pipe-opt,body.simple-mode #stagesToggle,body.simple-mode .auto-optional,body.simple-mode .auto-finish{display:none!important}
     body.simple-mode .auto-review>.head,body.simple-mode .review-tabs,body.simple-mode .review-pane:not(#ivPane){display:none!important}
@@ -260,7 +261,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   <main>
     <nav class="modetabs" aria-label="匯題方式"><a href="raw.html?mode=simple" id="tabSimple">簡單模式</a><a href="raw.html" id="tabAuto" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
     <script>if(/[?&]mode=simple\b/.test(location.search)){document.body.classList.add("simple-mode");document.getElementById("tabSimple").classList.add("on");document.getElementById("tabAuto").classList.remove("on")}</script>
-    <div class="intro sm-intro"><div class="sm-flow"><div><b>1</b><span>丟考卷</span></div><div><b>2</b><span>等處理</span><small>約 3～10 分</small></div><div><b>3</b><span>逐題檢查</span></div><div><b>4</b><span>一鍵匯入</span></div></div></div>
+    <div class="intro sm-intro"><div class="sm-flow"><div><b>1</b><span>丟考卷</span></div><div><b>2</b><span>等處理</span><small>約 3～10 分</small></div><div><b>3</b><span>逐題檢查</span></div><div><b>4</b><span>一鍵匯入</span></div></div><div class="sm-key"><button type="button" class="btn" onclick="akFile.click()">有簡答卷？點此匯入</button><span class="help" id="akState"></span></div></div>
     <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel；切圖後在「人工檢驗」對照原卷逐題檢查，再一鍵匯入題庫。詳解可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
     <section class="stage auto-review">
       <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
@@ -282,7 +283,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
           </div>
         </li>
         <li data-step="2"><b>檢查清稿結果</b>檢查或修補清稿。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*" class="hide" onchange="startDehand(this.files[0])"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">混合版（v10 模型＋紅藍色筆規則・建議）</option><option value="r8">實驗版 r8（模型筆跡機率）</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">重試</button></div></div></div>
+          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*,.txt,.csv" multiple class="hide" onchange="routeExamFiles(this.files)"><input id="akFile" type="file" accept="application/pdf,.pdf,.txt,.csv,text/plain" class="hide" onchange="loadAnswerKeyFile(this.files[0]);this.value=''"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">混合版（v10 模型＋紅藍色筆規則・建議）</option><option value="r8">實驗版 r8（模型筆跡機率）</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">重試</button></div></div></div>
         </li>
         <li data-step="3"><b>重新執行 OCR</b>需要時重跑。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
           <div class="step-detail">
@@ -1579,7 +1580,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-host"><b>OCR 運算主機</b><label><input type="radio" name="ocrHost" value="company" onchange="setOcrHost(this.value)"> 公司電腦</label><label><input type="radio" name="ocrHost" value="local" onchange="setOcrHost(this.value)"> 本機</label><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.1/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
-      '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');startDehand(event.dataTransfer.files[0])"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 </a></div>';
+      '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');routeExamFiles(event.dataTransfer.files)"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG；有簡答卷可一起放</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 </a></div>';
     setOcrHost(ocrHost());pipeRender()}
   function pipeRender(){
     const board=document.getElementById('pipeBoard');if(!board)return;const now=Date.now();let done=0;
@@ -2058,7 +2059,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     window._rvLeft=open=>{const v=document.getElementById('ivWrap');if(v)v.classList.toggle('left-open',open)};
     window._ivFull=()=>{const v=document.getElementById('ivWrap');const on=!v.classList.contains('full');v.classList.toggle('full',on);document.body.style.overflow=on?'hidden':'';document.getElementById('ivFullBtn').textContent=on?'結束全螢幕':'全螢幕'};
     function ensurePane(){const pane=document.getElementById('ivPane');if(!pane||pane.dataset.ready)return pane;pane.dataset.ready='1';
-      pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
+      pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><button type="button" class="btn" onclick="akFile.click()">匯入簡答</button><button type="button" class="btn" onclick="pasteAnswerKey()">貼上簡答</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
         <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><span class="help">框上可直接改題號、單題／題組、略過；也可拖曳補框</span><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
         <div class="iv-right" id="rvRight"></div></div>
         <div class="iv-foot"><div class="btn-even"><button type="button" class="btn primary" id="ivImportBtn" onclick="oneClickImport()">檢查完成，一鍵匯入題庫</button></div><div class="status" id="ivState"></div></div>
@@ -2074,6 +2075,65 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     window.closeImportReview=function(){};
     // 切圖、題目資料一變動就同步右側（不必按重新整理）
     const _rc=window.renderCropCandidates;window.renderCropCandidates=function(...a){const r=_rc.apply(this,a);window._ivSync();return r};
+
+    // ── 匯入簡答（答案卷）：PDF 文字層／文字檔 → {題號:答案}，填進題目資料；題目還沒產生時先暫存，產生後自動填 ──
+    let AK_PENDING=null;
+    const fw=s=>String(s||'').replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+    function akNorm(s){s=fw(s).trim().replace(/^[（(\[]|[)）\]]$/g,'').toUpperCase();return /^[A-E]{1,5}$/.test(s)?s:null}
+    function akFromText(t){
+      t=fw(t);const map={};let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
+      while((m=re.exec(t)))map[+m[1]]=m[2].toUpperCase();
+      if(Object.keys(map).length<3){ // 表格：一排題號、下一排答案
+        const tk=t.split(/\s+/).filter(Boolean);let i=0;
+        while(i<tk.length){const nums=[];while(i<tk.length&&/^\d{1,3}$/.test(tk[i]))nums.push(+tk[i++]);const ans=[];while(i<tk.length&&akNorm(tk[i]))ans.push(akNorm(tk[i++]));
+          if(nums.length&&nums.length===ans.length)nums.forEach((n,k)=>map[n]=ans[k]);if(!nums.length&&!ans.length)i++}
+      }
+      return map}
+    async function akFromPdf(f){
+      const pdfjs=await loadPdfJs();const PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/';
+      const doc=await pdfjs.getDocument({data:new Uint8Array(await f.arrayBuffer()),cMapUrl:PJ+'cmaps/',cMapPacked:true}).promise;
+      const map={};let all='';
+      for(let pn=1;pn<=Math.min(doc.numPages,4);pn++){
+        const page=await doc.getPage(pn),vp=page.getViewport({scale:1}),tc=await page.getTextContent();const toks=[];
+        tc.items.forEach(it=>{const str=(it.str||'').trim();if(!str)return;all+=it.str+(it.hasEOL?'\n':' ');const parts=str.split(/\s+/),w=(it.width||8)/Math.max(1,str.length),h=Math.abs(it.transform[3])||10;let x=it.transform[4];
+          parts.forEach(pt=>{toks.push({s:pt,x,cx:x+pt.length*w/2,y:vp.height-it.transform[5],h});x+=(pt.length+1)*w})});
+        const nums=toks.filter(t=>/^\d{1,3}$/.test(t.s)&&+t.s>0&&+t.s<=200),ans=toks.filter(t=>akNorm(t.s));
+        const pairs=[];
+        ans.forEach(a=>nums.forEach(n=>{const dy=a.y-n.y,dx=Math.abs(a.cx-n.cx);
+          if(Math.abs(dy)<a.h*0.7&&n.x<a.x&&a.x-n.x<90)pairs.push({a,n,sc:a.x-n.x});           // 同一行：「1. C」
+          else if(dy>2&&dy<70&&dx<a.h*1.6)pairs.push({a,n,sc:200+dy+dx*3})}));                 // 上下：題號在答案正上方
+        pairs.sort((p,q)=>p.sc-q.sc);const ua=new Set(),un=new Set();
+        pairs.forEach(p=>{if(ua.has(p.a)||un.has(p.n))return;ua.add(p.a);un.add(p.n);if(map[+p.n.s]==null)map[+p.n.s]=akNorm(p.a.s)});
+      }
+      if(Object.keys(map).length<3)Object.assign(map,akFromText(all));
+      return {map,text:all,pages:doc.numPages}}
+    async function akParse(f){
+      if(/\.pdf$/i.test(f.name)||f.type==='application/pdf')return akFromPdf(f);
+      if(/\.(txt|csv)$/i.test(f.name)||/^text\//.test(f.type)){const t=await f.text();return {map:akFromText(t),text:t,pages:1}}
+      throw new Error('簡答請用有文字的 PDF、文字檔，或按「貼上簡答」貼上文字（照片版簡答卷目前讀不到）')}
+    function akSay(t){['akState','ivState'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=t})}
+    function applyAnswerKey(map){
+      const nos=Object.keys(map);if(!nos.length){akSay('簡答卷裡沒有讀到「題號＋答案」，請改用「貼上簡答」。');return}
+      const csv=(questionCsv.value||'').trim();
+      if(!csv){AK_PENDING=map;akSay(`已讀取 ${nos.length} 題答案，題目產生後會自動填入。`);return}
+      const rows=parseCSV(csv),hd=rows[0]||[],f=(n,fb)=>{const i=hd.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb},iNo=f('題號',3),iAns=f('答案',4);
+      let filled=0,changed=[],seen=new Set();
+      for(let i=1;i<rows.length;i++){const r=rows[i];if(!r)continue;const no=parseInt(String(r[iNo]||'').replace(/\D/g,''),10);if(!(no in map))continue;seen.add(no);
+        const old=String(r[iAns]||'').trim().toUpperCase();if(old===map[no])continue;if(old)changed.push(no);while(r.length<=iAns)r.push('');r[iAns]=map[no];filled++}
+      questionCsv.value=_rowsToCsv(rows);try{inspectCsv()}catch(e){}AK_PENDING=null;window._ivSync&&_ivSync();
+      const extra=nos.map(Number).filter(n=>!seen.has(n));
+      akSay(`簡答已套用：填入 ${filled} 題`+(changed.length?`（其中第 ${changed.join('、')} 題原本答案不同，已改成簡答卷的答案）`:'')+(extra.length?`；簡答卷第 ${extra.join('、')} 題在題目資料裡找不到`:'')+'。')}
+    window.loadAnswerKeyFile=async function(f){if(!f)return;akSay('正在讀取簡答卷…');try{const r=await akParse(f);applyAnswerKey(r.map)}catch(e){akSay('讀取簡答失敗：'+(e.message||e))}};
+    window.pasteAnswerKey=function(){const t=prompt('貼上簡答，例如「1.C 2.D 3.A」或一排題號＋一排答案：');if(t)applyAnswerKey(akFromText(t))};
+    // 拖放／選檔：一次可放考卷＋簡答卷，自動分辨
+    async function isAnswerKey(f){
+      if(/簡答|答案|解答|answer/i.test(f.name))return true;
+      if(!(/\.pdf$/i.test(f.name)||f.type==='application/pdf'))return /\.(txt|csv)$/i.test(f.name);
+      try{const r=await akFromPdf(f);return r.pages<=2&&Object.keys(r.map).length>=5&&/答案|簡答|解答/.test(r.text)}catch(e){return false}}
+    window.routeExamFiles=async function(list){
+      const files=[...(list||[])];if(!files.length)return;let exam=null;
+      for(const f of files){if(files.length>1||/簡答|答案|解答|answer/i.test(f.name)||/\.(txt|csv)$/i.test(f.name)){if(await isAnswerKey(f)){await loadAnswerKeyFile(f);continue}}if(!exam)exam=f}
+      if(exam)startDehand(exam)};
     // 簡單模式：題庫 Excel 一產生就自動裁切並打開人工檢驗；換新考卷時重來
     let smFired=false;const isSimple=()=>document.body.classList.contains('simple-mode');
     async function simpleNext(){if(!isSimple()||smFired)return;smFired=true;document.body.classList.add('sm-ready');setStagesOpen(true);openReviewStep(5);
@@ -2082,7 +2142,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         try{await autoCropByModel()}catch(e){}
         const msg=(document.getElementById('cropReviewState')||{}).textContent||'';setState(/失敗/.test(msg)?msg+' 也可以直接在左邊清稿上拖曳框選補圖。':'自動切圖完成，請逐題檢查。');
         if(document.getElementById('ivPane').classList.contains('on'))renderLeft()}}
-    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(isSimple()&&pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
+    const _ic=window.inspectCsv;window.inspectCsv=function(...a){const r=_ic.apply(this,a);try{if(AK_PENDING&&(questionCsv.value||'').trim()){const m=AK_PENDING;AK_PENDING=null;setTimeout(()=>applyAnswerKey(m),0)}}catch(e){}try{if(isSimple()&&pipeStep(4).state==='done'&&(questionCsv.value||'').trim())simpleNext()}catch(e){}return r};
     const _pr=window.pipeReset;if(typeof _pr==='function')window.pipeReset=function(...a){smFired=false;document.body.classList.remove('sm-ready');return _pr.apply(this,a)};
     if(isSimple())try{setStagesOpen(false);document.body.classList.remove('stages-closed')}catch(e){}
     // 一鍵匯入：題目（題庫匯入程式）→ 圖（批次貼圖）
