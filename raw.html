@@ -148,7 +148,11 @@
     /* 簡單模式：只留丟檔、進度、人工檢驗與一鍵匯入（2026-11-13） */
     .sm-intro{display:none}
     body.simple-mode .sm-intro{display:block;margin-bottom:14px}
-    .sm-steps{margin:8px 0 0;padding-left:22px;line-height:1.75;font-size:14px}.sm-steps b{color:var(--red);margin-right:8px}
+    body.simple-mode .sm-intro{padding:12px}
+    .sm-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+    .sm-flow>div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;background:#fffaf3;border:1px solid #eadfce;text-align:center}
+    .sm-flow b{width:24px;height:24px;border-radius:50%;background:var(--red);color:#fff;display:grid;place-items:center;font-size:13px}
+    .sm-flow span{font-weight:800;font-size:13.5px;white-space:nowrap}.sm-flow small{font-size:11px;color:var(--muted);white-space:nowrap}
     body.simple-mode .wf-kicker,body.simple-mode .intro.wf>h2,body.simple-mode .intro.wf>p,body.simple-mode .pipe-board,body.simple-mode .pipe-opt,body.simple-mode #stagesToggle,body.simple-mode .auto-optional,body.simple-mode .auto-finish{display:none!important}
     body.simple-mode .auto-review>.head,body.simple-mode .review-tabs,body.simple-mode .review-pane:not(#ivPane){display:none!important}
     body.simple-mode #ivPane{display:block!important}
@@ -234,13 +238,28 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       .enrich-head{flex-wrap:wrap}
     }
   </style>
+  <style id="mobile-steps-fix">
+    /* 手機版：步驟卡展開內容撐滿卡片寬度；「展開／收合」改成橫排小按鈕（2026-11-14） */
+    .toggle-detail{width:auto!important;height:auto!important;min-height:0!important;padding:3px 10px!important;border:1px solid #e3d7ca!important;border-radius:999px!important;background:#fff!important;font-size:12px!important;line-height:1.4!important;white-space:nowrap}
+    .modetabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:100%!important;box-sizing:border-box}
+    .modetabs a{justify-content:center;padding-left:6px!important;padding-right:6px!important;white-space:nowrap}
+    @media(max-width:680px){
+      .steps>li{padding:16px 64px 14px 56px}
+      .step-detail{max-width:none!important;margin:12px -50px 0 -42px!important}
+      .manual-clean-drop{margin:10px -50px 0 -42px!important;max-width:none!important}
+      main select,main input:not([type=checkbox]):not([type=radio]),main textarea{max-width:100%;box-sizing:border-box}
+      main label.help{white-space:normal;max-width:100%}
+      main label.help>select{width:100%;margin-top:4px}
+      .step-detail .drop,.step-detail .row,.step-detail .action-row,.step-detail .crop-grid,.step-detail .dehand-grid{max-width:none;width:auto}
+    }
+  </style>
 </head>
 <body>
   <header><div class="brand-head"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><h1>茲茲文教｜自然題庫・考卷前處理</h1><div class="sub">TZUTZU SCIENCE QBANK · OCR WORKFLOW</div></div></div><div class="header-actions"><a class="home-link" href="home.html" aria-label="回到首頁" title="回到首頁"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></a><a class="home-link" href="index.html" aria-label="題庫管理" title="題庫管理"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/></svg></a></div></header>
   <main>
     <nav class="modetabs" aria-label="匯題方式"><a href="raw.html?mode=simple" id="tabSimple">簡單模式</a><a href="raw.html" id="tabAuto" class="on">自動匯題</a><a href="raw-manual.html">手動匯題</a></nav>
     <script>if(/[?&]mode=simple\b/.test(location.search)){document.body.classList.add("simple-mode");document.getElementById("tabSimple").classList.add("on");document.getElementById("tabAuto").classList.remove("on")}</script>
-    <div class="intro sm-intro"><h2>簡單模式：丟考卷 → 等處理 → 逐題檢查 → 一鍵匯入</h2><ol class="sm-steps"><li><b>丟入考卷</b>拖到下方框裡，或點一下選檔（PDF／照片）</li><li><b>等系統處理</b>自動命名、清稿、辨識、轉題目、切圖，約 3～10 分鐘，畫面保持開著</li><li><b>逐題檢查</b>左邊清稿、右邊題目；有顏色的題目要特別看，可直接修改、改圖的題號</li><li><b>一鍵匯入</b>檢查完按最下方的按鈕，題目和圖一起進題庫</li></ol></div>
+    <div class="intro sm-intro"><div class="sm-flow"><div><b>1</b><span>丟考卷</span></div><div><b>2</b><span>等處理</span><small>約 3～10 分</small></div><div><b>3</b><span>逐題檢查</span></div><div><b>4</b><span>一鍵匯入</span></div></div></div>
     <div class="intro wf"><span class="wf-kicker">自動匯題 · TZUTZU WORKFLOW</span><h2>考卷匯入工作流</h2><p>丟入一份考卷，自動完成命名、清稿、OCR、題庫 Excel；切圖後在「人工檢驗」對照原卷逐題檢查，再一鍵匯入題庫。詳解可事後再做。</p><div id="pipe" class="pipe" aria-live="polite"></div><div class="row" style="margin-top:12px;justify-content:center"><button type="button" class="btn" id="stagesToggle" onclick="setStagesOpen(document.body.classList.contains('stages-closed'))" aria-expanded="false">展開下方操作區</button></div></div>
     <section class="stage auto-review">
       <div class="head"><div class="no">I</div><div><h2>檢查與修正</h2><p>只有結果需要調整時才使用；一般情況不必逐步操作。</p></div></div>
@@ -1517,7 +1536,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 考卷匯入工作流：必要 5 步（1 清除筆跡→2 自動命名→3 OCR→4 題庫 Excel→5 手動切圖）＋可選 2 步（詳解、詳解 Excel）。
      PIPE 狀態＋ pipeStart/pipeProgress/pipeDone/pipeFail/pipeSkip；既有函式以 wrapper 接上，不改原邏輯。 */
   const PIPE={startedAt:0,sel:1,steps:[
-    {id:1,nm:'自動命名'},{id:2,nm:'清除筆跡'},{id:3,nm:'OCR 辨識'},{id:4,nm:'題庫 Excel'},{id:5,nm:'手動切圖'},{id:6,nm:'人工檢驗'},
+    {id:1,nm:'自動命名'},{id:2,nm:'清除筆跡'},{id:3,nm:'OCR 辨識'},{id:4,nm:'題庫 Excel'},{id:5,nm:'切圖'},{id:6,nm:'人工檢驗'},
     {id:7,nm:'詳解',opt:1},{id:8,nm:'詳解 Excel',opt:1}
   ].map(x=>({...x,state:'wait',pct:null,detail:'',summary:'',startedAt:0,elapsedMs:0}))};
   const PIPE_REQ=6;
@@ -1595,7 +1614,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     watch('ocrStatus',()=>{const t=(document.getElementById('ocrStatus')||{}).textContent||'';if(pipeStep(3).state==='run')pipeProgress(3,null,t.slice(0,40));
       if(/正在取得茲茲 OCR 題庫 Excel|正在用 .+分類/.test(t)&&pipeStep(4).state!=='run')pipeStart(4,'轉換中');
       if(/取得題庫 Excel 失敗/.test(t))pipeFail(4,t)});
-    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始手動切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
+    wrap('inspectCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('questionCsv')||{}).value||'';if(v.trim()&&pipeStep(4).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(4,n+' 題');if(pipeStep(5).state==='wait')pipeStart(5,'點這裡開始切圖',true);if(pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}}catch(e){}return r});
         wrap('copySolutionPrompt',function(o,a){pipeStart(7,'指令已複製，等你貼回 AI 結果',true);return o.apply(this,a)});
     wrap('inspectSolCsv',function(o,a){const r=o.apply(this,a);try{const v=(document.getElementById('solutionCsv')||{}).value||'';if(v.trim()&&pipeStep(8).state!=='done'){const n=Math.max(0,parseCSV(v).length-1);pipeDone(8,n+' 題詳解');if(pipeStep(7).state!=='done'&&pipeStep(7).state!=='run')pipeDone(7,'已取得詳解')}}catch(e){}return r});
   })();

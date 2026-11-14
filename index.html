@@ -489,7 +489,13 @@
     /* 手機也保留排序入口：Safari 不支援原生拖曳，會改用「先點要移動的功能、再點目標位置」 */
     .editing #tbEditBtn{display:block!important;z-index:3;top:7px;right:9px;background:var(--red)}
     .editing #tbResetBtn{display:block!important;z-index:3;top:7px;right:67px;background:var(--card)}
-    #tbWrap .tb-tabs{margin-right:76px}
+    #tbWrap .tb-tabs{margin-right:10px}
+    .editing #tbWrap .tb-tabs{margin-right:76px}
+    /* 按鈕平均填滿一排（放不下時仍可左右滑）；統計列置中 */
+    .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll>*{flex:1 0 0;min-width:max-content}
+    .tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll>*>button,.tb-row:not(.tb-row-stat):not(.tb-row-embed) .tb-btn-scroll>button{width:100%}
+    .tb-row-stat .tb-btn-scroll{grid-template-columns:none!important;grid-auto-flow:column;grid-auto-columns:minmax(0,180px);justify-content:center!important}
+    .tb-row-stat .tb-btn-scroll>.tb-item:last-child{grid-column:auto!important}
 
     /* === 每列：標籤在上、按鈕在下 === */
     .tb-row{flex-direction:column;flex-wrap:nowrap;overflow-x:visible;gap:0;padding:0;clear:both}
@@ -1056,6 +1062,7 @@
 #composer .wz-chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 #composer .wz-chip{border:1.5px solid #d9cfc0;background:#fff;color:#5a5148;border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700;cursor:pointer}
 #composer .wz-chip.on{border-color:var(--red);background:var(--red);color:#fff}
+.wz-eq{flex-wrap:nowrap!important}.wz-eq>span{flex:0 0 auto;white-space:nowrap}.wz-eq>.wz-chip{flex:1 1 0;min-width:0;max-width:170px;text-align:center;white-space:nowrap;padding:6px 8px}
 #composer .wz-tree-tools{display:flex;gap:8px;align-items:center;margin:4px 0 10px;flex-wrap:wrap}
 #composer .wz-tree-tools button{border:1px solid #d9cfc0;background:#fff;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;color:#5a5148;cursor:pointer}
 #composer .wz-tree-tools input{flex:1;min-width:140px;max-width:260px;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-family:inherit}
@@ -1161,25 +1168,24 @@
           <button type="button" class="btn" onclick="wzOpenFilterPapers()">🔎 避免重複考卷（排除已出過的題目）</button>
           <span class="wz-set-note wz-exclude-info" style="margin-left:4px">尚未排除任何考卷</span>
         </div>
-        <div class="wz-chips" style="margin-bottom:12px">
+        <div class="wz-chips wz-eq" style="margin-bottom:12px">
           <span style="font-weight:700;color:#6e6f74">選題方式：</span>
           <button type="button" class="wz-chip on" id="wzModeChapter" onclick="wzSetMode('chapter')">依章節</button>
           <button type="button" class="wz-chip" id="wzModeSchool" onclick="wzSetMode('school')">依學校</button>
-          <span id="wzModeHint" style="font-size:12px;color:#9a8f83;margin-left:4px">依課綱章節選題，適合組新卷</span>
+          <span id="wzModeHint" hidden style="font-size:12px;color:#9a8f83;margin-left:4px">依課綱章節選題，適合組新卷</span>
         </div>
         <!-- 依章節 -->
         <div id="wzChapterMode">
-          <div class="wz-chips" style="margin-bottom:10px">
+          <div class="wz-chips wz-eq" style="margin-bottom:10px">
             <span style="font-weight:700;color:#6e6f74">學制：</span>
             <button type="button" class="wz-chip" data-lv="國中" onclick="wzSetLevel(this,'國中')">國中</button>
             <button type="button" class="wz-chip" data-lv="高中" onclick="wzSetLevel(this,'高中')">高中</button>
           </div>
-          <div class="wz-chips" id="wzSylVerRow" style="margin-bottom:10px;display:none;align-items:center;flex-wrap:wrap;gap:6px">
-            <span style="font-weight:700;color:#6e6f74">七上生物章節編排：</span>
+          <div class="wz-chips wz-eq" id="wzSylVerRow" style="margin-bottom:10px;display:none;align-items:center;gap:6px">
+            <span style="font-weight:700;color:#6e6f74">七上生物版本：</span>
             <button type="button" class="wz-chip on" data-sv="hanlin" onclick="wzSetSylVer(this,'hanlin')">翰林版</button>
             <button type="button" class="wz-chip" data-sv="laiyan" onclick="wzSetSylVer(this,'laiyan')">賴妍講義版</button>
-            <span style="font-size:12px;color:#9a8f83">僅影響國中七上生物；理化、地科與其餘冊次固定採翰林課綱，不影響資料庫</span>
-          </div>
+                      </div>
           <div id="wzLevelGate" style="padding:34px 16px;text-align:center;color:#9a8f83;font-size:14.5px;line-height:1.9">請先選擇<b style="color:var(--red)">學制</b>（國中／高中），<br>再從課綱樹狀選擇章節範圍</div>
           <div id="wzScopeArea" hidden>
             <div class="wz-tree-tools">

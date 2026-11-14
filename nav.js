@@ -16,7 +16,7 @@
     sol: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 11h7M9 15h7M9 19h4"/>'
   };
   const ITEMS = [
-    { key: 'raw', label: '前處理', href: 'raw.html', on: page === 'raw.html' || page === 'raw-manual.html' },
+    { key: 'raw', label: '匯卷', href: 'raw.html', on: page === 'raw.html' || page === 'raw-manual.html' },
     { key: 'bank', label: '題庫', href: 'index.html', on: page === 'index.html' && !compose },
     { key: 'prog', label: '進度', href: 'progress.html', on: page === 'progress.html' },
     { key: 'comp', label: '組卷', href: 'composer.html', on: page === 'composer.html' || (page === 'index.html' && compose) },
