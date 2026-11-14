@@ -13,14 +13,16 @@
     bank: '<ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v7c0 1.7 3.1 3 7 3s7-1.3 7-3V5M5 12v7c0 1.7 3.1 3 7 3s7-1.3 7-3v-7"/>',
     prog: '<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8 8h5M8 12h5M8 16h3M15.5 15.5l1.2 1.2 2.3-2.6"/>',
     comp: '<path d="M4 5h7M4 5v14M4 12h7M4 19h7M14 4l6 3-6 3zM14 14l6 3-6 3z"/>',
-    sol: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 11h7M9 15h7M9 19h4"/>'
+    sol: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 11h7M9 15h7M9 19h4"/>',
+    help: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5v5l4.5-2.5z"/>'
   };
   const ITEMS = [
     { key: 'raw', label: '匯卷', href: 'raw.html', on: page === 'raw.html' || page === 'raw-manual.html' },
     { key: 'bank', label: '題庫', href: 'index.html', on: page === 'index.html' && !compose },
     { key: 'prog', label: '進度', href: 'progress.html', on: page === 'progress.html' },
     { key: 'comp', label: '組卷', href: 'composer.html', on: page === 'composer.html' || (page === 'index.html' && compose) },
-    { key: 'sol', label: '詳解', href: 'https://tzutzu-ocr.vercel.app/answer.html', ext: true }
+    { key: 'sol', label: '詳解', href: 'https://tzutzu-ocr.vercel.app/answer.html', ext: true },
+    { key: 'help', label: '教學', href: 'tutorial.html', on: page === 'tutorial.html' }
   ];
   const css = `
     :root{--zznav-h:0px}
@@ -36,7 +38,7 @@
     }
     @media(max-width:899px){
       :root{--zznav-h:calc(60px + env(safe-area-inset-bottom))}
-      .zznav{position:fixed;left:0;right:0;bottom:0;height:var(--zznav-h);padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,254,251,.97);border-top:1px solid #e6e4de;box-shadow:0 -4px 16px rgba(43,32,28,.06);backdrop-filter:blur(8px)}
+      .zznav{position:fixed;left:0;right:0;bottom:0;height:var(--zznav-h);padding-bottom:env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(6,1fr);background:rgba(255,254,251,.97);border-top:1px solid #e6e4de;box-shadow:0 -4px 16px rgba(43,32,28,.06);backdrop-filter:blur(8px)}
       .zznav a{flex-direction:column;gap:3px;font-size:11.5px;line-height:1.1}
       .zznav svg{width:23px;height:23px}
       body.has-zznav{padding-bottom:var(--zznav-h)!important}
