@@ -35,6 +35,55 @@ static class HostUpdates
         if (!path.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("更新壓縮檔路徑不正確。");
         return path;
     }
+    static async Task<Release> FetchRelease()
+    {
+        using (var http = new HttpClient { Timeout = TimeSpan.FromSeconds(30) }) {
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("ZiziHost-Updater/2.0");
+            var release = Read<Release>(await http.GetStringAsync(Feed));
+            Version version;
+            if (release == null || !Version.TryParse(release.version,out version) || release.sha256 == null ||
+                !System.Text.RegularExpressions.Regex.IsMatch(release.sha256,"\\A[0-9a-fA-F]{64}\\z"))
+                throw new InvalidDataException("更新版本資訊格式不正確。");
+            return release;
+        }
+    }
+    static async Task<string> DownloadRelease(Release release)
+    {
+        byte[] bytes;
+        using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) }) {
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("ZiziHost-Updater/2.0");
+            bytes = await http.GetByteArrayAsync(Package);
+        }
+        if (!String.Equals(Hash(bytes), release.sha256, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("更新檔校驗不符，請稍後再試。");
+        string stage = Path.Combine(Home, "updates", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(stage);
+        using (var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read)) {
+            foreach (var item in zip.Entries) {
+                string path = EntryPath(stage,item.FullName);
+                if (String.IsNullOrEmpty(item.Name)) { Directory.CreateDirectory(path); continue; }
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                item.ExtractToFile(path);
+            }
+        }
+        string app = Path.Combine(stage,"茲茲主機安裝");
+        var packaged = Read<Release>(File.ReadAllText(Path.Combine(app,"internal","version.json")));
+        if (packaged.version != release.version || packaged.modelVersion != release.modelVersion) throw new InvalidDataException("安裝包版本與更新資訊不一致。");
+        string exe = Path.Combine(app,"茲茲主機安裝.exe");
+        if (!File.Exists(exe)) throw new InvalidDataException("更新包缺少安裝程式。");
+        return exe;
+    }
+    public static int OnlineTest()
+    {
+        ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+        try {
+            var release = FetchRelease().GetAwaiter().GetResult();
+            DownloadRelease(release).GetAwaiter().GetResult();
+            return 0;
+        } catch (Exception ex) {
+            File.WriteAllText(Path.Combine(Path.GetTempPath(),"zizi-update-test-error.txt"),ex.ToString());
+            return 1;
+        }
+    }
     public static int SelfTest()
     {
         var parsed = Read<Release>("{\"version\":\"2.1.0\",\"modelVersion\":\"new-model\",\"sha256\":\"" + new string('a',64) + "\"}");
@@ -67,10 +116,8 @@ static class HostUpdates
                 busy = true;
                 try {
                     var installed = Read<Installed>(File.ReadAllText(Path.Combine(Home, "installed.json")));
-                    using (var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) })
+                    var release = await FetchRelease();
                     {
-                        http.DefaultRequestHeaders.UserAgent.ParseAdd("ZiziHost-Updater/2.0");
-                        var release = Read<Release>(await http.GetStringAsync(Feed));
                         if (IsNew(release, installed.version)) {
                             available = release;
                             check.Text = "更新到 " + release.version;
@@ -93,24 +140,7 @@ static class HostUpdates
                 try {
                     Release release = available;
                     tray.Text = "茲茲主機：正在下載更新";
-                    byte[] bytes;
-                    using (var http = new HttpClient { Timeout = TimeSpan.FromMinutes(15) }) {
-                        http.DefaultRequestHeaders.UserAgent.ParseAdd("ZiziHost-Updater/2.0");
-                        bytes = await http.GetByteArrayAsync(Package);
-                    }
-                    if (!String.Equals(Hash(bytes), release.sha256, StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("更新檔校驗不符，請稍後再試。");
-                    string stage = Path.Combine(Home, "updates", Guid.NewGuid().ToString("N"));
-                    Directory.CreateDirectory(stage);
-                    using (var zip = new ZipArchive(new MemoryStream(bytes), ZipArchiveMode.Read)) {
-                        foreach (var item in zip.Entries) {
-                            string path = EntryPath(stage, item.FullName);
-                            if (String.IsNullOrEmpty(item.Name)) { Directory.CreateDirectory(path); continue; }
-                            Directory.CreateDirectory(Path.GetDirectoryName(path));
-                            item.ExtractToFile(path);
-                        }
-                    }
-                    string exe = Path.Combine(stage, "茲茲主機安裝", "茲茲主機安裝.exe");
-                    if (!File.Exists(exe)) throw new InvalidDataException("更新包缺少安裝程式。");
+                    string exe = await DownloadRelease(release);
                     using (var installer = Process.Start(new ProcessStartInfo(exe, "--update") { UseShellExecute = true })) {
                         tray.ShowBalloonTip(4000, "正在更新", "更新視窗已開啟，完成後會自動重啟主機。", ToolTipIcon.Info);
                         await Task.Run(() => installer.WaitForExit());

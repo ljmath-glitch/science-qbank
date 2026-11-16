@@ -237,7 +237,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "GET" && url.pathname === "/apple-touch-icon.png") return send(res, 200, "image/png", fs.readFileSync(path.join(PUBLIC, "apple-touch-icon.png")));
     if (req.method === "GET" && url.pathname === "/api/health") {
-      return sendJson(res, 200, { ok: true, service: portalConfig.service, apiVersion: portalConfig.apiVersion, revision, queue: hostQueue.stats(),
+      return sendJson(res, 200, { ok: true, service: portalConfig.service, apiVersion: portalConfig.apiVersion, revision, queue: hostQueue.stats(), installId: path.basename(path.resolve(__dirname, '..')),
         host: require("os").hostname(), platform: process.platform, engine: process.env.ENGINE || "claude-code",
         // pyexam 的 auto 預設優先使用本機 PP-OCRv5；只有模型不可用時才退回 Tesseract。
         ocrEngine: process.env.OCR_ENGINE_LABEL || "PP-OCRv5（本機；Tesseract 僅備援）", capabilities: ["ocr-preflight", "ocr-review", "extract", "exam-package", "generate", "render", "csv-to-word", "py-ocr", "answer-key"] });

@@ -22,11 +22,16 @@ class Installer : Form
     {
         if (args.Length == 1 && args[0] == "--updates") return HostUpdates.Run();
         if (args.Length == 1 && args[0] == "--test-updates") return HostUpdates.SelfTest();
+        if (args.Length == 1 && args[0] == "--test-online") return HostUpdates.OnlineTest();
         if (args.Length == 1 && args[0] == "--check-package")
         {
             string folder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "internal");
+            string payload = Path.Combine(folder,"詳解應用");
             return File.Exists(Path.Combine(folder, "install.ps1")) &&
-                File.Exists(Path.Combine(folder, "詳解應用", "local-app", "install-host-service.ps1")) ? 0 : 1;
+                File.Exists(Path.Combine(payload, "local-app", "install-host-service.ps1")) &&
+                File.Exists(Path.Combine(payload,"ocr","figcrop","crop.py")) &&
+                File.Exists(Path.Combine(payload,"exam-to-word","scripts","buildlib.py")) &&
+                File.Exists(Path.Combine(payload,"exam-to-word","assets","template.docx")) ? 0 : 1;
         }
         Application.EnableVisualStyles();
         Application.SetCompatibleTextRenderingDefault(false);

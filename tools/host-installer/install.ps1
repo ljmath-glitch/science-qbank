@@ -11,6 +11,7 @@ $installLock = New-Object System.Threading.Mutex($false, 'Local\ZiziHostInstall'
 if (-not $installLock.WaitOne(0)) { Write-Host '已有安裝或更新正在進行。'; exit 1 }
 $previous = $null
 $switched = $false
+$runningRoots = @()
 
 function Refresh-Path {
     $env:Path = [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [Environment]::GetEnvironmentVariable('Path', 'User')
@@ -43,7 +44,27 @@ try {
             if (Test-Path -LiteralPath (Join-Path $oldRoot 'local-app\host-supervisor.js')) { $previous = [pscustomobject]@{path=$oldRoot;version='0.0.0';modelVersion='unknown'} }
         }
     }
-    foreach ($relative in @('package.json','ocr\requirements.txt','local-app\prepare-ocr-env.ps1','local-app\install-host-service.ps1')) {
+    # 以實際監聽服務辨認舊版，避免既有狀態檔指向上次失敗的安裝。
+    $hostProcesses = @(Get-CimInstance Win32_Process -Filter "Name='node.exe'")
+    foreach ($connection in @(Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue)) {
+        $serverProcess = $hostProcesses | Where-Object ProcessId -eq $connection.OwningProcess | Select-Object -First 1
+        if ($serverProcess.CommandLine -match '([A-Za-z]:\\[^"\r\n]*?)\\local-app\\server\.js"?\s*$') {
+            $liveRoot = $Matches[1]
+            if (Test-Path -LiteralPath (Join-Path $liveRoot 'local-app\host-supervisor.js')) {
+                if (-not $previous -or $previous.path -ne $liveRoot) { $previous = [pscustomobject]@{path=$liveRoot;version='0.0.0';modelVersion='unknown'} }
+                break
+            }
+        }
+    }
+    if ($previous) { $runningRoots += $previous.path }
+    foreach ($process in $hostProcesses) {
+        if ($process.CommandLine -match '([A-Za-z]:\\[^"\r\n]*?)\\local-app\\host-supervisor\.js"?\s*$') {
+            $candidate = [IO.Path]::GetFullPath($Matches[1])
+            if ($candidate.StartsWith(([IO.Path]::GetFullPath($homeDir) + '\'),[StringComparison]::OrdinalIgnoreCase)) { $runningRoots += $candidate }
+        }
+    }
+    $runningRoots = @($runningRoots | Select-Object -Unique)
+    foreach ($relative in @('package.json','ocr\requirements.txt','local-app\prepare-ocr-env.ps1','local-app\install-host-service.ps1','exam-to-word\scripts\buildlib.py','exam-to-word\assets\template.docx')) {
         if (-not (Test-Path -LiteralPath (Join-Path $Source $relative))) { throw "安裝包缺少 $relative。請用 -Source 指定解壓縮後的「詳解應用」資料夾。" }
     }
     Refresh-Path
@@ -86,6 +107,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw '自動切圖模型準備失敗，請檢查網路後重試。' }
     Push-Location $target
     try {
+        & $venvPython -c "import sys; sys.path.insert(0, 'exam-to-word/scripts'); import buildlib, openpyxl; print('Excel dependencies ready')"
+        if ($LASTEXITCODE -ne 0) { throw 'Excel 轉檔依賴檢查失敗。' }
         & npm.cmd install --omit=dev
         if ($LASTEXITCODE -ne 0) { throw 'Node.js 套件安裝失敗，請查看上方錯誤。' }
     } finally { Pop-Location }
@@ -93,20 +116,34 @@ try {
     try { $activeHealth = Invoke-RestMethod -Uri 'http://127.0.0.1:8787/api/health' -TimeoutSec 5 } catch { $activeHealth = $null }
     if ($activeHealth -and $activeHealth.queue -and $activeHealth.queue.waiting -gt 0) { throw '目前還有 OCR 或切圖工作，請等考卷處理完成後再按更新。' }
     $switched = $true
-    if ($previous) {
-        $restartFlag = Join-Path $previous.path 'local-app\output\update-stop.flag'
+    foreach ($oldRoot in $runningRoots) {
+        $restartFlag = Join-Path $oldRoot 'local-app\output\update-stop.flag'
         New-Item -ItemType Directory -Force (Split-Path $restartFlag) | Out-Null
         Set-Content -LiteralPath $restartFlag -Value 'update' -Encoding ASCII
-        Start-Sleep -Seconds 7
-        # 舊安裝包還沒有結束旗標，僅停止指向該安裝目錄的系統匣程式。
-        $oldTray = Join-Path $previous.path 'local-app\host-tray.ps1'
+    }
+    if ($runningRoots.Count) { Start-Sleep -Seconds 7 }
+    foreach ($oldRoot in $runningRoots) {
+        $oldTray = Join-Path $oldRoot 'local-app\host-tray.ps1'
         Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object {
             $_.CommandLine -and $_.CommandLine.IndexOf($oldTray,[StringComparison]::OrdinalIgnoreCase) -ge 0
         } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction Stop }
+        $oldSupervisor = Join-Path $oldRoot 'local-app\host-supervisor.js'
+        Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object {
+            $_.CommandLine -and $_.CommandLine.IndexOf($oldSupervisor,[StringComparison]::OrdinalIgnoreCase) -ge 0
+        } | ForEach-Object {
+            & taskkill.exe /PID $_.ProcessId /T /F
+            if ($LASTEXITCODE -ne 0) { throw '停止舊主機失敗，請重試。' }
+        }
+        foreach ($file in @('server.js','ai-bridge.cjs')) {
+            $oldFile = Join-Path $oldRoot ('local-app\' + $file)
+            Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object {
+                $_.CommandLine -and $_.CommandLine.IndexOf($oldFile,[StringComparison]::OrdinalIgnoreCase) -ge 0
+            } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction Stop }
+        }
     }
     Run-Step (Join-Path $target 'local-app\install-host-service.ps1') @('-DisplayName', $displayName)
     $health = Invoke-RestMethod -Uri 'http://127.0.0.1:8787/api/health' -TimeoutSec 10
-    if ($health.service -ne 'tzutzu-ocr') { throw '背景服務安裝後，OCR 健康檢查未通過。' }
+    if ($health.service -ne 'tzutzu-ocr' -or $health.installId -ne (Split-Path $target -Leaf)) { throw '背景服務安裝後，新版 OCR 主機身分檢查未通過。' }
     $updaterDir = Join-Path $target 'updater'
     New-Item -ItemType Directory -Force $updaterDir | Out-Null
     Copy-Item -LiteralPath (Join-Path (Split-Path $PSScriptRoot -Parent) '茲茲主機安裝.exe') -Destination (Join-Path $updaterDir '茲茲主機安裝.exe')
@@ -127,6 +164,16 @@ try {
     if ($switched -and $previous) {
         Write-Host '正在恢復原本的主機服務…' -ForegroundColor Yellow
         try {
+            $failedFlag = Join-Path $target 'local-app\output\update-stop.flag'
+            New-Item -ItemType Directory -Force (Split-Path $failedFlag) | Out-Null
+            Set-Content -LiteralPath $failedFlag -Value 'rollback' -Encoding ASCII
+            Start-Sleep -Seconds 7
+            foreach ($file in @('host-supervisor.js','server.js','ai-bridge.cjs')) {
+                $failedFile = Join-Path $target ('local-app\' + $file)
+                Get-CimInstance Win32_Process -Filter "Name='node.exe'" | Where-Object {
+                    $_.CommandLine -and $_.CommandLine.IndexOf($failedFile,[StringComparison]::OrdinalIgnoreCase) -ge 0
+                } | ForEach-Object { & taskkill.exe /PID $_.ProcessId /T /F | Out-Null }
+            }
             Remove-Item -LiteralPath (Join-Path $previous.path 'local-app\output\update-stop.flag') -ErrorAction SilentlyContinue
             Run-Step (Join-Path $previous.path 'local-app\install-host-service.ps1') @('-DisplayName', $previousName)
         } catch { Write-Host ('恢復原服務失敗，請從原安裝目錄重新啟動：' + $_.Exception.Message) -ForegroundColor Red }

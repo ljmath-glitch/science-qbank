@@ -32,14 +32,9 @@ if ($old) {
   Set-Content -LiteralPath (Join-Path $out 'disabled-old-task.txt') -Value $oldTask -Encoding UTF8
   Say "已停用舊排程「$oldTask」（解除安裝時可還原）" Yellow
 }
-$c = Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+$c = Get-NetTCPConnection -LocalPort 8787 -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalAddress -in @('127.0.0.1','::1','0.0.0.0','::') } | Select-Object -First 1
 if ($c) {
-  $procs = @($c.OwningProcess)
-  $parent = (Get-CimInstance Win32_Process -Filter "ProcessId=$($c.OwningProcess)").ParentProcessId
-  if ($parent -and (Get-Process -Id $parent -ErrorAction SilentlyContinue).ProcessName -eq 'cmd') { $procs += $parent }
-  foreach ($id in $procs) { try { Stop-Process -Id $id -Force -ErrorAction Stop } catch {} }
-  Start-Sleep -Seconds 2
-  Say '已關閉舊的主機視窗／程式' Yellow
+  throw '本機 8787 埠仍被使用，請先停止原主機，再重試安裝。'
 }
 
 # 2.5) 這台主機在網站上的顯示名稱（會自動登錄到匯卷頁的「OCR 運算主機」下拉選單，所有老師都看得到）
