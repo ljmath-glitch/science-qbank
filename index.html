@@ -2702,21 +2702,42 @@ async function importBatchHandoffImages(payload){
     }
     (groups[target.id]??={q:target,items:[]}).items.push(image);
   }
-  let done=0,failed=0;
+  let done=0,failed=0;const failedQnos=new Set();const failureDetails=[];
   for(const group of Object.values(groups)){
     try{
       const imgs=[];
       for(const image of group.items)imgs.push({src:image.src,width:await _faithfulImgPct(image.src),align:'center'});
-      const uploaded=await uploadImgs(imgs,group.q.id);
+      // 一鍵匯入不能在 Storage 失敗時把大型 base64 塞回 questions；逐張重試，仍失敗就明確回報。
+      const uploaded=[];
+      for(let i=0;i<imgs.length;i++){
+        const im=imgs[i];
+        if(!im.src||!im.src.startsWith('data:')){uploaded.push(im);continue;}
+        let last=null,ok=null;
+        for(let attempt=0;attempt<3&&!ok;attempt++){
+          const r=await _uploadImgDataURL(im.src,group.q.id,i);
+          if(r.url)ok={...im,src:r.url};else last=r.error||new Error('圖片上傳失敗');
+          if(!ok&&attempt<2)await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+        }
+        if(!ok)throw last||new Error('圖片上傳失敗');
+        uploaded.push(ok);
+      }
       const merged=[...(group.q.imgs||[]),...uploaded];
-      const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
-      if(error)throw error;
+      let writeError=null;
+      for(let attempt=0;attempt<3;attempt++){
+        const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
+        writeError=error||null;if(!writeError)break;
+        if(attempt<2)await new Promise(resolve=>setTimeout(resolve,500*(attempt+1)));
+      }
+      if(writeError)throw writeError;
+      const {data:check,error:checkError}=await sb.from('questions').select('imgs').eq('id',group.q.id).maybeSingle();
+      if(checkError)throw checkError;
+      if(!check||!Array.isArray(check.imgs)||check.imgs.length<merged.length)throw new Error(`寫入後驗證失敗（預期 ${merged.length} 張，實際 ${check&&Array.isArray(check.imgs)?check.imgs.length:0} 張）`);
       const local=DB.find(it=>it.id===group.q.id)||Object.values(PASSAGES).find(p=>p.id===group.q.id);if(local)local.imgs=merged;
       done+=group.items.length;
-    }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;}
+    }catch(error){console.error('raw 批次貼圖失敗',group.q.id,error);failed+=group.items.length;group.items.forEach(image=>{if(Number.isInteger(image.qno))failedQnos.add(image.qno)});failureDetails.push(`第 ${group.items.map(image=>image.qno??'未知').join('、')} 題：${error&&error.message?error.message:error}`);}
   }
   if(done)render();
-  return {done,failed,unmatched,unknownQno,unmatchedQnos:[...unmatchedQnos].sort((a,b)=>a-b),noPassageQnos:[...noPassageQnos].sort((a,b)=>a-b),matchedExam};
+  return {done,failed,unmatched,unknownQno,failedQnos:[...failedQnos].sort((a,b)=>a-b),failureDetails,unmatchedQnos:[...unmatchedQnos].sort((a,b)=>a-b),noPassageQnos:[...noPassageQnos].sort((a,b)=>a-b),matchedExam};
 }
 
 function _bimgCopyNamingPrompt(mode){

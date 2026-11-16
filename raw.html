@@ -2277,10 +2277,12 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
           const importer=await waitForPromptBuilder('importBatchHandoffImages');
           const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
-          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');
-          note=bits.length?'（圖片：'+bits.join('；')+'）':'，圖片已全部貼入';}
-        setState('匯入完成'+note+'。');try{pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,'已匯入題庫')}catch(e){}
-        if(confirm('匯入完成'+note+'。\n要前往題庫查看這份考卷嗎？'))finishRawWorkflow();
+          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');if(r&&r.unknownQno)bits.push(r.unknownQno+' 張圖片沒有題號');if(r&&r.failed)bits.push((r.failedQnos&&r.failedQnos.length?'第 '+r.failedQnos.join('、')+' 題的 ':'')+r.failed+' 張圖片上傳或驗證失敗');
+          const complete=r&&r.done===imgs.length&&!r.failed&&!r.unmatched;
+          note=complete?'，圖片已全部貼入':'（圖片未全部匯入：'+(bits.join('；')||(r&&r.done||0)+'／'+imgs.length+' 張成功')+'）';}
+        const imageIncomplete=imgs.length&&!/圖片已全部貼入/.test(note);
+        setState((imageIncomplete?'題目已匯入，但有圖片缺失':'匯入完成')+note+'。');try{if(imageIncomplete)pipeFail(5,note);else pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,imageIncomplete?'題目已匯入，圖片需重試':'已匯入題庫')}catch(e){}
+        if(confirm((imageIncomplete?'題目已匯入，但有圖片缺失':'匯入完成')+note+'。\n'+(imageIncomplete?'請先保留本頁並重試缺失圖片；仍要前往題庫查看嗎？':'要前往題庫查看這份考卷嗎？')))finishRawWorkflow();
       }catch(e){setState('匯入失敗：'+(e.message||e))}
       finally{btn.disabled=false}
     };
