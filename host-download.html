@@ -54,15 +54,13 @@
     </section>
 
     <section class="card">
-      <h2>安裝步驟（解壓縮後看「先看這裡.txt」）</h2>
-      <p class="muted">先準備：Node.js LTS、Python 3.11、Tailscale（登入電腦擁有者自己的帳號）；若要 AI 分類，再有一個已登入的 AI 命令列工具（claude、codex 或 agy）。</p>
+      <h2>安裝步驟</h2>
+      <p>下載並解壓縮後，開啟「茲茲主機安裝」資料夾，雙擊 <code>茲茲主機安裝.exe</code>，按「開始安裝」。首次安裝需要連網，可能花數分鐘。</p>
       <ol>
-        <li>把解壓縮後的資料夾放到 <code>C:\詳解應用</code>（不要放 Dropbox、OneDrive）。</li>
-        <li>雙擊 <code>local-app\準備OCR環境.bat</code>（要連網，第一次約需數分鐘）。</li>
-        <li>雙擊 <code>local-app\安裝主機背景服務.bat</code>。</li>
-        <li>雙擊 <code>local-app\主機背景服務-狀態.bat</code>，確認兩個服務都「執行中」，並記下印出的 https 網址。</li>
-        <li>Tailscale 後台開啟 MagicDNS 與 HTTPS 憑證，並把這台電腦「Share」給老師。</li>
-        <li>匯卷頁「OCR 運算主機」選這台，第一次輸入 OCR 網址（<code>:8443</code> 那個）。</li>
+        <li>程式會準備 Node.js、Python 3.11、Tailscale、Poppler、OCR 套件與模型，再設定背景服務。</li>
+        <li>Windows 若顯示安裝確認，請依畫面操作；Tailscale 與 AI 工具的帳號登入由電腦擁有者完成。</li>
+        <li>安裝完成後，回匯卷頁選擇這台主機，按「測試連線」。遠端使用需完成 Tailscale 登入、MagicDNS、HTTPS 與主機分享。</li>
+        <li>移到另一台電腦時，請複製整個資料夾；<code>internal</code> 包含安裝所需檔案。</li>
       </ol>
       <div class="note">這個安裝包不含自動更新；有新版時請回來下載新的安裝包。Windows 實機行為仍在測試階段，遇到錯誤請把 <code>local-app\output\host.log</code> 最後幾十行傳給管理者。</div>
     </section>
