@@ -166,6 +166,7 @@
     .iv-right{overflow:auto;padding:12px 14px 20px}
     .iv-foot{padding:10px 12px;background:#fffefb;border-top:1px solid var(--line)}
     .iv-foot .btn-even{margin-top:0}.iv-foot .status{margin:6px 0 0}
+    .rv-group-tool{margin-bottom:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fdf6f6}.rv-group-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.rv-group-title b{font-size:14px}.rv-group-title span{font-size:11px;color:#7a6e60}.rv-group-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}.rv-group-rows>div{display:flex;gap:6px;align-items:center}.rv-group-rows span{font-size:12px;color:#7a6e60;width:52px;flex:0 0 52px}.rv-group-rows input{font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;width:min(190px,55vw);font-family:inherit;background:#fff}.rv-group-actions{display:flex;gap:8px}.rv-group-actions .primary{background:#c0392b;color:#fff;border-color:#c0392b}
     .rv-sum{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
     .rv-chip{padding:4px 10px;border-radius:999px;border:1px solid #e4d8c6;background:#fff;font-size:12.5px;cursor:pointer;color:var(--ink)}.rv-chip b{margin-left:3px}
     .rv-chip.t-flag{background:#fff3d6;border-color:#e8c97a}.rv-chip.t-img{background:#e8f1fb;border-color:#a9c6e6}.rv-chip.t-ans{background:#fde8e6;border-color:#e7aaa4}.rv-chip.t-err{background:#f1e6f7;border-color:#c9a8dc}
@@ -1994,7 +1995,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
      切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
   (function(){
-    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null,groupRows:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
     const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
     function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
       _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
@@ -2019,32 +2020,47 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim();const it=byNo[no];const im={src:c.src,ci};
         if(!it){loose.push({...im,no});return}
         if((c.scope||'single')==='group'&&it.gid)(gImgs[it.gid]=gImgs[it.gid]||[]).push(im);else it.imgs.push(im)});
+      const gidCounts={};items.forEach(it=>{if(it.gid)gidCounts[it.gid]=(gidCounts[it.gid]||0)+1});
       const seen={};
       items.forEach(it=>{const w=[];
         if(!it.q.trim())w.push('題目空白');
         if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
         if(!it.ans)w.push('沒有答案');
+        if(it.gid&&gidCounts[it.gid]===1)w.push('題組只有1題');
         const needFig=FIG.test(it.q)||(it.gid&&FIG.test(passages[it.gid]||''));
         if(needFig&&!it.imgs.length&&!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length))w.push('缺圖');
         if(it.flag)w.push('待確認');
         it.warns=w;
-        it.tone=w.includes('題目空白')||w.includes('題號重複')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
-      return {rows,header,ix,items,passages,passageRow,gImgs,loose}}
+        it.tone=w.includes('題目空白')||w.includes('題號重複')||w.includes('題組只有1題')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
+      const gids=[...new Set(items.map(it=>it.gid).filter(Boolean))];
+      const groupIndex=Object.fromEntries(gids.map((gid,i)=>[gid,i+1]));
+      return {rows,header,ix,items,passages,passageRow,gImgs,loose,gids,groupIndex}}
     function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;return it.warns.includes(f)}
+    function rvParseRange(str){const nums=new Set();String(str||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{const m=part.match(/^(\d+)\s*-\s*(\d+)$/);if(m){const a=+m[1],b=+m[2];for(let n=Math.min(a,b);n<=Math.max(a,b);n++)nums.add(n)}else if(/^\d+$/.test(part))nums.add(+part)});return nums}
+    function rvCompactNos(nums){const a=[...new Set(nums)].sort((x,y)=>x-y),out=[];for(let i=0;i<a.length;){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;out.push(j>i?a[i]+'-'+a[j]:String(a[i]));i=j+1}return out.join(', ')}
+    function rvGroupsFromData(D){if(!D)return[{range:''}];const map=new Map();D.items.forEach(it=>{if(it.gid){if(!map.has(it.gid))map.set(it.gid,[]);const n=parseInt(it.no,10);if(Number.isInteger(n))map.get(it.gid).push(n)}});const rows=[...map.entries()].map(([gid,nos])=>({range:rvCompactNos(nos),gid}));return rows.length?rows:[{range:''}]}
+    function rvGroupTool(D){if(!D)return'';if(!RV.groupRows)RV.groupRows=rvGroupsFromData(D);return '<div class="rv-group-tool"><div class="rv-group-title"><b>🔧 題組編號人工校對</b><span>輸入題號範圍，按套用後：範圍內的題會標同一個題組 ID，範圍外的題組 ID 會被清空</span></div><div class="rv-group-rows">'+RV.groupRows.map((r,i)=>'<div><span>題組'+(i+1)+'</span><input value="'+esc(r.range||'')+'" placeholder="例如 8-9 或 15-19" oninput="_rvGroupInput('+i+',this.value)"><button type="button" class="btn sm" onclick="_rvGroupRemove('+i+')">✕</button></div>').join('')+'</div><div class="rv-group-actions"><button type="button" class="btn sm" onclick="_rvGroupAdd()">＋ 新增題組</button><button type="button" class="btn sm primary" onclick="_rvGroupApply()">套用</button></div></div>'}
+    window._rvGroupInput=(i,value)=>{if(RV.groupRows[i])RV.groupRows[i].range=value};
+    window._rvGroupAdd=()=>{RV.groupRows.push({range:''});renderRight(true)};
+    window._rvGroupRemove=i=>{RV.groupRows.splice(i,1);if(!RV.groupRows.length)RV.groupRows=[{range:''}];renderRight(true)};
+    window._rvGroupApply=()=>{const D=RV.data;if(!D)return;const parsed=RV.groupRows.map(r=>rvParseRange(r.range)).filter(s=>s.size);if(!parsed.length&&!confirm('沒有填任何題組範圍。要清空全部題目的題組 ID 嗎？'))return;const known=new Set(D.items.map(it=>parseInt(it.no,10)).filter(Number.isInteger)),seen=new Set();for(const g of parsed)for(const n of g){if(!known.has(n)){alert('題號 '+n+' 不在目前題目資料裡');return}if(seen.has(n)){alert('題號 '+n+' 出現在兩個題組裡，請確認範圍沒有重疊');return}seen.add(n)}
+      const base=(examName.value||D.items[0]?.exam||'題組').trim(),oldToNew=new Map();D.items.forEach(it=>{const no=parseInt(it.no,10);let gi=-1;parsed.forEach((g,i)=>{if(g.has(no))gi=i});const newGid=gi>=0?base+'-'+Math.min(...parsed[gi]):'';if(it.gid&&newGid&&!oldToNew.has(it.gid))oldToNew.set(it.gid,newGid);const row=D.rows[it.ri];while(row.length<=D.ix.gid)row.push('');row[D.ix.gid]=newGid});
+      for(let i=1;i<D.rows.length;i++){const row=D.rows[i],type=String(row[D.ix.type]||'').trim(),old=String(row[D.ix.gid]||'').trim();if(type==='passage'&&oldToNew.has(old))row[D.ix.gid]=oldToNew.get(old)}
+      questionCsv.value=_rowsToCsv(D.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.groupRows=rvGroupsFromData(RV.data);RV.edit='';renderRight(true);setState('題組範圍已套用到匯入資料；尚未寫入題庫。')};
     const gattr=g=>`data-g="${esc(g)}"`;
     function renderRight(keepY){
       const box=document.getElementById('rvRight');if(!box)return;const y=box.scrollTop;const D=RV.data;
       if(!D){box.innerHTML='<div class="status">還沒有題目資料。請等「題庫 Excel」產生後再回來。</div>';setSum('');return}
       const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,bad=D.items.filter(it=>it.warns.length).length;
       const chip=(k,l,n,t)=>`<button type="button" class="rv-chip${t?' t-'+t:''}${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
-      let h='<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')?chip('題號重複','題號重複',cnt('題號重複'),'err'):'')+'</div>';
+      let h=rvGroupTool(D)+'<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')+cnt('題組只有1題')?chip('題組只有1題','題組異常',cnt('題組只有1題'),'err'):'')+'</div>';
       if(D.loose.length)h+=`<div class="rv-card tone-err"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">在左邊清稿的框上把題號改對，就會自動放進對應題目。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">框上的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
       const shownG=new Set();let n=0;
       D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
         if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
           h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
             :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
-        const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
+        const tags=(it.gid?'<span class="rv-tag">題組'+(D.groupIndex[it.gid]||'')+' · '+esc(it.gid)+'</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
         const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
         if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
         h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
@@ -2109,7 +2125,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
       try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
       return pane}
-    async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
+    async function enter(){ensurePane();RV.data=build();RV.groupRows=rvGroupsFromData(RV.data);RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
       try{if(pipeStep(4).state==='done'&&pipeStep(5).state!=='run'&&pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
 
     // ── 修改：開啟「題庫管理」同一個編輯題目視窗（借用背景載入的題庫頁），儲存時只寫回這裡的題目資料與切圖，不會寫進雲端題庫 ──
