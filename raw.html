@@ -2157,7 +2157,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const E=id=>doc.getElementById(id),fix=v=>{try{return w.fixControlCharEatenLatex(v)}catch(e){return v}};
         const q=fix(E('eQ').value.trim()),summary=E('eSummary').value.trim();if(!q&&!summary){w.alert('題目或摘要至少填一個');return}
         const syl=w.eval('(SYL.find(k=>k.book===eBook.value)||{})'),df=w.eval('({step:diff.step,mem:diff.mem,con:diff.con})'),imgsNow=w.eval('curImgs.map(x=>({src:x.src}))');
-        let basis=E('eBasis').value.trim();const flag=E('eFlag').checked;if(flag&&basis&&!basis.startsWith('[回報]'))basis='[回報] '+basis;
+        const report=typeof w.getEditReportState==='function'?w.getEditReportState():{basis:E('eBasis').value.trim(),flag:E('eFlag').checked};let basis=report.basis;const flag=report.flag;
         const set=(i,v)=>{if(i>=0){while(r.length<=i)r.push('');r[i]=v}};
         set(C.year,E('eYear').value.trim());set(C.school,E('eSchool').value.trim());set(C.exam,E('eExam').value.trim());set(C.no,E('eNo').value.trim());set(C.ans,E('eAns').value.trim());
         set(C.book,E('eBook').value);set(C.bookName,syl.bookName||'');set(C.field,syl.field||'');set(C.unit,E('eUnit').value);set(C.sub,E('eSub').value);set(C.kp,E('eKp').value.trim());set(C.summary,summary);set(C.type,E('eType').value);
