@@ -24,11 +24,7 @@
   p,li{font-size:14.5px;color:#454952}.muted{color:var(--muted);font-size:13px}
   ul,ol{padding-left:22px}li{margin-bottom:4px}
   .dl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
-  input[type=password]{flex:1 1 220px;min-height:44px;padding:0 14px;font-size:16px;border:1px solid #d8d2c4;border-radius:11px;background:#fff;font-family:inherit}
-  button{min-height:44px;padding:0 20px;font-size:15px;font-weight:800;border:0;border-radius:11px;background:var(--red);color:#fff;cursor:pointer;font-family:inherit}
-  button:disabled{opacity:.55;cursor:wait}
-  .st{margin-top:10px;font-size:13.5px;min-height:20px}.st.err{color:#b3261e}.st.ok{color:#1f6f5c}
-  .bar2{height:8px;border-radius:6px;background:#eadfce;overflow:hidden;margin-top:10px;display:none}.bar2 i{display:block;height:100%;width:0;background:var(--red)}
+  a.btn{display:inline-block;min-height:44px;line-height:44px;padding:0 22px;font-size:15px;font-weight:800;border-radius:11px;background:var(--red);color:#fff;text-decoration:none}
   .note{margin-top:12px;font-size:13px;color:#6a5a2a;background:#fff8e6;border:1px solid #efdcaa;border-radius:10px;padding:9px 12px}
   code{background:#f0ece2;padding:1px 5px;border-radius:4px;font-size:13px}
   @media(max-width:600px){.card{padding:18px 16px}h1{font-size:21px}}
@@ -38,16 +34,12 @@
   <header><div class="bar"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><div class="brand-name">茲茲文教｜自然題庫</div><div class="brand-sub">HOST PACKAGE · 管理員專用</div></div><a class="home" href="tutorial.html">回教學頁</a></div></header>
   <main>
     <section class="card hero">
-      <span class="badge">管理員專用</span>
+      <span class="badge">管理員用</span>
       <h1>主機電腦安裝包（Windows）</h1>
       <p>把一台電腦變成「OCR 運算主機＋AI 分類橋接」，一次安裝、之後在背景自動執行（沒有視窗，不會被誤關）。給天母、玉承、劍潭這類主機電腦使用。</p>
       <div class="dl">
-        <input type="password" id="pw" placeholder="輸入管理員密碼" autocomplete="current-password" aria-label="管理員密碼">
-        <button id="go" type="button">輸入密碼並下載</button>
+        <a class="btn" href="downloads/zizi-host-windows.zip" download="zizi-host-windows.zip">下載安裝包（Windows，約 30 MB）</a>
       </div>
-      <div class="bar2" id="bar"><i id="fill"></i></div>
-      <div class="st" id="st" role="status"></div>
-      <div class="note">檔案約 30 MB，已用管理員密碼加密後才放在網站上，沒有密碼拿到也打不開。下載時由你的瀏覽器在本機解密，密碼不會傳到任何地方。</div>
     </section>
 
     <section class="card">
@@ -75,36 +67,6 @@
       <div class="note">這個安裝包不含自動更新；有新版時請回來下載新的安裝包。Windows 實機行為仍在測試階段，遇到錯誤請把 <code>local-app\output\host.log</code> 最後幾十行傳給管理者。</div>
     </section>
   </main>
-<script>
-(function(){
-  const $=id=>document.getElementById(id),st=$('st'),go=$('go'),bar=$('bar'),fill=$('fill');
-  const FILE='downloads/zizi-host-windows.zip.enc',NAME='zizi-host-windows.zip';
-  const say=(t,c)=>{st.textContent=t;st.className='st'+(c?' '+c:'')};
-  async function run(){
-    const pw=$('pw').value;if(!pw){say('請先輸入密碼。','err');return}
-    go.disabled=true;bar.style.display='block';fill.style.width='0';say('下載中…');
-    try{
-      const r=await fetch(FILE,{cache:'no-store'});if(!r.ok)throw new Error('下載失敗（'+r.status+'）');
-      const total=+r.headers.get('content-length')||0,rd=r.body.getReader(),parts=[];let got=0;
-      for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;if(total)fill.style.width=(got/total*90)+'%'}
-      const buf=new Uint8Array(got);let o=0;for(const p of parts){buf.set(p,o);o+=p.length}
-      const dv=new DataView(buf.buffer);
-      if(String.fromCharCode(buf[0],buf[1],buf[2])!=='ZZ1')throw new Error('檔案格式不對，請重新整理後再試。');
-      const iter=dv.getUint32(4),salt=buf.slice(8,24),iv=buf.slice(24,36),data=buf.slice(36);
-      say('解密中…（需要幾秒）');fill.style.width='95%';
-      const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-      const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
-      let plain;try{plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data)}catch(e){throw new Error('密碼不對。')}
-      fill.style.width='100%';
-      const url=URL.createObjectURL(new Blob([plain],{type:'application/zip'}));
-      const a=document.createElement('a');a.href=url;a.download=NAME;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
-      say('完成，已開始下載：'+NAME,'ok');$('pw').value='';
-    }catch(e){say(e.message||String(e),'err');fill.style.width='0'}
-    finally{go.disabled=false}
-  }
-  go.addEventListener('click',run);$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
-})();
-</script>
 <script src="nav.js" defer></script>
 </body>
 </html>
