@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#850103">
+<meta name="robots" content="noindex,nofollow">
+<title>茲茲文教｜主機電腦安裝包</title>
+<link rel="icon" type="image/png" href="/logo.png">
+<script>(()=>{const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
+<style>
+  :root{--ink:#2d3038;--paper:#f8f7f4;--card:#fffefb;--line:#e5dfd5;--red:#850103;--muted:#807a73;--ui:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,sans-serif;--shadow:0 2px 9px rgba(43,32,28,.045)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:var(--paper);color:var(--ink);font-family:var(--ui);font-weight:500;line-height:1.75}
+  header{height:72px;background:#fffefb;border-bottom:1px solid var(--line);display:flex;align-items:center}
+  .bar{width:min(860px,calc(100% - 32px));margin:auto;display:flex;align-items:center;gap:12px}
+  .brand-logo{width:38px;height:38px;object-fit:contain}.brand-name{font-size:17px;font-weight:800;color:var(--red)}.brand-sub{font-size:10px;color:#a0978d;letter-spacing:1px}
+  .home{margin-left:auto;color:var(--ink);text-decoration:none;font-size:13px;font-weight:700;padding:7px 12px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  main{width:min(860px,calc(100% - 32px));margin:0 auto;padding:28px 0 64px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:var(--shadow);padding:24px 26px;margin-bottom:18px}
+  .card.hero{border-top:4px solid var(--red)}
+  .badge{display:inline-block;background:var(--red);color:#fff;font-size:12px;font-weight:800;letter-spacing:1px;padding:2px 10px;border-radius:999px;vertical-align:middle}
+  h1{font-size:24px;margin:8px 0 6px;font-weight:800}h2{font-size:17px;font-weight:800;margin-bottom:8px}
+  p,li{font-size:14.5px;color:#454952}.muted{color:var(--muted);font-size:13px}
+  ul,ol{padding-left:22px}li{margin-bottom:4px}
+  .dl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
+  input[type=password]{flex:1 1 220px;min-height:44px;padding:0 14px;font-size:16px;border:1px solid #d8d2c4;border-radius:11px;background:#fff;font-family:inherit}
+  button{min-height:44px;padding:0 20px;font-size:15px;font-weight:800;border:0;border-radius:11px;background:var(--red);color:#fff;cursor:pointer;font-family:inherit}
+  button:disabled{opacity:.55;cursor:wait}
+  .st{margin-top:10px;font-size:13.5px;min-height:20px}.st.err{color:#b3261e}.st.ok{color:#1f6f5c}
+  .bar2{height:8px;border-radius:6px;background:#eadfce;overflow:hidden;margin-top:10px;display:none}.bar2 i{display:block;height:100%;width:0;background:var(--red)}
+  .note{margin-top:12px;font-size:13px;color:#6a5a2a;background:#fff8e6;border:1px solid #efdcaa;border-radius:10px;padding:9px 12px}
+  code{background:#f0ece2;padding:1px 5px;border-radius:4px;font-size:13px}
+  @media(max-width:600px){.card{padding:18px 16px}h1{font-size:21px}}
+</style>
+</head>
+<body>
+  <header><div class="bar"><img class="brand-logo" src="/logo.png" alt="茲茲文教"><div><div class="brand-name">茲茲文教｜自然題庫</div><div class="brand-sub">HOST PACKAGE · 管理員專用</div></div><a class="home" href="tutorial.html">回教學頁</a></div></header>
+  <main>
+    <section class="card hero">
+      <span class="badge">管理員專用</span>
+      <h1>主機電腦安裝包（Windows）</h1>
+      <p>把一台電腦變成「OCR 運算主機＋AI 分類橋接」，一次安裝、之後在背景自動執行（沒有視窗，不會被誤關）。給天母、玉承、劍潭這類主機電腦使用。</p>
+      <div class="dl">
+        <input type="password" id="pw" placeholder="輸入管理員密碼" autocomplete="current-password" aria-label="管理員密碼">
+        <button id="go" type="button">輸入密碼並下載</button>
+      </div>
+      <div class="bar2" id="bar"><i id="fill"></i></div>
+      <div class="st" id="st" role="status"></div>
+      <div class="note">檔案約 30 MB，已用管理員密碼加密後才放在網站上，沒有密碼拿到也打不開。下載時由你的瀏覽器在本機解密，密碼不會傳到任何地方。</div>
+    </section>
+
+    <section class="card">
+      <h2>裡面有什麼</h2>
+      <ul>
+        <li>OCR 主機程式（辨識、切圖、轉題庫 Excel）與 Tailscale HTTPS 入口設定。</li>
+        <li>AI 分類橋接（老師免輸入連線碼，只接受題庫網頁來源）。</li>
+        <li>一鍵腳本：準備 OCR 環境、安裝／解除安裝背景服務、檢查狀態。</li>
+        <li>不含任何金鑰、登入資料或學生資料。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>安裝步驟（解壓縮後看「先看這裡.txt」）</h2>
+      <p class="muted">先準備：Node.js LTS、Python 3.11、Tailscale（登入電腦擁有者自己的帳號）；若要 AI 分類，再有一個已登入的 AI 命令列工具（claude、codex 或 agy）。</p>
+      <ol>
+        <li>把解壓縮後的資料夾放到 <code>C:\詳解應用</code>（不要放 Dropbox、OneDrive）。</li>
+        <li>雙擊 <code>local-app\準備OCR環境.bat</code>（要連網，第一次約需數分鐘）。</li>
+        <li>雙擊 <code>local-app\安裝主機背景服務.bat</code>。</li>
+        <li>雙擊 <code>local-app\主機背景服務-狀態.bat</code>，確認兩個服務都「執行中」，並記下印出的 https 網址。</li>
+        <li>Tailscale 後台開啟 MagicDNS 與 HTTPS 憑證，並把這台電腦「Share」給老師。</li>
+        <li>匯卷頁「OCR 運算主機」選這台，第一次輸入 OCR 網址（<code>:8443</code> 那個）。</li>
+      </ol>
+      <div class="note">這個安裝包不含自動更新；有新版時請回來下載新的安裝包。Windows 實機行為仍在測試階段，遇到錯誤請把 <code>local-app\output\host.log</code> 最後幾十行傳給管理者。</div>
+    </section>
+  </main>
+<script>
+(function(){
+  const $=id=>document.getElementById(id),st=$('st'),go=$('go'),bar=$('bar'),fill=$('fill');
+  const FILE='downloads/zizi-host-windows.zip.enc',NAME='zizi-host-windows.zip';
+  const say=(t,c)=>{st.textContent=t;st.className='st'+(c?' '+c:'')};
+  async function run(){
+    const pw=$('pw').value;if(!pw){say('請先輸入密碼。','err');return}
+    go.disabled=true;bar.style.display='block';fill.style.width='0';say('下載中…');
+    try{
+      const r=await fetch(FILE,{cache:'no-store'});if(!r.ok)throw new Error('下載失敗（'+r.status+'）');
+      const total=+r.headers.get('content-length')||0,rd=r.body.getReader(),parts=[];let got=0;
+      for(;;){const {done,value}=await rd.read();if(done)break;parts.push(value);got+=value.length;if(total)fill.style.width=(got/total*90)+'%'}
+      const buf=new Uint8Array(got);let o=0;for(const p of parts){buf.set(p,o);o+=p.length}
+      const dv=new DataView(buf.buffer);
+      if(String.fromCharCode(buf[0],buf[1],buf[2])!=='ZZ1')throw new Error('檔案格式不對，請重新整理後再試。');
+      const iter=dv.getUint32(4),salt=buf.slice(8,24),iv=buf.slice(24,36),data=buf.slice(36);
+      say('解密中…（需要幾秒）');fill.style.width='95%';
+      const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
+      const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+      let plain;try{plain=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,data)}catch(e){throw new Error('密碼不對。')}
+      fill.style.width='100%';
+      const url=URL.createObjectURL(new Blob([plain],{type:'application/zip'}));
+      const a=document.createElement('a');a.href=url;a.download=NAME;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+      say('完成，已開始下載：'+NAME,'ok');$('pw').value='';
+    }catch(e){say(e.message||String(e),'err');fill.style.width='0'}
+    finally{go.disabled=false}
+  }
+  go.addEventListener('click',run);$('pw').addEventListener('keydown',e=>{if(e.key==='Enter')run()});
+})();
+</script>
+<script src="nav.js" defer></script>
+</body>
+</html>
