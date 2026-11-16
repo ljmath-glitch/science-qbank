@@ -2015,10 +2015,13 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if(cell(r,'type')==='passage'){if(gid){passages[gid]=String(r[ix.q]||'');passageRow[gid]={ri:i,col:ix.q}}continue}
         if(gid&&ps.trim()&&!passages[gid]){passages[gid]=ps;passageRow[gid]={ri:i,col:ix.passage}}
         items.push({ri:i,no:cell(r,'no'),ans:cell(r,'ans'),q:String(r[ix.q]||''),gid,chart:cell(r,'chart'),type:cell(r,'type'),flag:/^(y|yes|true|1|是)$/i.test(cell(r,'flag')),basis:cell(r,'basis'),imgs:[]})}
-      const byNo={};items.forEach(it=>{if(it.no&&!byNo[it.no])byNo[it.no]=it});
+      const byNo={};items.forEach(it=>{if(it.no)(byNo[it.no]??=[]).push(it)});
       const gImgs={},loose=[];
-      (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim();const it=byNo[no];const im={src:c.src,ci};
-        if(!it){loose.push({...im,no});return}
+      (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim(),choices=byNo[no]||[];
+        // 題號重複時不能只取第一題：題組共用圖優先找有題組 ID 的列；單題圖優先找含圖標記的列。
+        const it=(c.scope||'single')==='group'?(choices.find(x=>x.gid)||choices[0]):(choices.find(x=>FIG.test(x.q))||choices.find(x=>x.gid)||choices[0]);const im={src:c.src,ci};
+        if(!it){delete c._reviewRi;delete c._reviewGid;loose.push({...im,no});return}
+        c._reviewRi=it.ri;c._reviewGid=it.gid||'';
         if((c.scope||'single')==='group'&&it.gid)(gImgs[it.gid]=gImgs[it.gid]||[]).push(im);else it.imgs.push(im)});
       const gidCounts={};items.forEach(it=>{if(it.gid)gidCounts[it.gid]=(gidCounts[it.gid]||0)+1});
       const seen={};
@@ -2287,12 +2290,13 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const w=promptSource.contentWindow;await waitForPromptBuilder('doImport');
         if(!w.csvArea)throw new Error('題庫匯入程式尚未載入完成，請稍候再按一次');
         setState('正在匯入題目…');let loaded=false;const _ld=w.load;w.load=async function(...a){loaded=true;return _ld.apply(this,a)};
-        try{w.csvArea.value=csv;await w.doImport()}finally{w.load=_ld}
+        let importResult=null;try{w.csvArea.value=csv;importResult=await w.doImport()}finally{w.load=_ld}
         if(!loaded){setState('題目沒有匯入（已取消或發生錯誤）。');return}
         const imgs=cropCandidates.filter(x=>!x.skip);let note='';
         if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
           const importer=await waitForPromptBuilder('importBatchHandoffImages');
-          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
+          const renumbered=new Map((importResult&&importResult.renumbered||[]).map(x=>[x.ri,Number(x.newNo)]));
+          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:renumbered.has(x._reviewRi)?renumbered.get(x._reviewRi):x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
           const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');if(r&&r.unknownQno)bits.push(r.unknownQno+' 張圖片沒有題號');if(r&&r.failed)bits.push((r.failedQnos&&r.failedQnos.length?'第 '+r.failedQnos.join('、')+' 題的 ':'')+r.failed+' 張圖片上傳或驗證失敗');
           const complete=r&&r.done===imgs.length&&!r.failed&&!r.unmatched;
           note=complete?'，圖片已全部貼入':'（圖片未全部匯入：'+(bits.join('；')||(r&&r.done||0)+'／'+imgs.length+' 張成功')+'）';}

@@ -2952,7 +2952,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       let maxSel=0;selRows.forEach(i=>{const v=numNo(noOf(rows[i]));if(!isNaN(v)&&v>maxSel)maxSel=v;});
       const ordered=grpRows.slice().sort((a,b)=>{const na=numNo(noOf(rows[a])),nb=numNo(noOf(rows[b]));if(isNaN(na)&&isNaN(nb))return a-b;if(isNaN(na))return 1;if(isNaN(nb))return -1;return na-nb||a-b;});
       let next=maxSel;
-      ordered.forEach(i=>{next++;const old=noOf(rows[i]);if(String(old)!==String(next)){_renumLog.push(old+'→'+next);rows[i][3]=String(next);}});
+      ordered.forEach(i=>{next++;const old=noOf(rows[i]);if(String(old)!==String(next)){_renumLog.push({ri:i,old:String(old),newNo:String(next)});rows[i][3]=String(next);}});
     });
   })();
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
@@ -3014,7 +3014,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       const withSep=groupRows.find(x=>x.q.includes(SEP));
       if(withSep){const si=withSep.q.indexOf(SEP);pText=withSep.q.slice(0,si).trim();withSep.q=withSep.q.slice(si+SEP.length).trim();}
     }
-    if(!pText)return;
+    // 即使題組只有共用圖片、沒有文字，也建立空的 passage 資料列，讓圖片有正式存放目標。
     pText=pText.replace(/〔含圖〕|【含圖】/g,'').replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
     const dupPassage=(PASSAGES[it.groupId]&&PASSAGES[it.groupId].exam===it.exam)?PASSAGES[it.groupId]:null;
     // 同樣要保留既有題組文章已上傳的圖片，避免重複匯入時被清空
@@ -3067,8 +3067,8 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(_imgN)_issues.push(`${_imgN} 題含〔含圖〕→ 請逐題編輯並上傳圖片`);
   if(_flagN)_issues.push(`${_flagN} 題已標記「待確認」→ 點左側「只看待確認」集中處理`);
   if(_issues.length)_sumMsg+='\n\n⚠️ 需人工補充：\n• '+_issues.join('\n• ');
-  if(_renumLog.length)_sumMsg+='\n\n🔢 題組題號已自動接續選擇題（避免重複題號）：共調整 '+_renumLog.length+' 題\n• '+_renumLog.slice(0,15).join('、')+(_renumLog.length>15?' …等':'');
-  alert(_sumMsg);}
+  if(_renumLog.length)_sumMsg+='\n\n🔢 題組題號已自動接續選擇題（避免重複題號）：共調整 '+_renumLog.length+' 題\n• '+_renumLog.slice(0,15).map(x=>x.old+'→'+x.newNo).join('、')+(_renumLog.length>15?' …等':'');
+  alert(_sumMsg);return {ok:true,renumbered:_renumLog};}
 
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
