@@ -1243,8 +1243,34 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     // 打包程式只有 Windows 版；Mac 的「本機」連它自己的 OCR 服務（Safari 擋 http://localhost，所以走 Tailscale https）
     const OCR_HOSTS={get manager(){return localStorage.getItem('ocrManagerUrl')||''},company:'https://ljm2222.tail3d3c18.ts.net:8443',branch:'https://tzutzu-office.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
     function ocrHost(){const v=localStorage.getItem('ocrHost');return v==='local'||v==='branch'||(v==='manager'&&OCR_HOSTS.manager)?v:'company'}
-    function setOcrHost(v){if(v==='manager'&&!OCR_HOSTS.manager){const u=prompt('請輸入「劍潭」這台電腦的 OCR 網址（例如 https://電腦名稱.xxxx.ts.net:8443；向管理員索取，只需輸入一次）');const t=(u||'').trim().replace(/\/+$/,'');if(!/^https:\/\/[^\s]+$/.test(t)){alert('沒有輸入有效的 https 網址，維持原本的主機。');v=ocrHost()}else localStorage.setItem('ocrManagerUrl',t)}localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];{const sel=document.getElementById('ocrHostSel');if(sel)sel.value=v}const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent=''}
-    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到「'+({company:'玉承',branch:'天母',manager:'劍潭'}[ocrHost()]||'所選主機')+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
+    function ocrHostName(){const v=ocrHost();return v==='manager'?(localStorage.getItem('ocrRegName')||'所選主機'):({company:'玉承',branch:'天母',local:'本機'}[v]||'所選主機')}
+    function setOcrHost(v){
+      if(v==='manager')v='reg:'+(localStorage.getItem('ocrRegId')||'saved');
+      if(String(v).startsWith('reg:')){const id=String(v).slice(4);const h=REG_HOSTS.find(x=>String(x.id)===id)||(localStorage.getItem('ocrManagerUrl')?{id,name:localStorage.getItem('ocrRegName')||'所選主機',url:localStorage.getItem('ocrManagerUrl')}:null);
+        if(!h){v='company'}else{localStorage.setItem('ocrManagerUrl',h.url);localStorage.setItem('ocrRegId',String(h.id));localStorage.setItem('ocrRegName',h.name);localStorage.setItem('ocrHost','manager');const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=h.url;const sel=document.getElementById('ocrHostSel');if(sel)sel.value='reg:'+h.id;const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.add('hide');const hh=document.getElementById('ocrHealth');if(hh)hh.textContent='';return}}
+      localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];{const sel=document.getElementById('ocrHostSel');if(sel)sel.value=v}const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent=''}
+    // ── 主機自動登錄：每台裝了「主機背景服務」的電腦會自己把名稱與網址登錄到共用資料表，這裡讀出來放進下拉選單 ──
+    const REG_SB={url:'https://esfepufqyeplafzbeeag.supabase.co',key:'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf'};
+    let REG_HOSTS=[];
+    const REG_URL_OK=/^https:\/\/[a-z0-9-]+(\.[a-z0-9-]+)*\.ts\.net(:\d{2,5})?$/i;   // 只接受 Tailscale 私有網路網址，避免有人登錄奇怪的網址
+    function regParse(rows){const now=Date.now(),builtin=new Set([OCR_HOSTS.company,OCR_HOSTS.branch]),seen=new Set(),out=[];
+      for(const r of rows||[]){let o;try{o=JSON.parse(r.content)}catch(e){continue}
+        if(!o||o.kind!=='ocr-host'||typeof o.name!=='string'||typeof o.url!=='string')continue;
+        const url=o.url.replace(/\/+$/,'');if(!REG_URL_OK.test(url)||builtin.has(url)||seen.has(url))continue;
+        const last=+o.seen||0;if(now-last>30*864e5)continue;seen.add(url);
+        out.push({id:r.id,name:o.name.slice(0,20),url,stale:o.online===false||now-last>15*60*1000})}
+      return out.sort((a,b)=>(a.stale-b.stale)||a.name.localeCompare(b.name,'zh-Hant'))}
+    function renderHostOptions(){const sel=document.getElementById('ocrHostSel');if(!sel)return;
+      const cur=sel.value;[...sel.querySelectorAll('option[data-reg]')].forEach(o=>o.remove());
+      const list=REG_HOSTS.slice();const sid=localStorage.getItem('ocrRegId'),surl=localStorage.getItem('ocrManagerUrl');
+      if(surl&&!list.some(h=>h.url===surl)&&localStorage.getItem('ocrHost')==='manager')list.push({id:sid||'saved',name:localStorage.getItem('ocrRegName')||'所選主機',url:surl,stale:true});
+      for(const h of list){const o=document.createElement('option');o.value='reg:'+h.id;o.dataset.reg='1';o.textContent=h.name+(h.stale?'（離線）':'');sel.appendChild(o)}
+      if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
+      if(localStorage.getItem('ocrHost')==='manager'){const want='reg:'+(sid||'saved');if([...sel.options].some(o=>o.value===want))sel.value=want}}
+    async function loadRegistryHosts(){try{
+      const r=await fetch(REG_SB.url+'/rest/v1/syllabus_doc?select=id,content&id=gte.100000&limit=60',{headers:{apikey:REG_SB.key,Authorization:'Bearer '+REG_SB.key}});
+      if(!r.ok)return;REG_HOSTS=regParse(await r.json());renderHostOptions()}catch(e){}}
+    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
     let OCR_ACTIVE_RUN=null;
@@ -1568,9 +1594,9 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/6</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
-      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option><option value="manager">劍潭</option></select><a class="btn" id="hostPkgBtn" href="host-download.html" target="_blank" rel="noopener" title="把一台電腦設成 OCR 主機＋AI 橋接">下載主機安裝包</a><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.2/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
+      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option></select><a class="btn" id="hostPkgBtn" href="host-download.html" target="_blank" rel="noopener" title="把一台電腦設成 OCR 主機＋AI 橋接">下載主機安裝包</a><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.2/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
       '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');routeExamFiles(event.dataTransfer.files)"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG；有簡答卷可一起放</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 </a></div>';
-    setOcrHost(ocrHost());pipeRender()}
+    setOcrHost(ocrHost());pipeRender();loadRegistryHosts();setInterval(loadRegistryHosts,300000);{const sel=document.getElementById('ocrHostSel');if(sel)sel.addEventListener('focus',loadRegistryHosts)}}
   function pipeRender(){
     const board=document.getElementById('pipeBoard');if(!board)return;const now=Date.now();let done=0;
     PIPE.steps.forEach(s=>{const el=document.querySelector('#pipe .pz[data-id="'+s.id+'"]');if(!el)return;
