@@ -2168,7 +2168,15 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     const fw=s=>String(s||'').replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
     function akNorm(s){s=fw(s).trim().replace(/^[（(\[]|[)）\]]$/g,'').toUpperCase();return /^[A-E]{1,5}$/.test(s)?s:null}
     function akFromText(t){
-      t=fw(t);const map={};let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
+      t=fw(t);const map={};
+      const sequence=t.replace(/\s/g,'').replace(/／/g,'/').toUpperCase();
+      if(/^[A-E/]+$/.test(sequence)){
+        const groups=sequence.split('/');
+        if(groups.some((group,i)=>!group.length||group.length>5||(i<groups.length-1&&group.length!==5)))throw new Error('每 5 題請加一個 /，最後一組可少於 5 題，例如 CAABC/DDCAD。');
+        [...groups.join('')].forEach((answer,i)=>map[i+1]=answer);
+        return map;
+      }
+      let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
       while((m=re.exec(t)))map[+m[1]]=m[2].toUpperCase();
       if(Object.keys(map).length<3){ // 表格：一排題號、下一排答案
         const tk=t.split(/\s+/).filter(Boolean);let i=0;
@@ -2211,7 +2219,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       const extra=nos.map(Number).filter(n=>!seen.has(n));
       akSay(`簡答已套用：填入 ${filled} 題`+(changed.length?`（其中第 ${changed.join('、')} 題原本答案不同，已改成簡答卷的答案）`:'')+(extra.length?`；簡答卷第 ${extra.join('、')} 題在題目資料裡找不到`:'')+'。')}
     window.loadAnswerKeyFile=async function(f){if(!f)return;akSay('正在讀取簡答卷…');try{const r=await akParse(f);applyAnswerKey(r.map)}catch(e){akSay('讀取簡答失敗：'+(e.message||e))}};
-    window.pasteAnswerKey=function(){const t=prompt('貼上簡答，例如「1.C 2.D 3.A」或一排題號＋一排答案：');if(t)applyAnswerKey(akFromText(t))};
+    window.pasteAnswerKey=function(){const t=prompt('直接輸入全部答案，不用題號。每 5 題用 / 分隔，最後一組可少於 5 題。\n例如：CAABC/DDCAD');if(!t)return;try{const map=akFromText(t);if(!Object.keys(map).length)throw new Error('請輸入 A～E 答案，每 5 題用 / 分隔，例如 CAABC/DDCAD。');applyAnswerKey(map)}catch(e){akSay('簡答格式錯誤：'+e.message);alert(e.message)}};
 
     // ── 教用版：檔名寫明「教用版」時，每題前面括號裡印的答案就是正解（例如「（C）1.」）──
     const isTeacherName=n=>/教用版|教師版|教師用版/.test(n||'');

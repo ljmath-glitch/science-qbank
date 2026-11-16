@@ -16,3 +16,5 @@
 
 - 清稿新增 v10-pure 選項，以 https://tzutzu-course-system.vercel.app/eraser.html 的 V10 GPU／INT8 CPU 模型、RGB、橫式兩倍寬、512/48 切塊、邊界補值與打印版重建為準，另提供同原稿重跑按鈕。頁面裁切與校正仍沿用題庫流程，未實跑本次使用者考卷比較效果。
 - 新增 tools/dehand-pure.test.cjs，透過 cleanCanvas 正常入口驗證 RGB、邊界補值、直橫式寬度、純重建與不套混合版規則。
+
+- 貼上簡答支援 CAABC/DDCAD，每五題斜線分隔，由第 1 題順序套用，最後一組可 1～5 題；保留題號格式及多選題舊用法。分組格式錯誤時停止套用並提示。新增 tools/answer-sequence.test.cjs，涵蓋解析、實際貼上入口、取消與錯誤輸入。
