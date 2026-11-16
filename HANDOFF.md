@@ -13,3 +13,6 @@
 - 掃描頁有手寫內容且略過清稿，OCR 與分題仍需人工核對。
 - 發布新版需遞增 version.json 並重建 ZIP 與 manifest，一起推至 main。
 - 修正匯卷頁本機預設埠由舊版 18787 改為主機安裝包 8787；測試連線可在新舊本機埠間偵測並記住結果，更新舊版錯誤提示。新增 tools/raw-local-connection.test.cjs 回歸測試。
+
+- 清稿新增 v10-pure 選項，以 https://tzutzu-course-system.vercel.app/eraser.html 的 V10 GPU／INT8 CPU 模型、RGB、橫式兩倍寬、512/48 切塊、邊界補值與打印版重建為準，另提供同原稿重跑按鈕。頁面裁切與校正仍沿用題庫流程，未實跑本次使用者考卷比較效果。
+- 新增 tools/dehand-pure.test.cjs，透過 cleanCanvas 正常入口驗證 RGB、邊界補值、直橫式寬度、純重建與不套混合版規則。
