@@ -1,6 +1,6 @@
 {
-  "version": "2.0.0",
+  "version": "2.0.1",
   "modelVersion": "PP-OCRv5_PP-DocLayoutv3-20261116",
-  "sha256": "4449492077594019dc8ec935dc34c4b98f9805f028f35431fa4d7da0e1ea7a13",
+  "sha256": "9aac9a2b0a0248bed1e3f99e49ae93ddaaab148d579a023b74f9792a40679756",
   "notes": "自動切圖模型預先準備；新版程式與模型通知，一鍵更新。"
 }

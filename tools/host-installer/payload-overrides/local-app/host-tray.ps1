@@ -174,6 +174,7 @@ $miCopyOcr = $menu.Items.Add('複製 OCR 主機網址')
 $miCopyAi = $menu.Items.Add('複製 AI 橋接網址')
 [void]$menu.Items.Add('-')
 $miRestart = $menu.Items.Add('重新啟動服務')
+$miRename = $menu.Items.Add('更改主機顯示名稱')
 $miLog = $menu.Items.Add('開啟紀錄資料夾')
 [void]$menu.Items.Add('-')
 $miExit = $menu.Items.Add('結束（停止主機）')
@@ -183,6 +184,30 @@ $notify.Add_DoubleClick({ Show-StatusForm })
 $miCopyOcr.Add_Click({ $u = Get-Urls (Get-State); if ($u.Ocr) { [System.Windows.Forms.Clipboard]::SetText($u.Ocr); $notify.ShowBalloonTip(2000, '茲茲主機', '已複製 OCR 主機網址', 'Info') } else { $notify.ShowBalloonTip(3000, '茲茲主機', '還沒取得網址：請確認 Tailscale 已連線', 'Warning') } })
 $miCopyAi.Add_Click({ $u = Get-Urls (Get-State); if ($u.Ai) { [System.Windows.Forms.Clipboard]::SetText($u.Ai); $notify.ShowBalloonTip(2000, '茲茲主機', '已複製 AI 橋接網址', 'Info') } else { $notify.ShowBalloonTip(3000, '茲茲主機', '還沒取得網址：請確認 Tailscale 已連線', 'Warning') } })
 $miRestart.Add_Click({ Restart-Host })
+$miRename.Add_Click({
+  $dialog = New-Object System.Windows.Forms.Form
+  $dialog.Text = '更改主機顯示名稱'; $dialog.Size = New-Object System.Drawing.Size(420,190)
+  $dialog.StartPosition = 'CenterScreen'; $dialog.Font = New-Object System.Drawing.Font('Microsoft JhengHei',10)
+  $label = New-Object System.Windows.Forms.Label; $label.Text = '網站主機選單名稱，例如：天母、玉承、劍潭'; $label.SetBounds(15,15,380,25)
+  $input = New-Object System.Windows.Forms.TextBox; $input.SetBounds(15,48,370,28); $input.MaxLength = 20
+  $cfgPath = Join-Path $here 'host-config.json'; $cfg = @{}
+  try {
+    if (Test-Path -LiteralPath $cfgPath) { (Get-Content -LiteralPath $cfgPath -Raw -Encoding UTF8 | ConvertFrom-Json).PSObject.Properties | ForEach-Object { $cfg[$_.Name] = $_.Value } }
+  } catch { [System.Windows.Forms.MessageBox]::Show('無法讀取主機設定，請先修復設定檔。'); return }
+  $input.Text = if ($cfg.displayName) { [string]$cfg.displayName } else { $env:COMPUTERNAME }
+  $save = New-Object System.Windows.Forms.Button; $save.Text = '儲存'; $save.SetBounds(285,90,100,30); $save.DialogResult = 'OK'
+  $dialog.AcceptButton = $save; $dialog.Controls.AddRange(@($label,$input,$save))
+  if ($dialog.ShowDialog() -eq 'OK') {
+    $name = $input.Text.Trim()
+    if (-not $name -or $name -match '[\x00-\x1f"]') { [System.Windows.Forms.MessageBox]::Show('名稱不能留空或包含雙引號、換行。'); $dialog.Dispose(); return }
+    try {
+      $cfg['displayName'] = $name
+      [IO.File]::WriteAllText($cfgPath, ($cfg | ConvertTo-Json), (New-Object Text.UTF8Encoding($false)))
+      $notify.ShowBalloonTip(5000, '主機名稱已儲存', '網站主機選單會在下一次登錄時更新，約 5 分鐘。', 'Info')
+    } catch { [System.Windows.Forms.MessageBox]::Show('儲存失敗：' + $_.Exception.Message) }
+  }
+  $dialog.Dispose()
+})
 $miLog.Add_Click({ Start-Process explorer.exe $out })
 $miExit.Add_Click({
   $r = [System.Windows.Forms.MessageBox]::Show("結束後，老師就連不到這台主機（OCR 與 AI 分類都會停止）。`n確定要結束嗎？", '茲茲主機', 'YesNo', 'Warning', 'Button2')

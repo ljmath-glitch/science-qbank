@@ -1,5 +1,6 @@
 ﻿param(
-    [string]$Source = (Join-Path $PSScriptRoot '詳解應用')
+    [string]$Source = (Join-Path $PSScriptRoot '詳解應用'),
+    [string]$RequestedDisplayName = $env:ZIZI_HOST_DISPLAY_NAME
 )
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
@@ -69,6 +70,12 @@ try {
         $cfg = Get-Content -Raw -Encoding UTF8 (Join-Path $target 'local-app\host-config.json') | ConvertFrom-Json
         if ($cfg.displayName) { $displayName = $cfg.displayName }
     }
+    $previousName = $displayName
+    if ($RequestedDisplayName) {
+        $RequestedDisplayName = $RequestedDisplayName.Trim()
+        if (-not $RequestedDisplayName -or $RequestedDisplayName.Length -gt 20 -or $RequestedDisplayName -match '[\x00-\x1f"]') { throw '主機名稱須為 1～20 字，不能包含雙引號或換行。' }
+        $displayName = $RequestedDisplayName
+    }
     Write-Host "主機安裝位置：$target" -ForegroundColor Cyan
     $env:OCR_VENV = Join-Path $target '.venv'
     Run-Step (Join-Path $target 'local-app\prepare-ocr-env.ps1')
@@ -121,7 +128,7 @@ try {
         Write-Host '正在恢復原本的主機服務…' -ForegroundColor Yellow
         try {
             Remove-Item -LiteralPath (Join-Path $previous.path 'local-app\output\update-stop.flag') -ErrorAction SilentlyContinue
-            Run-Step (Join-Path $previous.path 'local-app\install-host-service.ps1') @('-DisplayName', $displayName)
+            Run-Step (Join-Path $previous.path 'local-app\install-host-service.ps1') @('-DisplayName', $previousName)
         } catch { Write-Host ('恢復原服務失敗，請從原安裝目錄重新啟動：' + $_.Exception.Message) -ForegroundColor Red }
     }
     exit 1
