@@ -12,3 +12,4 @@
 - 未在全新 Windows 機器驗證所有 winget 前置工具，也未強制演練更新通知點擊及失敗恢復。
 - 掃描頁有手寫內容且略過清稿，OCR 與分題仍需人工核對。
 - 發布新版需遞增 version.json 並重建 ZIP 與 manifest，一起推至 main。
+- 修正匯卷頁本機預設埠由舊版 18787 改為主機安裝包 8787；測試連線可在新舊本機埠間偵測並記住結果，更新舊版錯誤提示。新增 tools/raw-local-connection.test.cjs 回歸測試。

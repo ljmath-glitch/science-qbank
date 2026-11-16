@@ -1241,7 +1241,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字與題庫 Excel，不要求 Gemini ──
     const OCR_IS_MAC=/Mac|iPad|iPhone/.test(navigator.platform||navigator.userAgent);
     // 打包程式只有 Windows 版；Mac 的「本機」連它自己的 OCR 服務（Safari 擋 http://localhost，所以走 Tailscale https）
-    const OCR_HOSTS={get manager(){return localStorage.getItem('ocrManagerUrl')||''},company:'https://ljm2222.tail3d3c18.ts.net:8443',branch:'https://tzutzu-office.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
+    const OCR_HOSTS={get manager(){return localStorage.getItem('ocrManagerUrl')||''},company:'https://ljm2222.tail3d3c18.ts.net:8443',branch:'https://tzutzu-office.tail3d3c18.ts.net:8443',get local(){return OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:'+(localStorage.getItem('ocrLocalPort')==='18787'?'18787':'8787')}};
     function ocrHost(){const v=localStorage.getItem('ocrHost');return v==='local'||v==='branch'||(v==='manager'&&OCR_HOSTS.manager)?v:'company'}
     function ocrHostName(){const v=ocrHost();return v==='manager'?(localStorage.getItem('ocrRegName')||'所選主機'):({company:'玉承',branch:'天母',local:'本機'}[v]||'所選主機')}
     function setOcrHost(v){
@@ -1270,7 +1270,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     async function loadRegistryHosts(){try{
       const r=await fetch(REG_SB.url+'/rest/v1/syllabus_doc?select=id,content&id=gte.100000&limit=60',{headers:{apikey:REG_SB.key,Authorization:'Bearer '+REG_SB.key}});
       if(!r.ok)return;REG_HOSTS=regParse(await r.json());renderHostOptions()}catch(e){}}
-    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
+    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機主機：請確認已完成「茲茲主機安裝」，並查看右下角「茲」圖示的服務狀態。瀏覽器若詢問是否允許存取本機網路，請按允許；建議使用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
     let OCR_ACTIVE_RUN=null;
@@ -1360,10 +1360,21 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         '<span class="help">估算費用 ≈ US$'+usd.toFixed(4)+'（約 NT$'+(usd*USD_TWD).toFixed(2)+'）　單價：輸入 $'+GEMINI_PRICE.input+'／1M、輸出 $'+GEMINI_PRICE.output+'／1M（gemini-2.5-flash，僅供估算，實際請以 Google 官方報價為準）</span>';
     }
     async function testOcrService(){
-      const el=document.getElementById('ocrHealth');const base=ocrBase();
+      const el=document.getElementById('ocrHealth');let base=ocrBase();
       if(!base){el.textContent='找不到茲茲 OCR 主機設定。';return}
       el.textContent='測試中…';
-      try{const r=await fetch(base+'/api/health');if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');const j=await r.json();
+      try{
+        const readHealth=async url=>{const r=await fetch(url+'/api/health',{signal:AbortSignal.timeout(5000)});if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');return{r,j:await r.json()}};
+        let result;
+        try{result=await readHealth(base)}catch(err){
+          const local=ocrHost()==='local'&&!OCR_IS_MAC&&/^http:\/\/127\.0\.0\.1:(8787|18787)$/.test(base);
+          if(!local||(!(err instanceof TypeError)&&err.name!=='TimeoutError'))throw err;
+          const alternate=base.endsWith(':8787')?'18787':'8787';
+          const next='http://127.0.0.1:'+alternate;
+          result=await readHealth(next);
+          if(result.r.ok&&result.j.service==='tzutzu-ocr'){localStorage.setItem('ocrLocalPort',alternate);document.getElementById('ocrUrl').value=next;base=next}
+        }
+        const {r,j}=result;
         if(!r.ok||j.service!=='tzutzu-ocr')throw new Error('這不是茲茲 OCR 主機');
         el.textContent=`已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR 與題庫 Excel 均由此主機處理。`;
       }catch(e){el.textContent=''+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
