@@ -268,7 +268,7 @@
       rows.push(`<w:tr><w:trPr><w:cantSplit/><w:trHeight w:val="${TW(1.1)}" w:hRule="atLeast"/></w:trPr>${cells.join('')}</w:tr>`);
     }
     const b = (t, sz, c) => `<w:${t} w:val="single" w:sz="${sz}" w:space="0" w:color="${c}"/>`;
-    return `<w:tbl><w:tblPr><w:tblW w:w="${cw * 5}" w:type="dxa"/><w:tblBorders>${b('top', 12, hex(TH.ac))}<w:left w:val="nil"/>${b('bottom', 12, hex(TH.ac))}<w:right w:val="nil"/>${b('insideH', 4, 'BFBFBF')}${b('insideV', 4, 'BFBFBF')}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="60" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr><w:tblGrid>${'<w:gridCol w:w="' + cw + '"/>'.repeat(5)}</w:tblGrid>${rows.join('')}</w:tbl>` + (hasLong ? P(R('＊ 非選擇題，答案見下方詳解。', { font: F.head, s: 9, c: G1, b: false }), { sb: 3, sa: 6 }) : P('', { sa: 6 }));
+    return `<w:tbl><w:tblPr><w:tblW w:w="${cw * 5}" w:type="dxa"/><w:tblBorders>${b('top', 12, hex(TH.ac))}<w:left w:val="nil"/>${b('bottom', 12, hex(TH.ac))}<w:right w:val="nil"/>${b('insideH', 4, 'BFBFBF')}${b('insideV', 4, 'BFBFBF')}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="60" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="0000"/></w:tblPr><w:tblGrid>${('<w:gridCol w:w="' + cw + '"/>').repeat(5)}</w:tblGrid>${rows.join('')}</w:tbl>` + (hasLong ? P(R('＊ 非選擇題，答案見下方詳解。', { font: F.head, s: 9, c: G1, b: false }), { sb: 3, sa: 6 }) : P('', { sa: 6 }));
   }
 
   // ---------------- 其他整套風格的卷頭：色帶（科目彩色）、細線（簡潔省墨）、置中（會考仿真） ----------------
@@ -524,9 +524,8 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
    *      passage:{range:'4～5', text, imgs:[…]} }]}],
    *   solutions: [{no, answer, detail, options:[{label,text}]}]   // kind=solution
    * } */
-  async function buildDocx(spec) {
-    const JSZip = window.JSZip;
-    if (!JSZip) throw new Error('Word 打包套件（JSZip）尚未載入');
+  // 產生 Word 的全部內容（XML 字串＋圖片）。buildDocx 把它打包成 .docx；預覽（zz-docx-html.js）直接讀同一份，所以預覽＝Word。
+  function buildParts(spec) {
     ID = 2000; Z = 251660000;
     TH = pickStyle(spec.style, spec.field);
     const pg = spec.paper === 'B4' ? { w: 25.7, h: 36.4 } : { w: 21.0, h: 29.7 };
@@ -566,6 +565,12 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     else if (kind === 'mock') body = (gh || mockCover(W, m)) + mockInstructions(W, m) + P('', { sect: sect(pg, {}), sa: 0 }) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
     else body = (gh ? gh + answerKey(W, m.answers || []) : answerHead(W, m)) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
 
+    return { spec, kind, pg, W, colW, cols, body, headers, media, stylesXml: stylesXml(colW), numberingXml: NUMBERING(), NS, theme: TH };
+  }
+  async function buildDocx(spec) {
+    const JSZip = window.JSZip;
+    if (!JSZip) throw new Error('Word 打包套件（JSZip）尚未載入');
+    const { body, headers, media, colW, stylesXml: sx, numberingXml } = buildParts(spec);
     const zip = new JSZip();
     const hdrIds = Object.keys(headers);
     zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -578,12 +583,12 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
       const tag = h.startsWith('footer') ? 'ftr' : 'hdr';
       zip.file(`word/${h}.xml`, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:${tag} ${NS}>${headers[h]}</w:${tag}>`);
     }
-    zip.file('word/styles.xml', stylesXml(colW));
+    zip.file('word/styles.xml', sx);
     zip.file('word/settings.xml', settingsXml());
-    zip.file('word/numbering.xml', NUMBERING());
+    zip.file('word/numbering.xml', numberingXml);
     for (const x of media) zip.file('word/media/' + x.name, x.bytes);
     return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', compression: 'DEFLATE' });
   }
 
-  window.ZZExam = { buildDocx, optionLines, visLen, fixGlyph, STYLES };
+  window.ZZExam = { buildDocx, buildParts, optionLines, visLen, fixGlyph, STYLES };
 })();

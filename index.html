@@ -375,6 +375,10 @@
   .pv-bar{position:sticky;top:0;z-index:30;display:flex;gap:9px;align-items:center;padding:10px 18px;background:#fffefb;border-bottom:1px solid #e4d9ca;box-shadow:0 2px 10px rgba(43,32,28,.08);flex-wrap:wrap}.pv-bar .btn{height:30px!important;padding:0 12px!important;font-size:12px!important;background:linear-gradient(180deg,#fff,#faf4ea)!important;border-color:#e4d8c6!important;color:var(--ink)!important;box-shadow:0 1px 2px rgba(43,32,28,.07),inset 0 1px 0 #fff!important}.pv-bar .btn:hover{background:linear-gradient(180deg,#fffdfb,#fbece7)!important;border-color:#c58f89!important;color:var(--red)!important;box-shadow:0 5px 14px -5px rgba(133,1,3,.38),inset 0 1px 0 #fff!important}
   .pv-bar .spacer{flex:1}
   /* 預覽紙張以 B4 直式呈現，讓題目、圖片與雙欄排版保有接近實際列印的呼吸空間。 */
+  /* Word 版面預覽：不再套舊的「紙」樣式，由 zz-docx-html.js 畫出與 Word 輸出相同的頁面 */
+  .pv-wordhost{background:transparent!important;box-shadow:none!important;padding:0!important;width:auto!important;min-height:0!important;margin:16px auto!important;border:0!important}
+  .pv-word-msg{padding:60px 20px;text-align:center;color:#777;font-size:14px;background:#fff;border-radius:10px;max-width:640px;margin:20px auto;line-height:1.8}
+  html.pv-wordview .pv-fmt-bar .pv-editonly{opacity:.35;pointer-events:none}
   .pv-sheet{font-family:'HuaKangTNR',"Times New Roman",serif;width:972px;min-height:1375px;margin:24px auto 60px;padding:58px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.75;color:#1a2238;font-size:10pt;box-sizing:border-box;}
   @media(max-width:1080px){.pv-sheet{width:calc(100vw - 28px);min-height:0;padding:32px 28px}}
   /* 分頁預覽：pvSheet 變成頁面容器，每個 .pv-page 同時掛 .pv-sheet 以沿用字型/浮水印，並固定成一張 B4/A4 紙，內容超過頁高就換下一張（像 Word）。 */
@@ -1381,12 +1385,13 @@
     </span>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
-    <span class="pv-tool-group"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
-    <span class="pv-tool-group"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
-    <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
+<span class="pv-tool-group pv-keep"><button type="button" class="math-btn" id="pvWordToggle" onmousedown="event.preventDefault()" onclick="pvSetWordView(!PV_WORD_VIEW)" title="切換：版面預覽（與 Word 輸出完全一致）／編輯題目">✎ 編輯題目</button></span>
+        <span class="pv-tool-group pv-editonly"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
+    <span class="pv-tool-group pv-editonly"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
+    <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
     <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select><select id="pvZZStyle" aria-label="考卷風格" onchange="pvSetZZStyle(this.value)"><option value="formal">正式版・黑白灰</option><option value="redgold">紅金版</option><option value="subject">科目彩色</option><option value="simple">簡潔省墨</option><option value="exam">會考仿真</option></select></span>
-    <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
+    <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
   <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25\\,{}^\\circ\\mathrm{C}$、$95\\,{}^\\circ\\mathrm{F}$</code></div></div></div>
@@ -6008,7 +6013,7 @@ function paperSetLayout(twoCol){
   paperSettingsPreviewLater();
 }
 function paperSettingsPreviewLater(){clearTimeout(_paperSettingsPreviewTimer);_paperSettingsPreviewTimer=setTimeout(refreshPaperSettingsPreview,300);}
-function paperPreviewGo(page){_paperSettingsPage=Math.min(Math.max(0,page),_paperSettingsPageCount-1);refreshPaperSettingsPreview();}
+function paperPreviewGo(page){_paperSettingsPage=Math.min(Math.max(0,page),_paperSettingsPageCount-1);window.__zzKeepPreview=true;refreshPaperSettingsPreview();}
 function paperPreviewTurn(delta){paperPreviewGo(_paperSettingsPage+delta);}
 function paperPreviewChunks(items,kind){
   // 以「行數」估算每題高度，並依單欄／雙欄換算整頁容量，讓每頁盡量填滿（不再半頁就換頁）。
@@ -6033,9 +6038,10 @@ function paperPreviewChunks(items,kind){
 function scalePaperSettingsPreview(){
   const viewport=document.getElementById('paperSettingsViewport'),stage=document.getElementById('paperSettingsStage'),inner=document.getElementById('paperSettingsPreview');
   if(!viewport||!stage||!inner)return;
+  const zp=inner.querySelector('.zzpg');
   const isB4=!!inner.querySelector('.pdoc-sheet.b4,.pv-page.template-paper');
-  const width=isB4?972:794;
-  const height=isB4?1376:1123;
+  const width=zp?parseFloat(zp.style.width):(isB4?972:794);
+  const height=zp?parseFloat(zp.style.height):(isB4?1376:1123);
   inner.style.width=width+'px';
   const availableWidth=Math.max(240,viewport.clientWidth-40),availableHeight=Math.max(300,viewport.clientHeight-40);
   const scale=Math.min(1,availableWidth/width,availableHeight/height*.9);
@@ -6054,7 +6060,40 @@ function _solPreviewSheet(title,solItems){
   }).join('');
   return `<section class="pdoc-sheet a4 solsheet"><style>.pdoc-sheet.solsheet .pdoc-sol-title{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 12px}.pdoc-sol-item{margin-bottom:10px;break-inside:avoid}.pdoc-sol-line{display:flex;align-items:flex-start;gap:3px;font-size:12pt;line-height:1}.pdoc-sol-no{flex:0 0 26px;font-weight:bold}.pdoc-sol-lbl{flex:0 0 56px;font-weight:bold;white-space:nowrap}.pdoc-sol-opt{flex:0 0 26px;text-align:center}.pdoc-sol-txt{flex:1;min-width:0}</style><div class="pdoc-sol-title">${esc(title)}　詳解</div><p style="text-align:center">${esc(solutionSummary(solItems||[]))}</p>${body||'<div class="pdoc-meta">尚未選題</div>'}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
 }
+let _zzSetCache={pages:[],token:0};
+async function _zzSettingsPreview(keep){
+  const target=document.getElementById('paperSettingsPreview');if(!target)return;
+  const my=++_zzSetCache.token;
+  if(!keep||!_zzSetCache.pages.length){
+    if(!pickedItems().length){target.innerHTML='<div class="pdoc-meta">尚未選題</div>';_zzSetCache.pages=[];_paperSettingsPageCount=1;}
+    else{
+      target.innerHTML='<div class="pdoc-meta">正在依 Word 版面排版…</div>';
+      const docs=await _zzPreviewDocs();if(my!==_zzSetCache.token)return;
+      _zzSetCache.pages=_zzRenderDocs(docs);
+    }
+  }
+  const pages=_zzSetCache.pages;_paperSettingsPageCount=Math.max(1,pages.length);
+  _paperSettingsPage=Math.min(Math.max(0,_paperSettingsPage),_paperSettingsPageCount-1);
+  const cur=pages[_paperSettingsPage];
+  target.classList.remove('mock-thumbnails');target.innerHTML='';
+  if(cur)target.appendChild(cur.el.cloneNode(true));
+  const head=document.querySelector('.pdoc-preview-head');if(head)head.innerHTML=`文件預覽 <small>${cur?(parseFloat(cur.el.style.width)>900?'B4':'A4'):'A4'} 等比縮圖・${cur?cur.label:'題目卷'}・與 Word 輸出一致</small>`;
+  const slider=document.getElementById('pdocPageSlider'),prev=document.getElementById('pdocPrev'),next=document.getElementById('pdocNext'),label=document.getElementById('pdocPageLabel');
+  if(slider){slider.max=_paperSettingsPageCount;slider.value=_paperSettingsPage+1;}
+  if(prev)prev.disabled=_paperSettingsPage===0;
+  if(next)next.disabled=_paperSettingsPage===_paperSettingsPageCount-1;
+  if(label)label.textContent=`第 ${_paperSettingsPage+1} / ${_paperSettingsPageCount} 頁${cur&&_zzSetCache.pages.some(x=>x.label==='解析卷')&&_zzSetCache.pages.some(x=>x.label==='題目卷')?'・'+cur.label:''}`;
+  requestAnimationFrame(scalePaperSettingsPreview);
+}
 function refreshPaperSettingsPreview(){
+  if(typeof ZZDocHtml!=='undefined'&&typeof ZZExam!=='undefined'&&ZZExam.buildParts){
+    const keep=!!window.__zzKeepPreview;window.__zzKeepPreview=false;
+    _zzSettingsPreview(keep).catch(e=>{console.error(e);const t=document.getElementById('paperSettingsPreview');if(t)t.innerHTML='<div class="pdoc-meta">版面預覽失敗：'+esc(e.message||String(e))+'</div>';});
+    return;
+  }
+  return _refreshPaperSettingsPreviewOld();
+}
+function _refreshPaperSettingsPreviewOld(){
   const target=document.getElementById('paperSettingsPreview');if(!target)return;
   const sections=paperQuestionSections(pickedItems());
   const title=(pTitle.value||'自然科測驗卷').trim();
@@ -6515,6 +6554,7 @@ function _pvRunningHeader(){
 }
 // 把題目切成一張張 B4/A4 紙（用實際量測換頁，超過頁高就換下一張，像 Word）。
 function _pvRenderPaged(outputHost,editable=true){
+  if(!outputHost&&PV_WORD_VIEW&&typeof ZZDocHtml!=='undefined'&&typeof ZZExam!=='undefined'&&ZZExam.buildParts)return _pvRenderWord();
   if(typeof syncPaperMetadataControls==='function')syncPaperMetadataControls();
   const kind=paperPreviewKind();
   const parts=buildPaperInner(undefined,editable,true);
@@ -10634,7 +10674,7 @@ async function downloadZZExamWord(kind,opts){
   _zzDownloadBlob(blob,(spec.title||'考卷')+(opts.suffix||'')+'_'+stamp()+'.docx');
 }
 // 解析卷：茲茲詳解卷頭＋答案總表，內容維持「12 pt、單行、單一連續無框線四欄表格」規則。
-async function downloadZZSolutionWord(){
+function _zzSolutionSpec(){
   const val=id=>((document.getElementById(id)||{}).value||'').trim();
   const title=val('pTitle')||'自然科測驗卷';
   const questions=paperQuestionSections(pickedItems()).ordered.map((it,i)=>{
@@ -10643,9 +10683,56 @@ async function downloadZZSolutionWord(){
   });
   const subject=val('pSubject')||'自然科';
   const scope=val('pScope')||readPaperTemplateMetadata().chapterRange;
-  const spec={kind:'solution',paper:val('pPaperSize')==='B4'?'B4':'A4',style:val('pZZStyle')||'formal',field:_zzMainField(),title:title+'_詳解',solutions:questions,
-    meta:{title,scope,answers:questions.map(q=>q.answer)},running:{left:title+'　詳解',right:scope},footer:subject+'　詳解'};
+  return {title,spec:{kind:'solution',paper:val('pPaperSize')==='B4'?'B4':'A4',style:val('pZZStyle')||'formal',field:_zzMainField(),title:title+'_詳解',solutions:questions,
+    meta:{title,scope,answers:questions.map(q=>q.answer)},running:{left:title+'　詳解',right:scope},footer:subject+'　詳解'}};
+}
+// 解析卷：茲茲詳解卷頭＋答案總表，內容維持「12 pt、單行、單一連續無框線四欄表格」規則。
+async function downloadZZSolutionWord(){
+  const {title,spec}=_zzSolutionSpec();
   _zzDownloadBlob(await ZZExam.buildDocx(spec),title+'_詳解_'+stamp()+'.docx');
+}
+// ── Word 版面預覽：直接讀「產生 Word 時用的那份 XML」畫成一張張紙（zz-docx-html.js），預覽＝Word 輸出 ──
+// 預覽對應的文件：題目卷（課前考／ABK／黃金模擬考／模考題本）與解析卷，依「輸出文件」選項決定。
+async function _zzPreviewDocs(){
+  const mode=paperAnsMode(),kind=paperPreviewKind(),dk=kind==='formal'?'pre':kind;
+  const docs=[];
+  if(mode!=='full')docs.push({label:'題目卷',parts:ZZExam.buildParts(await _zzExamSpec(dk,{teacher:true}))});
+  if(mode==='full'||mode==='both_full')docs.push({label:'解析卷',parts:ZZExam.buildParts(_zzSolutionSpec().spec)});
+  return docs;
+}
+function _zzRenderDocs(docs){
+  // 必須在「已掛進頁面」的容器裡排版，瀏覽器才量得到寬度（Tab 定位、分頁都靠實際量測）：先畫在畫面外的隱形容器，排完再把整頁取出。
+  const off=document.createElement('div');off.style.cssText='position:absolute;left:-99999px;top:0;visibility:hidden;width:1200px;';document.body.appendChild(off);
+  const out=[];
+  try{
+    docs.forEach(d=>{const sub=document.createElement('div');off.appendChild(sub);const r=ZZDocHtml.render(d.parts,sub,{});(r.pageEls||[]).forEach((el,i)=>out.push({el,label:d.label,idx:i+1,of:r.pages}));});
+    out.forEach(o=>o.el.parentNode&&o.el.parentNode.removeChild(o.el));
+  }finally{document.body.removeChild(off);}
+  return out;
+}
+let _pvWordToken=0;
+async function _pvRenderWord(){
+  const host=document.getElementById('pvSheet');if(!host)return;
+  const my=++_pvWordToken;host.className='pv-wordhost';host.style.zoom='';
+  if(!PICKS.size){host.innerHTML='<div class="pv-word-msg">尚未選題</div>';return;}
+  host.innerHTML='<div class="pv-word-msg">正在依 Word 版面排版…</div>';
+  try{
+    const docs=await _zzPreviewDocs();if(my!==_pvWordToken)return;
+    const pages=_zzRenderDocs(docs);
+    host.innerHTML='';pages.forEach(o=>host.appendChild(o.el));
+    const pg=pages[0]&&pages[0].el,w=pg?parseFloat(pg.style.width):794,avail=(host.parentElement?host.parentElement.clientWidth:w)-24;
+    if(avail>0&&avail<w)host.style.zoom=(avail/w).toFixed(4);
+  }catch(e){console.error(e);if(my===_pvWordToken)host.innerHTML='<div class="pv-word-msg">版面預覽失敗：'+esc(e.message||String(e))+'<br><small>可改按「編輯題目」使用舊的編輯預覽。</small></div>';}
+}
+// 版面預覽（同 Word）／編輯題目 兩種模式；預設版面預覽，記在這個瀏覽器。
+let PV_WORD_VIEW=(function(){try{return localStorage.getItem('pvWordView')!=='0';}catch(e){return true;}})();
+setTimeout(function(){document.documentElement.classList.toggle('pv-wordview',PV_WORD_VIEW);const b=document.getElementById('pvWordToggle');if(b)b.textContent=PV_WORD_VIEW?'✎ 編輯題目':'👁 版面預覽（同 Word）';const l=document.getElementById('pvEditLabel');if(l&&PV_WORD_VIEW)l.textContent='版面預覽：與 Word 輸出完全一致，要修改題目請按「編輯題目」';},0);
+function pvSetWordView(on){
+  PV_WORD_VIEW=!!on;try{localStorage.setItem('pvWordView',on?'1':'0');}catch(e){}
+  document.documentElement.classList.toggle('pv-wordview',PV_WORD_VIEW);
+  const b=document.getElementById('pvWordToggle');if(b)b.textContent=PV_WORD_VIEW?'✎ 編輯題目':'👁 版面預覽（同 Word）';
+  const l=document.getElementById('pvEditLabel');if(l)l.textContent=PV_WORD_VIEW?'版面預覽：與 Word 輸出完全一致，要修改題目請按「編輯題目」':'點擊題目、答案或詳解即可編輯';
+  _pvRenderPaged();
 }
 async function downloadWordFromDlg(){
   if(!PICKS.size){alert('尚未選題');return;}
@@ -10800,6 +10887,7 @@ async function downloadWordDoc(){
   <script src="paper-metadata.js"></script>
   <script src="paper-output.js"></script>
   <script src="zz-exam-docx.js"></script>
+  <script src="zz-docx-html.js"></script>
   <script src="mt-embed-client.js"></script>
   <script src="announce.js"></script>
   <script src="patchnotes.js" defer></script>
