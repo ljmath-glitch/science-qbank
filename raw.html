@@ -149,14 +149,18 @@
     .iv{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
     .iv.full{position:fixed;inset:0;z-index:9000;border-radius:0;display:flex;flex-direction:column}
     /* 電腦版：人工檢驗的左右比對區不受 main 980px 限制，放寬到螢幕 96%（最大 1680px），並拉高（2026-11-17） */
-    @media(min-width:1100px){.iv:not(.full){width:min(96vw,1680px);max-width:none;margin-left:calc((100% - min(96vw,1680px))/2)}.iv:not(.full) .iv-body{height:min(84vh,1100px)}}
+    @media(min-width:1100px){
+      /* 寬版人工檢驗：整張「檢查與修正」卡片一起放寬到螢幕 96%（最大 1680px）並置中，工作區留在卡片裡面，邊框與圓角才會一致（取代只把工作區撐出卡片的做法） */
+      .auto-review:has(#ivPane.on){width:min(96vw,1680px);max-width:none;margin-left:calc((100% - min(96vw,1680px))/2)}
+      .iv:not(.full) .iv-body{height:min(84vh,1100px)}
+    }
     .iv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#fffefb;border-bottom:1px solid var(--line)}
     .iv-top #ivSum{flex:1 1 180px;min-width:0}
     .rv-seg{display:inline-flex;border:1px solid #e4d8c6;border-radius:10px;overflow:hidden}.rv-seg button{border:0;background:#fff;padding:6px 12px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}.rv-seg button.on{background:var(--red);color:#fff}
     .iv-body{display:grid;grid-template-columns:minmax(0,var(--ivL,50%)) 12px minmax(0,1fr);height:min(78vh,980px)}
     /* 左右分隔線：拖拉調整寬度，雙擊還原 50/50 */
     .iv-split{position:relative;cursor:col-resize;touch-action:none;background:#efece6;border-left:1px solid var(--line);border-right:1px solid var(--line);user-select:none}
-    .iv-split::after{content:'';position:absolute;left:50%;top:50%;width:4px;height:44px;margin:-22px 0 0 -2px;border-radius:3px;background:#b9ae9c}
+    .iv-split::after{content:'';position:absolute;left:50%;top:50%;width:5px;height:56px;margin:-28px 0 0 -2.5px;border-radius:3px;background:#a99d8a}
     .iv-split:hover,.iv-split.dragging{background:#e6ddd0}.iv-split:hover::after,.iv-split.dragging::after{background:var(--red,#850103)}
     .iv.dragging-split,.iv.dragging-split *{cursor:col-resize!important;user-select:none!important}
     .iv.full .iv-body{flex:1;height:auto;min-height:0}
