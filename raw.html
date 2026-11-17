@@ -151,7 +151,12 @@
     .iv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#fffefb;border-bottom:1px solid var(--line)}
     .iv-top #ivSum{flex:1 1 180px;min-width:0}
     .rv-seg{display:inline-flex;border:1px solid #e4d8c6;border-radius:10px;overflow:hidden}.rv-seg button{border:0;background:#fff;padding:6px 12px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}.rv-seg button.on{background:var(--red);color:#fff}
-    .iv-body{display:grid;grid-template-columns:minmax(0,50fr) minmax(0,50fr);height:min(78vh,980px)}
+    .iv-body{display:grid;grid-template-columns:minmax(0,var(--ivL,50%)) 12px minmax(0,1fr);height:min(78vh,980px)}
+    /* 左右分隔線：拖拉調整寬度，雙擊還原 50/50 */
+    .iv-split{position:relative;cursor:col-resize;touch-action:none;background:#efece6;border-left:1px solid var(--line);border-right:1px solid var(--line);user-select:none}
+    .iv-split::after{content:'';position:absolute;left:50%;top:50%;width:4px;height:44px;margin:-22px 0 0 -2px;border-radius:3px;background:#b9ae9c}
+    .iv-split:hover,.iv-split.dragging{background:#e6ddd0}.iv-split:hover::after,.iv-split.dragging::after{background:var(--red,#850103)}
+    .iv.dragging-split,.iv.dragging-split *{cursor:col-resize!important;user-select:none!important}
     .iv.full .iv-body{flex:1;height:auto;min-height:0}
     .iv-left{overflow:auto;background:#efece6;border-right:1px solid var(--line);padding:10px;--rvz:1}
     .iv-left .rv-ltools{position:sticky;top:-10px;z-index:8;display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:-10px -10px 10px;padding:8px 10px;background:#efece6;border-bottom:1px solid var(--line)}
@@ -192,6 +197,7 @@
     .rv-handle,.rv-scrim,.rv-closeleft,.iv-openleft{display:none}
     @media(max-width:899px){
       .iv-body{grid-template-columns:1fr;height:auto}
+      .iv-split{display:none}
       .iv.full .iv-body{overflow:auto}
       .iv-right{max-height:none;padding-left:30px}
       .iv-left{position:fixed;top:0;bottom:0;left:0;width:min(90vw,560px);z-index:9002;transform:translateX(-100%);transition:transform .25s ease;box-shadow:6px 0 24px rgba(0,0,0,.18)}
@@ -2126,12 +2132,26 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       document.addEventListener('keyup',e=>{if(e.code!=='Space'||!spaceOn)return;spaceOn=false;const l=L();l&&l.classList.remove('tool-space');if(l&&RV.tool!=='hand')l.classList.remove('tool-hand')})})();
     window._rvLeft=open=>{const v=document.getElementById('ivWrap');if(v)v.classList.toggle('left-open',open)};
     window._ivFull=()=>{const v=document.getElementById('ivWrap');const on=!v.classList.contains('full');v.classList.toggle('full',on);document.body.style.overflow=on?'hidden':'';document.getElementById('ivFullBtn').textContent=on?'結束全螢幕':'全螢幕'};
+    // 左右分隔線：拖拉調整清稿與題目的寬度（20%～80%），記在這個瀏覽器；雙擊還原
+    (function(){const KEY='rvSplitPct';let drag=null;
+      const body=()=>document.querySelector('#ivWrap .iv-body');
+      const apply=pct=>{const b=body();if(b)b.style.setProperty('--ivL',pct+'%')};
+      const notify=()=>{try{window.dispatchEvent(new Event('resize'))}catch(e){}};   // 讓浮在右邊的編輯視窗、切圖框重新對位
+      window._rvSplitRestore=()=>{try{const v=parseFloat(localStorage.getItem(KEY));if(v>=20&&v<=80)apply(v)}catch(e){}};
+      document.addEventListener('pointerdown',e=>{const sp=e.target.closest&&e.target.closest('#ivSplit');if(!sp)return;drag={sp};sp.classList.add('dragging');const w=document.getElementById('ivWrap');w&&w.classList.add('dragging-split');try{sp.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault()});
+      document.addEventListener('pointermove',e=>{if(!drag)return;const b=body();if(!b)return;const r=b.getBoundingClientRect(),pct=Math.max(20,Math.min(80,(e.clientX-r.left-6)/r.width*100));apply(pct.toFixed(2));drag.pct=pct});
+      const end=()=>{if(!drag)return;const sp=drag.sp,pct=drag.pct;drag=null;sp.classList.remove('dragging');const w=document.getElementById('ivWrap');w&&w.classList.remove('dragging-split');if(pct!=null){try{localStorage.setItem(KEY,String(pct.toFixed(2)))}catch(e){}}notify()};
+      document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
+      document.addEventListener('dblclick',e=>{if(!(e.target.closest&&e.target.closest('#ivSplit')))return;apply(50);try{localStorage.removeItem(KEY)}catch(_){}notify()});
+    })();
     function ensurePane(){const pane=document.getElementById('ivPane');if(!pane||pane.dataset.ready)return pane;pane.dataset.ready='1';
       pane.innerHTML=`<div class="iv" id="ivWrap"><div class="iv-top"><div class="rv-seg" id="ivSrc"><button type="button" data-src="crop" onclick="_rvSrc('crop')">清稿＋切圖</button><button type="button" data-src="orig" onclick="_rvSrc('orig')">原卷</button></div><button type="button" class="btn iv-openleft" onclick="_rvLeft(true)">看清稿</button><button type="button" class="btn" onclick="akFile.click()">匯入簡答</button><button type="button" class="btn" onclick="pasteAnswerKey()">貼上簡答</button><span class="help" id="ivSum"></span><button type="button" class="btn" id="ivFullBtn" onclick="_ivFull()">全螢幕</button></div>
         <div class="iv-body"><div class="iv-left" id="ivLeft"><div class="rv-ltools"><div class="rv-seg" id="ivTool"><button type="button" data-tool="crop" class="on" onclick="_rvTool('crop')">框選切圖</button><button type="button" data-tool="hand" onclick="_rvTool('hand')">手掌移動</button></div><button type="button" class="btn" onclick="_rvZoom(-1)">縮小</button><button type="button" class="btn" onclick="_rvZoom(1)">放大</button><button type="button" class="btn" onclick="_rvZoom(0)">還原</button><button type="button" class="btn" onclick="_rvAutoCrop()">重新自動切圖</button><button type="button" class="btn rv-closeleft" onclick="_rvLeft(false)">收起</button><span class="help" id="ivToolHint">框選切圖：在清稿上拖曳畫框，放開後輸入題號；框上可改題號、單題／題組、略過、刪除。放大後按「手掌移動」拖曳頁面（按住空白鍵也可暫時移動）。</span></div><div id="ivCropSlot"></div><div id="ivOrig" hidden></div></div>
+        <div class="iv-split" id="ivSplit" title="拖拉調整左右寬度（雙擊還原）" role="separator" aria-orientation="vertical"></div>
         <div class="iv-right" id="rvRight"></div></div>
         <div class="iv-foot"><div class="btn-even"><button type="button" class="btn primary" id="ivImportBtn" onclick="oneClickImport()">檢查完成，一鍵匯入題庫</button></div><div class="status" id="ivState"></div></div>
         <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
+      try{_rvSplitRestore()}catch(e){}
       try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
       return pane}
     async function enter(){ensurePane();RV.data=build();RV.groupRows=rvGroupsFromData(RV.data);RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
