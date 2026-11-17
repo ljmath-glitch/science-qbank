@@ -230,12 +230,6 @@ function composeDisplayName(school,grade,year,round,subject){
 // 考卷名稱本身如果有寫科目（例如同校同次段考但地科、理化其實是兩張分開的考卷，各自命名時
 // 才會加科目後綴），才把科目算進分組依據；沒寫科目的維持原本行為（同一次段考不分科目合併一列，
 // 內部用「領域」欄位分科目即可）。這樣新增這個判斷不會影響原本就沒有科目後綴的考卷分組。
-// 九年級的理化、地科是同一份考卷（同一次段考），進度表合併成同一列，不依科目分開；
-// 其他年級維持原本行為（考卷名稱有寫科目才分開）。
-function groupSubject(grade, exam){
-  const sub = parseSubject(exam);
-  return (grade==='九年級' && (sub==='理化'||sub==='地科')) ? '' : sub;
-}
 function parseSubject(exam){
   return (String(exam||'').match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
 }
@@ -327,7 +321,7 @@ async function loadAll(){
     const grade  = gradeFromExam(q.exam||'', q.book||'');
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
-    const subject = groupSubject(grade, q.exam||'');
+    const subject = parseSubject(q.exam||'');
     const key    = makeId(school, grade, year, round, subject);
     if(!grouped[key]) grouped[key] = {school, grade, year, round, subject, displayName: composeDisplayName(school,grade,year,round,subject), count: 0, examRawSet: new Set()};
     grouped[key].count++;
