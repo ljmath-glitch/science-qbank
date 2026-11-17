@@ -223,9 +223,19 @@ function renderGradeTabs(){
   const shown=grades.filter(g=>g==='全部'||g===activeGrade||counts[g]>0);
   document.getElementById('gradeTabs').innerHTML='<span class="tab-label">年級</span>'+shown.map(g=>`<button type="button" class="exam-tab ${activeGrade===g?'active':''}" aria-pressed="${activeGrade===g}" onclick="setGrade('${g}')">${g}<span class="tab-count">${counts[g]}</span></button>`).join('');
 }
-function composeDisplayName(school,grade,year,round,subject){
+function composeDisplayName(school,grade,year,round,subject,semester){
   if(round==='會考') return (year||'')+'會考';
-  return [school,grade,year,round,subject].filter(Boolean).join('-')||'（未命名）';
+  // 年度欄位有的是「112上」、有的只有「114」：名稱一律拆成「年度（純數字）－學期－段考次」，學期從考試名稱判斷
+  const y=String(year||'').replace(/[上下]$/,'');
+  return [school,grade,y,semester,round,subject].filter(Boolean).join('-')||'（未命名）';
+}
+// 學期：考試名稱寫「上學期／下學期」或縮寫「113上」，否則看年度欄位結尾；都沒有就空白（例如跨冊的模擬考）
+function parseSemester(exam,year){
+  const e=String(exam||'');
+  if(/上學期/.test(e)) return '上學期';
+  if(/下學期/.test(e)) return '下學期';
+  const m=e.match(/\d{3}([上下])-/)||String(year||'').match(/([上下])$/);
+  return m?(m[1]==='上'?'上學期':'下學期'):'';
 }
 // 考卷名稱本身如果有寫科目（例如同校同次段考但地科、理化其實是兩張分開的考卷，各自命名時
 // 才會加科目後綴），才把科目算進分組依據；沒寫科目的維持原本行為（同一次段考不分科目合併一列，
@@ -323,7 +333,7 @@ async function loadAll(){
     const round  = examRound(q.exam||'');
     const subject = parseSubject(q.exam||'');
     const key    = makeId(school, grade, year, round, subject);
-    if(!grouped[key]) grouped[key] = {school, grade, year, round, subject, displayName: composeDisplayName(school,grade,year,round,subject), count: 0, examRawSet: new Set()};
+    if(!grouped[key]){ const semester = parseSemester(q.exam, year); grouped[key] = {school, grade, year, round, subject, semester, displayName: composeDisplayName(school,grade,year,round,subject,semester), count: 0, examRawSet: new Set()}; }
     grouped[key].count++;
     if(q.exam) grouped[key].examRawSet.add(q.exam.trim());
   });
