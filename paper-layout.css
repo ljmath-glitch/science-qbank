@@ -1,5 +1,15 @@
 /* Physical dimensions from the approved ABK DOCX; 1 twip = 1/15 CSS px. */
 .pv-sheet.pv-page.template-paper{font:10pt/1 'HuaKangTNR','DFPYuanMedium-B5','Times New Roman',serif;color:#171717;background:#fff;box-sizing:border-box}
+/* 預覽和 Word 共用同一個風格識別；未選卷別固定是正式版黑白灰。 */
+.pv-sheet.zz-style-formal{--zz-preview-ac:#171717;--zz-preview-line:#8c8c8c;--zz-preview-tint:#f2f2f2}
+.pv-sheet.zz-style-redgold{--zz-preview-ac:#850103;--zz-preview-line:#b69358;--zz-preview-tint:#f6f1e7}
+.pv-sheet.zz-style-subject{--zz-preview-ac:#176e71;--zz-preview-line:#4d9a9c;--zz-preview-tint:#edf8f7}
+.pv-sheet.zz-style-simple{--zz-preview-ac:#171717;--zz-preview-line:#777;--zz-preview-tint:#fff}
+.pv-sheet.zz-style-exam{--zz-preview-ac:#1d3557;--zz-preview-line:#6d8196;--zz-preview-tint:#f1f4f8}
+.pv-sheet.zz-style-redgold .paper-major,.pv-sheet.zz-style-subject .paper-major,.pv-sheet.zz-style-exam .paper-major{color:var(--zz-preview-ac);border-color:var(--zz-preview-line)}
+.pv-sheet.zz-style-redgold .exam-hdr,.pv-sheet.zz-style-subject .exam-hdr,.pv-sheet.zz-style-exam .exam-hdr{border-color:var(--zz-preview-line)}
+.pv-sheet.zz-style-redgold .exam-hdr-body,.pv-sheet.zz-style-subject .exam-hdr-body,.pv-sheet.zz-style-exam .exam-hdr-body{background:var(--zz-preview-tint)}
+.pv-sheet.zz-style-simple .exam-hdr{border-radius:0}.pv-sheet.zz-style-simple .exam-hdr-body{background:#fff}
 .pv-sheet.template-paper.abk-preview::before{content:'';position:absolute;z-index:0;left:-54.8px;top:16.1px;width:350.9px;height:465.5px;background:url('templates/abk_watermark.png') -102.6px -26.2px/556.2px 667.5px no-repeat;filter:brightness(0);opacity:.1;pointer-events:none}
 .pv-sheet.template-paper:not(.abk-preview)::before{content:none;background:none}
 .pv-sheet.template-paper>*{position:relative;z-index:1}
