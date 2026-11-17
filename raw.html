@@ -107,7 +107,7 @@
     .pg-primary:hover{background:#a01822}
     .pg-no{font-size:14px;font-weight:800;color:var(--ink);min-width:48px;text-align:center}
     .pg-wrap{flex:1;min-height:0;overflow:auto;padding:16px;position:relative}
-    .pg-wrap.panning,.pg-wrap.panning canvas{cursor:grabbing!important}
+    .pg-wrap.panning,.pg-wrap.panning canvas{cursor:grabbing!important}.pg-wrap.pan-tool canvas{cursor:grab}
     .pg-box{position:relative;touch-action:none;width:fit-content;margin:0 auto}
     .pg-box canvas{display:block;background:#fff;box-shadow:0 6px 24px rgba(40,25,10,.18);cursor:none;max-width:none}
     .pg-box canvas.pg-mark{position:absolute;left:0;top:0;background:transparent;box-shadow:none;pointer-events:none}
@@ -1767,7 +1767,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       <span id="pgNo" class="pg-no"></span>
       <button id="pgNext" class="pg-ib" title="下一頁">下一頁</button>
       <b id="pgTitle" class="pg-grow"></b>
-      <span class="pg-tip pg-hint">滾輪：以游標為中心縮放　右鍵或空白鍵拖曳：移動　手機：兩指縮放、移動</span>
+      <span class="pg-tip pg-hint">滾輪：以游標為中心縮放　「手掌移動」工具、右鍵或空白鍵拖曳：移動　手機：兩指縮放、移動</span>
       <button id="pgDone" class="pg-primary">完成</button>
     </div>
     <div class="pg-wrap" id="pgWrap"><div class="pg-box" id="pgBox"><canvas id="pgCanvas"></canvas><div class="pg-brush" id="pgBrush" hidden></div><div id="pgSel" class="pg-sel" hidden></div><textarea id="pgEdit" class="pg-edit" spellcheck="false" hidden></textarea></div></div>
@@ -1779,6 +1779,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         <button data-tool="line" title="直線（Shift 水平／垂直）">直線</button>
         <button data-tool="rect" title="方框（Shift 正方形）">方框</button>
         <button data-tool="ellipse" title="圓形（Shift 正圓）">圓形</button>
+        <button data-tool="pan" title="手掌移動（H）：按住拖曳就能移動頁面，不會畫到圖">手掌移動</button>
       </div>
       <div class="pg-row" id="pgCtlPaint">
         <div class="pg-tabs"><button id="pgShapeBrush" class="on" title="用筆刷塗">塗抹</button><button id="pgShapeRect" title="拖方框整塊處理（B 切換）">框選</button></div>
@@ -1892,7 +1893,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
 
     // ---- 工具切換 ----
     const TOOL_BTNS=()=>EG('pgToolTabs').querySelectorAll('button');
-    function pgSetTool(t){pgTool=t;TOOL_BTNS().forEach(b=>b.classList.toggle('on',b.dataset.tool===t));const mk=PG_MARK_TOOLS.has(t);if(!mk){pgCommitEdit();pgSelMark=null;pgRedrawMarks()}EG('pgCtlPaint').hidden=mk;EG('pgBrush').hidden=true;if(EDC)EDC.style.cursor=t==='text'?'text':(mk||pgShape==='rect'?'crosshair':'none');syncMarkCtl()}
+    function pgSetTool(t){pgTool=t;TOOL_BTNS().forEach(b=>b.classList.toggle('on',b.dataset.tool===t));const mk=PG_MARK_TOOLS.has(t);if(!mk){pgCommitEdit();pgSelMark=null;pgRedrawMarks()}EG('pgCtlPaint').hidden=mk||t==='pan';EG('pgBrush').hidden=true;EG('pgWrap').classList.toggle('pan-tool',t==='pan');if(EDC)EDC.style.cursor=t==='pan'?'grab':t==='text'?'text':(mk||pgShape==='rect'?'crosshair':'none');syncMarkCtl()}
     function pgSetShape(t){pgShape=t;EG('pgShapeBrush').classList.toggle('on',t==='brush');EG('pgShapeRect').classList.toggle('on',t==='rect');EG('pgBrushWrap').style.visibility=t==='rect'?'hidden':'';if(EDC&&!PG_MARK_TOOLS.has(pgTool))EDC.style.cursor=t==='rect'?'crosshair':'none';EG('pgBrush').hidden=true}
 
     // ---- 復原 / 重做 ----
@@ -1964,10 +1965,10 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       EG('pgWrap').addEventListener('wheel',e=>{if(EG('pgEd').hidden)return;e.preventDefault();zoomAt(+EG('pgZoom').value*(e.deltaY<0?1.15:1/1.15),e.clientX,e.clientY)},{passive:false});
       EG('pgWrap').addEventListener('contextmenu',e=>e.preventDefault());
       // 平移（右鍵／空白鍵拖曳）
-      EG('pgWrap').addEventListener('pointerdown',e=>{if(EG('pgEd').hidden||!(e.button===2||(e.button===0&&spaceDown)))return;e.preventDefault();e.stopPropagation();const wrap=EG('pgWrap'),sx=e.clientX,sy=e.clientY,sl=wrap.scrollLeft,st=wrap.scrollTop;wrap.classList.add('panning');wrap.setPointerCapture(e.pointerId);EG('pgBrush').hidden=true;const move=ev=>{wrap.scrollLeft=sl-(ev.clientX-sx)/ZM();wrap.scrollTop=st-(ev.clientY-sy)/ZM()};const up=()=>{wrap.classList.remove('panning');wrap.removeEventListener('pointermove',move);wrap.removeEventListener('pointerup',up)};wrap.addEventListener('pointermove',move);wrap.addEventListener('pointerup',up)},true);
+      EG('pgWrap').addEventListener('pointerdown',e=>{if(EG('pgEd').hidden||!(e.button===2||(e.button===0&&(spaceDown||pgTool==='pan'))))return;const touch=e.pointerType==='touch';e.preventDefault();if(!touch)e.stopPropagation();const wrap=EG('pgWrap'),sx=e.clientX,sy=e.clientY,sl=wrap.scrollLeft,st=wrap.scrollTop;wrap.classList.add('panning');if(!touch)wrap.setPointerCapture(e.pointerId);EG('pgBrush').hidden=true;const move=ev=>{if(ev.pointerId!==e.pointerId)return;if(touch&&(pgGesture||pgTouches.size>1))return;wrap.scrollLeft=sl-(ev.clientX-sx)/ZM();wrap.scrollTop=st-(ev.clientY-sy)/ZM()};const up=ev=>{if(ev&&ev.pointerId!==e.pointerId)return;wrap.classList.remove('panning');wrap.removeEventListener('pointermove',move);wrap.removeEventListener('pointerup',up);wrap.removeEventListener('pointercancel',up)};wrap.addEventListener('pointermove',move);wrap.addEventListener('pointerup',up);wrap.addEventListener('pointercancel',up)},true);
       window.addEventListener('resize',()=>{if(!EG('pgEd').hidden)pgFitZoom()});
       // 鍵盤
-      document.addEventListener('keydown',e=>{if(EG('pgEd').hidden)return;if(e.key==='Escape'){if(pgEditing){e.preventDefault();pgCommitEdit();return}if(pgSelMark){pgSelMark=null;pgRedrawMarks();return}pgDone();return}if(/TEXTAREA|INPUT|SELECT/.test(e.target.tagName))return;if((e.key==='Delete'||e.key==='Backspace')&&pgSelMark){e.preventDefault();deleteMark();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();EG(e.shiftKey?'pgRedo':'pgUndo').click();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();EG('pgRedo').click();return}if(e.code==='Space'){spaceDown=true;e.preventDefault();return}if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const k=e.key.toLowerCase();if(k==='e')pgSetTool('erase');else if(k==='r')pgSetTool('restore');else if(k==='t')pgSetTool('text');else if(k==='b')pgSetShape(pgShape==='rect'?'brush':'rect');else if(k==='['||k===']'){const b=EG('pgBrushSize');b.value=Math.max(4,Math.min(90,+b.value+(k===']'?6:-6)))}else if(e.key==='ArrowLeft'){e.preventDefault();pgTurn(-1)}else if(e.key==='ArrowRight'){e.preventDefault();pgTurn(1)}}});
+      document.addEventListener('keydown',e=>{if(EG('pgEd').hidden)return;if(e.key==='Escape'){if(pgEditing){e.preventDefault();pgCommitEdit();return}if(pgSelMark){pgSelMark=null;pgRedrawMarks();return}pgDone();return}if(/TEXTAREA|INPUT|SELECT/.test(e.target.tagName))return;if((e.key==='Delete'||e.key==='Backspace')&&pgSelMark){e.preventDefault();deleteMark();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();EG(e.shiftKey?'pgRedo':'pgUndo').click();return}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();EG('pgRedo').click();return}if(e.code==='Space'){spaceDown=true;e.preventDefault();return}if(!e.ctrlKey&&!e.metaKey&&!e.altKey){const k=e.key.toLowerCase();if(k==='e')pgSetTool('erase');else if(k==='r')pgSetTool('restore');else if(k==='t')pgSetTool('text');else if(k==='h')pgSetTool('pan');else if(k==='b')pgSetShape(pgShape==='rect'?'brush':'rect');else if(k==='['||k===']'){const b=EG('pgBrushSize');b.value=Math.max(4,Math.min(90,+b.value+(k===']'?6:-6)))}else if(e.key==='ArrowLeft'){e.preventDefault();pgTurn(-1)}else if(e.key==='ArrowRight'){e.preventDefault();pgTurn(1)}}});
       document.addEventListener('keyup',e=>{if(e.code==='Space')spaceDown=false});
       // 選取框把手
       EG('pgSel').addEventListener('pointerdown',e=>{if(!pgSelMark||e.button!==0)return;e.preventDefault();e.stopPropagation();const h=e.target.closest('.pg-mh');dragMark(e,h?h.dataset.h:'move')});
@@ -1984,7 +1985,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       box.addEventListener('pointerup',endTouch,true);box.addEventListener('pointercancel',endTouch,true);
       // 畫布繪製／標註
       box.addEventListener('pointerdown',e=>{
-        if(EG('pgEd').hidden||e.target!==EDC||e.button!==0||spaceDown||pgGesture||pgTouches.size>1)return;
+        if(EG('pgEd').hidden||e.target!==EDC||e.button!==0||spaceDown||pgTool==='pan'||pgGesture||pgTouches.size>1)return;
         if(PG_MARK_TOOLS.has(pgTool)){markDown(e);return}
         e.preventDefault();try{box.setPointerCapture(e.pointerId)}catch(_){}
         const wasEdited=pgEdited;pgEdited=true;
