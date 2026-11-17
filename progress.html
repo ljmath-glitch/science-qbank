@@ -230,6 +230,12 @@ function composeDisplayName(school,grade,year,round,subject){
 // 考卷名稱本身如果有寫科目（例如同校同次段考但地科、理化其實是兩張分開的考卷，各自命名時
 // 才會加科目後綴），才把科目算進分組依據；沒寫科目的維持原本行為（同一次段考不分科目合併一列，
 // 內部用「領域」欄位分科目即可）。這樣新增這個判斷不會影響原本就沒有科目後綴的考卷分組。
+// 九年級的理化、地科是同一份考卷（同一次段考），進度表合併成同一列，不依科目分開；
+// 其他年級維持原本行為（考卷名稱有寫科目才分開）。
+function groupSubject(grade, exam){
+  const sub = parseSubject(exam);
+  return (grade==='九年級' && (sub==='理化'||sub==='地科')) ? '' : sub;
+}
 function parseSubject(exam){
   return (String(exam||'').match(/理化|生物|地科|自然|物理|化學/)||[])[0]||'';
 }
@@ -321,7 +327,7 @@ async function loadAll(){
     const grade  = gradeFromExam(q.exam||'', q.book||'');
     const year   = (q.year||'').trim();
     const round  = examRound(q.exam||'');
-    const subject = parseSubject(q.exam||'');
+    const subject = groupSubject(grade, q.exam||'');
     const key    = makeId(school, grade, year, round, subject);
     if(!grouped[key]) grouped[key] = {school, grade, year, round, subject, displayName: composeDisplayName(school,grade,year,round,subject), count: 0, examRawSet: new Set()};
     grouped[key].count++;
@@ -334,6 +340,17 @@ async function loadAll(){
   });
 
   progressMap = await loadProgress();
+  // 九年級理化／地科原本各一列、各有進度：合併後的那一列若還沒有進度，沿用原本理化（其次地科）那列，避免勾選全部歸零
+  const carry=[];
+  exams.forEach(ex=>{
+    if(ex.isManual||ex.grade!=='九年級'||ex.subject) return;
+    const id=makeId(ex.school,ex.grade,ex.year,ex.round,'');
+    if(progressMap[id]) return;
+    const legacy=progressMap[makeId(ex.school,ex.grade,ex.year,ex.round,'理化')]||progressMap[makeId(ex.school,ex.grade,ex.year,ex.round,'地科')];
+    if(legacy){ progressMap[id]={...legacy}; carry.push([id,legacy]); }
+  });
+  // 存回雲端，之後勾選才不會從空白開始（已有進度的列不覆蓋）
+  if(carry.length) mergeAndSave(()=>{ carry.forEach(([id,v])=>{ if(!progressMap[id]) progressMap[id]={...v}; }); });
   // 合併手動新增的考卷
   const manuals = progressMap['__manuals__'] || [];
   manuals.forEach(name => {
