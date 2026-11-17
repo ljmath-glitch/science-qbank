@@ -148,6 +148,8 @@
     /* 人工檢驗（第 6 步）：左＝清稿＋切圖框／原卷，右＝全部題目卡片（2026-11-13） */
     .iv{position:relative;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
     .iv.full{position:fixed;inset:0;z-index:9000;border-radius:0;display:flex;flex-direction:column}
+    /* 電腦版：人工檢驗的左右比對區不受 main 980px 限制，放寬到螢幕 96%（最大 1680px），並拉高（2026-11-17） */
+    @media(min-width:1100px){.iv:not(.full){width:min(96vw,1680px);max-width:none;margin-left:calc((100% - min(96vw,1680px))/2)}.iv:not(.full) .iv-body{height:min(84vh,1100px)}}
     .iv-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#fffefb;border-bottom:1px solid var(--line)}
     .iv-top #ivSum{flex:1 1 180px;min-width:0}
     .rv-seg{display:inline-flex;border:1px solid #e4d8c6;border-radius:10px;overflow:hidden}.rv-seg button{border:0;background:#fff;padding:6px 12px;font-family:inherit;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink)}.rv-seg button.on{background:var(--red);color:#fff}
