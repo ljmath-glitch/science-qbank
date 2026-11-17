@@ -31,15 +31,16 @@ function paperTemplateImage(image) {
 }
 function scalePaperEditorPages() {
   const host = document.getElementById('pvSheet');
-  const scale = Math.min(1, Math.max(0.15,(host.clientWidth - 32) / 972));
   for (const page of host.querySelectorAll('.template-paper')) {
+    const width = parseFloat(page.style.width) || 972, height = parseFloat(page.style.height) || 1375;
+    const scale = Math.min(1, Math.max(0.15,(host.clientWidth - 32) / width));
     let stage = page.parentElement;
     if (!stage.classList.contains('pv-page-stage')) {
       stage = document.createElement('div');stage.className = 'pv-page-stage';
       page.before(stage);stage.appendChild(page);
     }
-    stage.style.width = 972 * scale + 'px';
-    stage.style.height = 1375 * scale + 'px';
+    stage.style.width = width * scale + 'px';
+    stage.style.height = height * scale + 'px';
     page.style.transform = `scale(${scale})`;
   }
 }
