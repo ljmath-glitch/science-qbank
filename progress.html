@@ -196,7 +196,7 @@ function setExamKind(kind){activeExamKind=kind;render();}
 function setGrade(g){activeGrade=g;render();}
 function setKeyword(v){activeKeyword=v.trim();render();}
 // 進度表裡存過的「名稱」有些只是舊的自動名稱（沒人真的改過，例如少了學期或寫成「112上」）：這種直接用新的自動名稱；真的自訂過的才沿用
-function _nameKey(n){return String(n||'').replace(/(上學期|下學期)/g,'').replace(/(\d{3})[上下]/g,'$1').replace(/-{2,}/g,'-').replace(/^-|-$/g,'');}
+function _nameKey(n){return String(n||'').replace(/(上學期|下學期)/g,'').replace(/(\d{3})[上下]/g,'$1').replace(/-{2,}/g,'-').replace(/-(理化|地科|生物)$/,'').replace(/^-|-$/g,'');}
 function shownNameOf(ex,p){
   if(p.customName===undefined||p.customName===null) return ex.displayName;
   return _nameKey(p.customName)===_nameKey(ex.displayName) ? ex.displayName : p.customName;
