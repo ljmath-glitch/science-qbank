@@ -1248,8 +1248,8 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     function setOcrHost(v){
       if(v==='manager')v='reg:'+(localStorage.getItem('ocrRegId')||'saved');
       if(String(v).startsWith('reg:')){const id=String(v).slice(4);const h=REG_HOSTS.find(x=>String(x.id)===id)||(localStorage.getItem('ocrManagerUrl')?{id,name:localStorage.getItem('ocrRegName')||'所選主機',url:localStorage.getItem('ocrManagerUrl')}:null);
-        if(!h){v='company'}else{localStorage.setItem('ocrManagerUrl',h.url);localStorage.setItem('ocrRegId',String(h.id));localStorage.setItem('ocrRegName',h.name);localStorage.setItem('ocrHost','manager');const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=h.url;const sel=document.getElementById('ocrHostSel');if(sel)sel.value='reg:'+h.id;const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.add('hide');const hh=document.getElementById('ocrHealth');if(hh)hh.textContent='';return}}
-      localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];{const sel=document.getElementById('ocrHostSel');if(sel)sel.value=v}const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent=''}
+        if(!h){v='company'}else{localStorage.setItem('ocrManagerUrl',h.url);localStorage.setItem('ocrRegId',String(h.id));localStorage.setItem('ocrRegName',h.name);localStorage.setItem('ocrHost','manager');const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=h.url;const sel=document.getElementById('ocrHostSel');if(sel)sel.value='reg:'+h.id;const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.add('hide');const hh=document.getElementById('ocrHealth');if(hh)hh.textContent='';updateRenameBtn();return}}
+      localStorage.setItem('ocrHost',v);const urlEl=document.getElementById('ocrUrl');if(urlEl)urlEl.value=OCR_HOSTS[v];{const sel=document.getElementById('ocrHostSel');if(sel)sel.value=v}const dl=document.getElementById('ocrLocalDownload');if(dl)dl.classList.toggle('hide',v!=='local'||OCR_IS_MAC);const h=document.getElementById('ocrHealth');if(h)h.textContent='';updateRenameBtn()}
     // ── 主機自動登錄：每台裝了「主機背景服務」的電腦會自己把名稱與網址登錄到共用資料表，這裡讀出來放進下拉選單 ──
     const REG_SB={url:'https://esfepufqyeplafzbeeag.supabase.co',key:'sb_publishable_P_OpGwKYuWxpHMHCZdQRPA_1lCCLfNf'};
     let REG_HOSTS=[];
@@ -1259,7 +1259,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if(!o||o.kind!=='ocr-host'||typeof o.name!=='string'||typeof o.url!=='string')continue;
         const url=o.url.replace(/\/+$/,'');if(!REG_URL_OK.test(url)||builtin.has(url)||seen.has(url))continue;
         const last=+o.seen||0;if(now-last>30*864e5)continue;seen.add(url);
-        out.push({id:r.id,name:o.name.slice(0,20),url,stale:o.online===false||now-last>15*60*1000})}
+        out.push({id:r.id,raw:o,name:o.name.slice(0,20),url,stale:o.online===false||now-last>15*60*1000})}
       return out.sort((a,b)=>(a.stale-b.stale)||a.name.localeCompare(b.name,'zh-Hant'))}
     function renderHostOptions(){const sel=document.getElementById('ocrHostSel');if(!sel)return;
       const cur=sel.value;[...sel.querySelectorAll('option[data-reg]')].forEach(o=>o.remove());
@@ -1268,9 +1268,15 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       for(const h of list){const o=document.createElement('option');o.value='reg:'+h.id;o.dataset.reg='1';o.textContent=h.name+(h.stale?'（離線）':'');sel.appendChild(o)}
       if(cur&&[...sel.options].some(o=>o.value===cur))sel.value=cur;
       if(localStorage.getItem('ocrHost')==='manager'){const want='reg:'+(sid||'saved');if([...sel.options].some(o=>o.value===want))sel.value=want}}
+    function updateRenameBtn(){const b=document.getElementById('hostRenameBtn');if(b)b.classList.toggle('hide',!(localStorage.getItem('ocrHost')==='manager'&&REG_HOSTS.some(h=>String(h.id)===localStorage.getItem('ocrRegId'))))}
+    async function renameOcrHost(){const id=localStorage.getItem('ocrRegId'),h=REG_HOSTS.find(x=>String(x.id)===id);if(!h){alert('只有自動登錄的主機可以改名');return}
+      const n=prompt('這台主機要顯示什麼名稱？（最多 20 字，所有人都會看到）',h.name);if(n===null)return;const name=n.trim().slice(0,20);if(!name)return;
+      const raw=Object.assign({},h.raw,{name,nameAt:Date.now()});
+      try{const r=await fetch(REG_SB.url+'/rest/v1/syllabus_doc?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:{apikey:REG_SB.key,Authorization:'Bearer '+REG_SB.key,'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({content:JSON.stringify(raw)})});
+        if(!r.ok)throw new Error('HTTP '+r.status);h.name=name;h.raw=raw;localStorage.setItem('ocrRegName',name);renderHostOptions();alert('已改名為「'+name+'」。主機會在 5 分鐘內同步，之後以最後一次修改為準。')}catch(e){alert('改名失敗：'+e.message)}}
     async function loadRegistryHosts(){try{
       const r=await fetch(REG_SB.url+'/rest/v1/syllabus_doc?select=id,content&id=gte.100000&limit=60',{headers:{apikey:REG_SB.key,Authorization:'Bearer '+REG_SB.key}});
-      if(!r.ok)return;REG_HOSTS=regParse(await r.json());renderHostOptions()}catch(e){}}
+      if(!r.ok)return;REG_HOSTS=regParse(await r.json());renderHostOptions();updateRenameBtn()}catch(e){}}
     function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機主機：請確認已完成「茲茲主機安裝」，並查看右下角「茲」圖示的服務狀態。瀏覽器若詢問是否允許存取本機網路，請按允許；建議使用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
@@ -1606,7 +1612,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/6</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
-      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option></select><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
+      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option></select><a class="btn" id="hostPkgBtn" href="host-download.html" title="下載安裝包：把一台電腦設成 OCR 主機＋AI 橋接（在目前分頁開啟，下載頁有安裝步驟）">下載安裝包</a><button type="button" class="btn hide" id="hostRenameBtn" onclick="renameOcrHost()" title="改這台主機在網站上顯示的名稱（所有人都會看到）">改名</button><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
       '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');routeExamFiles(event.dataTransfer.files)"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG；有簡答卷可一起放</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 </a></div>';
     setOcrHost(ocrHost());pipeRender();loadRegistryHosts();setInterval(loadRegistryHosts,300000);{const sel=document.getElementById('ocrHostSel');if(sel)sel.addEventListener('focus',loadRegistryHosts)}}
   function pipeRender(){
