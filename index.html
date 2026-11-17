@@ -1385,7 +1385,7 @@
     <span class="pv-tool-group"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
-    <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select></span>
+    <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select><select id="pvZZStyle" aria-label="考卷風格" onchange="pvSetZZStyle(this.value)"><option value="formal">正式版・黑白灰</option><option value="redgold">紅金版</option><option value="subject">科目彩色</option><option value="simple">簡潔省墨</option><option value="exam">會考仿真</option></select></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
   </div>
@@ -4289,7 +4289,7 @@ function pvInlineImageChange(input){
     await _pvSave(type,id,true);
   };reader.readAsDataURL(file);
 }
-function _pvRebuild(){const selectedKind=paperPreviewKind();_pvKeepScroll(()=>_pvRenderPaged());const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;}
+function _pvRebuild(){const selectedKind=paperPreviewKind(),selectedStyle=paperZZStyle();_pvKeepScroll(()=>_pvRenderPaged());const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),style=document.getElementById('pvZZStyle'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;if(style)style.value=selectedStyle;}
 function pvSetColumns(twoCol){_pvPushHist();paperSetLayout(!!twoCol);_pvRebuild();_rebuildLastPaperHTML();}
 async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
@@ -6116,7 +6116,7 @@ function refreshPaperSettingsPreview(){
   const content=previewQuestions||'<div class="pdoc-meta">尚未選題</div>';
   const preName=examName||'課前考',preMain=[grade+subject,scope].filter(Boolean).join(' ')||title;
   const pre=`<section class="pdoc-sheet a4 pre"><div class="pdoc-pre-top">茲茲文教　${esc(grade+subject)}　課前考</div><div class="pdoc-pre-head"><div class="pdoc-pre-logo"><img src="logo.png" alt="茲茲文教">TZU TZU</div><div class="pdoc-pre-main">${esc(preMain)}</div><div class="pdoc-pre-divider"></div><div class="pdoc-pre-name">${esc(preName)}</div></div><div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
-  const formal=`<section class="pdoc-sheet a4 formal-preview zz-style-${paperZZStyle()}"><div class="exam-hdr"><div class="exam-hdr-logo"><img src="logo.png" alt="TZU TZU"><div class="exam-hdr-brand">TZU TZU</div></div><div class="exam-hdr-body"><div class="exam-hdr-left"><span class="exam-hdr-gs">${esc(title)}</span></div>${examName?`<div class="exam-hdr-vsep"></div><div class="exam-hdr-right"><span class="exam-hdr-name">${esc(examName)}</span></div>`:''}</div></div><div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
+  const formal=`<section class="pdoc-sheet a4 formal-preview zz-style-${paperZZStyle()}">${buildFormalPreviewHeader(false)}<div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
   const abk=`<section class="pdoc-sheet b4 abk"><div class="pdoc-abk-watermark" aria-hidden="true"></div>${buildAbkPreviewHeader(false)}<div class="pdoc-meta">${meta}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage+1}</div></section>`;
   const mockCover=`<section class="pdoc-sheet a4 mock-cover"><div class="pdoc-mock-cover-top"><img src="logo.png" alt="茲茲文教"><div class="boxes"><span>考試日期<br>　　年　月　日</span><span>考生姓名<br>____________</span><span>座號<br>______</span></div></div><div class="pdoc-mock-title">茲茲文教模考題本</div><div class="pdoc-mock-sub">${esc(subject||'自然科')}</div><div class="pdoc-mock-scope">${esc(examName||title)}<br>範圍：${esc(scope)}</div><div class="pdoc-mock-warning">請不要翻到次頁！</div><div class="pdoc-mock-instructions"><b>作答說明</b>請核對考卷名稱及個人資料。<br>本卷共 ${pickedItems().length} 題；請依題號順序作答。<br>答案請填寫於指定作答區。</div><div class="pdoc-mock-footer">TZUTZU EDUCATION</div></section>`;
   const mockBody=`<section class="pdoc-sheet a4 mock-body"><div class="pdoc-mock-body-top">茲茲文教　${esc(subject||'自然科')}　${esc(examName||title)}</div>${content}<div class="pdoc-page-number">${_paperSettingsPage}</div></section>`;
@@ -6294,14 +6294,32 @@ function paperZZStyle(){
   return ['formal','redgold','subject','simple','exam'].includes(style)?style:'formal';
 }
 function paperSetZZStyle(style){
+  const main=document.getElementById('pZZStyle'),preview=document.getElementById('pvZZStyle');
+  if(main&&main.value!==style)main.value=style;
+  if(preview&&preview.value!==style)preview.value=style;
   try{localStorage.setItem('zzExamStyle',style)}catch(e){}
   if(typeof paperOutputInvalidate==='function')paperOutputInvalidate();
   if(typeof paperDlg!=='undefined'&&paperDlg.open)_pvDirty=true;else if(typeof _pvRebuild==='function')_pvRebuild();
   if(typeof _rebuildLastPaperHTML==='function')_rebuildLastPaperHTML();
   if(typeof paperSettingsPreviewLater==='function')paperSettingsPreviewLater();
 }
+function wordPreviewMeta(){
+  const value=id=>((document.getElementById(id)||{}).value||'').trim();
+  const title=value('pTitle')||'自然科測驗卷',metadata=readPaperTemplateMetadata();
+  const book=PAPER_BOOK_NAMES[Number(metadata.book)-1]||'';
+  const subject=value('pSubject')||title.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科';
+  return {title,subject,book,label:value('pExamName')||metadata.chapterRange||value('pScope')};
+}
+// 與 zz-exam-docx.js 的 prequizHead 同一套資料與比例：未選卷別的正式版就是輸出的課前考正式卷頭。
+function buildFormalPreviewHeader(forPreview){
+  const m=wordPreviewMeta(),title=[m.subject,m.book].filter(Boolean).join('　')||m.title;
+  const edit=(text,id)=>forPreview?_pvHdrEditable(text,id):esc(text);
+  const fields=['班級','座號','姓名'].map(name=>`<span>${name}<i></i></span>`).join('');
+  return `<div class="zz-formal-head"><div class="zz-formal-logo"><img src="logo.png" alt="TZU TZU"><small>TZU TZU</small></div><div class="zz-formal-main"><div class="zz-formal-en">PRE-CLASS QUIZ</div><div class="zz-formal-title">${edit(title,'pTitle')}</div><div class="zz-formal-label"><b>課前考</b>${m.label?`<span>${edit(m.label,'pExamName')}</span>`:''}</div></div><div class="zz-formal-fields">${fields}</div><div class="zz-formal-score">得分</div></div><div class="zz-formal-rule"></div>`;
+}
 function buildExamHeader(forPreview){
   const kind=paperPreviewKind();
+  if(kind==='formal')return buildFormalPreviewHeader(forPreview);
   if(kind==='golden')return buildGoldenPreviewHeader(forPreview);
   const g=document.getElementById('pGrade').value.trim();
   const s=document.getElementById('pSubject').value.trim();
@@ -6359,7 +6377,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
   const showMeta=pShowMeta.checked,showTag=pShowTag.checked,showSource=document.getElementById('pShowSource').checked,showSourceFull=document.getElementById('pShowSourceFull').checked,title=pTitle.value||'自然科測驗卷';lastPaperTitle=title;lastAnsMode=ansMode;
   ansMode=previewMode;
   const paperKind=paperPreviewKind();
-  const templateLayout=['abk','pre','golden'].includes(paperKind);
+  const templateLayout=['formal','abk','pre','golden'].includes(paperKind);
   const hdr=paperKind==='abk'?buildAbkPreviewHeader(forPreview):buildExamHeader(forPreview);
   // ── 預算每題組的題號範圍 ──
   const groupRanges={};
@@ -6382,7 +6400,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const srcText=showSourceFull?getSource(it,true):(showSource?getSource(it):'');
     const src=srcText?`<span style="font-size:11px;color:#2e75b6;background:#e8f0fb;border-radius:3px;padding:1px 5px;margin-left:4px;font-family:inherit">[${esc(srcText)}]</span>`:'';
     // 課前考／ABK 預覽的預設圖位置（與 Word 同一個 _defaultImagePlacement）：手動調過→浮動；小圖→選項旁；大圖／多圖→文字下方靠右。
-    const _preKind=forPreview&&(paperKind==='pre'||paperKind==='abk');
+    const _preKind=forPreview&&(['formal','pre','abk'].includes(paperKind));
     const _manualImg=_preKind&&(it.imgs||[]).some(_pvManualImageLayout);
     const _imgPlace=_preKind&&!_manualImg&&(it.imgs||[]).some(im=>im&&im.src)?_defaultImagePlacement((it.imgs||[]).filter(im=>im&&im.src).map(im=>({width:im.width})),it.q||it.summary||'',paperKind,null):'';
     const _besideIdx=-1;
@@ -6439,7 +6457,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
     // 課前考／ABK 單題圖靠右浮動時，圖要排在題號/題幹「之前」文字才會繞排在左。
     // 預設大圖／多圖在全部選項後靠右獨立一行，避免從題號第一行就擠壓文字；手動搬過的圖才浮動。
-    const floatImgs=forPreview&&(paperKind==='pre'||paperKind==='abk')&&(it.imgs||[]).some(_pvManualImageLayout)&&imgs;
+    const floatImgs=forPreview&&(['formal','pre','abk'].includes(paperKind))&&(it.imgs||[]).some(_pvManualImageLayout)&&imgs;
     const body=floatImgs?`${ctrl}${tag}${imgs}${numberHtml}${qText}${extra}${src}`:`${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}`;
     return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${body}</div>`;
   });
@@ -6501,13 +6519,15 @@ function _pvRenderPaged(outputHost,editable=true){
   const kind=paperPreviewKind();
   const parts=buildPaperInner(undefined,editable,true);
   const host=outputHost||pvSheet;host.className='pv-pages';host.innerHTML='';
-  const PAGE_H=1375,PAD=116,FOOT=40;
-  const templateLayout=['abk','pre','golden'].includes(kind);
+  // 與 Word 匯出相同：A4 794×1123、B4 972×1375（皆為四邊 1 cm）。
+  const previewB4=(document.getElementById('pPaperSize')||{}).value==='B4';
+  const PAGE_W=previewB4?972:794,PAGE_H=previewB4?1375:1123,PAD=previewB4?96:76,FOOT=40;
+  const templateLayout=['formal','abk','pre','golden'].includes(kind);
   const narrow=!templateLayout&&!outputHost&&!!(window.matchMedia&&window.matchMedia('(max-width:1080px)').matches);
   let pageIdx=0,cur=null;
   function newPage(){
-    const pg=document.createElement('div');pg.className='pv-sheet pv-page zz-style-'+paperZZStyle()+(kind==='abk'?' abk-preview':'')+(kind==='golden'?' golden-preview':'')+(templateLayout?' template-paper':'');
-    if(outputHost||templateLayout){pg.style.width='972px';pg.style.height=PAGE_H+'px';pg.style.overflow='hidden';pg.style.padding=templateLayout?'48px':'58px';}
+    const pg=document.createElement('div');pg.className='pv-sheet pv-page zz-style-'+paperZZStyle()+(kind==='formal'?' zz-word-preview':'')+(kind==='abk'?' abk-preview':'')+(kind==='golden'?' golden-preview':'')+(templateLayout?' template-paper':'');
+    if(outputHost||templateLayout||kind==='formal'){pg.style.width=PAGE_W+'px';pg.style.height=PAGE_H+'px';pg.style.overflow='hidden';pg.style.padding=(previewB4?'48px':'38px');}
     const head=document.createElement('div');head.className='pv-page-head';head.innerHTML=pageIdx===0?parts.headHtml:_pvRunningHeader();
     const bodyWrap=document.createElement('div');bodyWrap.className='pv-page-body'+(parts.twoCol?' paper-2col':'');
     const foot=document.createElement('div');foot.className='pv-page-foot';foot.textContent=kind==='golden'?`茲茲  ${pageIdx+1}  ${readGoldenMetadata().gold_footer_subject}`:String(pageIdx+1);
