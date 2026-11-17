@@ -2614,12 +2614,23 @@ async function _bimgConfirm(){
     if(!byId[id])byId[id]={q:it.matched,items:[]};
     byId[id].items.push(it);
   });
+  // 已有圖片的題目先問：繼續貼入／覆蓋／取消
+  const _replace=new Set();
+  try{
+    const have=await _findExistingImgs(Object.values(byId).map(g=>g.q));
+    const list=Object.entries(byId).filter(([id])=>have[id]).map(([id,g])=>({label:g.q.type==='passage'?'題組文章':'第 '+g.q.no+' 題',count:have[id],id}));
+    if(list.length){
+      const choice=await askExistingImgChoice(list);
+      if(choice==='cancel'){btn.disabled=false;btn.textContent='🖼 貼圖到題庫';msg.textContent='已取消，沒有貼任何圖片';return}
+      if(choice==='replace')list.forEach(x=>_replace.add(x.id));
+    }
+  }catch(e){console.error('檢查既有圖片失敗',e);btn.disabled=false;btn.textContent='🖼 貼圖到題庫';msg.textContent='無法確認題目是否已有圖片，已停止：'+(e.message||e);return}
   for(const[id,grp]of Object.entries(byId)){
     try{
       const imgs=[];
       for(const it of grp.items)imgs.push({src:it.src,width:await _faithfulImgPct(it.src),align:'center'});
       const uploaded=await uploadImgs(imgs,id);
-      const existing=grp.q.imgs||[];
+      const existing=_replace.has(id)?[]:(grp.q.imgs||[]);
       const merged=[...existing,...uploaded];
       const{error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',id);
       if(error)throw error;
@@ -2684,6 +2695,37 @@ function listBatchExamStatus(examGuess){
   const matchedExam=_findBatchExam(exam);
   return {matchedExam,ok:!!matchedExam,suggestions:matchedExam?[]:_batchExamSuggestions(exam)};
 }
+// 已有圖片的題目要再貼圖時，跳出三選一視窗：繼續貼入（接在原圖後面）／覆蓋（先清掉原圖）／取消。
+// list=[{label,count}]；doc 預設本頁，raw.html 會傳自己的 document，讓視窗顯示在使用者看得到的頁面上。
+function askExistingImgChoice(list,doc){
+  doc=doc||document;
+  return new Promise(resolve=>{
+    const ov=doc.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(40,25,15,.45);z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:16px';
+    const box=doc.createElement('div');
+    box.style.cssText='background:#fffdf8;border:1px solid #dccfbb;border-radius:14px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3);font-family:inherit;color:#2a1c12';
+    const esc2=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    box.innerHTML='<div style="padding:16px 18px 8px;font-weight:700;font-size:16px">這 '+list.length+' 題已經有圖片了</div>'
+      +'<div style="padding:0 18px 8px;font-size:13px;color:#6b5a4a;line-height:1.6">這些圖不是這次匯入的。要怎麼處理？</div>'
+      +'<div style="padding:8px 18px;overflow:auto;font-size:13px;line-height:1.7;border-top:1px solid #eee4d4;border-bottom:1px solid #eee4d4">'+list.map(x=>'<div>'+esc2(x.label)+'　<span style="color:#8a6d1f">已有 '+x.count+' 張</span></div>').join('')+'</div>'
+      +'<div style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"></div>';
+    const bar=box.lastChild;
+    const mk=(txt,val,style)=>{const b=doc.createElement('button');b.textContent=txt;b.style.cssText='padding:8px 14px;border-radius:9px;font-size:14px;cursor:pointer;border:1px solid #c9b9a2;background:#fff;color:#2a1c12;'+(style||'');b.onclick=()=>{ov.remove();resolve(val)};bar.appendChild(b)};
+    mk('取消','cancel');
+    mk('覆蓋（先清掉原圖）','replace','border-color:#a33;color:#a33');
+    mk('繼續貼入（保留原圖）','append','background:#8a1f1f;color:#fff;border-color:#8a1f1f');
+    ov.appendChild(box);doc.body.appendChild(ov);
+  });
+}
+// 找出 targets（題目／題組文章物件）裡「資料庫目前已有圖片」的項目；一律向資料庫查最新狀態，避免同事剛貼過而本機沒更新
+async function _findExistingImgs(targets){
+  const ids=[...new Set(targets.map(t=>t.id))];const have={};
+  for(let i=0;i<ids.length;i+=100){
+    const {data,error}=await sb.from('questions').select('id,imgs').in('id',ids.slice(i,i+100));
+    if(error)throw error;(data||[]).forEach(r=>{if(Array.isArray(r.imgs)&&r.imgs.length)have[r.id]=r.imgs.length});
+  }
+  return have;
+}
 async function importBatchHandoffImages(payload){
   for(let i=0;i<80&&!window.__qbankDataReady;i++)await new Promise(ok=>setTimeout(ok,100));
   if(!window.__qbankDataReady)throw new Error('題庫資料尚未載入，請稍後再試');
@@ -2712,6 +2754,17 @@ async function importBatchHandoffImages(payload){
     }
     (groups[target.id]??={q:target,items:[]}).items.push(image);
   }
+  // 已有圖片（非本次匯入）的題目：先問，同一次匯入的多張圖不受限制
+  const replaceIds=new Set();
+  if(Object.keys(groups).length&&payload?.onExisting!=='append'){
+    const have=await _findExistingImgs(Object.values(groups).map(g=>g.q));
+    const list=Object.values(groups).filter(g=>have[g.q.id]).map(g=>({label:(g.q.type==='passage'?'題組文章（含第 '+g.items.map(x=>x.qno).join('、')+' 題）':'第 '+g.q.no+' 題'),count:have[g.q.id],id:g.q.id}));
+    if(list.length){
+      const choice=await askExistingImgChoice(list,payload?.dialogDoc);
+      if(choice==='cancel')return {cancelled:true,done:0,failed:0,unmatched:0,unknownQno:0,failedQnos:[],failureDetails:[],unmatchedQnos:[],noPassageQnos:[],matchedExam,existingCount:list.length};
+      if(choice==='replace')list.forEach(x=>replaceIds.add(x.id));
+    }
+  }
   let done=0,failed=0;const failedQnos=new Set();const failureDetails=[];
   for(const group of Object.values(groups)){
     try{
@@ -2731,7 +2784,7 @@ async function importBatchHandoffImages(payload){
         if(!ok)throw last||new Error('圖片上傳失敗');
         uploaded.push(ok);
       }
-      const merged=[...(group.q.imgs||[]),...uploaded];
+      const merged=replaceIds.has(group.q.id)?[...uploaded]:[...(group.q.imgs||[]),...uploaded];
       let writeError=null;
       for(let attempt=0;attempt<3;attempt++){
         const {error}=await sb.from('questions').update({imgs:merged,updated_at:new Date().toISOString()}).eq('id',group.q.id);
