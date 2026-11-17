@@ -166,6 +166,7 @@
     .iv-right{overflow:auto;padding:12px 14px 20px}
     .iv-foot{padding:10px 12px;background:#fffefb;border-top:1px solid var(--line)}
     .iv-foot .btn-even{margin-top:0}.iv-foot .status{margin:6px 0 0}
+    .rv-group-tool{margin-bottom:12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:#fdf6f6}.rv-group-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px}.rv-group-title b{font-size:14px}.rv-group-title span{font-size:11px;color:#7a6e60}.rv-group-rows{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}.rv-group-rows>div{display:flex;gap:6px;align-items:center}.rv-group-rows span{font-size:12px;color:#7a6e60;width:52px;flex:0 0 52px}.rv-group-rows input{font-size:12px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;width:min(190px,55vw);font-family:inherit;background:#fff}.rv-group-actions{display:flex;gap:8px}.rv-group-actions .primary{background:#c0392b;color:#fff;border-color:#c0392b}
     .rv-sum{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
     .rv-chip{padding:4px 10px;border-radius:999px;border:1px solid #e4d8c6;background:#fff;font-size:12.5px;cursor:pointer;color:var(--ink)}.rv-chip b{margin-left:3px}
     .rv-chip.t-flag{background:#fff3d6;border-color:#e8c97a}.rv-chip.t-img{background:#e8f1fb;border-color:#a9c6e6}.rv-chip.t-ans{background:#fde8e6;border-color:#e7aaa4}.rv-chip.t-err{background:#f1e6f7;border-color:#c9a8dc}
@@ -178,7 +179,7 @@
     .rv-passage{border:1px solid #8a8a8a;background:#fff;border-radius:6px;padding:10px 12px;margin-bottom:6px;font-size:14px;line-height:1.8}
     .rv-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
     .rv-no{font-weight:800;color:var(--red);font-size:15px}
-    .rv-tag{font-size:11.5px;padding:2px 8px;border-radius:999px;background:#f3efe8;color:#5b4a33}
+    .rv-tag{font-size:11.5px;padding:2px 8px;border-radius:999px;background:#f3efe8;color:#5b4a33}.rv-tag.grouped{background:#e9f5ec;color:#23653a;border:1px solid #9bcbaa;font-weight:700}.rv-tag.ungrouped{background:#f4f1ec;color:#786f63;border:1px dashed #c9c0b5}
     .rv-tag.warn{background:#fff;color:#a31515;font-weight:700;border:1px solid #e7aaa4}
     .rv-flag{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#9a6910;cursor:pointer;white-space:nowrap}
     .rv-q{font-size:14.5px;line-height:1.85;overflow-wrap:anywhere}
@@ -270,7 +271,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
           </div>
         </li>
         <li data-step="2"><b>檢查清稿結果</b>檢查或修補清稿。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
-          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*,.txt,.csv" multiple class="hide" onchange="routeExamFiles(this.files)"><input id="akFile" type="file" accept="application/pdf,.pdf,.txt,.csv,text/plain" class="hide" onchange="loadAnswerKeyFile(this.files[0]);this.value=''"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">混合版（v10 模型＋紅藍色筆規則・建議）</option><option value="r8">實驗版 r8（模型筆跡機率）</option></select></label><span class="help">上方匯入後會自動開始，不必重複選檔。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">重試</button></div></div></div>
+          <div class="step-detail"><div class="dehand-workspace"><input id="dehandFile" type="file" accept="application/pdf,image/*,.txt,.csv" multiple class="hide" onchange="routeExamFiles(this.files)"><input id="akFile" type="file" accept="application/pdf,.pdf,.txt,.csv,text/plain" class="hide" onchange="loadAnswerKeyFile(this.files[0]);this.value=''"><div class="row"><button type="button" class="btn" onclick="dehandFile.value='';dehandFile.click()">更換考卷</button><label class="help">清稿模式 <select id="dehandMode"><option value="v10">混合版（v10 模型＋紅藍色筆規則・建議）</option><option value="v10-pure">純 V10（模型直接清稿）</option><option value="r8">實驗版 r8（模型筆跡機率）</option></select></label><button type="button" class="btn" id="rerunDehandBtn" onclick="retryDehand()" disabled>用所選模式重新清稿</button><span class="help">可用同一份原稿比較不同清稿模式。</span></div><div class="dehand-flow" id="dehandFlow"><div data-stage="讀取檔案"><b>① 讀取檔案</b><span>等待</span></div><div data-stage="載入模型"><b>② 載入模型</b><span>等待</span></div><div data-stage="逐頁轉影像"><b>③ 逐頁轉影像</b><span>等待</span></div><div data-stage="逐頁清除筆跡"><b>④ 清除筆跡</b><span>等待</span></div><div data-stage="合成乾淨 PDF"><b>⑤ 合成 PDF</b><span>等待</span></div></div><div id="dehandStatus" class="status">等待選擇考卷。</div><div id="dehandProgress" class="dehand-progress hide"><b id="dehandProgressText">等待開始</b><div class="dehand-bar"><i id="dehandProgressBar"></i></div><div class="dehand-meta"><span id="dehandPageMeta">尚未開始</span><span id="dehandTimeMeta">已耗時 0 秒</span></div></div><div id="dehandError" class="dehand-error hide"></div><div id="dehandPages" class="dehand-grid"></div><div class="dehand-actions"><button id="downloadDehandBtn" class="btn primary" onclick="downloadDehandPdf()" disabled>下載乾淨 PDF</button><button id="ocrFromCleanInlineBtn" class="btn green" onclick="runAutoOcr(dehandResult&&dehandResult.file,true)" disabled>繼續下一步（OCR）</button><button id="retryDehandBtn" class="btn hide" onclick="retryDehand()">重試</button></div></div></div>
         </li>
         <li data-step="3"><b>重新執行 OCR</b>需要時重跑。<br><button class="btn toggle-detail" onclick="toggleDetail(this)" title="展開本步工具" aria-label="展開本步工具">展開</button>
           <div class="step-detail">
@@ -521,7 +522,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     function updateCleanOcrButtons(){const ready=!!(dehandResult&&dehandResult.file);for(const id of ['ocrFromCleanBtn','ocrFromCleanInlineBtn']){const el=document.getElementById(id);if(el)el.disabled=!ready}}
     function setDehandFlow(stage,done=false){const order=['讀取檔案','載入模型','逐頁轉影像','逐頁清除筆跡','合成乾淨 PDF'],at=order.indexOf(stage);document.querySelectorAll('#dehandFlow [data-stage]').forEach((el,i)=>{el.classList.toggle('active',i===at&&!done);el.classList.toggle('done',i<at||done&&i===at);el.querySelector('span').textContent=i<at||done&&i===at?'完成':i===at?'進行中':'等待'})}
     function retryDehand(){if(dehandLastFile)startDehand(dehandLastFile)}
-    async function startDehand(file){if(!file)return;const status=document.getElementById('dehandStatus'),progress=document.getElementById('dehandProgress'),pages=document.getElementById('dehandPages'),download=document.getElementById('downloadDehandBtn'),error=document.getElementById('dehandError'),retry=document.getElementById('retryDehandBtn');if(!/\.pdf$/i.test(file.name)&&!/^image\//.test(file.type)){alert('請選擇 PDF 或圖片檔。');return}dehandLastFile=file;dehandStartedAt=Date.now();status.textContent='已收到 '+file.name+'，準備開始。';progress.classList.remove('hide');pages.innerHTML='';error.classList.add('hide');retry.classList.add('hide');download.disabled=true;dehandResult=null;updateCleanOcrButtons();setDehandFlow('讀取檔案');try{dehandResult={pages:[]};const addCard=(page,i)=>{dehandResult.pages[i]=page;const card=document.createElement('div');card.className='dehand-card';card.innerHTML=`<b>第 ${i+1} 頁完成</b><div class="dehand-pair"><div><span class="dehand-label">原稿</span><button title="點擊放大" onclick="openDehandImage(${i},false)"><img src="${page.before}" alt="第 ${i+1} 頁原稿"></button></div><div><span class="dehand-label">清稿</span><button title="點擊放大／手動塗白" onclick="openDehandImage(${i},true)"><img src="${page.after}" alt="第 ${i+1} 頁清稿"></button></div></div><button class="btn" onclick="openDehandImage(${i},true)">放大檢查／手動修補</button>`;pages.appendChild(card)};const mode=document.getElementById('dehandMode').value;dehandResult=await window.Dehand.cleanFile(file,{loadPdfJs,onPage:addCard,mode,onProgress:info=>{const pct=Math.round(info.percent||0),elapsed=Math.max(0,Date.now()-dehandStartedAt),per=info.page?elapsed/info.page:0,remain=info.total&&info.page?Math.max(0,Math.round(per*(info.total-info.page)/1000)):null;setDehandFlow(info.stage,pct>=100);document.getElementById('dehandProgressText').textContent=`${info.stage}：${info.message}`;document.getElementById('dehandProgressBar').style.width=pct+'%';document.getElementById('dehandPageMeta').textContent=info.total?`第 ${info.page||0}/${info.total} 頁 · ${pct}%`:`${pct}%`;document.getElementById('dehandTimeMeta').textContent=`已耗時 ${Math.round(elapsed/1000)} 秒${remain!==null?' · 預估剩餘 '+remain+' 秒':''}`;}});cropFiles.pdf=dehandResult.file;OCR_PDF_FILE=dehandResult.file;setCropFile('pdf',dehandResult.file);renderDehandGrid();status.textContent=`清稿完成：${dehandResult.pages.length} 頁，已自動帶入 OCR 與裁圖。`;download.disabled=false;updateCleanOcrButtons()}catch(e){console.error(e);const msg=(e&&e.message)||String(e);status.textContent='清稿失敗，尚未改動後續檔案。';error.textContent='錯誤：'+msg+'。請確認網路可載入 ONNX/WASM，或按「重試」。';error.classList.remove('hide');retry.classList.remove('hide');updateCleanOcrButtons()}}
+    async function startDehand(file){if(!file)return;const status=document.getElementById('dehandStatus'),progress=document.getElementById('dehandProgress'),pages=document.getElementById('dehandPages'),download=document.getElementById('downloadDehandBtn'),error=document.getElementById('dehandError'),retry=document.getElementById('retryDehandBtn');if(!/\.pdf$/i.test(file.name)&&!/^image\//.test(file.type)){alert('請選擇 PDF 或圖片檔。');return}document.getElementById('rerunDehandBtn').disabled=true;dehandLastFile=file;dehandStartedAt=Date.now();status.textContent='已收到 '+file.name+'，準備開始。';progress.classList.remove('hide');pages.innerHTML='';error.classList.add('hide');retry.classList.add('hide');download.disabled=true;dehandResult=null;updateCleanOcrButtons();setDehandFlow('讀取檔案');try{dehandResult={pages:[]};const addCard=(page,i)=>{dehandResult.pages[i]=page;const card=document.createElement('div');card.className='dehand-card';card.innerHTML=`<b>第 ${i+1} 頁完成</b><div class="dehand-pair"><div><span class="dehand-label">原稿</span><button title="點擊放大" onclick="openDehandImage(${i},false)"><img src="${page.before}" alt="第 ${i+1} 頁原稿"></button></div><div><span class="dehand-label">清稿</span><button title="點擊放大／手動塗白" onclick="openDehandImage(${i},true)"><img src="${page.after}" alt="第 ${i+1} 頁清稿"></button></div></div><button class="btn" onclick="openDehandImage(${i},true)">放大檢查／手動修補</button>`;pages.appendChild(card)};const mode=document.getElementById('dehandMode').value;dehandResult=await window.Dehand.cleanFile(file,{loadPdfJs,onPage:addCard,mode,onProgress:info=>{const pct=Math.round(info.percent||0),elapsed=Math.max(0,Date.now()-dehandStartedAt),per=info.page?elapsed/info.page:0,remain=info.total&&info.page?Math.max(0,Math.round(per*(info.total-info.page)/1000)):null;setDehandFlow(info.stage,pct>=100);document.getElementById('dehandProgressText').textContent=`${info.stage}：${info.message}`;document.getElementById('dehandProgressBar').style.width=pct+'%';document.getElementById('dehandPageMeta').textContent=info.total?`第 ${info.page||0}/${info.total} 頁 · ${pct}%`:`${pct}%`;document.getElementById('dehandTimeMeta').textContent=`已耗時 ${Math.round(elapsed/1000)} 秒${remain!==null?' · 預估剩餘 '+remain+' 秒':''}`;}});cropFiles.pdf=dehandResult.file;OCR_PDF_FILE=dehandResult.file;setCropFile('pdf',dehandResult.file);renderDehandGrid();status.textContent=`清稿完成：${dehandResult.pages.length} 頁，已自動帶入 OCR 與裁圖。`;download.disabled=false;updateCleanOcrButtons()}catch(e){console.error(e);const msg=(e&&e.message)||String(e);status.textContent='清稿失敗，尚未改動後續檔案。';error.textContent='錯誤：'+msg+'。請確認網路可載入 ONNX/WASM，或按「重試」。';error.classList.remove('hide');retry.classList.remove('hide');updateCleanOcrButtons()}finally{document.getElementById('rerunDehandBtn').disabled=!dehandLastFile}}
     function openDehandImage(i,editable){const page=dehandResult&&dehandResult.pages[i];if(!page)return;if(!editable){document.getElementById('cropModalBody').innerHTML=`<div class="crop-modal-title">第 ${i+1} 頁原稿</div><img src="${page.before}" alt="原稿"><div class="action-row"><button class="btn" onclick="closeInfoModal()">關閉</button></div>`;document.getElementById('cropModalOverlay').classList.add('show');return}openPageEditor(null,i)}
     function downloadDehandPdf(){if(!dehandResult)return;const a=document.createElement('a');a.href=URL.createObjectURL(dehandResult.file);const base=(examName&&examName.value||dehandResult.file.name||'考卷').replace(/\.(pdf|png|jpe?g)$/i,'').replace(/[\\/:*?"<>|]/g,'_');a.download=base+'_乾淨.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 
@@ -1241,7 +1242,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     // ── 茲茲 OCR 主流程：同一份 PDF 交給 OCR 主機，直接回傳文字與題庫 Excel，不要求 Gemini ──
     const OCR_IS_MAC=/Mac|iPad|iPhone/.test(navigator.platform||navigator.userAgent);
     // 打包程式只有 Windows 版；Mac 的「本機」連它自己的 OCR 服務（Safari 擋 http://localhost，所以走 Tailscale https）
-    const OCR_HOSTS={get manager(){return localStorage.getItem('ocrManagerUrl')||''},company:'https://ljm2222.tail3d3c18.ts.net:8443',branch:'https://tzutzu-office.tail3d3c18.ts.net:8443',local:OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:18787'};
+    const OCR_HOSTS={get manager(){return localStorage.getItem('ocrManagerUrl')||''},company:'https://ljm2222.tail3d3c18.ts.net:8443',branch:'https://tzutzu-office.tail3d3c18.ts.net:8443',get local(){return OCR_IS_MAC?'https://chias-macbook-pro.tail3d3c18.ts.net:8443':'http://127.0.0.1:'+(localStorage.getItem('ocrLocalPort')==='18787'?'18787':'8787')}};
     function ocrHost(){const v=localStorage.getItem('ocrHost');return v==='local'||v==='branch'||(v==='manager'&&OCR_HOSTS.manager)?v:'company'}
     function ocrHostName(){const v=ocrHost();return v==='manager'?(localStorage.getItem('ocrRegName')||'所選主機'):({company:'玉承',branch:'天母',local:'本機'}[v]||'所選主機')}
     function setOcrHost(v){
@@ -1276,7 +1277,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     async function loadRegistryHosts(){try{
       const r=await fetch(REG_SB.url+'/rest/v1/syllabus_doc?select=id,content&id=gte.100000&limit=60',{headers:{apikey:REG_SB.key,Authorization:'Bearer '+REG_SB.key}});
       if(!r.ok)return;REG_HOSTS=regParse(await r.json());renderHostOptions();updateRenameBtn()}catch(e){}}
-    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機程式：請先下載解壓縮、開啟 ZiziOCR.exe 並保持視窗開著；瀏覽器若詢問是否允許存取本機網路請按允許（按過拒絕要到網址列左側的網站設定改回）；Safari 無法連本機，請用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
+    function ocrConnectHint(){return ocrHost()==='local'&&OCR_IS_MAC?'連不到這台 Mac 的 OCR 服務：請確認服務已開、Tailscale 已連線。':ocrHost()==='local'?'連不到本機主機：請確認已完成「茲茲主機安裝」，並查看右下角「茲」圖示的服務狀態。瀏覽器若詢問是否允許存取本機網路，請按允許；建議使用 Chrome 或 Edge。':'連不到「'+ocrHostName()+'」：請確認那台電腦已開機、OCR 服務有開，你的電腦也已連上 Tailscale。'}
     let OCR_RESULT=null;
     let OCR_PDF_FILE=null;   // 記住這次辨識的 PDF，供手動切圖步驟「手動框選修正」用
     let OCR_ACTIVE_RUN=null;
@@ -1366,10 +1367,21 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         '<span class="help">估算費用 ≈ US$'+usd.toFixed(4)+'（約 NT$'+(usd*USD_TWD).toFixed(2)+'）　單價：輸入 $'+GEMINI_PRICE.input+'／1M、輸出 $'+GEMINI_PRICE.output+'／1M（gemini-2.5-flash，僅供估算，實際請以 Google 官方報價為準）</span>';
     }
     async function testOcrService(){
-      const el=document.getElementById('ocrHealth');const base=ocrBase();
+      const el=document.getElementById('ocrHealth');let base=ocrBase();
       if(!base){el.textContent='找不到茲茲 OCR 主機設定。';return}
       el.textContent='測試中…';
-      try{const r=await fetch(base+'/api/health');if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');const j=await r.json();
+      try{
+        const readHealth=async url=>{const r=await fetch(url+'/api/health',{signal:AbortSignal.timeout(5000)});if(r.status===403)throw new Error('主機仍在使用舊版白名單，請在該台電腦重啟茲茲 OCR 背景服務');return{r,j:await r.json()}};
+        let result;
+        try{result=await readHealth(base)}catch(err){
+          const local=ocrHost()==='local'&&!OCR_IS_MAC&&/^http:\/\/127\.0\.0\.1:(8787|18787)$/.test(base);
+          if(!local||(!(err instanceof TypeError)&&err.name!=='TimeoutError'))throw err;
+          const alternate=base.endsWith(':8787')?'18787':'8787';
+          const next='http://127.0.0.1:'+alternate;
+          result=await readHealth(next);
+          if(result.r.ok&&result.j.service==='tzutzu-ocr'){localStorage.setItem('ocrLocalPort',alternate);document.getElementById('ocrUrl').value=next;base=next}
+        }
+        const {r,j}=result;
         if(!r.ok||j.service!=='tzutzu-ocr')throw new Error('這不是茲茲 OCR 主機');
         el.textContent=`已連線茲茲 OCR：${j.host||'主機'} · 版本 ${j.revision||'未知'} · ${j.ocrEngine||'本機 OCR'}；OCR 與題庫 Excel 均由此主機處理。`;
       }catch(e){el.textContent=''+(e instanceof TypeError?ocrConnectHint():(e.message||e));}
@@ -1553,7 +1565,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       return imgs;
     }
   </script>
-  <script type="module" src="tools/dehand.js"></script>
+  <script type="module" src="tools/dehand.js?v=pure-v10-20261116"></script>
 
   <script id="pipeScript">
   /* 考卷匯入工作流：必要 5 步（1 清除筆跡→2 自動命名→3 OCR→4 題庫 Excel→5 手動切圖）＋可選 2 步（詳解、詳解 Excel）。
@@ -1600,7 +1612,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     box.innerHTML='<div class="pipe-top"><div class="pipe-total"><b id="pipeCount">0/6</b> 個必要步驟完成 · <span id="pipeElapsed">尚未開始</span></div><div class="pipe-bar"><i id="pipeFill"></i></div></div>'+
       '<div class="pipe-board" id="pipeBoard">'+PIPE.steps.filter(s=>!s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
       '<div class="pipe-opt" id="pipeOpt"><div class="pipe-optlabel">可選・不影響完成度（事後再做也可以）</div>'+PIPE.steps.filter(s=>s.opt).map((s,i,a)=>pipePieceHtml(s,i<a.length-1)).join('')+'</div>'+
-      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option></select><a class="btn" id="hostPkgBtn" href="host-download.html" target="_blank" rel="noopener" title="把一台電腦設成 OCR 主機＋AI 橋接">下載主機安裝包</a><a class="btn hide" id="ocrLocalDownload" href="https://github.com/ljmath-glitch/science-qbank/releases/download/ocr-desktop-v1.0.2/ZiziOCR-windows.zip">下載本機程式</a><button type="button" class="btn hide" id="hostRenameBtn" onclick="renameOcrHost()" title="改這台主機在網站上顯示的名稱（所有人都會看到，主機 5 分鐘內同步）">改名</button><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
+      '<div class="pipe-host"><b>OCR 運算主機</b><select id="ocrHostSel" aria-label="OCR 運算主機" onchange="setOcrHost(this.value)"><option value="local">本機</option><option value="company">玉承</option><option value="branch">天母</option></select><button type="button" class="btn hide" id="hostRenameBtn" onclick="renameOcrHost()" title="改這台主機在網站上顯示的名稱（所有人都會看到）">改名</button><button type="button" class="btn" onclick="testOcrService()">測試連線</button><span class="status" id="ocrHealth"></span></div>'+
       '<div class="drop pipe-import" id="pipeImport" onclick="dehandFile.value=\'\';dehandFile.click()" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="event.preventDefault();this.classList.remove(\'drag\');routeExamFiles(event.dataTransfer.files)"><b id="pipeImportTitle">拖放考卷到這裡，或點此選檔</b><span class="help" id="pipeImportHint">PDF、JPG、PNG；有簡答卷可一起放</span></div><div class="pipe-done" id="pipeDone"><span id="pipeDoneTxt"></span><a class="btn primary" href="#" onclick="finishRawWorkflow();return false">前往題庫做最後審核 </a></div>';
     setOcrHost(ocrHost());pipeRender();loadRegistryHosts();setInterval(loadRegistryHosts,300000);{const sel=document.getElementById('ocrHostSel');if(sel)sel.addEventListener('focus',loadRegistryHosts)}}
   function pipeRender(){
@@ -1989,7 +2001,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
      切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
   (function(){
-    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
+    let RV={filter:'all',edit:'',src:'crop',zoom:1,tool:'crop',data:null,groupRows:null},RV_EDIT_CLOSE=null;const PAGE_CACHE=new WeakMap();let _katexP=null,_tmr=0,_cropHome=null;
     const KATEX='https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/';
     function loadKatex(){if(window.renderMathInElement)return Promise.resolve();if(_katexP)return _katexP;
       _katexP=new Promise((ok,bad)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=KATEX+'katex.min.css';document.head.appendChild(l);
@@ -2009,37 +2021,55 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if(cell(r,'type')==='passage'){if(gid){passages[gid]=String(r[ix.q]||'');passageRow[gid]={ri:i,col:ix.q}}continue}
         if(gid&&ps.trim()&&!passages[gid]){passages[gid]=ps;passageRow[gid]={ri:i,col:ix.passage}}
         items.push({ri:i,no:cell(r,'no'),ans:cell(r,'ans'),q:String(r[ix.q]||''),gid,chart:cell(r,'chart'),type:cell(r,'type'),flag:/^(y|yes|true|1|是)$/i.test(cell(r,'flag')),basis:cell(r,'basis'),imgs:[]})}
-      const byNo={};items.forEach(it=>{if(it.no&&!byNo[it.no])byNo[it.no]=it});
+      const byNo={};items.forEach(it=>{if(it.no)(byNo[it.no]??=[]).push(it)});
       const gImgs={},loose=[];
-      (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim();const it=byNo[no];const im={src:c.src,ci};
-        if(!it){loose.push({...im,no});return}
+      (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim(),choices=byNo[no]||[];
+        // 題號重複時不能只取第一題：題組共用圖優先找有題組 ID 的列；單題圖優先找含圖標記的列。
+        const it=(c.scope||'single')==='group'?(choices.find(x=>x.gid)||choices[0]):(choices.find(x=>FIG.test(x.q))||choices.find(x=>x.gid)||choices[0]);const im={src:c.src,ci};
+        if(!it){delete c._reviewRi;delete c._reviewGid;loose.push({...im,no});return}
+        c._reviewRi=it.ri;c._reviewGid=it.gid||'';
         if((c.scope||'single')==='group'&&it.gid)(gImgs[it.gid]=gImgs[it.gid]||[]).push(im);else it.imgs.push(im)});
+      const gidCounts={};items.forEach(it=>{if(it.gid)gidCounts[it.gid]=(gidCounts[it.gid]||0)+1});
       const seen={};
       items.forEach(it=>{const w=[];
         if(!it.q.trim())w.push('題目空白');
         if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
         if(!it.ans)w.push('沒有答案');
+        if(it.gid&&gidCounts[it.gid]===1)w.push('題組只有1題');
         const needFig=FIG.test(it.q)||(it.gid&&FIG.test(passages[it.gid]||''));
         if(needFig&&!it.imgs.length&&!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length))w.push('缺圖');
         if(it.flag)w.push('待確認');
         it.warns=w;
-        it.tone=w.includes('題目空白')||w.includes('題號重複')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
-      return {rows,header,ix,items,passages,passageRow,gImgs,loose}}
+        it.tone=w.includes('題目空白')||w.includes('題號重複')||w.includes('題組只有1題')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
+      const gids=[...new Set(items.map(it=>it.gid).filter(Boolean))];
+      const groupIndex=Object.fromEntries(gids.map((gid,i)=>[gid,i+1]));
+      return {rows,header,ix,items,passages,passageRow,gImgs,loose,gids,groupIndex}}
     function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;return it.warns.includes(f)}
+    function rvParseRange(str){const nums=new Set();String(str||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{const m=part.match(/^(\d+)\s*-\s*(\d+)$/);if(m){const a=+m[1],b=+m[2];for(let n=Math.min(a,b);n<=Math.max(a,b);n++)nums.add(n)}else if(/^\d+$/.test(part))nums.add(+part)});return nums}
+    function rvCompactNos(nums){const a=[...new Set(nums)].sort((x,y)=>x-y),out=[];for(let i=0;i<a.length;){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;out.push(j>i?a[i]+'-'+a[j]:String(a[i]));i=j+1}return out.join(', ')}
+    function rvGroupsFromData(D){if(!D)return[{range:''}];const map=new Map();D.items.forEach(it=>{if(it.gid){if(!map.has(it.gid))map.set(it.gid,[]);const n=parseInt(it.no,10);if(Number.isInteger(n))map.get(it.gid).push(n)}});const rows=[...map.entries()].map(([gid,nos])=>({range:rvCompactNos(nos),gid}));return rows.length?rows:[{range:''}]}
+    function rvGroupTool(D){if(!D)return'';if(!RV.groupRows)RV.groupRows=rvGroupsFromData(D);return '<div class="rv-group-tool"><div class="rv-group-title"><b>🔧 題組編號人工校對</b><span>輸入題號範圍，按套用後：範圍內的題會標同一個題組 ID，範圍外的題組 ID 會被清空</span></div><div class="rv-group-rows">'+RV.groupRows.map((r,i)=>'<div><span>題組'+(i+1)+'</span><input value="'+esc(r.range||'')+'" placeholder="例如 8-9 或 15-19" oninput="_rvGroupInput('+i+',this.value)"><button type="button" class="btn sm" onclick="_rvGroupRemove('+i+')">✕</button></div>').join('')+'</div><div class="rv-group-actions"><button type="button" class="btn sm" onclick="_rvGroupAdd()">＋ 新增題組</button><button type="button" class="btn sm primary" onclick="_rvGroupApply()">套用</button></div></div>'}
+    window._rvGroupInput=(i,value)=>{if(RV.groupRows[i])RV.groupRows[i].range=value};
+    window._rvGroupAdd=()=>{RV.groupRows.push({range:''});renderRight(true)};
+    window._rvGroupRemove=i=>{RV.groupRows.splice(i,1);if(!RV.groupRows.length)RV.groupRows=[{range:''}];renderRight(true)};
+    window._rvGroupApply=()=>{const D=RV.data;if(!D)return;const parsed=RV.groupRows.map(r=>rvParseRange(r.range)).filter(s=>s.size);if(!parsed.length&&!confirm('沒有填任何題組範圍。要清空全部題目的題組 ID 嗎？'))return;const known=new Set(D.items.map(it=>parseInt(it.no,10)).filter(Number.isInteger)),seen=new Set();for(const g of parsed)for(const n of g){if(!known.has(n)){alert('題號 '+n+' 不在目前題目資料裡');return}if(seen.has(n)){alert('題號 '+n+' 出現在兩個題組裡，請確認範圍沒有重疊');return}seen.add(n)}
+      const base=(examName.value||D.items[0]?.exam||'題組').trim(),oldToNew=new Map();D.items.forEach(it=>{const no=parseInt(it.no,10);let gi=-1;parsed.forEach((g,i)=>{if(g.has(no))gi=i});const newGid=gi>=0?base+'-'+Math.min(...parsed[gi]):'';if(it.gid&&newGid&&!oldToNew.has(it.gid))oldToNew.set(it.gid,newGid);const row=D.rows[it.ri];while(row.length<=D.ix.gid)row.push('');row[D.ix.gid]=newGid});
+      for(let i=1;i<D.rows.length;i++){const row=D.rows[i],type=String(row[D.ix.type]||'').trim(),old=String(row[D.ix.gid]||'').trim();if(type==='passage'&&oldToNew.has(old))row[D.ix.gid]=oldToNew.get(old)}
+      questionCsv.value=_rowsToCsv(D.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.groupRows=rvGroupsFromData(RV.data);RV.edit='';renderRight(true);setState('題組範圍已套用到匯入資料；尚未寫入題庫。')};
     const gattr=g=>`data-g="${esc(g)}"`;
     function renderRight(keepY){
       const box=document.getElementById('rvRight');if(!box)return;const y=box.scrollTop;const D=RV.data;
       if(!D){box.innerHTML='<div class="status">還沒有題目資料。請等「題庫 Excel」產生後再回來。</div>';setSum('');return}
       const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,bad=D.items.filter(it=>it.warns.length).length;
       const chip=(k,l,n,t)=>`<button type="button" class="rv-chip${t?' t-'+t:''}${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
-      let h='<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')?chip('題號重複','題號重複',cnt('題號重複'),'err'):'')+'</div>';
+      let h=rvGroupTool(D)+'<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')+cnt('題組只有1題')?chip('題組只有1題','題組異常',cnt('題組只有1題'),'err'):'')+'</div>';
       if(D.loose.length)h+=`<div class="rv-card tone-err"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">在左邊清稿的框上把題號改對，就會自動放進對應題目。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">框上的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
       const shownG=new Set();let n=0;
       D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
         if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
           h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
             :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
-        const tags=(it.gid?'<span class="rv-tag">題組</span>':'')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
+        const tags=(it.gid?'<span class="rv-tag grouped">題組編號：題組'+(D.groupIndex[it.gid]||'')+'（'+esc(it.gid)+'）</span>':'<span class="rv-tag ungrouped">題組編號：未加入</span>')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
         const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
         if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
         h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
@@ -2104,7 +2134,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         <div class="rv-scrim" onclick="_rvLeft(false)"></div><button type="button" class="rv-handle" onclick="_rvLeft(true)" aria-label="打開清稿"><span>清</span><span>稿</span></button></div>`;
       try{const v=document.getElementById('ivWrap');new IntersectionObserver(es=>es.forEach(e=>v.classList.toggle('inview',e.isIntersecting&&document.getElementById('ivPane').classList.contains('on')))).observe(v.querySelector('.iv-body'))}catch(e){}
       return pane}
-    async function enter(){ensurePane();RV.data=build();RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
+    async function enter(){ensurePane();RV.data=build();RV.groupRows=rvGroupsFromData(RV.data);RV.edit='';renderRight(false);loadKatex().then(()=>rvMath(document.getElementById('rvRight')));await renderLeft();
       try{if(pipeStep(4).state==='done'&&pipeStep(5).state!=='run'&&pipeStep(6).state==='wait')pipeStart(6,'對照原卷逐題檢查',true)}catch(e){}}
 
     // ── 修改：開啟「題庫管理」同一個編輯題目視窗（借用背景載入的題庫頁），儲存時只寫回這裡的題目資料與切圖，不會寫進雲端題庫 ──
@@ -2136,7 +2166,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const E=id=>doc.getElementById(id),fix=v=>{try{return w.fixControlCharEatenLatex(v)}catch(e){return v}};
         const q=fix(E('eQ').value.trim()),summary=E('eSummary').value.trim();if(!q&&!summary){w.alert('題目或摘要至少填一個');return}
         const syl=w.eval('(SYL.find(k=>k.book===eBook.value)||{})'),df=w.eval('({step:diff.step,mem:diff.mem,con:diff.con})'),imgsNow=w.eval('curImgs.map(x=>({src:x.src}))');
-        let basis=E('eBasis').value.trim();const flag=E('eFlag').checked;if(flag&&basis&&!basis.startsWith('[回報]'))basis='[回報] '+basis;
+        const report=typeof w.getEditReportState==='function'?w.getEditReportState():{basis:E('eBasis').value.trim(),flag:E('eFlag').checked};let basis=report.basis;const flag=report.flag;
         const set=(i,v)=>{if(i>=0){while(r.length<=i)r.push('');r[i]=v}};
         set(C.year,E('eYear').value.trim());set(C.school,E('eSchool').value.trim());set(C.exam,E('eExam').value.trim());set(C.no,E('eNo').value.trim());set(C.ans,E('eAns').value.trim());
         set(C.book,E('eBook').value);set(C.bookName,syl.bookName||'');set(C.field,syl.field||'');set(C.unit,E('eUnit').value);set(C.sub,E('eSub').value);set(C.kp,E('eKp').value.trim());set(C.summary,summary);set(C.type,E('eType').value);
@@ -2163,7 +2193,15 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     const fw=s=>String(s||'').replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
     function akNorm(s){s=fw(s).trim().replace(/^[（(\[]|[)）\]]$/g,'').toUpperCase();return /^[A-E]{1,5}$/.test(s)?s:null}
     function akFromText(t){
-      t=fw(t);const map={};let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
+      t=fw(t);const map={};
+      const sequence=t.replace(/\s/g,'').replace(/／/g,'/').toUpperCase();
+      if(/^[A-E/]+$/.test(sequence)){
+        const groups=sequence.split('/');
+        if(groups.some((group,i)=>!group.length||group.length>5||(i<groups.length-1&&group.length!==5)))throw new Error('每 5 題請加一個 /，最後一組可少於 5 題，例如 CAABC/DDCAD。');
+        [...groups.join('')].forEach((answer,i)=>map[i+1]=answer);
+        return map;
+      }
+      let m;const re=/(?<!\d)(\d{1,3})\s*[.、:：)）\]]?\s*[（(]?\s*([A-Ea-e]{1,5})(?:\s*[)）])?(?![A-Za-z])/g;
       while((m=re.exec(t)))map[+m[1]]=m[2].toUpperCase();
       if(Object.keys(map).length<3){ // 表格：一排題號、下一排答案
         const tk=t.split(/\s+/).filter(Boolean);let i=0;
@@ -2206,7 +2244,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       const extra=nos.map(Number).filter(n=>!seen.has(n));
       akSay(`簡答已套用：填入 ${filled} 題`+(changed.length?`（其中第 ${changed.join('、')} 題原本答案不同，已改成簡答卷的答案）`:'')+(extra.length?`；簡答卷第 ${extra.join('、')} 題在題目資料裡找不到`:'')+'。')}
     window.loadAnswerKeyFile=async function(f){if(!f)return;akSay('正在讀取簡答卷…');try{const r=await akParse(f);applyAnswerKey(r.map)}catch(e){akSay('讀取簡答失敗：'+(e.message||e))}};
-    window.pasteAnswerKey=function(){const t=prompt('貼上簡答，例如「1.C 2.D 3.A」或一排題號＋一排答案：');if(t)applyAnswerKey(akFromText(t))};
+    window.pasteAnswerKey=function(){const t=prompt('直接輸入全部答案，不用題號。每 5 題用 / 分隔，最後一組可少於 5 題。\n例如：CAABC/DDCAD');if(!t)return;try{const map=akFromText(t);if(!Object.keys(map).length)throw new Error('請輸入 A～E 答案，每 5 題用 / 分隔，例如 CAABC/DDCAD。');applyAnswerKey(map)}catch(e){akSay('簡答格式錯誤：'+e.message);alert(e.message)}};
 
     // ── 教用版：檔名寫明「教用版」時，每題前面括號裡印的答案就是正解（例如「（C）1.」）──
     const isTeacherName=n=>/教用版|教師版|教師用版/.test(n||'');
@@ -2258,16 +2296,19 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const w=promptSource.contentWindow;await waitForPromptBuilder('doImport');
         if(!w.csvArea)throw new Error('題庫匯入程式尚未載入完成，請稍候再按一次');
         setState('正在匯入題目…');let loaded=false;const _ld=w.load;w.load=async function(...a){loaded=true;return _ld.apply(this,a)};
-        try{w.csvArea.value=csv;await w.doImport()}finally{w.load=_ld}
+        let importResult=null;try{w.csvArea.value=csv;importResult=await w.doImport()}finally{w.load=_ld}
         if(!loaded){setState('題目沒有匯入（已取消或發生錯誤）。');return}
         const imgs=cropCandidates.filter(x=>!x.skip);let note='';
         if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
           const importer=await waitForPromptBuilder('importBatchHandoffImages');
-          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
-          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');
-          note=bits.length?'（圖片：'+bits.join('；')+'）':'，圖片已全部貼入';}
-        setState('匯入完成'+note+'。');try{pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,'已匯入題庫')}catch(e){}
-        if(confirm('匯入完成'+note+'。\n要前往題庫查看這份考卷嗎？'))finishRawWorkflow();
+          const renumbered=new Map((importResult&&importResult.renumbered||[]).map(x=>[x.ri,Number(x.newNo)]));
+          const r=await importer({exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:renumbered.has(x._reviewRi)?renumbered.get(x._reviewRi):x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
+          const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');if(r&&r.unknownQno)bits.push(r.unknownQno+' 張圖片沒有題號');if(r&&r.failed)bits.push((r.failedQnos&&r.failedQnos.length?'第 '+r.failedQnos.join('、')+' 題的 ':'')+r.failed+' 張圖片上傳或驗證失敗');
+          const complete=r&&r.done===imgs.length&&!r.failed&&!r.unmatched;
+          note=complete?'，圖片已全部貼入':'（圖片未全部匯入：'+(bits.join('；')||(r&&r.done||0)+'／'+imgs.length+' 張成功')+'）';}
+        const imageIncomplete=imgs.length&&!/圖片已全部貼入/.test(note);
+        setState((imageIncomplete?'題目已匯入，但有圖片缺失':'匯入完成')+note+'。');try{if(imageIncomplete)pipeFail(5,note);else pipeDone(5,imgs.length+' 張圖已貼入');pipeDone(6,imageIncomplete?'題目已匯入，圖片需重試':'已匯入題庫')}catch(e){}
+        if(confirm((imageIncomplete?'題目已匯入，但有圖片缺失':'匯入完成')+note+'。\n'+(imageIncomplete?'請先保留本頁並重試缺失圖片；仍要前往題庫查看嗎？':'要前往題庫查看這份考卷嗎？')))finishRawWorkflow();
       }catch(e){setState('匯入失敗：'+(e.message||e))}
       finally{btn.disabled=false}
     };

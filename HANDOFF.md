@@ -1,0 +1,20 @@
+# 交接
+
+## 已完成（2026-11-16）
+- Windows 安裝包 2.0.2，含 OCR、Excel、自動切圖、系統匣更名與更新提醒。
+- 安裝會先下載並初始化 PP-DocLayout v3，再切換服務；主機名稱與設定保留。
+- 實測修正舊監督程序占埠且健康檢查誤認舊服務的問題，加入新安裝身分檢查。
+- 實測修正 Excel 500：補齊 buildlib.py 與範本，並檢查執行依賴。
+- 真實 Windows 安裝、單頁 OCR、23 欄 Excel 下載、自動切圖 4 張、.NET 更新聯網下載校驗通過。
+- 可重建來源、發布步驟與本次測試紀錄位於 tools/host-installer。
+
+## 下一步與驗證範圍
+- 未在全新 Windows 機器驗證所有 winget 前置工具，也未強制演練更新通知點擊及失敗恢復。
+- 掃描頁有手寫內容且略過清稿，OCR 與分題仍需人工核對。
+- 發布新版需遞增 version.json 並重建 ZIP 與 manifest，一起推至 main。
+- 修正匯卷頁本機預設埠由舊版 18787 改為主機安裝包 8787；測試連線可在新舊本機埠間偵測並記住結果，更新舊版錯誤提示。新增 tools/raw-local-connection.test.cjs 回歸測試。
+
+- 清稿新增 v10-pure 選項，以 https://tzutzu-course-system.vercel.app/eraser.html 的 V10 GPU／INT8 CPU 模型、RGB、橫式兩倍寬、512/48 切塊、邊界補值與打印版重建為準，另提供同原稿重跑按鈕。頁面裁切與校正仍沿用題庫流程，未實跑本次使用者考卷比較效果。
+- 新增 tools/dehand-pure.test.cjs，透過 cleanCanvas 正常入口驗證 RGB、邊界補值、直橫式寬度、純重建與不套混合版規則。
+
+- 貼上簡答支援 CAABC/DDCAD，每五題斜線分隔，由第 1 題順序套用，最後一組可 1～5 題；保留題號格式及多選題舊用法。分組格式錯誤時停止套用並提示。新增 tools/answer-sequence.test.cjs，涵蓋解析、實際貼上入口、取消與錯誤輸入。

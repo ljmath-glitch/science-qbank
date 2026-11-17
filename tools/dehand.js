@@ -12,7 +12,23 @@ export function tileWeight(x,y,w,h){return Math.min(1,Math.min(x+1,y+1,w-x,h-y,O
 export function tileStarts(length,size=TILE_SIZE,overlap=OVERLAP){if(length<=size)return[0];const step=size-overlap,out=[];for(let x=0;x<length;x+=step){out.push(Math.min(x,length-size));if(x+size>=length)break}return[...new Set(out)]}
 
 const sessions=new Map;
+async function getPureV10Session(){
+  const key='v10-pure';
+  if(sessions.has(key))return sessions.get(key);
+  const promise=(async()=>{
+    const ort=await import('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.min.mjs');
+    ort.env.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';
+    ort.env.wasm.numThreads=globalThis.crossOriginIsolated?Math.min(4,navigator.hardwareConcurrency||1):1;
+    const gpu=!!(navigator.gpu&&await navigator.gpu.requestAdapter().catch(()=>null));
+    if(gpu){try{return{ort,session:await ort.InferenceSession.create(DEHAND_FALLBACK_URL+'?v=10',{executionProviders:['webgpu']})}}catch(e){console.warn('純 V10 改用 CPU 模型',e)}}
+    return{ort,session:await ort.InferenceSession.create('https://tzutzu-course-system.vercel.app/models/handwriting-eraser-v10-int8.onnx?v=10',{executionProviders:['wasm']})};
+  })();
+  sessions.set(key,promise);
+  try{return await promise}catch(e){sessions.delete(key);throw e}
+}
 async function getSession(mode='v10'){
+  if(mode==='v10-pure')return getPureV10Session();
+  mode=mode==='r8'?'r8':'v10';
   if(sessions.has(mode))return sessions.get(mode);
   const model=mode==='r8'?DEHAND_EXPERIMENTAL_MODEL_URL:DEHAND_MODEL_URL;
   const promise=(async()=>{const ort=await import('https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.webgpu.min.mjs');ort.env.wasm.wasmPaths='https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/';try{return{ort,session:await ort.InferenceSession.create(model,{executionProviders:['webgpu','wasm']}).catch(()=>mode==='v10'?ort.InferenceSession.create(DEHAND_FALLBACK_URL,{executionProviders:['webgpu','wasm']}):Promise.reject(new Error('r8 模型無法載入')))}}catch(webgpuError){console.warn('WebGPU 載入失敗，改用 WASM',webgpuError);return{ort,session:await ort.InferenceSession.create(model,{executionProviders:['wasm']})}}})();sessions.set(mode,promise);try{return await promise}catch(e){sessions.delete(mode);throw e}
@@ -91,7 +107,8 @@ function watermarkRatio(img,mask,bg){const n=img.width*img.height,val=new Uint8A
 let runChain=Promise.resolve();
 function runQueued(session,feeds){const p=runChain.then(()=>session.run(feeds));runChain=p.catch(()=>{});return p}
 export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
-  const scale=PAGE_WIDTH/source.width,w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*scale)),input=canvas(w,h),ictx=input.getContext('2d',{willReadFrequently:true});ictx.drawImage(source,0,0,w,h);const image=ictx.getImageData(0,0,w,h),wm=removeWatermark(image),wmt=wm?(wmBg&&wmBg.w===w&&wmBg.h===h?watermarkRatio(image,wm,wmBg.bg):watermarkText(image,wm)):null,out=canvas(w,h),odata=out.getContext('2d').createImageData(w,h),sum=new Float32Array(w*h),hand=new Float32Array(w*h),weights=new Float32Array(w*h),runtime=await getSession(mode),session=runtime.session,xs=tileStarts(w),ys=tileStarts(h);let done=0;
+  if(mode==='v10-pure')return cleanPureV10Canvas(source,onTile);
+  const scale=PAGE_WIDTH/source.width,w=PAGE_WIDTH,h=Math.max(1,Math.round(source.height*scale)),input=canvas(w,h),ictx=input.getContext('2d',{willReadFrequently:true});ictx.drawImage(source,0,0,w,h);const image=ictx.getImageData(0,0,w,h),wm=mode==='v10-pure'?null:removeWatermark(image),wmt=wm?(wmBg&&wmBg.w===w&&wmBg.h===h?watermarkRatio(image,wm,wmBg.bg):watermarkText(image,wm)):null,out=canvas(w,h),odata=out.getContext('2d').createImageData(w,h),sum=new Float32Array(w*h),hand=new Float32Array(w*h),weights=new Float32Array(w*h),runtime=await getSession(mode),session=runtime.session,xs=tileStarts(w),ys=tileStarts(h);let done=0;
   for(const y of ys)for(const x of xs){const tw=Math.min(TILE_SIZE,w-x),th=Math.min(TILE_SIZE,h-y),data=new Float32Array(3*TILE_SIZE*TILE_SIZE);for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const src=((y+yy)*w+x+xx)*4,v=yy*TILE_SIZE+xx,g=(.299*image.data[src]+.587*image.data[src+1]+.114*image.data[src+2])/255;data[v]=data[TILE_SIZE*TILE_SIZE+v]=data[2*TILE_SIZE*TILE_SIZE+v]=g}const feeds={[session.inputNames[0]]:new runtime.ort.Tensor('float32',data,[1,3,TILE_SIZE,TILE_SIZE])};const result=await runQueued(session,feeds),raw=(result.out||result[session.outputNames[0]]).data,TT=TILE_SIZE*TILE_SIZE;for(let yy=0;yy<th;yy++)for(let xx=0;xx<tw;xx++){const n=(y+yy)*w+x+xx,wt=tileWeight(xx,yy,tw,th),k=yy*TILE_SIZE+xx;sum[n]+=raw[k]*wt;if(raw.length>=2*TT)hand[n]+=1/(1+Math.exp(-Math.max(-30,Math.min(30,raw[TT+k]))))*wt;weights[n]+=wt}onTile&&onTile(++done,xs.length*ys.length)}
   // 只在 1240 寬上「判斷」要擦哪裡；輸出在原解析度上只塗白要擦的像素、其餘保留原圖（字不會被模型重畫而變糊）
   const erase=new Uint8Array(w*h),wmv=new Int16Array(w*h).fill(-1);
@@ -103,6 +120,39 @@ export async function cleanCanvas(source,onTile,{mode='v10',wmBg=null}={}){
     d[o]=d[o+1]=d[o+2]=v;d[o+3]=255}}
   fctx.putImageData(fd,0,0);return full
 }
+// 與 tzutzu-course-system/eraser.html 的 V10 打印版相同的 RGB、切塊與輸出換算。
+async function cleanPureV10Canvas(source,onTile){
+  const w=source.width>source.height*1.2?PAGE_WIDTH*2:PAGE_WIDTH;
+  const h=Math.max(1,Math.round(source.height*w/source.width)),input=canvas(w,h);
+  const ctx=input.getContext('2d',{willReadFrequently:true});
+  ctx.drawImage(source,0,0,w,h);
+  const image=ctx.getImageData(0,0,w,h),sum=new Float32Array(w*h),weights=new Float32Array(w*h);
+  const runtime=await getPureV10Session(),session=runtime.session;
+  const xs=tileStarts(Math.max(w,TILE_SIZE)),ys=tileStarts(Math.max(h,TILE_SIZE)),area=TILE_SIZE*TILE_SIZE;
+  let done=0;
+  for(const y of ys)for(const x of xs){
+    const data=new Float32Array(3*area);
+    for(let yy=0;yy<TILE_SIZE;yy++)for(let xx=0;xx<TILE_SIZE;xx++){
+      const offset=(Math.min(y+yy,h-1)*w+Math.min(x+xx,w-1))*4,k=yy*TILE_SIZE+xx;
+      data[k]=image.data[offset]/255;
+      data[area+k]=image.data[offset+1]/255;
+      data[2*area+k]=image.data[offset+2]/255;
+    }
+    const result=await runQueued(session,{[session.inputNames[0]]:new runtime.ort.Tensor('float32',data,[1,3,TILE_SIZE,TILE_SIZE])});
+    const raw=result[session.outputNames[0]].data;
+    for(let yy=0;yy<Math.min(TILE_SIZE,h-y);yy++)for(let xx=0;xx<Math.min(TILE_SIZE,w-x);xx++){
+      const i=(y+yy)*w+x+xx,weight=tileWeight(xx,yy,TILE_SIZE,TILE_SIZE);
+      sum[i]+=raw[yy*TILE_SIZE+xx]*weight;weights[i]+=weight;
+    }
+    onTile&&onTile(++done,xs.length*ys.length);
+  }
+  const output=canvas(w,h),outCtx=output.getContext('2d'),pixels=outCtx.createImageData(w,h);
+  for(let i=0;i<sum.length;i++){
+    const value=printGray(sum[i]/weights[i]),offset=i*4;
+    pixels.data[offset]=pixels.data[offset+1]=pixels.data[offset+2]=value;pixels.data[offset+3]=255;
+  }
+  outCtx.putImageData(pixels,0,0);return output;
+}
 async function pdfFromCanvases(pages){const {PDFDocument}=await import('https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm'),pdf=await PDFDocument.create();for(const pg of pages){
     // 支援三種來源：已編輯頁（pg.canvas）、直接傳入的 canvas（pg 本身）、清稿頁（只有 pg.blob＋寬高，省記憶體）。
     const cv=pg.canvas||(pg&&typeof pg.getContext==='function'?pg:null);let blob,cw,ch;
@@ -113,7 +163,7 @@ export function preload(mode='v10'){return getSession(mode).catch(e=>{console.wa
 export async function cleanFile(file,{loadPdfJs,onProgress,onPage,mode='v10'}={}){const began=performance.now(),el=()=>((performance.now()-began)/1000).toFixed(1);let total=0;const emit=(stage,percent,page=0,message='')=>onProgress&&onProgress({stage,percent,page,total,message,elapsed:el()}),src=await (emit('讀取檔案',2,0,'正在讀取檔案'),filePages(file,loadPdfJs));total=src.count;const pages=[];
   emit('載入模型',8,0,'正在載入去筆跡模型');await getSession(mode);emit('逐頁轉影像',14,0,`共 ${total} 頁，準備轉為影像`);
   // 流水線：清第 i 頁時，第 i+1 頁已在繪製、第 i-1 頁還在編 JPEG；onPage 仍照頁序觸發
-  let wmBg=null;if(total>=2&&total<=40&&/\.pdf$/i.test(file.name)){emit('分析浮水印',10,0,'正在分析各頁浮水印');const lums=[];for(let i=0;i<total;i++){try{lums.push(await pageLum(await src.get(i)))}catch(e){lums.push(null)}}wmBg=buildWmBg(lums)}
+  let wmBg=null;if(mode!=='v10-pure'&&total>=2&&total<=40&&/\.pdf$/i.test(file.name)){emit('分析浮水印',10,0,'正在分析各頁浮水印');const lums=[];for(let i=0;i<total;i++){try{lums.push(await pageLum(await src.get(i)))}catch(e){lums.push(null)}}wmBg=buildWmBg(lums)}
   let next=src.get(0),shown=Promise.resolve();
   for(let i=0;i<total;i++){emit('逐頁轉影像',14+i/total*12,i+1,`正在轉換第 ${i+1}/${total} 頁`);const source=await next;if(i+1<total)next=src.get(i+1);const beforeP=blobUrl(source,'image/jpeg',.8),
     clean=await cleanCanvas(source,(n,t)=>emit('逐頁清除筆跡',26+(i+n/t)/total*62,i+1,`第 ${i+1}/${total} 頁，清稿切塊 ${n}/${t}`),{mode,wmBg}),blobP=toBlob(clean,'image/jpeg',.92);
