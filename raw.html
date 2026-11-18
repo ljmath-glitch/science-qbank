@@ -1458,8 +1458,28 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       document.getElementById('ocrMarkdown').textContent=md.join('\n');
     }
     /* OCR 常輸出的特殊字元（㈲㈬ ㆗㆙㆚㆛ 等）換成一般字；只動這幾個區段，全形標點不動。㈠～㈩ 保留括號 */
+    function plainSubscripts(s){
+      // OCR／AI 對下標的寫法不一致（有的 F_1、有的 F₁、有的 $F_{1}$），一律統一成一般寫法 F1、F2、H2O。上標（如 Cu^{2+}、10^8）不動。
+      const SUB={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ₐ':'a','ₑ':'e','ₒ':'o','ₓ':'x','ₕ':'h','ₖ':'k','ₗ':'l','ₘ':'m','ₙ':'n','ₚ':'p','ₛ':'s','ₜ':'t','ᵢ':'i','ⱼ':'j'};
+      let t=String(s==null?'':s).replace(/[₀-₉ₐₑₒₓₕₖₗₘₙₚₛₜᵢⱼ]/g,c=>SUB[c]||c);
+      // \mathrm{F}_1、\text{F}_{1}、{F}_1 → F1（先處理，避免指令名稱被當成一般字母）
+      t=t.replace(/\\(?:mathrm|mathbf|text|textbf|mathit)\s*\{([A-Za-z]+)\}\s*_\s*(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,a,b,c)=>a+(b||c));
+      t=t.replace(/\{([A-Za-z]+)\}\s*_\s*(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,a,b,c)=>a+(b||c));
+      // F_1、F_{12}、CH_3COOH：第一個分支吃掉 \sum、\frac 之類的指令名稱，讓它們後面的 _ 不被誤改
+      t=t.replace(/(\\[A-Za-z]+)|([A-Za-z\)\]])_(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,cmd,a,b,c)=>cmd?cmd:a+(b||c));
+      // $F1$ 這種只剩一個字母加數字的行內公式，不需要 $ 了：直接寫 F1
+      t=t.replace(/\$\s*([A-Za-z][A-Za-z0-9]{0,11})\s*\$/g,(m,x)=>/\d/.test(x)?x:m);
+      // 不是算式、也沒有特殊符號或上標的 $...$（單純數字、單位、文字、F1、(B)F2）→ 拿掉 $ 與 \mathrm／\text 外殼，直接寫一般文字
+      t=t.replace(/\$([^$\n]{1,60}?)\$/g,(m,x)=>{
+        let y=x.trim();
+        const w=/^\\(?:mathrm|text|textbf|mathbf)\s*\{([^{}\\^_]*)\}$/.exec(y);if(w)y=w[1].trim();
+        const u=/^([0-9.]+)\s*(?:\\,|\\ |\\;)?\s*\\(?:mathrm|text)\s*\{([^{}\\^_$]*)\}$/.exec(y);if(u)return u[1]+' '+u[2].trim();
+        return /^[A-Za-z0-9\u4e00-\u9fff ().,，。（）%:：]+$/.test(y)?y:m;
+      });
+      return t;
+    }
     function fixOcrChars(s){return String(s==null?'':s).replace(/[\u3190-\u319f\u3220-\u3243\u3280-\u32b0\u2f00-\u2fd5\uf900-\ufaff]/g,ch=>{const n=ch.normalize('NFKC');if(n===ch)return ch;const m=/^\(([^()])\)$/.exec(n),c=ch.charCodeAt(0);return m&&!(c>=0x3220&&c<=0x3229)?m[1]:n})}
-    function ocrAllMarkdown(){const md=(OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');return fixOcrChars(md.trim()?md:((OCR_RESULT&&OCR_RESULT.text)||''));}
+    function ocrAllMarkdown(){const md=(OCR_RESULT&&OCR_RESULT.pages||[]).map(p=>p.markdown||'').join('\n\n');return plainSubscripts(fixOcrChars(md.trim()?md:((OCR_RESULT&&OCR_RESULT.text)||'')));}
     // 把 OCR 出來的圖／表，送進手動切圖步驟「批次貼圖」的可編輯清單（改題號/手動框選/略過）
     function ocrToBatch(){
       if(!OCR_RESULT){alert('請先執行 OCR 辨識。');return}

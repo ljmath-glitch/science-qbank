@@ -2974,6 +2974,26 @@ async function doImportSol(){
   alert(msg);
 }
 // 22欄舊格式相容: 19題目 20詳解 21題組ID（題組文章藏在題目欄以【題幹】分隔）
+function plainSubscripts(s){
+  // OCR／AI 對下標的寫法不一致（有的 F_1、有的 F₁、有的 $F_{1}$），一律統一成一般寫法 F1、F2、H2O。上標（如 Cu^{2+}、10^8）不動。
+  const SUB={'₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','ₐ':'a','ₑ':'e','ₒ':'o','ₓ':'x','ₕ':'h','ₖ':'k','ₗ':'l','ₘ':'m','ₙ':'n','ₚ':'p','ₛ':'s','ₜ':'t','ᵢ':'i','ⱼ':'j'};
+  let t=String(s==null?'':s).replace(/[₀-₉ₐₑₒₓₕₖₗₘₙₚₛₜᵢⱼ]/g,c=>SUB[c]||c);
+  // \mathrm{F}_1、\text{F}_{1}、{F}_1 → F1（先處理，避免指令名稱被當成一般字母）
+  t=t.replace(/\\(?:mathrm|mathbf|text|textbf|mathit)\s*\{([A-Za-z]+)\}\s*_\s*(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,a,b,c)=>a+(b||c));
+  t=t.replace(/\{([A-Za-z]+)\}\s*_\s*(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,a,b,c)=>a+(b||c));
+  // F_1、F_{12}、CH_3COOH：第一個分支吃掉 \sum、\frac 之類的指令名稱，讓它們後面的 _ 不被誤改
+  t=t.replace(/(\\[A-Za-z]+)|([A-Za-z\)\]])_(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,cmd,a,b,c)=>cmd?cmd:a+(b||c));
+  // $F1$ 這種只剩一個字母加數字的行內公式，不需要 $ 了：直接寫 F1
+  t=t.replace(/\$\s*([A-Za-z][A-Za-z0-9]{0,11})\s*\$/g,(m,x)=>/\d/.test(x)?x:m);
+  // 不是算式、也沒有特殊符號或上標的 $...$（單純數字、單位、文字、F1、(B)F2）→ 拿掉 $ 與 \mathrm／\text 外殼，直接寫一般文字
+  t=t.replace(/\$([^$\n]{1,60}?)\$/g,(m,x)=>{
+    let y=x.trim();
+    const w=/^\\(?:mathrm|text|textbf|mathbf)\s*\{([^{}\\^_]*)\}$/.exec(y);if(w)y=w[1].trim();
+    const u=/^([0-9.]+)\s*(?:\\,|\\ |\\;)?\s*\\(?:mathrm|text)\s*\{([^{}\\^_$]*)\}$/.exec(y);if(u)return u[1]+' '+u[2].trim();
+    return /^[A-Za-z0-9\u4e00-\u9fff ().,，。（）%:：]+$/.test(y)?y:m;
+  });
+  return t;
+}
 async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.value);if(!rows.length){alert('沒有資料');return}
   let start=0;const head=rows[0].join('');if(head.includes('題目')||head.includes('年度')||head.includes('冊數'))start=1;const adds=[];
   const examKeys=new Map();
@@ -3035,10 +3055,10 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const it={id:dup?dup.id:uid(),year:year,school:school,exam:fmtExam,no:g(3),ans:g(4),book:book,bookName:g(6),field:g(7),
       unit:g(8),sub:g(9),kp:g(10),summary:g(11),type:g(12),
       step:+g(13)||0,mem:+g(14)||0,con:+g(15)||0,chart:g(16),basis:g(17),
-      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:fixControlCharEatenLatex(g(19)).replace(/承第\s*\d+\s*題/g,'承上題'),
+      flag:(g(18)==='Y'||g(18)==='y')||!g(4),q:plainSubscripts(fixControlCharEatenLatex(g(19)).replace(/承第\s*\d+\s*題/g,'承上題')),
       // 覆蓋既有題目時，若這次 CSV 的詳解欄是空的，保留原本已寫好的詳解，不要清空（常見情境：先匯入原始考卷、詳解另外用 AI 產生後才補上，之後如果重新匯入原始 CSV 不該把詳解洗掉）
       sol:(r.length>=22?normalizeSol(fixControlCharEatenLatex(g(20))):'')||(dup?dup.sol:''),
-      _passage:is23?fixControlCharEatenLatex(g(21)).replace(/承第\s*\d+\s*題/g,'承上題'):'',
+      _passage:is23?plainSubscripts(fixControlCharEatenLatex(g(21)).replace(/承第\s*\d+\s*題/g,'承上題')):'',
       groupId:is23?(g(22)||''):r.length>=22?(g(21)||''):(g(20)||''),
       // CSV 無法承載圖片資料，覆蓋既有題目時要保留原本已上傳的圖片，避免被清空
       imgs:dup?dup.imgs:[]};
@@ -6892,34 +6912,47 @@ function buildPrompt(){const syl=SYL_RAW;
 
   【數學與化學式 LaTeX 規則（題目欄、詳解欄都適用）】
   ▸ 所有數學式、化學式用 $...$ 包住（如 $v=\\frac{d}{t}$、$Cu^{2+}$）
-  ▸ 單位和英文字詞用 \\text{} 包住（如 $30\\,\\text{m/s}$、$25\\,\\text{g}$）
-  ▸ ⚠️ 不是只有明顯的算式才要包 $...$：題幹敘述裡任何測量值、數量、數據（即使只是單一個數字、沒有搭配運算符號）也一律要包
-    ✓ 小明走了 $30$ 公尺，花了 $4$ 秒　　✗ 小明走了30公尺，花了4秒
-    ✓ 燒杯中有 $12$ 顆分子　　　　　　　✗ 燒杯中有12顆分子
-    ⚠️ 例外（不要包 $...$）：題號、年度／學年學期（如112年、114上）、選項代號(A)(B)(C)(D)
+  ▸ ⚠️【只有需要時才用 LaTeX】能用一般文字寫的就寫一般文字，不要包 $...$
+    · 一般文字（不要 $）：單獨的數字與帶單位的數量（30公尺、12顆、25 g、30 m/s）、F1、F2、H2O、CO2、選項代號(A)(B)、純文字敘述
+    · 要用 LaTeX：算式／方程式（含 = + − × ÷ 分數 根號）、特殊符號（希臘字母、→、≥、≤、≠、度數 °）、有上標或平方的（$10^8$、$m^2$、$Cu^{2+}$）
+    ✓ 小明走了30公尺，花了4秒　　✗ 小明走了 $30$ 公尺，花了 $4$ 秒
+    ✓ 燒杯中有12顆分子、(B)F2　　✗ $12$ 顆分子、$\\mathrm{(B)F_2}$
+    ✓ 速度 $v=\\frac{d}{t}$、面積 $S=\\pi r^2$、$6\\times10^{23}$
+    ⚠️ 選項代號(A)(B)(C)(D)、題號、年度／學年學期（如112年、114上）一律不包 $...$
     ⚠️ 溫度一律用 KaTeX 度數格式，禁止用裸字「℃」「℉」「°C」「°F」「度C」「度F」
     ✓ 水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ $25$℃、25℃、$25^\\circ\\mathrm{C}$（缺 \\,{}）、$25\\,\\text{℃}$
     ✓ $32\\,{}^\\circ\\mathrm{F}$　　　　✗ $32$℉、32℉、$32^\\circ\\mathrm{F}$（缺 \\,{}）、$32°F$
     ⚠️ 數字與度數符號之間一律加細空格 \\,：格式固定為 $數字\\,{}^\\circ\\mathrm{C}$ 或 $數字\\,{}^\\circ\\mathrm{F}$（\\, 後面要接空群組 {}，否則 KaTeX 無法渲染）
     ✓ 原文「華氏32度」→ $32\\,{}^\\circ\\mathrm{F}$（遇到「華氏」字樣，改寫成數字加 $\\,{}^\\circ\\mathrm{F}$，不保留「華氏」中文）
   ▸ 化學方程式整條在同一個 $...$，不可截斷
-    ✓ $C_2H_5OH + 3O_2 \\rightarrow 2CO_2 + 3H_2O$
+    ✓ $C2H5OH + 3O2 \\rightarrow 2CO2 + 3H2O$
     ✓ 可逆反應用 \\rightleftharpoons
     ✓ 箭頭上下有條件（催化劑／加熱等）：用 \\xrightarrow[下方]{\\text{上方}}
-      範例：$\\mathrm{CH_3COOH}+\\mathrm{C_2H_5OH}\\xrightarrow[\\Delta]{\\text{硫酸}}\\mathrm{CH_3COOC_2H_5}+\\mathrm{H_2O}$
+      範例：$\\mathrm{CH3COOH}+\\mathrm{C2H5OH}\\xrightarrow[\\Delta]{\\text{硫酸}}\\mathrm{CH3COOC2H5}+\\mathrm{H2O}$
       ⚠️ 禁止用 \\overset/\\underset 搭配 \\longrightarrow（KaTeX 無法正確渲染）
+  ▸ ⚠️【下標規則】所有下標一律寫成一般寫法，不要用 LaTeX 的底線 _，也不要用 Unicode 下標字元（₁₂₃）
+    ✓ F1、F2、F3、v0、a1、H2O、CO2、C2H5OH、CH3COOH（圖上或題目裡的 F₁、F_1、F_{1} 全部寫成 F1）
+    ✗ F_1、F_{1}、$F_1$、F₁、\\mathrm{F}_1
+    · 只剩「字母＋數字」的就直接寫 F1，不用加 $；算式裡出現時照寫，如 $F1+F2=10$
+    · 上標（如 $Cu^{2+}$、$10^8$）不受影響，照原本規則用 LaTeX
+  ▸ ⚠️【O、0、。要分清楚】掃描字形很像，請依上下文判斷，不確定時照原圖字形、並把該題「待確認」欄填 Y
+    · 字母 O（氧）：出現在化學式、元素符號、點／位置代號裡，如 H2O、CO2、O2、CuO、(OH)、「O 點」「原點 O」
+    · 數字 0：出現在數值、年份、題號、量值裡，如 100、$0.5$、$10$、v0、1.0
+    · 「。」是中文句號，只出現在句尾；不是 0，也不是 O，更不要拿來當度數或小數點
+    · 度數符號用 ^\\circ（如溫度 $25\\,{}^\\circ\\mathrm{C}$、角度 $30^\\circ$）；圓圈選項「○」「◎」保持原樣，不要改成 O 或 0
+    ✓ 100 公尺、H2O、O 點、水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ 1OO 公尺、H20、0 點（指字母 O 的點）、25。C
   ▸ 所有 LaTeX 指令必須有反斜線（\\times \\cdot \\frac \\rightarrow 等）
     ✓ $6\\times10^{23}$　✗ $6times10^{23}$（漏了反斜線）
     ✓ $60\\,\\text{s}$　 ✗ $60s$（沒有 \\text）
     ✓ $\\text{m/s}$　　 ✗ $m/s$（沒有 \\text）
   ▸ 常見錯誤對照（禁止使用左欄，必須用右欄）：
-    ✗ H₂O（Unicode下標）　→　✓ $H_2O$
-    ✗ CO₂                  →　✓ $CO_2$
+    ✗ H_2O、H₂O、$H_2O$（任何下標寫法）　→　✓ H2O（下標一律寫成一般寫法，見上方【下標規則】）
+    ✗ CO₂、$CO_2$           →　✓ CO2
     ✗ 10⁸（Unicode上標）  →　✓ $10^8$
     ✗ Cu²⁺                 →　✓ $Cu^{2+}$
     ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
     ✗ v=d/t（無$）         →　✓ $v=\\frac{d}{t}$
-    ✗ 30公尺（裸數字無$）  →　✓ $30$\\,\\text{公尺}
+    ✗ $30$ 公尺、$12$ 顆（單純數量不要包 $）  →　✓ 30公尺、12顆
     ✗ 華氏32度 / 32°F / $32$℉  →　✓ $32\\,{}^\\circ\\mathrm{F}$
   ▸ ⚠️ 禁止在數字與 \\text{} 之間插入逗號（ChatGPT 常犯此錯誤）
     ✗ $29,\\text{ g/mol}$　→　✓ $29\\text{ g/mol}$
@@ -7823,17 +7856,31 @@ function buildPromptHS(){
 
   【數學與化學式 LaTeX 規則（題目欄、詳解欄都適用）】
   ▸ 所有數學式、化學式用 $...$ 包住（如 $v=\\frac{d}{t}$、$Cu^{2+}$）
-  ▸ 單位和英文字詞用 \\text{} 包住（如 $30\\,\\text{m/s}$、$25\\,\\text{g}$）
-  ▸ ⚠️ 不是只有明顯的算式才要包 $...$：題幹敘述裡任何測量值、數量、數據（即使只是單一個數字、沒有搭配運算符號）也一律要包
-    ✓ $30$\\,\\text{公尺}　✗ 30公尺（裸數字無$）
-    ⚠️ 例外（不要包）：題號、年度／學年學期、選項代號(A)(B)(C)(D)
+  ▸ ⚠️【只有需要時才用 LaTeX】能用一般文字寫的就寫一般文字，不要包 $...$
+    · 一般文字（不要 $）：單獨的數字與帶單位的數量（30公尺、12顆、25 g、30 m/s）、F1、F2、H2O、CO2、選項代號(A)(B)、純文字敘述
+    · 要用 LaTeX：算式／方程式（含 = + − × ÷ 分數 根號）、特殊符號（希臘字母、→、≥、≤、≠、度數 °）、有上標或平方的（$10^8$、$m^2$、$Cu^{2+}$）
+    ✓ 小明走了30公尺，花了4秒　　✗ 小明走了 $30$ 公尺，花了 $4$ 秒
+    ✓ 燒杯中有12顆分子、(B)F2　　✗ $12$ 顆分子、$\\mathrm{(B)F_2}$
+    ✓ 速度 $v=\\frac{d}{t}$、面積 $S=\\pi r^2$、$6\\times10^{23}$
+    ⚠️ 選項代號(A)(B)(C)(D)、題號、年度／學年學期（如112年、114上）一律不包 $...$
     ⚠️ 溫度一律用 KaTeX 度數格式，禁止用裸字「℃」「℉」「°C」「°F」
     ✓ 水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ $25$℃、25℃、$25^\\circ\\mathrm{C}$（缺 \\,{}）
   ▸ 化學方程式整條在同一個 $...$，不可截斷
+  ▸ ⚠️【下標規則】所有下標一律寫成一般寫法，不要用 LaTeX 的底線 _，也不要用 Unicode 下標字元（₁₂₃）
+    ✓ F1、F2、F3、v0、a1、H2O、CO2、C2H5OH、CH3COOH（圖上或題目裡的 F₁、F_1、F_{1} 全部寫成 F1）
+    ✗ F_1、F_{1}、$F_1$、F₁、\\mathrm{F}_1
+    · 只剩「字母＋數字」的就直接寫 F1，不用加 $；算式裡出現時照寫，如 $F1+F2=10$
+    · 上標（如 $Cu^{2+}$、$10^8$）不受影響，照原本規則用 LaTeX
+  ▸ ⚠️【O、0、。要分清楚】掃描字形很像，請依上下文判斷，不確定時照原圖字形、並把該題「待確認」欄填 Y
+    · 字母 O（氧）：出現在化學式、元素符號、點／位置代號裡，如 H2O、CO2、O2、CuO、(OH)、「O 點」「原點 O」
+    · 數字 0：出現在數值、年份、題號、量值裡，如 100、$0.5$、$10$、v0、1.0
+    · 「。」是中文句號，只出現在句尾；不是 0，也不是 O，更不要拿來當度數或小數點
+    · 度數符號用 ^\\circ（如溫度 $25\\,{}^\\circ\\mathrm{C}$、角度 $30^\\circ$）；圓圈選項「○」「◎」保持原樣，不要改成 O 或 0
+    ✓ 100 公尺、H2O、O 點、水溫 $25\\,{}^\\circ\\mathrm{C}$　　✗ 1OO 公尺、H20、0 點（指字母 O 的點）、25。C
   ▸ 所有 LaTeX 指令必須有反斜線（\\times \\cdot \\frac \\rightarrow 等）
   ▸ 常見錯誤對照（禁止使用左欄，必須用右欄）：
-    ✗ H₂O（Unicode下標）　→　✓ $H_2O$
-    ✗ CO₂                  →　✓ $CO_2$
+    ✗ H_2O、H₂O、$H_2O$（任何下標寫法）　→　✓ H2O（下標一律寫成一般寫法，見上方【下標規則】）
+    ✗ CO₂、$CO_2$           →　✓ CO2
     ✗ 10⁸（Unicode上標）  →　✓ $10^8$
     ✗ Cu²⁺                 →　✓ $Cu^{2+}$
     ✗ →（純文字箭頭）      →　✓ $\\rightarrow$（化學方程式中）
