@@ -1469,6 +1469,13 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
       t=t.replace(/(\\[A-Za-z]+)|([A-Za-z\)\]])_(?:\{([A-Za-z0-9+\-]{1,6})\}|([A-Za-z0-9]))/g,(m,cmd,a,b,c)=>cmd?cmd:a+(b||c));
       // $F1$ 這種只剩一個字母加數字的行內公式，不需要 $ 了：直接寫 F1
       t=t.replace(/\$\s*([A-Za-z][A-Za-z0-9]{0,11})\s*\$/g,(m,x)=>/\d/.test(x)?x:m);
+      // 不是算式、也沒有特殊符號或上標的 $...$（單純數字、單位、文字、F1、(B)F2）→ 拿掉 $ 與 \mathrm／\text 外殼，直接寫一般文字
+      t=t.replace(/\$([^$\n]{1,60}?)\$/g,(m,x)=>{
+        let y=x.trim();
+        const w=/^\\(?:mathrm|text|textbf|mathbf)\s*\{([^{}\\^_]*)\}$/.exec(y);if(w)y=w[1].trim();
+        const u=/^([0-9.]+)\s*(?:\\,|\\ |\\;)?\s*\\(?:mathrm|text)\s*\{([^{}\\^_$]*)\}$/.exec(y);if(u)return u[1]+' '+u[2].trim();
+        return /^[A-Za-z0-9\u4e00-\u9fff ().,，。（）%:：]+$/.test(y)?y:m;
+      });
       return t;
     }
     function fixOcrChars(s){return String(s==null?'':s).replace(/[\u3190-\u319f\u3220-\u3243\u3280-\u32b0\u2f00-\u2fd5\uf900-\ufaff]/g,ch=>{const n=ch.normalize('NFKC');if(n===ch)return ch;const m=/^\(([^()])\)$/.exec(n),c=ch.charCodeAt(0);return m&&!(c>=0x3220&&c<=0x3229)?m[1]:n})}
