@@ -8,3 +8,4 @@ tools/__pycache__/
 _t_local.jpg
 tools/models/handwriting-eraser-v10.onnx
 tools/models/ppocr/
+tools/models/termfix_c3.json
