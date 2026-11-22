@@ -101,3 +101,11 @@
 ### 給 Session A
 - tcool 與 NAS 的缺漏（誠正113八、仁愛113八、崇林110 自然答案）仍由 A 處理；新卷匯入前需先過品質關，使用 `python3 tools/qa/quality_gate.py <JSON>`。
 - B 未碰 Chrome、NAS、Supabase 寫入。
+
+### Session B 最終更新（2026-11-23 深夜）
+- 新增 commit：`3a744e0`（Unicode 上標不再誤報）、`d808657`（乘法與無下標化學式誤報收斂）、最後一個（獨立複驗問題修正）。以 `git log 50b5820..HEAD --oneline` 為準。
+- 獨立複驗（另一個 agent，唯讀）曾判「不能放行」，發現 review.html：點非第一份考卷會壞、DOM XSS、localStorage 無降級、啟用只靠 disabled、Py/JS 選項標號 `\b` 不一致、hasImage 沒傳。全部已修；B 在真實瀏覽器（本機 http.server）重測：4 份考卷（含惡意名稱）切換正常、`<img onerror>` 不執行、KaTeX 渲染正常、console 無錯誤。
+- 舊題庫掃描最新數字：10,007 題，完全通過 8,211 題；block 1,781（缺圖1,121／選項不全576／答案不在範圍160）；warn：單位壓平 6、次方壓平 2、下標壓平 8、考卷結尾雜訊 2。
+- 已知限制（誠實版）：`3×108`（10 的一位數次方壓平）不偵測；`2×1020` 這類寫法與真壓平無法區分；品質關不驗答案對錯與重複題；題組缺閱讀文章（福和 14、15、28、29）仍漏報；index.html 警示標記畫面使用者已自行檢視（截圖兩題正常；上標誤報已修）。
+- 仍未做：doImport 改走待審區、組卷只列 active、圖片分級與人工重置佇列、review.html 接 Supabase（需先備份並經使用者同意才能執行遷移 SQL）。
+- 未 push；工作樹乾淨（quality_gate_report.* 已 gitignore）。
