@@ -35,7 +35,15 @@ class QualityGateTest(unittest.TestCase):
   for notation in ("m/s²", "cm³", "10⁻⁹"):
    self.assertFalse({"flattened_exponent","flattened_square_unit","flattened_subscript"}&rules({"題目":notation,"答案":"1"}), notation)
   self.assertIn("flattened_square_unit",rules({"題目":"cm2","答案":"1"}))
-  self.assertIn("flattened_exponent",rules({"題目":"3×1020","答案":"1"}))
+  for notation in ("3×1020", "2.235 × 1010", "6×1023", "3\\times 1020"):
+   self.assertIn("flattened_exponent",rules({"題目":notation,"答案":"1"}), notation)
+  for notation in ("1000 × 1000", "2×1000", "3 × 10", "3 × 10+20", "3 × 10⁻²⁰"):
+   self.assertNotIn("flattened_exponent",rules({"題目":notation,"答案":"1"}), notation)
+ def test_flattened_subscript_chemical_cases(self):
+  for notation in ("MnO2", "H2O", "CO2", "SO4"):
+   self.assertIn("flattened_subscript",rules({"題目":notation,"答案":"1"}), notation)
+  for notation in (r"\text{HCl(aq)}", r"\text{NaCl(s)}", "HCl", "NaCl", "HNO3", r"\text{H}_2\text{O}"):
+   self.assertNotIn("flattened_subscript",rules({"題目":notation,"答案":"1"}), notation)
  def test_numbering_strict_paper_level_and_reset(self):
   found={f["rule"] for f in check_numbering([{"題號":"1"},{"題號":"3"},{"題號":"3"},{"題號":"2a"}])}; self.assertTrue({"missing_question_number","duplicate_question_number","invalid_question_number"}<=found)
   flags=check_numbering([{"題號":"1"},{"題號":"2"},{"題號":"1","大題":"二"},{"題號":"2","大題":"二"}]); self.assertNotIn("duplicate_question_number",{f["rule"] for f in flags})
