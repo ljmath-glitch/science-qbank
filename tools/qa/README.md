@@ -25,3 +25,23 @@ v0.1 重點規則：
 ```bash
 cd tools/qa && python3 -m unittest -v test_quality_gate.py
 ```
+
+## 舊題庫唯讀掃描
+
+準備 gitignore 的 `_work/old_q.ndjson`（每行一筆舊 `questions` 匯出）與
+`_work/_img.txt`（每行一個有圖片的題目 ID）後，從專案根目錄執行：
+
+```bash
+python3 tools/qa/scan_old_db.py
+```
+
+可用 `--input`、`--images`、`--output-dir` 指定其他快照或輸出目錄。它不會寫入
+資料庫，會產生 `scan_old_db.json`、繁中 `scan_old_db.md` 和
+`scan_old_db_by_exam.csv`。題組文章會依 `group_id` 回填給子題；缺圖則以題目或
+題組文章 ID 是否在 `_img.txt` 為準。
+
+全部 QA 測試：
+
+```bash
+python3 -m unittest discover -s tools/qa
+```
