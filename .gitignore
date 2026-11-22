@@ -10,3 +10,5 @@ tools/models/handwriting-eraser-v10.onnx
 tools/models/ppocr/
 tools/models/termfix_c3.json
 _work/
+quality_gate_report.md
+quality_gate_report.json

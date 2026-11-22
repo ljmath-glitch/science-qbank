@@ -65,14 +65,16 @@ def question_kind(question, parts):
 
 def check_notation(value, field):
     """題幹、題組文章、詳解共用檢查。"""
-    flags, body = [], normalize(value)
+    # NFKC 會把 Unicode 上／下標（例如 ²、⁻、₉）轉成一般數字；
+    # 壓平偵測必須看原文，避免把已正確排版的記號誤判為遺失上／下標。
+    flags, raw, body = [], text(value), normalize(value)
     if NOISE_END.search(body): add_flag(flags, "warn", "exam_end_noise", f"{field}含考卷版面雜訊。")
     if PAGE_NUMBER_LINE.search(body): add_flag(flags, "warn", "page_number_noise", f"{field}含獨立頁碼樣式。")
     if PAGE_LABEL_EDGE.search(body): add_flag(flags, "warn", "page_label_noise", f"{field}含行首或行尾頁面標籤。")
     if TRAILING_FIGURES.search(body): add_flag(flags, "warn", "trailing_figure_labels", f"{field}題末有連黏圖號。")
-    if FLATTENED_POWER.search(body): add_flag(flags, "warn", "flattened_exponent", f"{field}疑似次方壓平。")
-    if FLATTENED_UNIT.search(body): add_flag(flags, "warn", "flattened_square_unit", f"{field}疑似單位上標遺失。")
-    if CHEMICAL_SUBSCRIPT.search(body) or VARIABLE_SUBSCRIPT.search(body): add_flag(flags, "warn", "flattened_subscript", f"{field}疑似化學式或變數下標壓平。")
+    if FLATTENED_POWER.search(raw): add_flag(flags, "warn", "flattened_exponent", f"{field}疑似次方壓平。")
+    if FLATTENED_UNIT.search(raw): add_flag(flags, "warn", "flattened_square_unit", f"{field}疑似單位上標遺失。")
+    if CHEMICAL_SUBSCRIPT.search(raw) or VARIABLE_SUBSCRIPT.search(raw): add_flag(flags, "warn", "flattened_subscript", f"{field}疑似化學式或變數下標壓平。")
     return flags
 
 def image_flags(question):

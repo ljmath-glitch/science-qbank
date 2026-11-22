@@ -31,6 +31,11 @@ class QualityGateTest(unittest.TestCase):
   found=rules({"題目":"題目 (7-2) 在句中 A4。\n- 1 -\nH2O、I1、3×1020、cm2、m/s2","詳解":"本卷結束","答案":"1"})
   self.assertTrue({"page_number_noise","flattened_exponent","flattened_square_unit","flattened_subscript","exam_end_noise"}<=found); self.assertNotIn("page_label_noise",found)
   self.assertNotIn("flattened_subscript",rules({"題目":"A4 和 B12 紙張","答案":"1"}))
+ def test_unicode_super_and_subscripts_are_not_flattened(self):
+  for notation in ("m/s²", "cm³", "10⁻⁹"):
+   self.assertFalse({"flattened_exponent","flattened_square_unit","flattened_subscript"}&rules({"題目":notation,"答案":"1"}), notation)
+  self.assertIn("flattened_square_unit",rules({"題目":"cm2","答案":"1"}))
+  self.assertIn("flattened_exponent",rules({"題目":"3×1020","答案":"1"}))
  def test_numbering_strict_paper_level_and_reset(self):
   found={f["rule"] for f in check_numbering([{"題號":"1"},{"題號":"3"},{"題號":"3"},{"題號":"2a"}])}; self.assertTrue({"missing_question_number","duplicate_question_number","invalid_question_number"}<=found)
   flags=check_numbering([{"題號":"1"},{"題號":"2"},{"題號":"1","大題":"二"},{"題號":"2","大題":"二"}]); self.assertNotIn("duplicate_question_number",{f["rule"] for f in flags})
