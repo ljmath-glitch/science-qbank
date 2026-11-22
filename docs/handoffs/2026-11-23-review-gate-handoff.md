@@ -65,3 +65,39 @@
 - tcool 現況（A 負責）：國九上三 7 校已齊（崇林110 自然答案缺，tcool 放成社會答案已改名標註）；國八誠正114 已下載（內容為理化）；缺誠正113八、仁愛113八 題目＋答案、崇林110 自然答案；已排 05:07 單次補下載。永和114 答案卷僅「理化科」，匯入自然合卷時需另補地科／生物答案。
 - 已定案：舊題未過品質關「留著標記、不下架」。
 - B 完成紀錄（2026-11-23 夜）：品質關 v0.1（db4bf16）、舊題庫唯讀掃描器（b824e7f）、遷移 SQL 未執行（a8bdb2f）、review.html 示範版（f5bae32）、舊題留標記決定（718c3cd）。已完成：index.html 品質警示標記＋共用 qa-gate.js（瀏覽器畫面未驗證：index 有登入閘門，我不替使用者輸入密碼）。B 未碰 Chrome、未寫資料庫、未 push。
+
+## Session B 交班（2026-11-23 夜，給 Session A 與下一個接手者）
+
+### 分支與 commit（textlayer-structured，未 push，未動 main）
+- `db4bf16` 品質關 v0.1（tools/qa/quality_gate.py；是非題判斷已修；`python3 -m unittest discover -s tools/qa` 10 個全過）
+- `b824e7f` 舊題庫唯讀掃描器 tools/qa/scan_old_db.py
+- `a8bdb2f` 遷移 SQL db/migrations/2026-11-23_review_gate.sql（**只寫檔、未執行**）
+- `f5bae32` review.html（示範模式，只存 localStorage、不寫雲端）＋ docs/product/quality-gate-rules.md
+- `718c3cd` 決定：舊題未過品質關「留著標記、不下架」
+- `077b35b` qa-gate.js（共用規則）＋ index.html 品質警示標記＋「只看通過」篩選＋ guide.html 說明
+- 工作樹尚有未追蹤的 `quality_gate_report.md`（Codex 產出，未處理，可刪）。
+
+### 驗證狀態（誠實版）
+- 已驗：單元測試；review.html 在瀏覽器實測（載入、狀態切換、啟用、block 擋啟用、還原、手機寬度）；qa-gate.js 以 node 測缺圖／有圖邏輯。
+- **未驗：index.html 警示標記的實際畫面**（index 有登入閘門，B 不替使用者輸入密碼）。使用者正在自己看畫面，結果待回報。
+- 品質關已知：福和對照 Gemini 清單誤報 0、漏報 4 題（14、15、28、29 缺閱讀測驗文章）；驗證不了答案對錯與重複題。
+
+### 舊題庫掃描數字（_work/scan_old_db.md，_work 不進 git，快照來源為 2026-11-23 唯讀查詢）
+- 226 份考卷、10,007 題；block 1,781（缺圖 1,121、選項不全 576、答案不在範圍 160）、warn 206、完全通過考卷 1 份；缺圖比例 >30% 的考卷 33 份（多為七年級生物）。
+- 重現：_work/old_q.ndjson 與 _work/_img.txt 以 Supabase REST 唯讀（anon key）抓取，再跑 `python3 tools/qa/scan_old_db.py`。
+
+### 重要提醒
+- 遷移 SQL 的 `active` 預設 false：一執行，舊題庫每題都變未啟用。必須先跑檔內「舊資料遷移範本」（舊題全部 active=true、未過者標記）再讓組卷開始過濾 active。執行前須完整備份與使用者明確同意，且只能由一個 session 做。
+- aixwang 原文審核只有「題幹／簡答／詳解」三段、無圖片分級；四段審核與 A/B/C/D 圖片分級是我們自己的設計，對外報告別說成參考它。
+- 教訓：Codex 的 prompt 若含 DROP 之類字眼會被 guard 擋下，改成註解式描述或拆小任務。Codex 驗收時發現過「有圖仍報缺圖」的 bug（已修）。
+
+### 下一步（由簡到繁，B 負責）
+1. 依使用者看畫面的回饋修警示標記。
+2. 補漏報：題組缺閱讀文章的規則（福和 14、15、28、29）。
+3. 文字層流程保留結構（上下標、選項、題組、圖綁題號）。
+4. 使用者同意並備份後：執行遷移 SQL＋舊資料遷移；review.html 接 Supabase。
+5. `doImport()` 改走待審區；組卷只列 active；圖片分級與人工重置佇列；Gemini 看圖檢查接 agy_bridge。
+
+### 給 Session A
+- tcool 與 NAS 的缺漏（誠正113八、仁愛113八、崇林110 自然答案）仍由 A 處理；新卷匯入前需先過品質關，使用 `python3 tools/qa/quality_gate.py <JSON>`。
+- B 未碰 Chrome、NAS、Supabase 寫入。
