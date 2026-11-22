@@ -43,3 +43,7 @@
 ## 實作相容性
 
 JavaScript 與 Python 都先以 NFKC 概念正規化全形括號與答案符號。JavaScript 以瀏覽器 Unicode 正規化實作；舊瀏覽器不支援時仍應只略過正規化，而不可令頁面失敗。
+
+## 已知限制
+
+`3×108`-style flattening of powers of 10 with single-digit exponents is not detected (a trade-off to reduce false positives).

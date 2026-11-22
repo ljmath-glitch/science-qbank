@@ -20,6 +20,10 @@ class QualityGateTest(unittest.TestCase):
   p=option_parts("裝置 (A) 與點 (B)。\n(A)甲\n(B)乙\n(C)丙\n(D)丁")
   self.assertEqual((set(p),p["A"]),(set("ABCD"),"甲"))
   self.assertIn("incomplete_options",rules({"題型":"選擇題","題目":"(A)甲\n(B)乙\n(C)丙","答案":"A"}))
+ def test_cjk_adjacent_option_markers(self):
+  expected={"A":"甲","B":"乙","C":"丙","D":"丁"}
+  self.assertEqual(option_parts("何者正確A.甲B.乙C.丙D.丁"),expected)
+  self.assertEqual(option_parts("何者正確A.甲B.乙C.丙D. 丁"),expected)
  def test_image_reference_invalid_and_noun_only(self):
   self.assertIn("missing_image",rules({"題目":"如附圖所示","答案":"1","圖表類型":"待補"}))
   self.assertIn("possible_missing_image",rules({"題目":"電路圖的符號","答案":"1","圖表類型":"無"}))

@@ -8,7 +8,8 @@ from typing import Any
 
 IMAGE_REFERENCE = re.compile(r"附圖|如圖|下圖|右圖|左圖|上圖|附表|如下表|表\s*[一二三四五六七八九十0-9]+|如表|見圖|圖\s*[（(]?[一二三四五六七八九十0-9A-Za-z]+[）)]?|示意圖|如[右左上下]圖")
 NOUN_IMAGE_REFERENCE = re.compile(r"電路圖|流程圖|長條圖|圓餅圖")
-OPTION_MARKER = re.compile(r"(?:\(([A-E])\)|\b([A-E])\s*[\.．、])")
+# Do not use \b here: it does not see a boundary between CJK text and A.
+OPTION_MARKER = re.compile(r"(?:\(([A-E])\)|(?<![A-Za-z0-9])([A-E])\s*[\.．、])")
 PAGE_NUMBER_LINE = re.compile(r"^\s*-\s*\d+\s*-\s*$", re.M)
 PAGE_LABEL_EDGE = re.compile(r"(?:^|\n)\s*\(\s*\d+\s*-\s*\d+\s*\)(?=\s|$)|(?:^|\s)\(\s*\d+\s*-\s*\d+\s*\)\s*(?:$|\n)", re.M)
 TRAILING_FIGURES = re.compile(r"圖[一二三四五六七八九十]+(?:圖[一二三四五六七八九十]+)+\s*[。．]?$")
