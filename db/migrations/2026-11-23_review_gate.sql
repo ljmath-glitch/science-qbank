@@ -37,19 +37,18 @@ CREATE TABLE IF NOT EXISTS question_log (
 );
 
 -- Legacy-data migration template: disabled by default.
+-- DECISION (2026-11-23, user): legacy questions that fail the quality gate are KEPT and MARKED, not deactivated.
+-- So ALL legacy rows stay active=true; failures only get stem/ans/img status 'blocked' (or 'pending') and a qa jsonb
+-- with the failing rules, so composer/wizard can show a warning badge instead of hiding them.
 -- Requires explicit user approval and a prior full backup before being enabled.
--- Replace <quality_gate_condition> with the confirmed quality-gate predicate.
+-- Replace <passed_ids> / <failed_ids> with the id lists produced by tools/qa/scan_old_db.py.
+-- UPDATE questions SET active = true;
 -- UPDATE questions
--- SET stem_status = 'approved',
---     ans_status = 'approved',
---     sol_status = 'approved',
---     img_status = 'approved',
---     active = true
--- WHERE <quality_gate_condition>;
---
+-- SET stem_status = 'approved', ans_status = 'approved', img_status = 'approved'
+-- WHERE id IN (<passed_ids>);
 -- UPDATE questions
--- SET active = false
--- WHERE NOT (<quality_gate_condition>);
+-- SET qa = '{"gate":"v0.1","result":"fail"}'::jsonb   -- per-question rule list to be filled from the scan JSON
+-- WHERE id IN (<failed_ids>);
 
 -- Reverse statements (restore the pre-migration schema; run only with explicit user approval and a backup):
 -- DROP TABLE IF EXISTS question_log;
