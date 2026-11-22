@@ -174,6 +174,7 @@
   .tag.d3{background:#f9ecdf;color:#b5641a;border-color:#f0dbc4}
   .tag.d4{background:#f9e8e7;color:#b3392f;border-color:#f0d3cf}
   .tag.flagtag{background:#f9ebd4;color:#9a6910;border-color:#efdbb5}
+  .qa-marker{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;line-height:1.4;cursor:help}.qa-marker.block{color:#a92118;background:#fff0ee;border:1px solid #efc2bd}.qa-marker.warn{color:#8a6200;background:#fff7d8;border:1px solid #eed997}
   .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:inherit;font-weight:400}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
   .qimg{display:block;margin:9px 0;border:1px solid var(--line);border-radius:6px}
@@ -687,6 +688,7 @@
           <div class="filt"><label>難度</label><select id="fDiff" onchange="render()"><option value="">全部</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select></div>
         </div>
         <div class="filt"><label>圖表類型</label><select id="fChart" onchange="render()"><option value="">全部</option></select></div>
+        <div class="filt"><label>品質關</label><select id="fQa" onchange="render()"><option value="">全部</option><option value="pass">只看通過</option></select></div>
       </div>
       <div class="filt" style="border-top:1px solid var(--line);margin-top:10px;padding-top:12px;display:flex;flex-direction:column;gap:8px">
         <label class="chk"><input type="checkbox" id="fFlag" onchange="toggleFlagOnly(this.checked)"> 只看待確認(Y)</label>
@@ -1401,6 +1403,7 @@
 </div>
 
 <script src="syllabus.js"></script>
+<script src="qa-gate.js"></script>
 <script>
 const QTYPES = [
   {code:'A1',name:'概念辨識',group:'A 觀念型'},
@@ -3920,7 +3923,7 @@ function buildFiltersKeep(){
 }
 function resetFilters(){
   _pinId=null;_pinGroupId=null;
-  ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
+  ['fSearch','fSchoolLevel','fBook','fField','fUnit','fSub','fKp','fType','fDiff','fYear','fSem','fSchool','fGrade','fChart','fQa','fExamType','fRound'].forEach(id=>document.getElementById(id).value='');
   onFilterSchoolLevel();
   document.getElementById('fRoundWrap').style.display='none';
   document.getElementById('fSemWrap').style.display='';
@@ -4569,6 +4572,15 @@ function normType(t){
   return m?m[1]:t;
 }
 function typeName(code){const t=QTYPES.find(x=>x.code===normType(code));return t?t.code+' '+t.name:code}
+// 僅在卡片顯示（或「只看通過」篩選）時運算，並依題目與題組內容快取。
+const _qaCache=new WeakMap();
+function qaGateFor(it){
+  const ps=it.groupId&&PASSAGES[it.groupId],sig=[it.q,it.ans,it.type,it.chart,it.sol,JSON.stringify(it.imgs||[]),ps&&ps.q,JSON.stringify(ps&&ps.imgs||[])].join('\u0001');
+  const old=_qaCache.get(it);if(old&&old.sig===sig)return old;
+  const flags=QAGate.checkQuestion(it,{passage:ps,hasImage:!!((it.imgs&&it.imgs.length)||(ps&&ps.imgs&&ps.imgs.length))});
+  const value={sig,flags,severity:flags.some(x=>x[0]==='block')?'block':flags.length?'warn':'pass'};_qaCache.set(it,value);return value;
+}
+function qaMarker(it){const qa=qaGateFor(it);if(qa.severity==='pass')return '';const reasons=qa.flags.map(x=>x[2]).join('\n'),label=qa.severity==='block'?'⚠ 缺圖/選項不全…':'⚠ 需人工確認';return `<span class="qa-marker ${qa.severity}" title="${esc(reasons)}">${label}</span>`;}
 function matches(it){
   if(_pinId!==null){if(_pinGroupId)return it.groupId===_pinGroupId;return it.id===_pinId;}
   if(_pinExam&&!_pinExam.includes(it.exam))return false;
@@ -4588,6 +4600,7 @@ function matches(it){
   if(fRound.value&&(it._examRoundNum!==undefined?it._examRoundNum:examRoundNum(it.exam))!==fRound.value)return false;
   if(fGrade.value&&(it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book))!==fGrade.value)return false;
   if(fChart.value&&it.chart!==fChart.value)return false;
+  if(fQa.value==='pass'&&qaGateFor(it).severity!=='pass')return false;
   if(fFlag.checked&&!it.flag)return false;
   const _sl=document.getElementById('fSchoolLevel');
   if(_sl&&_sl.value){const _g=it._grade!==undefined?it._grade:gradeFromExam(it.exam,it.book);const _isHS=['高一','高二','高三','高中'].includes(_g);if(_sl.value==='高中'&&!_isHS)return false;if(_sl.value==='國中'&&_isHS)return false;}
@@ -4711,6 +4724,7 @@ function renderPage(list,shown,start){
         ${it.year?`<span class="tag meta">${esc(it.year)}</span>`:''}
         ${it.school?`<span class="tag meta">${esc(it.school)}</span>`:''}
         ${it.flag?`<span class="tag flagtag">待確認</span>`:''}
+        ${qaMarker(it)}
       </div>
       <div class="qbody">${it.summary?`<b>${esc(it.summary)}</b><br>`:''}${optEsc}${imgs}${ansHtml}${solHtml}</div>
       ${it.exam||it.no?`<div class="summary">${esc(it.exam||'')} ${it.no?'第'+esc(it.no)+'題':''}${it.basis?' · 依據：'+esc(it.basis):''}</div>`:''}
@@ -5674,11 +5688,12 @@ function wzRenderList(){
   const html=items.slice(0,400).map(it=>{
     const d=effDiffLvl(it)||'未評分';const picked=PICKS.has(it.id);
     const meta=`${esc(it.book||'')}・${esc(it.unit||'')}${it.sub?'・'+esc(it.sub):''}${it.type?'・'+esc(typeof typeName==='function'?typeName(it.type):it.type):''}`;
+    const qa=qaMarker(it);
     return `<div class="wz-q${picked?' picked':''}${WZ_AICHECK_BAD.has(it.id)?' wz-aibad':''}" data-id="${it.id}"${WZ_AICHECK_WHY[it.id]?` title="${esc(WZ_AICHECK_WHY[it.id])}"`:''}>`
       +`<div class="wz-qhead">`
       +`<input type="checkbox" ${picked?'checked':''} title="選入考卷" onclick="event.stopPropagation();wzPick('${it.id}')">`
       +`<div class="wz-qbody" onclick="wzToggleExpand('${it.id}')">`
-      +`<div class="wz-qmeta"><span class="wz-qbadge" style="background:${WZ_DIFFCOLOR[d]}">${d}</span>${meta}<span class="wz-expand-hint">▸ 點展開完整題目</span></div>`
+      +`<div class="wz-qmeta"><span class="wz-qbadge" style="background:${WZ_DIFFCOLOR[d]}">${d}</span>${meta}${qa}<span class="wz-expand-hint">▸ 點展開完整題目</span></div>`
       +`<div class="wz-qtext" id="wzq-${it.id}">${_wzSimple(it)||'（無題幹摘要）'}</div>`
       +`<div class="wz-qfull" id="wzfull-${it.id}" hidden></div>`
       +`</div>`
