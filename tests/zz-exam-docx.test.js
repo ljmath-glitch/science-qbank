@@ -26,6 +26,12 @@ for (const kind of ['formal', 'pre', 'abk', 'golden', 'mock']) {
     assert.doesNotMatch(p.body, /ABK 卷頭|浮水印/);
     assert.match(p.body, /茲茲正式版卷頭/);
   }
+  if (kind === 'golden') {
+    assert.match(p.stylesXml, /w:sz w:val="16"/);
+    assert.match(p.body, /w:pgSz w:w="11907" w:h="16840"/);
+    assert.match(p.body, /w:pgMar w:top="567" w:right="567" w:bottom="567" w:left="567"/);
+    assert.match(p.body, /w:cols w:num="1"/);
+  }
 }
 const solution = Z.buildParts({ kind: 'solution', style: 'formal', field: '自然', title: '驗證詳解', meta: { title: '驗證詳解', scope: '第一章', answers: ['A'] }, running: { left: '詳解', right: '' }, footer: '自然', solutions: [{ no: 1, answer: 'A', detail: '說明', options: [] }] });
 assert.ok(solution.body.includes('詳解'));
