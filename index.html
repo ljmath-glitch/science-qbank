@@ -323,8 +323,8 @@
   .pvimg-draggable:hover .pvimg-tools,.pvimg-draggable.pv-active .pvimg-tools{opacity:1}
   .pvimg-tools button{border:1px solid #cfd6e2;border-radius:4px;background:#fff;color:#344054;padding:3px 5px;font:12px/1 var(--ui-font);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.18)}
   .pvimg-tools button:hover{background:#fbece7;color:var(--red);border-color:#e7bbb5}
-  /* 課前考／ABK 單題圖：依所在側浮動；ABK 的 float 以 CSS 欄為邊界。 */
-  .pvimg-floatimg{float:right;clear:right;margin:2px 0 6px 14px;line-height:0;contain:layout;}
+  /* 圖片一律 inline 區塊；ZZExam 不使用文繞圖或浮動 anchor。 */
+  .pvimg-floatimg{display:inline-block;float:none;clear:none;margin:10px 0;line-height:0;contain:layout;}
   /* 垂直位移用零寬浮動 spacer：它只決定圖片開始的高度，不佔橫向繞排寬度。 */
   .pvimg-spacer{display:block;width:0;height:0;margin:0;padding:0;pointer-events:none;}
   /* 拖曳時不讓控制點反覆顯示／隱藏，避免 hover 樣式額外重繪。 */
@@ -979,8 +979,9 @@
       </div></details>
       <details class="paper-section" open><summary>基本設定 <span class="paper-section-summary">卷別與標題</span></summary><div class="paper-section-body">
         <div class="field"><label>卷別</label><div class="paper-kind-row">
+          <label class="chk"><input type="radio" name="pPaperKind" value="formal" onchange="pvSetPaperKind(this.value)" checked><span>茲茲正式版<small>A4・正式版卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="pre" onchange="pvSetPaperKind(this.value)"><span>課前考<small>單欄・閃電卷頭</small></span></label>
-          <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>雙欄・淡灰浮水印</small></span></label>
+          <label class="chk"><input type="radio" name="pPaperKind" value="abk" onchange="pvSetPaperKind(this.value)"><span>輔導課 ABK 卷<small>B4・雙欄・正式版卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="golden" onchange="pvSetPaperKind(this.value)"><span>段考黃金模擬考<small>單欄・學期考次卷頭</small></span></label>
           <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>封面＋單欄題本</small></span></label>
         </div></div>
@@ -6443,7 +6444,7 @@ function wordPreviewMeta(){
   const subject=value('pSubject')||title.replace(/第[一二三四五六1-6]冊.*$/,'').trim()||'自然科';
   return {title,subject,book,label:value('pExamName')||metadata.chapterRange||value('pScope')};
 }
-// 與 zz-exam-docx.js 的 prequizHead 同一套資料與比例：未選卷別的正式版就是輸出的課前考正式卷頭。
+// 舊 HTML 編輯器的後備卷頭；Word 預覽／匯出一律以 ZZExam.buildParts 為準。
 function buildFormalPreviewHeader(forPreview){
   const m=wordPreviewMeta(),title=[m.subject,m.book].filter(Boolean).join('　')||m.title;
   const edit=(text,id)=>forPreview?_pvHdrEditable(text,id):esc(text);
@@ -6590,7 +6591,8 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     const numberHtml=templateLayout?`<span class="paper-question-marker">${qNum}.(${answerSlot})</span>`:answerInNumber?`<b>${qNum}.(${answerSlot})</b> `:`<b>${qNum}.</b> `;
     // 課前考／ABK 單題圖靠右浮動時，圖要排在題號/題幹「之前」文字才會繞排在左。
     // 預設大圖／多圖在全部選項後靠右獨立一行，避免從題號第一行就擠壓文字；手動搬過的圖才浮動。
-    const floatImgs=forPreview&&(['formal','pre','abk'].includes(paperKind))&&(it.imgs||[]).some(_pvManualImageLayout)&&imgs;
+    // ZZExam exports inline drawings only; manual edits must remain in document order.
+    const floatImgs=false;
     const body=floatImgs?`${ctrl}${tag}${imgs}${numberHtml}${qText}${extra}${src}`:`${ctrl}${tag}${numberHtml}${qText}${imgs}${extra}${src}`;
     return major+`${passageHtml}<div class="q${templateLayout?' template-question':''}"${qAttr}>${body}</div>`;
   });
@@ -10770,6 +10772,7 @@ async function _zzExamSpec(kind,opts){
   }
   const paper=val('pPaperSize')==='B4'?'B4':'A4';
   const base={kind,paper,teacher:opts.teacher!==false,sections,title,style:val('pZZStyle')||'formal',field:_zzMainField()};
+  if(kind==='formal')return {...base,meta:{subject,book:bookName,label:examName||range},running:{left:subject+'　正式版考卷',right:[bookName,range].filter(Boolean).join('　')},footer:[subject,bookName].filter(Boolean).join('·')};
   if(kind==='pre')return {...base,meta:{subject,book:bookName,label:examName||range},running:{left:subject+' 課前考',right:[bookName,range].filter(Boolean).join('　')},footer:[subject,bookName].filter(Boolean).join('·')};
   if(kind==='abk')return {...base,meta:{variant:metadata.variant,chapter:examName||metadata.title||title,code:metadata.code},running:{left:'輔導課 '+metadata.variant+' 卷',right:metadata.code},footer:[subject,bookName].filter(Boolean).join('·')+(examName?'　'+examName:'')};
   if(kind==='golden'){
@@ -10817,7 +10820,7 @@ async function downloadZZSolutionWord(){
 // ── Word 版面預覽：直接讀「產生 Word 時用的那份 XML」畫成一張張紙（zz-docx-html.js），預覽＝Word 輸出 ──
 // 預覽對應的文件：題目卷（課前考／ABK／黃金模擬考／模考題本）與解析卷，依「輸出文件」選項決定。
 async function _zzPreviewDocs(){
-  const mode=paperAnsMode(),kind=paperPreviewKind(),dk=kind==='formal'?'pre':kind;
+  const mode=paperAnsMode(),kind=paperPreviewKind(),dk=kind;
   const docs=[];
   if(mode!=='full')docs.push({label:'題目卷',parts:ZZExam.buildParts(await _zzExamSpec(dk,{teacher:true}))});
   if(mode==='full'||mode==='both_full')docs.push({label:'解析卷',parts:ZZExam.buildParts(_zzSolutionSpec().spec)});
@@ -10870,7 +10873,7 @@ async function downloadWordFromDlg(){
   const hdr=readHdrFields();
   const paperKind=(document.querySelector('input[name=pPaperKind]:checked')||{}).value||'pre';
   if(typeof paperDlg!=='undefined')paperDlg.close();
-  if(['abk','pre','golden','mock'].includes(paperKind)){
+  if(['formal','abk','pre','golden','mock'].includes(paperKind)){
     // 課前考／ABK／黃金模擬／模考題本：照「茲茲講義素材」考卷範本直接產生（zz-exam-docx.js）。
     // 一律輸出教用版：答案是隱藏文字，Word 關掉 ¶ 即為學生版。舊的範本填入流程（downloadWordViaTemplate）保留未刪。
     try{

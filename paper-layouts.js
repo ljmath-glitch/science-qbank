@@ -19,12 +19,20 @@
     bodyFont: { eastAsia: '華康中圓體(P)', latin: 'Times New Roman' },
     source: { pt: 8, color: '#808080', align: 'right' },
     question: { line: 1, beforePt: 3.6, afterPt: 3.6, keepLines: true },
-    image: { defaultPlacement: 'float-right', gapCm: 0.37, maxWidthCm: 8.5 },
+    // ZZExam deliberately writes every question image as wp:inline.  Keeping
+    // this here prevents a preview-only float/wrap policy from leaking back in.
+    image: { defaultPlacement: 'inline', gapCm: 0.37, maxWidthCm: 8.5 },
     options: { tabsTwips: [3000, 5280, 7560], labelLeftTwips: 960 }
   };
 
   // ABK 的 A/B 成品邊界、第一段／第二段欄數確有不同，因此保留 variant 覆寫。
   const layouts = {
+    formal: {
+      ...common, id: 'formal', paper: { widthCm: 21, heightCm: 29.7 },
+      marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyPt: 12, headerPt: 12,
+      columns: { first: 1, body: 1, gapCm: 0, separator: false }, line: 1,
+      watermark: { enabled: false }, header: 'zz'
+    },
     abk: {
       ...common, id: 'abk', paper: { widthCm: 25.7, heightCm: 36.4 },
       marginCm: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
@@ -48,6 +56,18 @@
       marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyPt: 10, headerPt: 12,
       columns: { first: 1, body: 1, gapCm: 0, separator: false }, line: 1,
       watermark: { enabled: false }, header: 'pre'
+    },
+    mock: {
+      ...common, id: 'mock', paper: { widthCm: 21, heightCm: 29.7 },
+      marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyPt: 12, headerPt: 12,
+      columns: { first: 1, body: 1, gapCm: 0, separator: false }, line: 1,
+      watermark: { enabled: false }, header: 'mock'
+    },
+    solution: {
+      ...common, id: 'solution', paper: { widthCm: 21, heightCm: 29.7 },
+      marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyPt: 12, headerPt: 12,
+      columns: { first: 1, body: 1, gapCm: 0, separator: false }, line: 1,
+      watermark: { enabled: false }, header: 'solution'
     }
   };
 

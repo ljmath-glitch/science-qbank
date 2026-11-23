@@ -278,6 +278,7 @@
   // ---------------- 其他整套風格的卷頭：色帶（科目彩色）、細線（簡潔省墨）、置中（會考仿真） ----------------
   // 五種卷別共用一份卷頭資料：英文小字、主標、標籤、副標、填寫欄、要不要得分欄
   function headInfo(kind, m) {
+    if (kind === 'formal') return { en: 'OFFICIAL EXAM', title: [m.subject, m.book].filter(Boolean).join('　') || m.title || '', tag: '茲茲正式版', sub: m.label || '', fields: ['班級', '座號', '姓名'], score: true };
     if (kind === 'pre') return { en: 'PRE-CLASS QUIZ', title: [m.subject, m.book].filter(Boolean).join('　'), tag: '課前考', sub: m.label || '', fields: ['班級', '座號', '姓名'], score: true };
     if (kind === 'abk') return { en: 'TUTORING · ' + (m.variant || 'A'), title: m.chapter || '', tag: (m.variant || 'A') + ' 卷', sub: m.code || '', fields: ['姓名'], score: true };
     if (kind === 'golden') return { en: 'GOLDEN MOCK EXAM', title: (m.subject || '') + '　黃金模擬考', tag: m.examTitle || '', sub: [`${m.year} 學年度第 ${m.semester} 學期`, m.version ? '版本 ' + m.version : '', m.scope ? '範圍 ' + m.scope : ''].filter(Boolean).join('　'), fields: ['班級', '座號', '姓名'], score: true };
@@ -287,6 +288,20 @@
   const fieldRuns = (h, c) => [...h.fields, ...(h.score ? ['得分'] : [])].map((f, i) => [i ? R('　', { s: 10.5 }) : '', R(f, { font: F.head, s: 10.5, c }), R(' '.repeat(13), { font: 'Times New Roman', s: 10.5, c, u: 'single' })].join(''));   // 不斷行空白：放在行尾 Word 也不會吃掉底線
   function genericHead(kind, W, m) {
     const h = headInfo(kind, m), s = [];
+    // Formal ABK is intentionally *not* the historical ABK artwork.  The ABK
+    // kind still supplies B4/two-column/separator geometry; its identity is
+    // rendered with the formal family just like the other formal papers.
+    if (TH.head === 'zz') {
+      const tw = W - (h.score ? 3.1 : .3);
+      s.push(slab(0, 0, 3.35, 2.45));
+      s.push(...logo(.95, .28, 1.35));
+      s.push({ name: '卷種英文', x: 3.65, y: .12, w: tw - 3.4, h: .42, ins: [0,0,0,0], txt: P(R('TZU TZU · ' + h.en, { font:F.code, s:8, c:G1, sp:2 })) });
+      s.push({ name: '卷名', x: 3.65, y: .52, w: tw - 3.4, h: 1.0, ins: [0,0,0,0], va:'ctr', txt: P(R(h.title, { font:F.title, s:fitPt(h.title, tw - 3.4, 20, 12), c:INK })) });
+      s.push({ name: '標籤', x: 3.65, y: 1.58, w: tw - 3.4, h: .52, ins:[0,0,0,0], txt:P([R(h.tag, {font:F.head,s:10,c:'#FFFFFF',hl:TH.ac}), h.sub ? R('　'+h.sub,{font:F.head,s:9,c:G1,b:false}) : '']) });
+      if (h.score) s.push(...scoreBox(W - 2.6, .12));
+      s.push(...rule2(2.62, W));
+      return P(groupInline('茲茲正式版卷頭', W, 2.82, s), { sa: 8 });
+    }
     if (TH.head === 'band') {
       const tw = W - (h.score ? 5.2 : 2.4);
       const BH = 2.5;
@@ -549,6 +564,7 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     const pg = { w: ACTIVE_LAYOUT.paper.widthCm, h: ACTIVE_LAYOUT.paper.heightCm, margin: ACTIVE_LAYOUT.marginCm };
     const W = pg.w - pg.margin.left - pg.margin.right;
     const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : 1;
+    const legacyAbk = kind === 'abk' && spec.legacyAbk === true;
     const colW = cols === 2 ? (W - ACTIVE_LAYOUT.columns.gapCm) / 2 : W;
     const media = [];
     const ctx = { pg, textW: TW(colW), teacher: !!spec.teacher, showSol: !!spec.showSol,
@@ -558,8 +574,10 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     const m = spec.meta || {};
     const HF = { hdr: 'header1', hdrFirst: 'header2', ftr: 'footer1', ftrFirst: 'footer1' };
     const headers = {
-      header1: (kind === 'abk' && TH.wm ? abkWatermark(pg) : '') + runHead(spec.running.left, spec.running.right, W),
-      header2: kind === 'abk' && TH.wm ? abkWatermark(pg) : P(''),
+      // The old ABK watermark/head are retained only for explicit legacy
+      // exports.  New ABK uses the selected style (normally formal).
+      header1: (legacyAbk && TH.wm ? abkWatermark(pg) : '') + runHead(spec.running.left, spec.running.right, W),
+      header2: legacyAbk && TH.wm ? abkWatermark(pg) : P(''),
       footer1: foot(spec.footer || '', W),
     };
     let body = '';
@@ -575,8 +593,9 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
         }
       }
     }
-    const gh = TH.head === 'zz' ? '' : genericHead(kind, W, m);   // 茲茲正式版／紅金用各卷別原本的閃電卷頭
-    if (kind === 'pre') body = (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
+    const gh = (TH.head === 'zz' && kind !== 'formal' && !(kind === 'abk' && !legacyAbk)) ? '' : genericHead(kind, W, m);
+    if (kind === 'formal') body = (gh || genericHead(kind, W, m)) + qbody + sect(pg, HF);
+    else if (kind === 'pre') body = (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
     else if (kind === 'golden') body = (gh || goldenHead(W, m)) + qbody + sect(pg, HF);
     else if (kind === 'abk') body = (gh || abkHead(W, m)) + P('', { sect: sect(pg, HF), sa: 0 }) + qbody + sect(pg, { cols, gapCm: ACTIVE_LAYOUT.columns.gapCm, separator: ACTIVE_LAYOUT.columns.separator, cont: true, ...HF });
     else if (kind === 'mock') body = (gh || mockCover(W, m)) + mockInstructions(W, m) + P('', { sect: sect(pg, {}), sa: 0 }) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
