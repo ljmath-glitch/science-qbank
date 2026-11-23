@@ -1236,6 +1236,7 @@
             <div class="wz-filterbar">
               <select id="wzfType" onchange="wzFilterChange()"><option value="">全部題型</option></select>
               <select id="wzfDiff" onchange="wzFilterChange()"><option value="">全部難易度</option><option>簡單</option><option>中等</option><option>困難</option><option>極難</option></select>
+              <label class="chk" title="只顯示 QA 健檢通過的題目"><input type="checkbox" id="wzfQaPass" checked onchange="wzFilterChange()"> 只選沒問題的題</label>
               <input type="text" id="wzfSearch" placeholder="關鍵字搜尋…" oninput="wzRenderList()" style="flex:1;min-width:160px">
               <button type="button" class="btn" onclick="wzSelectAllFiltered()" title="把目前篩選／範圍內的待選題目全部選入">✓ 全選</button>
               <button type="button" class="btn" onclick="wzDeselectAllFiltered()" title="取消目前篩選／範圍內已選的題目">✗ 全不選</button>
@@ -4841,7 +4842,7 @@ function _mixLvl(it){return effDiffLvl(it)}
 // 題源（不含題組文章本身）；組卷精靈開啟時以精靈範圍(WZ_SCOPE)為題源，否則用題庫管理的篩選
 function _mixSelectablePool(){
   const wzOn=(typeof WZ_SCOPE!=='undefined')&&document.getElementById('composer')&&!document.getElementById('composer').hidden;
-  if(wzOn){const ex=(typeof _wzExcludedQids==='function')?_wzExcludedQids():new Set();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id)&&wzInScope(it));}
+  if(wzOn){const ex=(typeof _wzExcludedQids==='function')?_wzExcludedQids():new Set();return DB.filter(it=>it&&it.type!=='passage'&&!ex.has(it.id)&&wzInScope(it)&&_wzAutoQaEligible(it));}
   return DB.filter(it=>it&&it.type!=='passage'&&matches(it));
 }
 function _mixSyncMode(){const m=document.getElementById('mixMode').value;
@@ -4881,6 +4882,8 @@ function _mixTokenize(pool){
       if(seen.has('G:'+it.groupId))return;seen.add('G:'+it.groupId);
       // 整組成員（含題組文章），用第一小題當分類代表
       const members=DB.filter(x=>x.groupId===it.groupId);
+      // 題組一旦被帶入會連同所有小題選入；品質篩選開啟時，整組都必須通過。
+      if(!_wzAutoQaEligibleGroup(members))return;
       const subs=members.filter(x=>x.type!=='passage');
       const rep=subs.slice().sort((a,b)=>(parseInt(a.no)||0)-(parseInt(b.no)||0))[0]||it;
       units.push({ids:members.map(x=>x.id),unit:rep.unit||'（未分類）',lvl:_mixLvl(rep),count:subs.length||1});
@@ -4939,6 +4942,8 @@ function doAutoMix(){
     }
     got.forEach((g,v)=>{if(g<req.need)shortfalls.push('卷'+String.fromCharCode(65+v)+'「'+req.label+'」需 '+req.need+' 題，僅 '+g+' 題');});
   });
+  // 品質 gate 開啟時，不用有問題的題暗中補足需求；讓使用者明確決定是否放寬。
+  if(_wzQaPassOnly()&&shortfalls.length){alert('沒問題的題不足，需取消勾選才能補滿');return;}
   mixDlg.close();
   // 套用結果
   if(nVer===1){
@@ -5667,6 +5672,11 @@ function _wzFullHtml(it){
   const sol=(it.sol&&it.sol.trim())?`<div class="wz-sol">${_wzMathHtml(it.sol,false)}</div>`:'';
   return ph+`<div>${qh}</div>${imgs}${ans}${sol}`;
 }
+function _wzQaPassOnly(){const el=document.getElementById('wzfQaPass');return !!(el&&el.checked);}
+function _wzQaPasses(it){return qaGateFor(it).severity==='pass';}
+// 自動選題的題組會整組帶入，故不能只因其中一小題通過就帶進其餘有問題的小題。
+function _wzAutoQaEligible(it){return !_wzQaPassOnly()||_wzQaPasses(it);}
+function _wzAutoQaEligibleGroup(members){return !_wzQaPassOnly()||members.filter(it=>it.type!=='passage').every(_wzQaPasses);}
 // 目前篩選條件下的題目（forSelect=true 時忽略「已選分頁」限制，供全選用）
 function _wzFilteredItems(forSelect){
   const ft=document.getElementById('wzfType').value,fd=document.getElementById('wzfDiff').value,fs=(document.getElementById('wzfSearch').value||'').trim();
@@ -5676,6 +5686,7 @@ function _wzFilteredItems(forSelect){
   if(ft)items=items.filter(it=>it.type===ft);
   if(WZ_FMT.size)items=items.filter(it=>WZ_FMT.has(_wzFormat(it)));
   if(fd)items=items.filter(it=>(effDiffLvl(it)||'未評分')===fd);
+  if(_wzQaPassOnly())items=items.filter(_wzQaPasses);
   if(fs)items=items.filter(it=>stripRichMarks((it.q||'')+(it.summary||'')+(it.sol||'')).includes(fs));
   return items;
 }
@@ -5850,7 +5861,8 @@ function wzPick(id){
 // 全選：把目前篩選／範圍內的待選題目全部選入（題組會整組一起選）。
 function wzSelectAllFiltered(){
   const items=_wzFilteredItems(true);
-  const todo=items.filter(it=>!PICKS.has(it.id));
+  // 全選也屬於自動加入；題組需確認所有會被連帶選入的小題都通過。
+  const todo=items.filter(it=>!PICKS.has(it.id)&&_wzAutoQaEligibleGroup(it.groupId?DB.filter(x=>x.groupId===it.groupId):[it]));
   if(!todo.length){alert('目前篩選範圍內的題目都已經選過了。');return;}
   if(todo.length>60&&!confirm('確定把目前篩選範圍內的 '+todo.length+' 題全部選入？（題組會整組一起選）'))return;
   todo.forEach(it=>{if(!PICKS.has(it.id))togglePick(it.id,true);});
