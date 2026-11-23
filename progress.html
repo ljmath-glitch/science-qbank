@@ -143,17 +143,16 @@ th.sort-header:hover{background:#e5ddd0}
             <th title="照原卷逐題對過：文字、標點、單位、上下標、公式">① 題幹與公式<small>對照原卷</small></th>
             <th title="答案已對照原廠答案卷，不是只看 AI 的結果">② 答案<small>對照答案卷</small></th>
             <th title="每張圖都已切完整、放在對的題號與選項，圖號與題目文字相符">③ 圖片與圖號<small>切對、綁對題號</small></th>
-            <th title="題組共用文章、承上題的前後題都已核對">④ 題組／承上題</th>
-            <th title="詳解已完成，並核對過結論與答案一致">⑤ 詳解</th>
-            <th title="章節（冊／單元）與難度三項已確認">⑥ 章節與難度</th>
-            <th title="最後階段才做；不影響「可出卷」判斷">⑦ 圖片高清化<small>最後階段</small></th>
+            <th title="詳解已完成，並核對過結論與答案一致">④ 詳解</th>
+            <th title="章節（冊／單元）與難度三項已確認">⑤ 章節與難度</th>
+            <th title="最後階段才做；不影響「可出卷」判斷">⑥ 圖片高清化<small>最後階段</small></th>
             <th title="選填，不影響完成判斷">其他<small>選填</small></th>
             <th style="min-width:160px">備註</th>
             <th>最後更新</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="15" class="loading">載入中…</td></tr>
+          <tr><td colspan="14" class="loading">載入中…</td></tr>
         </tbody>
       </table>
     </div>
@@ -230,7 +229,7 @@ function matchesKeyword(ex){
 }
 function isAllDone(ex){
   const p=progressMap[examId(ex)]||{};
-  return !!(p.verified_questions&&p.ans_ok&&p.has_images&&p.verified_groups&&p.has_sol&&p.class_ok);
+  return !!(p.verified_questions&&p.ans_ok&&p.has_images&&p.has_sol&&p.class_ok);
 }
 function renderExamTabs(){
   const kinds=['全部','段考','模擬考','會考','學測','分科／其他'];
@@ -340,7 +339,7 @@ function showCheer(rate){
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
   _cheerPending=true;
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="15" class="loading">載入中…</td></tr>';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="14" class="loading">載入中…</td></tr>';
   document.getElementById('emptyMsg').style.display = 'none';
 
   if(!demoMode){
@@ -457,7 +456,7 @@ function render(){
 
   const doneCount = visibleExams.filter(ex => {
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject)] || {};
-    return p.verified_questions && p.ans_ok && p.has_images && p.verified_groups && p.has_sol && p.class_ok;
+    return p.verified_questions && p.ans_ok && p.has_images && p.has_sol && p.class_ok;
   }).length;
   const rate = visibleExams.length ? Math.round(doneCount / visibleExams.length * 100) : 0;
   document.getElementById('statLine').textContent =
@@ -468,7 +467,7 @@ function render(){
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject);
     const p   = progressMap[id] || {};
     const shownName = shownNameOf(ex,p);
-    const allDone = p.verified_questions && p.ans_ok && p.has_images && p.verified_groups && p.has_sol && p.class_ok;
+    const allDone = p.verified_questions && p.ans_ok && p.has_images && p.has_sol && p.class_ok;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
     const delBtn = ex.isManual
       ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
@@ -498,14 +497,13 @@ function render(){
       <td class="chk-cell" data-label="① 題幹與公式"><input type="checkbox" title="① 題幹與公式" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
       <td class="chk-cell" data-label="② 答案"><input type="checkbox" title="② 答案" ${p.ans_ok?'checked':''} onchange="toggle('${esc(id)}','ans_ok',this.checked)"></td>
       <td class="chk-cell" data-label="③ 圖片與圖號"><input type="checkbox" title="③ 圖片與圖號" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
-      <td class="chk-cell" data-label="④ 題組／承上題"><input type="checkbox" title="④ 題組／承上題" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
-      <td class="chk-cell" data-label="⑤ 詳解"><input type="checkbox" title="⑤ 詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
-      <td class="chk-cell" data-label="⑥ 章節與難度"><input type="checkbox" title="⑥ 章節與難度" ${p.class_ok?'checked':''} onchange="toggle('${esc(id)}','class_ok',this.checked)"></td>
-      <td class="chk-cell" data-label="⑦ 圖片高清化（最後階段）"><input type="checkbox" title="⑦ 圖片高清化（最後階段）" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
+      <td class="chk-cell" data-label="④ 詳解"><input type="checkbox" title="④ 詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
+      <td class="chk-cell" data-label="⑤ 章節與難度"><input type="checkbox" title="⑤ 章節與難度" ${p.class_ok?'checked':''} onchange="toggle('${esc(id)}','class_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="⑥ 圖片高清化（最後階段）"><input type="checkbox" title="⑥ 圖片高清化（最後階段）" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
       <td class="chk-cell" data-label="其他（選填）"><input type="checkbox" title="其他（選填）" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
       <td data-label="備註"><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
       <td class="ts-cell" data-label="最後更新">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
-    </tr>${state.open?`<tr class="review-row"><td colspan="15">${renderReviewPanel(id,shownName)}</td></tr>`:''}`;
+    </tr>${state.open?`<tr class="review-row"><td colspan="14">${renderReviewPanel(id,shownName)}</td></tr>`:''}`;
   }).join('');
 }
 
