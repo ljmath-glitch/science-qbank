@@ -426,9 +426,10 @@
   const srcLine = (src, o) => P(R('［' + src + '］', { font: F.body, s: 8, c: '#808080' }), { jc: 'right', sb: 0, sa: 3, ...(o || {}) });
   // 不可見書籤：標出這一段屬於題庫哪一題（Word 不顯示；網頁預覽點擊編輯時用）
   let BM_SEQ = 0;
-  const bmWrap = (id, runs) => {
+  // pfx：zzq_＝題目第一段（點擊編輯）、zzs_＝詳解段、zzo_N_＝一行一個選項的第 N 個選項段、zzg_N_＝題組文章第 N 段（名稱 ≤ 40 字元）
+  const bmWrap = (id, runs, pfx) => {
     if (!id) return runs;
-    const n = ++BM_SEQ, name = 'zzq_' + String(id).replace(/[^A-Za-z0-9_]/g, '').slice(0, 34);
+    const n = ++BM_SEQ, name = (pfx || 'zzq_') + String(id).replace(/[^A-Za-z0-9_]/g, '').slice(0, pfx && pfx !== 'zzs_' ? 28 : 34);
     return `<w:bookmarkStart w:id="${n}" w:name="${name}"/>${runs}<w:bookmarkEnd w:id="${n}"/>`;
   };
   function choiceQuestion(it, ctx) {
@@ -442,12 +443,12 @@
     const two = lay.cols === 2 && lay.mid === Q_TABS[1] ? { tabs: [{ v: 'clear', tw: Q_TABS[0] }, { v: 'clear', tw: Q_TABS[2] }] } : {};
     let x = P(runs, { style: 'ZXQ', kl: true, kn: more || !!(it.layout && it.layout.keepTogether), pb: !!(it.layout && it.layout.breakBefore), ...two, ...(own ? { sb: 3.6, sa: 0 } : {}) });
     if (own) lay.lines.forEach((ln, i) => {
-      x += P(RT(ln, qfont()), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) || !!it.src });
+      x += P(bmWrap(it.id, RT(ln, qfont()), 'zzo_' + i + '_'), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) || !!it.src });
     });
     // 同一題的圖排在同一行、置中（放不下 Word 會自動換行）
     if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (it.imgs[0].align || 'center'), indTw: { l: Q_LEFT }, sa: 3, kn: !!it.src });
     if (it.src) x += srcLine(it.src);
-    if (ctx.teacher && it.sol && ctx.showSol) x += solutionNote(it.sol);
+    if (ctx.teacher && it.sol && ctx.showSol) x += solutionNote(it.sol, it.id);
     return x;
   }
   // 非選擇題：題號「N.」＋題幹；「＿＿」作答處改成【　　　　】；教用版在下面加一行隱藏的紅字答案
@@ -457,11 +458,12 @@
     if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (it.imgs[0].align || 'center'), indTw: { l: Q_LEFT }, sa: 3, kn: true });
     if (it.src) x += srcLine(it.src, { kn: true });
     if (ctx.teacher && it.ans) x += P([R('答：', qfont({ c: ANS, b: true, vanish: true })), RT(it.ans, qfont({ c: ANS, vanish: true }))], { indTw: { l: Q_LEFT }, sa: 3 });
+    if (ctx.teacher && it.sol && ctx.showSol) x += solutionNote(it.sol, it.id);
     x += P('', { sa: it.lines ? it.lines * 12 : 24 });   // 作答空間
     return x;
   }
-  function solutionNote(sol) {
-    return P([R('詳解　', { font: F.head, s: 10, c: ANS, vanish: true }), RT(sol, { font: F.body, s: 10, c: ANS, vanish: true })], { indTw: { l: Q_LEFT }, sa: 3, ls: 1.2 });
+  function solutionNote(sol, id) {
+    return P([bmWrap(id, R('詳解　', { font: F.head, s: 10, c: ANS, vanish: true }) + RT(sol, { font: F.body, s: 10, c: ANS, vanish: true }), 'zzs_')], { indTw: { l: Q_LEFT }, sa: 3, ls: 1.2 });
   }
   // 題組框：圓角細黑框、左上「題組」小黑籤；太長（超過約半頁）時改成整段加框的段落，才能跨頁
   function passageBlock(ps, W, ctx) {
@@ -478,13 +480,13 @@
       const o = { bdr: bd, ind: { l: 0.2, r: 0.2 }, ls: 1.3, sa: 0, ...(TH.box === 'tint' ? { shd: TH.tint } : {}) };
       const tag = TH.box === 'thin' ? R('【題組】', { font: F.head, s: 9.5, c: TH.ac }) : R('題組', { font: F.head, s: 9.5, c: '#FFFFFF', hl: TH.ac });
       let x = P([tag, R('　'), ...head], { ...o, sb: 10 });
-      paras.forEach((p) => { x += P(RT(p, { font: F.body, s: 10, c: INK }), o); });
+      paras.forEach((p, k) => { x += P(bmWrap(ps.gid, RT(p, { font: F.body, s: 10, c: INK }), 'zzg_' + k + '_'), o); });
       if ((ps.imgs || []).length) x += P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { ...o, jc: (ps.imgs[0].align || 'center') });
       if (ps.src) x += P(R('［' + ps.src + '］', { font: F.body, s: 8, c: '#808080' }), { ...o, jc: 'right' });
       return x + P('', { sa: 4 });
     }
     const txt = [P(head, { sa: 3 })];
-    paras.forEach((p) => txt.push(P(RT(p, { font: F.body, s: 10, c: INK }), { ls: 1.3, sa: 3 })));
+    paras.forEach((p, k) => txt.push(P(bmWrap(ps.gid, RT(p, { font: F.body, s: 10, c: INK }), 'zzg_' + k + '_'), { ls: 1.3, sa: 3 })));
     if ((ps.imgs || []).length) txt.push(P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (ps.imgs[0].align || 'center'), sa: 3 }));
     if (ps.src) { txt.push(srcLine(ps.src, { sa: 0 })); estH += 0.45; }
     const spacer = P(R('', { s: 14 }), { sb: 0, sa: 0, kn: true });
@@ -573,9 +575,12 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     if (spec.paper && kind !== 'abk' && kind !== 'golden') ACTIVE_LAYOUT = { ...ACTIVE_LAYOUT, paper: spec.paper === 'B4' ? {widthCm:25.7,heightCm:36.4} : {widthCm:21,heightCm:29.7} };
     const pg = { w: ACTIVE_LAYOUT.paper.widthCm, h: ACTIVE_LAYOUT.paper.heightCm, margin: ACTIVE_LAYOUT.marginCm };
     const W = pg.w - pg.margin.left - pg.margin.right;
-    const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : 1;
+    // 雙欄：ABK 由版面設定決定；正式版／課前考／黃金模擬考可由 spec.twoCol 要求（卷頭單欄，題目區雙欄，同 ABK 作法）
+    const userTwo = !!spec.twoCol && (kind === 'formal' || kind === 'pre' || kind === 'golden');
+    const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : userTwo ? 2 : 1;
+    const gapCm = kind === 'abk' ? ACTIVE_LAYOUT.columns.gapCm : userTwo ? 1.25 : 0;
     const legacyAbk = kind === 'abk' && spec.legacyAbk === true;
-    const colW = cols === 2 ? (W - ACTIVE_LAYOUT.columns.gapCm) / 2 : W;
+    const colW = cols === 2 ? (W - gapCm) / 2 : W;
     const media = [];
     const ctx = { pg, textW: TW(colW), teacher: !!spec.teacher, showSol: !!spec.showSol,
       addMedia(img) { const n = media.length + 1; media.push({ name: `image${n}.${img.ext === 'jpeg' ? 'jpeg' : 'png'}`, bytes: img.bytes }); return 'rIdImg' + n; } };
@@ -604,9 +609,10 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
       }
     }
     const gh = (TH.head === 'zz' && kind !== 'formal' && !(kind === 'abk' && !legacyAbk)) ? '' : genericHead(kind, W, m);
-    if (kind === 'formal') body = (gh || genericHead(kind, W, m)) + qbody + sect(pg, HF);
-    else if (kind === 'pre') body = (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
-    else if (kind === 'golden') body = (gh || goldenHead(W, m)) + qbody + sect(pg, HF);
+    const twoBody = (head) => head + P('', { sect: sect(pg, HF), sa: 0 }) + qbody + sect(pg, { cols: 2, gapCm, separator: true, cont: true, ...HF });
+    if (kind === 'formal') body = userTwo ? twoBody(gh || genericHead(kind, W, m)) : (gh || genericHead(kind, W, m)) + qbody + sect(pg, HF);
+    else if (kind === 'pre') body = userTwo ? twoBody(gh || prequizHead(W, m)) : (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
+    else if (kind === 'golden') body = userTwo ? twoBody(gh || goldenHead(W, m)) : (gh || goldenHead(W, m)) + qbody + sect(pg, HF);
     else if (kind === 'abk') body = (gh || abkHead(W, m)) + P('', { sect: sect(pg, HF), sa: 0 }) + qbody + sect(pg, { cols, gapCm: ACTIVE_LAYOUT.columns.gapCm, separator: ACTIVE_LAYOUT.columns.separator, cont: true, ...HF });
     else if (kind === 'mock') body = (gh || mockCover(W, m)) + mockInstructions(W, m) + P('', { sect: sect(pg, {}), sa: 0 }) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
     else body = (gh ? gh + answerKey(W, m.answers || []) : answerHead(W, m)) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });

@@ -209,6 +209,9 @@
     const div = document.createElement('div'); div.className = 'zzp';
     const _bm = [...p.children].find((c) => c.localName === 'bookmarkStart' && /^zzq_/.test(c.getAttribute('w:name') || ''));
     if (_bm) div.dataset.qid = _bm.getAttribute('w:name').slice(4);
+    // 其他書籤：zzs_＝詳解段、zzo_N_＝一行一個選項的選項段、zzg_N_＝題組文章第 N 段（就地編輯用）
+    { const _bx = [...p.children].find((c) => c.localName === 'bookmarkStart' && /^zz[sog]_/.test(c.getAttribute('w:name') || ''));
+      if (_bx) { const nm = _bx.getAttribute('w:name'); if (/^zzs_/.test(nm)) div.dataset.sid = nm.slice(4); else { const mm = /^zz([og])_(\d+)_(.*)$/.exec(nm); if (mm) { div.dataset[mm[1] === 'o' ? 'oid' : 'pid'] = mm[3]; div.dataset.seq = mm[2]; } } } }
     const markR = mergeR(baseR, P.mark);
     // 編號（大題「一、」、題號「N.(　　)」）
     let lblHtml = null, left = P.left, hang = P.hang, numInline = null;
