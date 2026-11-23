@@ -10977,6 +10977,14 @@ document.addEventListener('mouseover',function(ev){
   else if(_PVQBAR&&!ev.target.closest('#pvQBar')){clearTimeout(_pvQBarTimer);_pvQBarTimer=setTimeout(_pvQBarHide,300);}
 });
 window.addEventListener('scroll',_pvQBarPlace,true);
+document.addEventListener('keydown',function(e){
+  const t=e.target,typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&document.getElementById('pvQE')){e.preventDefault();const b=document.getElementById('pvQEsave');if(b&&!b.disabled)b.click();return;}
+  if(!(e.ctrlKey||e.metaKey)||typing||!PV_WORD_VIEW||!document.querySelector('.pv-wordhost'))return;
+  const k=e.key.toLowerCase();
+  if(k==='z'&&!e.shiftKey){e.preventDefault();_pvHistUndo();}
+  else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();_pvHistRedo();}
+});
 (function(){const st=document.createElement('style');st.textContent='#pvQBar{position:fixed;z-index:99998;display:flex;gap:2px;align-items:center;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18)}#pvQBar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12.5px}#pvQBar button:hover{background:#dfe5fb}#pvQBar button.on{background:#3e63dd;color:#fff}#pvQBar .sp{width:6px}';document.head.appendChild(st);})();
 // 版面預覽（同 Word）／編輯題目 兩種模式；預設版面預覽，記在這個瀏覽器。
 let PV_WORD_VIEW=(function(){try{return localStorage.getItem('pvWordView')!=='0';}catch(e){return true;}})();
