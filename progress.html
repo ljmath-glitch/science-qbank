@@ -7,6 +7,9 @@
 <script>(()=>{const u=+sessionStorage.getItem('tzutzu_qbank_unlock_until')||0;if(Date.now()>=u)location.replace('home.html');})();</script>
 <link rel="icon" type="image/png" href="/logo.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="qa-gate.js"></script>
+<script src="syllabus.js"></script>
+<script src="progress-review.js"></script>
 <style>
 :root{--bg:#f6f5f2;--card:#fff;--line:#e6e4de;--text:#2d3038;--muted:#6e6f74;--primary:#850103;--green:#2d9060;--red:#c0392b;--orange:#f9a12c;--ui-font:"PingFang TC","Microsoft JhengHei",system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -65,6 +68,11 @@ th.sort-header:hover{background:#e5ddd0}
 .link-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;display:block}
 .link-btn-ph{display:inline-block;width:21px;flex-shrink:0}
 .multi-badge{position:absolute;top:-5px;right:-5px;min-width:14px;height:14px;padding:0 3px;border-radius:999px;background:var(--primary,#850103);color:#fff;font-size:9px;font-weight:700;line-height:14px;text-align:center}
+.demo-banner{display:none;background:#fff3cd;border-bottom:1px solid #e8c45f;color:#76520a;padding:8px 20px;text-align:center;font-weight:700}.demo-banner.show{display:block}
+.audit-cell{min-width:230px}.audit-bar{display:flex;height:10px;border-radius:8px;overflow:hidden;background:#ece8df;margin:5px 0}.audit-bar span{min-width:2px}.audit-copy{font-size:11px;line-height:1.5;color:var(--muted)}.audit-copy b{color:var(--text)}
+.review-btn,.review-actions button{font:600 12px var(--ui-font);border:1px solid var(--line);border-radius:6px;background:#fff;padding:5px 8px;cursor:pointer;color:var(--text)}.review-btn:hover,.review-actions button:hover{border-color:var(--primary);color:var(--primary)}
+.review-row td{background:#fffdf9;padding:14px}.review-panel{max-width:100%;overflow:hidden}.review-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:9px}.review-info{font-size:12px;color:var(--muted)}.review-actions{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.review-table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}.review-table{min-width:760px;width:100%;font-size:12px;box-shadow:none}.review-table th{position:static;padding:7px}.review-table td{padding:7px;border-bottom:1px solid var(--line);background:#fff}.review-table .changed{background:#fff1df;color:#9a5200;font-weight:700}.review-table .same{color:var(--muted)}.review-table .bad{color:var(--red);font-weight:700}.review-summary{max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.review-status{font-size:12px;margin:8px 0;color:var(--muted)}
+.ai-link{font-size:11px;white-space:nowrap}.import-box{width:100%;min-height:70px;padding:7px;font:12px ui-monospace,monospace;border:1px solid var(--line);border-radius:6px}.issue-copy{font-size:11px;line-height:1.45;color:#8a5200;max-width:260px}.ai-view{max-width:1100px;margin:0 auto;padding:22px;font:15px/1.55 ui-monospace,"Noto Sans TC",monospace;background:#fff;color:#111}.ai-view h1{font:700 22px var(--ui-font);margin-bottom:5px}.ai-view .ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.ai-view button{padding:7px 10px;border:1px solid #777;border-radius:5px;background:#fff;cursor:pointer}.ai-question{border:1px solid #aaa;border-radius:6px;margin:16px 0;padding:14px;white-space:pre-wrap}.ai-question h2{font:700 17px var(--ui-font);margin:0 0 10px}.ai-field{margin:3px 0}.ai-field b{font-family:var(--ui-font)}.ai-meta{color:#444;margin:8px 0}.ai-json{display:none}.ai-empty{padding:30px;border:1px solid #aaa}
 /* ── 手機版：表格轉卡片，避免橫向捲動 ── */
 @media(max-width:600px){
   .wrap{padding:0 14px}
@@ -92,7 +100,9 @@ th.sort-header:hover{background:#e5ddd0}
   .note-inp{width:auto;flex:1;text-align:right;font-size:13px}
   .ts-cell{white-space:normal;text-align:right;line-height:1.4}
   .ts-cell b{font-weight:700}
+  .review-row td{display:block}.review-row td:before{display:none}.audit-cell{align-items:flex-start!important;flex-direction:column}.review-table-wrap{max-width:100%}
 }
+  thead th small{display:block;font-weight:500;font-size:10.5px;color:var(--muted);margin-top:2px}
 </style>
 </head>
 <body>
@@ -118,6 +128,7 @@ th.sort-header:hover{background:#e5ddd0}
 </div>
 
 <div class="cheer" id="cheer"></div>
+<div class="demo-banner" id="demoBanner">示範模式：使用內建假資料與假 AI 建議，不會讀取或寫入雲端資料。</div>
 
 <div class="main">
   <div class="wrap">
@@ -127,19 +138,22 @@ th.sort-header:hover{background:#e5ddd0}
           <tr>
             <th class="left sort-header" onclick="sortBy('displayName')">考卷名稱 ↕</th>
             <th>題數</th>
-            <th>確認公式</th>
-            <th>上傳圖片</th>
-            <th>考卷圖片高清化</th>
-            <th>製作詳解</th>
-            <th>題幹敘述確認</th>
-            <th>題組/承上題確認</th>
-            <th>其他確認</th>
+            <th style="min-width:240px">審核</th>
+            <th>AI 修正</th>
+            <th title="照原卷逐題對過：文字、標點、單位、上下標、公式">① 題幹與公式<small>對照原卷</small></th>
+            <th title="答案已對照原廠答案卷，不是只看 AI 的結果">② 答案<small>對照答案卷</small></th>
+            <th title="每張圖都已切完整、放在對的題號與選項，圖號與題目文字相符">③ 圖片與圖號<small>切對、綁對題號</small></th>
+            <th title="題組共用文章、承上題的前後題都已核對">④ 題組／承上題</th>
+            <th title="詳解已完成，並核對過結論與答案一致">⑤ 詳解</th>
+            <th title="章節（冊／單元）與難度三項已確認">⑥ 章節與難度</th>
+            <th title="最後階段才做；不影響「可出卷」判斷">⑦ 圖片高清化<small>最後階段</small></th>
+            <th title="選填，不影響完成判斷">其他<small>選填</small></th>
             <th style="min-width:160px">備註</th>
             <th>最後更新</th>
           </tr>
         </thead>
         <tbody id="tbody">
-          <tr><td colspan="10" class="loading">載入中…</td></tr>
+          <tr><td colspan="15" class="loading">載入中…</td></tr>
         </tbody>
       </table>
     </div>
@@ -161,6 +175,12 @@ let sortKey = 'year';
 let sortAsc = false;
 let activeExamKind = '全部';
 let activeGrade = '全部';
+let demoMode = new URLSearchParams(location.search).get('demo')==='1';
+let aiMode = new URLSearchParams(location.search).get('ai')==='1';
+let aiExam = new URLSearchParams(location.search).get('exam')||'';
+let reviewQuestions = {}; // {exam id: questions[]}
+let reviewState = {}; // {exam id: {open, rows, busy, abort}}
+let passageByGroup = {}; // {group_id: passage question}
 function gradeGroup(ex){
   const g=(ex&&ex.grade)||'';
   if(g==='七年級'||g==='八年級'||g==='九年級')return g;
@@ -210,7 +230,7 @@ function matchesKeyword(ex){
 }
 function isAllDone(ex){
   const p=progressMap[examId(ex)]||{};
-  return !!(p.verified_formula&&p.has_images&&p.has_sol&&p.verified_questions&&p.verified_groups&&p.other_ok);
+  return !!(p.verified_questions&&p.ans_ok&&p.has_images&&p.verified_groups&&p.has_sol&&p.class_ok);
 }
 function renderExamTabs(){
   const kinds=['全部','段考','模擬考','會考','學測','分科／其他'];
@@ -255,12 +275,14 @@ function loadName(){ document.getElementById('userName').value = localStorage.ge
 
 // ── 進度資料讀寫（存在 syllabus_doc id=2 的 content 欄） ──
 async function loadProgress(){
+  if(demoMode) return {};
   const {data, error} = await sb.from('syllabus_doc').select('content').eq('id', PROGRESS_ROW_ID).maybeSingle();
   if(error || !data) return {};
   try { return JSON.parse(data.content || '{}'); } catch(e){ return {}; }
 }
 
 async function saveProgress(){
+  if(demoMode) return;
   const {error} = await sb.from('syllabus_doc').upsert({id: PROGRESS_ROW_ID, content: JSON.stringify(progressMap)});
   if(error) alert('儲存失敗：' + error.message);
 }
@@ -271,6 +293,7 @@ function showSaving(show){
 
 // fetch 最新版本 → 合併本地變更 → 存回（避免覆蓋他人勾選）
 async function mergeAndSave(changeFn){
+  if(demoMode){ alert('示範模式不會儲存變更。'); return; }
   showSaving(true);
   const latest = await loadProgress();
   progressMap = {...latest};
@@ -317,12 +340,18 @@ function showCheer(rate){
 // ── 載入所有題目清單 ──────────────────────────────
 async function loadAll(){
   _cheerPending=true;
-  document.getElementById('tbody').innerHTML = '<tr><td colspan="10" class="loading">載入中…</td></tr>';
+  document.getElementById('tbody').innerHTML = '<tr><td colspan="15" class="loading">載入中…</td></tr>';
   document.getElementById('emptyMsg').style.display = 'none';
 
+  if(!demoMode){
+    try{ const {data:{session}}=await sb.auth.getSession(); if(!session)demoMode=true; }catch(e){demoMode=true;}
+  }
+  document.getElementById('demoBanner').classList.toggle('show',demoMode);
   let allQs = [], from = 0;
-  while(true){
-    const {data, error} = await sb.from('questions').select('year,school,exam,book,type').neq('type','passage').range(from, from + 999);
+  if(demoMode){
+    allQs=demoQuestions();
+  } else while(true){
+    const {data, error} = await sb.from('questions').select('id,year,school,exam,book,book_name,domain,unit,sub,kp,step,mem,con,flag,basis,no,summary,q,ans,sol,type,chart,imgs,group_id').range(from, from + 999);
     if(error || !data || !data.length) break;
     allQs = allQs.concat(data);
     if(data.length < 1000) break;
@@ -331,7 +360,9 @@ async function loadAll(){
 
   // 依語意 key 分組：school + grade + year + examRound（＋考卷名稱本身有寫科目才加科目，見 parseSubject）
   const grouped = {};
-  allQs.forEach(q => {
+  reviewQuestions={};
+  passageByGroup=Object.fromEntries(allQs.filter(q=>q.type==='passage'&&q.group_id).map(q=>[q.group_id,q]));
+  allQs.filter(q=>q.type!=='passage').forEach(q => {
     const school = (q.school||'').trim();
     const grade  = gradeFromExam(q.exam||'', q.book||'');
     const year   = (q.year||'').trim();
@@ -340,6 +371,7 @@ async function loadAll(){
     const key    = makeId(school, grade, year, round, subject);
     if(!grouped[key]){ const semester = parseSemester(q.exam, year); grouped[key] = {school, grade, year, round, subject, semester, displayName: composeDisplayName(school,grade,year,round,subject,semester), count: 0, examRawSet: new Set()}; }
     grouped[key].count++;
+    (reviewQuestions[key]||(reviewQuestions[key]=[])).push(q);
     if(q.exam) grouped[key].examRawSet.add(q.exam.trim());
   });
   exams = Object.values(grouped).map(ex => {
@@ -349,6 +381,7 @@ async function loadAll(){
   });
 
   progressMap = await loadProgress();
+  if(aiMode){renderAiAssistantView();return;}
   // 九年級理化／地科原本各一列、各有進度：合併後的那一列若還沒有進度，沿用原本理化（其次地科）那列，避免勾選全部歸零
   const carry=[];
   exams.forEach(ex=>{
@@ -424,7 +457,7 @@ function render(){
 
   const doneCount = visibleExams.filter(ex => {
     const p = progressMap[makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject)] || {};
-    return p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
+    return p.verified_questions && p.ans_ok && p.has_images && p.verified_groups && p.has_sol && p.class_ok;
   }).length;
   const rate = visibleExams.length ? Math.round(doneCount / visibleExams.length * 100) : 0;
   document.getElementById('statLine').textContent =
@@ -435,7 +468,7 @@ function render(){
     const id  = ex.isManual ? manualKey(ex.displayName) : makeId(ex.school, ex.grade, ex.year, ex.round, ex.subject);
     const p   = progressMap[id] || {};
     const shownName = shownNameOf(ex,p);
-    const allDone = p.verified_formula && p.has_images && p.has_sol && p.verified_questions && p.verified_groups && p.other_ok;
+    const allDone = p.verified_questions && p.ans_ok && p.has_images && p.verified_groups && p.has_sol && p.class_ok;
     const rowStyle = allDone ? 'background:#f0fbf5' : '';
     const delBtn = ex.isManual
       ? `<button class="del-btn" title="刪除此列" onclick="deleteManual('${esc(ex.displayName)}')">✕</button>`
@@ -452,24 +485,41 @@ function render(){
       ? `<a class="link-btn" href="${linkHref}" target="_blank" ${multiNote}>${examRaws.length>1?`<span class="multi-badge">${examRaws.length}</span>`:''}<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><path d="M15 3h6v6"/><path d="M10 14 21 3"/></svg></a>`
       : `<span class="link-btn-ph"></span>`;
     const countCell = ex.count===null ? '<span style="color:#bbb">—</span>' : `<span class="count-badge">${ex.count}</span>`;
+    const aiHref=`progress.html?ai=1&exam=${encodeURIComponent(shownName)}${demoMode?'&demo=1':''}`;
+    const audit=ProgressReview.auditQuestions(reviewQuestions[id]||[],q=>QAGate.checkFields({題目:q.q||'',答案:q.ans||'',題型:q.type||'',圖表類型:q.chart||''},{hasImage:Array.isArray(q.imgs)&&q.imgs.length>0}));
+    auditById[id]=audit;
+    const auditCell=renderAudit(audit);
+    const state=reviewState[id]||{};
     return `<tr style="${rowStyle}">
       <td class="pg-name" style="display:flex;align-items:center;gap:4px">${delBtn}${linkBtn}<input class="name-inp-cell" value="${esc(shownName)}" onblur="updateName('${esc(id)}',this.value)"></td>
       <td class="center" data-label="題數">${countCell}</td>
-      <td class="chk-cell" data-label="確認公式"><input type="checkbox" title="確認公式" ${p.verified_formula?'checked':''} onchange="toggle('${esc(id)}','verified_formula',this.checked)"></td>
-      <td class="chk-cell" data-label="上傳圖片"><input type="checkbox" title="上傳圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
-      <td class="chk-cell" data-label="考卷圖片高清化"><input type="checkbox" title="考卷圖片高清化" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
-      <td class="chk-cell" data-label="製作詳解"><input type="checkbox" title="製作詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
-      <td class="chk-cell" data-label="題幹敘述確認"><input type="checkbox" title="題幹敘述確認" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
-      <td class="chk-cell" data-label="題組/承上題確認"><input type="checkbox" title="題組/承上題確認" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
-      <td class="chk-cell" data-label="其他確認"><input type="checkbox" title="其他確認" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
+      <td class="audit-cell" data-label="審核">${auditCell}</td>
+      <td class="center" data-label="AI 修正"><button class="review-btn" onclick="toggleReview('${esc(id)}')">${state.open?'收合清單':'展開清單'}</button><br><a class="ai-link" target="_blank" href="${aiHref}">AI 助手視圖</a></td>
+      <td class="chk-cell" data-label="① 題幹與公式"><input type="checkbox" title="① 題幹與公式" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell" data-label="② 答案"><input type="checkbox" title="② 答案" ${p.ans_ok?'checked':''} onchange="toggle('${esc(id)}','ans_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="③ 圖片與圖號"><input type="checkbox" title="③ 圖片與圖號" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell" data-label="④ 題組／承上題"><input type="checkbox" title="④ 題組／承上題" ${p.verified_groups?'checked':''} onchange="toggle('${esc(id)}','verified_groups',this.checked)"></td>
+      <td class="chk-cell" data-label="⑤ 詳解"><input type="checkbox" title="⑤ 詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
+      <td class="chk-cell" data-label="⑥ 章節與難度"><input type="checkbox" title="⑥ 章節與難度" ${p.class_ok?'checked':''} onchange="toggle('${esc(id)}','class_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="⑦ 圖片高清化（最後階段）"><input type="checkbox" title="⑦ 圖片高清化（最後階段）" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
+      <td class="chk-cell" data-label="其他（選填）"><input type="checkbox" title="其他（選填）" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
       <td data-label="備註"><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
       <td class="ts-cell" data-label="最後更新">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
-    </tr>`;
+    </tr>${state.open?`<tr class="review-row"><td colspan="15">${renderReviewPanel(id,shownName)}</td></tr>`:''}`;
   }).join('');
 }
 
 // ── 勾選 ────────────────────────────────────────────
+const auditById={};
+const TOGGLE_GUARDS={
+  verified_questions:a=>a.flagged>0?`系統還標有 ${a.flagged} 題「待確認／疑似問題」。確定題幹與公式都已對照原卷嗎？`:'',
+  ans_ok:a=>(a.missingAnswer>0||a.incompleteOptions>0)?`系統發現 ${a.missingAnswer} 題缺答案、${a.incompleteOptions} 題選項不全。確定答案都已對照答案卷嗎？`:'',
+  has_images:a=>a.missingImage>0?`系統仍判定 ${a.missingImage} 題缺圖。確定圖都已切好並綁到正確題號嗎？`:'',
+  class_ok:a=>(a.missingCategory>0||a.missingDifficulty>0)?`仍有 ${a.missingCategory} 題分類未填、${a.missingDifficulty} 題難度未填。確定都已確認嗎？`:''
+};
 async function toggle(id, field, val){
+  const a=auditById[id],g=TOGGLE_GUARDS[field];
+  if(val&&a&&g){const msg=g(a);if(msg&&!confirm(msg+'\n\n按「取消」會維持未勾選。')){render();return;}}
   const who = document.getElementById('userName').value.trim() || '未填姓名';
   await mergeAndSave(() => {
     progressMap[id] = {
@@ -541,6 +591,90 @@ async function deleteManual(name){
     exams = exams.filter(e=>!(e.isManual && e.displayName===name));
   });
 }
+
+function renderAudit(a){
+  const parts=[['缺圖',a.missingImage,'#c0392b'],['選項不全',a.incompleteOptions,'#e67e22'],['答案缺',a.missingAnswer,'#d35400'],['分類未填',a.missingCategory,'#8e44ad'],['難度未填',a.missingDifficulty,'#2980b9'],['待確認',a.flagged,'#7f8c8d']];
+  const bad=parts.reduce((n,x)=>n+x[1],0), total=Math.max(a.total,1);
+  return `<div class="audit-bar" aria-label="審核問題共 ${bad} 項">${parts.filter(x=>x[1]).map(x=>`<span style="width:${x[1]/Math.max(bad,1)*100}%;background:${x[2]}" title="${x[0]} ${x[1]} 題"></span>`).join('')}</div><div class="audit-copy">${parts.map(x=>`${x[0]} <b>${x[1]}</b>`).join('／')}<br><b>可出卷 ${a.ready} / ${total} 題</b></div>`;
+}
+function qaFlagsFor(q){
+  const flags=QAGate.checkFields({題目:q.q||'',答案:q.ans||'',題型:q.type||'',圖表類型:q.chart||''},{hasImage:Array.isArray(q.imgs)&&q.imgs.length>0})||[];
+  const cn={missing_image:'疑似缺少圖片',possible_missing_image:'可能缺少圖片',incomplete_options:'選項可能不完整',missing_answer:'答案未填'};
+  return flags.map(x=>({rule:x[1]||x.code||'qa',description:cn[x[1]||x.code]||x[0]||'品質關檢查結果'}));
+}
+function aiExportFor(id,name){
+  const qs=(reviewQuestions[id]||[]).map(q=>({...q,qa_flags:qaFlagsFor(q)}));
+  const passages=Object.fromEntries(Object.entries(passageByGroup).map(([gid,p])=>[gid,p.q||'']));
+  return ProgressReview.buildExport(name,qs,{passages});
+}
+function copyAiText(id,name){
+  const data=aiExportFor(id,name);
+  const plain=data.questions.map(x=>`# 題號 ${x['題號']}（id: ${x.id}）\n`+Object.entries(x.fields).map(([k,v])=>`${k}：${v}`).join('\n')+`\n品質關規則：${x.qa_flags.map(f=>f.rule+'：'+f.description).join('；')||'（無）'}\n圖片：${x.images.map(i=>`${i.url||i.name}／${i.role}／${i.source}／${i.status}`).join('；')||'（無）'}\n題組：${JSON.stringify(x.group)}`).join('\n\n');
+  navigator.clipboard&&navigator.clipboard.writeText(plain).then(()=>alert('已複製完整文字。')).catch(()=>prompt('請複製：',plain));
+}
+function sampleAiResults(id){return (reviewQuestions[id]||[]).map((q,i)=>({id:q.id,verdict:i===0?'ok':'fix',issues:i===0?[]:[{field:'答案',problem:'請老師覆核圖片與答案是否一致',suggest:'不自動回寫'}],category:{book:q.book||'B1',book_name:q.book_name||'七上生物',unit:q.unit||'C2 生物體與營養'},difficulty:{step:Number(q.step)||2,mem:Number(q.mem)||2,concept:Number(q.con)||1},confidence:'高'}));}
+function renderAiAssistantView(){
+  const match=exams.find(ex=>{const p=progressMap[examId(ex)]||{};return aiExam===shownNameOf(ex,p)||aiExam===ex.displayName||(ex.examRaws||[]).includes(aiExam);});
+  const app=document.body;
+  if(!match){app.innerHTML='<main class="ai-view"><h1>AI 助手視圖</h1><p class="ai-empty">找不到指定考卷。請從進度表的「AI 助手視圖」按鈕開啟。</p></main>';return;}
+  const id=examId(match),name=shownNameOf(match,progressMap[id]||{}),data=aiExportFor(id,name);
+  const qs=data.questions.map(x=>{const flags=x.qa_flags.length?x.qa_flags.map(f=>`${f.rule}：${f.description}`).join('；'):'（無）';const imgs=x.images.length?x.images.map(i=>`${i.url||i.name}｜角色：${i.role}｜來源：${i.source}｜狀態：${i.status}`).join('\n'):'（無）';const fieldText=Object.entries(x.fields).map(([k,v])=>`<div class="ai-field"><b>${esc(k)}：</b>${esc(v)}</div>`).join('');return `<section class="ai-question" id="q-${esc(x.id)}" data-question-id="${esc(x.id)}" data-question-no="${esc(x['題號'])}" data-fields='${esc(JSON.stringify(x.fields))}'><h2>第 ${esc(x['題號'])} 題</h2>${fieldText}<div class="ai-meta"><b>品質關規則：</b>${esc(flags)}</div><div class="ai-meta"><b>圖片清單：</b>\n${esc(imgs)}</div><div class="ai-meta"><b>題組文章與同題組其他題號：</b>${esc(x.group.passage)}／${esc(x.group.other_question_numbers.join('、')||'（無）')}</div><div class="ai-meta"><b>目前章節：</b>${esc([x.fields['冊數'],x.fields['冊名'],x.fields['大單元']].join('／'))}　<b>目前難度值：</b>步驟 ${esc(x.fields['步驟分'])}、記憶 ${esc(x.fields['記憶分'])}、概念 ${esc(x.fields['概念分'])}</div></section>`;}).join('');
+  app.innerHTML=`<main class="ai-view"><h1>AI 助手視圖：${esc(name)}</h1><p>共 ${data.questions.length} 題；每題完整資料均已直接放在本頁，不需展開。</p><div class="ai-actions"><button onclick="downloadJson('AI審閱檔_${esc(name)}.json',aiExportFor('${esc(id)}','${esc(name)}'))">下載 AI 審閱檔（JSON）</button><button onclick="copyAiText('${esc(id)}','${esc(name)}')">複製為文字</button>${demoMode?`<button onclick="downloadJson('sample-ai-review-results.json',sampleAiResults('${esc(id)}'))">下載示範 AI 審閱結果</button>`:''}<a href="progress.html">返回進度表</a></div>${qs}<template class="ai-json">${esc(JSON.stringify(data))}</template></main>`;
+}
+function toggleReview(id){reviewState[id]={...(reviewState[id]||{}),open:!(reviewState[id]||{}).open};render();}
+function reviewRows(id){return (reviewState[id]||{}).rows||[];}
+function renderReviewPanel(id,name){
+  const s=reviewState[id]||{}, rows=s.rows||[];
+  const bridge=getBridge();
+  const status=s.status||(!bridge&&!demoMode?'尚未設定本機橋接：請先在題庫管理頁設定「本機 agy 橋接」。':'尚未取得 AI 建議。');
+  const body=rows.length?`<div class="review-table-wrap"><table class="review-table"><thead><tr><th>套用</th><th>題號</th><th>題目摘要</th><th>章節（現值 → 建議）</th><th>難度（現值 → 建議）</th><th>判定／問題</th><th>信心</th></tr></thead><tbody>${rows.map((r,i)=>{
+    const q=r.q||{}, ch=r.changes||{}, chapter=['book','book_name','unit'].map(k=>diffCell(q[k],r.suggestion&&r.suggestion[k],!!ch[k])).join('<br>');
+    const difficult=['step','mem','con'].map(k=>diffCell(q[k],r.suggestion&&r.suggestion[k],!!ch[k])).join('／');
+    const issues=(r.issues||[]).map(x=>`${x.field}：${x.problem}${x.suggest?' → '+x.suggest:''}`).join('\n');
+    return `<tr><td><input type="checkbox" ${r.selected?'checked':''} ${r.parseable?'':'disabled'} onchange="setReviewSelection('${esc(id)}',${i},this.checked)"></td><td>${esc(q.no||r.id||String(i+1))}</td><td class="review-summary" title="${esc(q.summary||q.q||r.error||'')}">${esc(q.summary||q.q||r.error||'（無摘要）')}</td><td>${r.parseable?chapter:'<span class="bad">無法解析</span>'}</td><td>${r.parseable?difficult:'—'}</td><td class="issue-copy">${esc(r.verdict||'—')}${issues?'<br>'+esc(issues):''}</td><td>${esc(r.confidence||'低')}</td></tr>`;
+  }).join('')}</tbody></table></div>`:'';
+  const selected=rows.filter(r=>r.selected&&r.parseable&&Object.keys(r.changes||{}).length);
+  return `<section class="review-panel"><div class="review-head"><button class="review-btn" ${s.busy?'disabled':''} onclick="askAi('${esc(id)}')">請 AI 建議章節與難度</button>${s.busy?`<button class="review-btn" onclick="stopAi('${esc(id)}')">中止</button>`:''}<span class="review-info">${esc(status)}</span></div><div class="review-actions"><button onclick="downloadJson('AI審閱檔_${esc(name)}.json',aiExportFor('${esc(id)}','${esc(name)}'))">下載 AI 審閱檔（JSON）</button><button onclick="copyAiText('${esc(id)}','${esc(name)}')">複製為文字</button>${demoMode?`<button onclick="downloadJson('sample-ai-review-results.json',sampleAiResults('${esc(id)}'))">下載示範結果</button>`:''}<label class="review-btn">選檔匯入<input type="file" accept="application/json,.json" hidden onchange="importAiFile('${esc(id)}',this.files[0])"></label><button onclick="importAiText('${esc(id)}')">貼上結果匯入</button></div><textarea id="ai-import-${esc(id)}" class="import-box" placeholder="貼上 AI 審閱結果 JSON：[{id 或 題號, verdict, issues, category, difficulty, confidence}]"></textarea>${rows.length?`<div class="review-actions"><button onclick="selectReview('${esc(id)}','all')">全選</button><button onclick="selectReview('${esc(id)}','changed')">只選有變動</button><button onclick="selectReview('${esc(id)}','none')">全不選</button><button onclick="applyReview('${esc(id)}','${esc(name)}')">套用勾選的 ${selected.length} 題</button>${s.backup?`<button onclick="restoreReview('${esc(id)}')">還原本次修改</button>`:''}</div>`:''}${body}<div class="review-status">${s.verify||''}</div></section>`;
+}
+function diffCell(oldv,newv,changed){return `<span class="${changed?'changed':'same'}">${esc(oldv==null?'—':String(oldv))} → ${esc(newv==null?'—':String(newv))}</span>`;}
+function setReviewSelection(id,i,val){reviewState[id].rows[i].selected=val;render();}
+function selectReview(id,kind){reviewRows(id).forEach(r=>r.selected=r.parseable&&(kind==='all'||(kind==='changed'&&Object.keys(r.changes||{}).length)));render();}
+function importAiText(id,raw){
+  const value=raw===undefined?(document.getElementById('ai-import-'+id)||{}).value:raw;
+  const result=ProgressReview.importAiResults(value,reviewQuestions[id]||[]);
+  const s=reviewState[id]||(reviewState[id]={open:true});
+  if(!result.valid){s.rows=[{id:'',q:null,parseable:false,changes:{},confidence:'低',verdict:'無法解析',issues:[],selected:false,error:'JSON 格式不正確；請貼上陣列或 {suggestions:[…]}。'}];s.status='匯入失敗：JSON 格式不正確。';}
+  else{s.rows=result.rows;s.status=`已匯入 ${result.rows.length} 筆；找不到題目的項目會標示「無法解析」，題幹／答案問題只供老師閱讀，不會寫回。`;}
+  render();
+}
+function importAiFile(id,file){if(!file)return;const r=new FileReader();r.onload=()=>importAiText(id,String(r.result||''));r.readAsText(file,'utf-8');}
+function getBridge(){try{const x=JSON.parse(localStorage.getItem('qbank_agy_bridge')||'null');return x&&x.url&&x.token?{url:String(x.url).replace(/\/+$/,''),token:x.token}:null;}catch(e){return null;}}
+function chapterMap(){const seen=new Set(), rows=[];const add=x=>{if(x&&!seen.has(x)){seen.add(x);rows.push(x);}};if(typeof HANLIN_SYLLABUS==='string')HANLIN_SYLLABUS.split('\n').forEach(line=>{const a=line.split('|').map(x=>x.trim());if(a.length>=4)add(a.slice(0,4).join('|'));});Object.values(reviewQuestions).flat().forEach(q=>add([q.book,q.book_name,q.unit].map(x=>String(x||'').trim()).join('|')));return rows.filter(x=>x!=='||').slice(0,300);}
+function demoQuestions(){return [
+ {id:'demo-1',year:'115',school:'示範國中',exam:'115上第一次段考自然',book:'B1',book_name:'七上生物',domain:'生物',unit:'C1 生命的特性',sub:'1-1',kp:'細胞構造',step:1,mem:1,con:1,flag:false,no:'1',summary:'觀察細胞構造',q:'下列何者為細胞基本構造？ (A)細胞膜 (B)岩石 (C)雲 (D)風',ans:'A',sol:'細胞膜包覆細胞。',type:'A1',chart:'無',imgs:[]},
+ {id:'demo-2',year:'115',school:'示範國中',exam:'115上第一次段考自然',book:'',book_name:'',unit:'',step:0,mem:0,con:0,flag:true,no:'2',summary:'光合作用條件',q:'如圖，植物進行光合作用需要何種條件？',ans:'',sol:'',type:'A2',chart:'圖',imgs:[{url:'https://example.invalid/demo.png',role:'題目',source:'示範',status:'待確認'}],group_id:'demo-g'},
+ {id:'demo-passage',year:'115',school:'示範國中',exam:'115上第一次段考自然',type:'passage',group_id:'demo-g',q:'一株植物置於不同光照條件下，觀察其氣泡數量。',imgs:[]}
+ ];}
+function demoAi(q){return {id:q.id,book:'B1',book_name:'七上生物',unit:'C2 生物體與營養',step:2,mem:2,con:1,confidence:'高'};}
+async function askAi(id){
+  const state=reviewState[id]||(reviewState[id]={open:true}),qs=reviewQuestions[id]||[]; if(!qs.length){state.status='這份考卷沒有可分析的題目。';render();return;}
+  const bridge=getBridge();if(!demoMode&&!bridge){state.status='尚未設定本機橋接。請在題庫管理頁的 AI 健檢設定連線碼後再試。';render();return;}
+  state.busy=true;state.abort=false;state.rows=[];render(); const out=[];
+  for(let n=0;n<qs.length;n+=15){if(state.abort)break;state.status=`AI 分析中：${Math.min(n+15,qs.length)}/${qs.length} 題…`;render();let list=null;
+    try{if(demoMode)list=qs.slice(n,n+15).map(demoAi);else{const batch=qs.slice(n,n+15);const prompt='你是自然科題庫分類助理。只回傳 JSON：{"suggestions":[{"id":"題目id","book":"冊數","book_name":"冊名","unit":"大單元","step":1-3,"mem":1-3,"con":1-3,"confidence":"高|中|低"}]}。只能依章節對照建議，不確定請低信心。\n【章節對照】\n'+chapterMap().join('\n')+'\n【題目】\n'+batch.map(q=>JSON.stringify({id:q.id,題目:q.q||q.summary,現值:{book:q.book,book_name:q.book_name,unit:q.unit,step:q.step,mem:q.mem,con:q.con}})).join('\n');const res=await fetch(bridge.url+'/ai',{method:'POST',headers:{'content-type':'application/json','x-bridge-token':bridge.token},body:JSON.stringify({prompt,engine:localStorage.getItem('qbank_ai_engine')||'auto'})});const json=await res.json().catch(()=>({}));if(!res.ok)throw new Error(json.error||'橋接回應失敗');list=ProgressReview.parseAiJson(json.text);}
+    }catch(e){state.status='AI 呼叫失敗：'+e.message;list=null;}
+    const map=new Map((list||[]).map(x=>[x.id,x]));qs.slice(n,n+15).forEach(q=>{const sug=map.get(String(q.id));const norm=ProgressReview.normalizedSuggestion(q,sug);out.push({id:q.id,q,suggestion:sug,parseable:!!sug,changes:norm.changes,confidence:norm.confidence,selected:!!sug&&norm.confidence==='高'&&Object.keys(norm.changes).length>0});});
+  }
+  state.rows=out;state.busy=false;state.status=state.abort?'已中止，可保留已取得的建議。':`完成 ${out.length}/${qs.length} 題；預設只勾選高信心且有變動者。`;render();
+}
+function stopAi(id){if(reviewState[id])reviewState[id].abort=true;}
+function downloadJson(name,obj){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+async function applyReview(id,name){const s=reviewState[id],items=reviewRows(id).filter(r=>r.selected&&r.parseable&&Object.keys(r.changes||{}).length);const fields=ProgressReview.changedFieldCount(items);if(!items.length){alert('尚未勾選可套用的建議。');return;}if(!confirm(`將修改 ${items.length} 題、${fields} 個欄位；只會寫入章節與難度欄位，是否繼續？`))return;
+  const backup=ProgressReview.buildBackup(name,items.map(r=>({id:r.id,before:r.q})));s.backup=backup;localStorage.setItem('progress_review_backup_'+id,JSON.stringify(backup));downloadJson(`考卷修正備份_${new Date().toISOString().replace(/[:.]/g,'-')}.json`,backup);if(demoMode){s.verify='示範模式：已模擬套用與驗證，未寫入資料。';render();return;}
+  let ok=0,bad=[];for(const r of items){const patch=ProgressReview.editablePatch(r.q,r.suggestion);const {error}=await sb.from('questions').update(patch).eq('id',r.id);if(error){bad.push(r.id);continue;}const {data}=await sb.from('questions').select(ProgressReview.EDITABLE.join(',')).eq('id',r.id).maybeSingle();if(data&&Object.entries(patch).every(([k,v])=>String(data[k]??'')===String(v??'')))ok++;else bad.push(r.id);}
+  s.verify=`已驗證 ${ok}/${items.length} 題與預期一致${bad.length?'；不一致：'+bad.join('、'):''}`;render();if(ok)loadAll();
+}
+async function restoreReview(id){const s=reviewState[id],backup=s&&s.backup;if(!backup){alert('找不到本次修改備份。');return;}if(!confirm(`還原「${backup.examName}」的 ${backup.items.length} 題？`))return;if(demoMode){s.verify='示範模式：已模擬還原，未寫入資料。';render();return;}let ok=0,bad=[];for(const item of backup.items){const patch=ProgressReview.restorePatch(item);const {error}=await sb.from('questions').update(patch).eq('id',item.id);if(error){bad.push(item.id);continue;}const {data}=await sb.from('questions').select(ProgressReview.EDITABLE.join(',')).eq('id',item.id).maybeSingle();if(data&&Object.entries(patch).every(([k,v])=>String(data[k]??'')===String(v??'')))ok++;else bad.push(item.id);}s.verify=`還原後已驗證 ${ok}/${backup.items.length} 題${bad.length?'；不一致：'+bad.join('、'):''}`;render();if(ok)loadAll();}
 
 // ── Realtime：即時同步他人變更 ──────────────────────────
 sb.channel('progress-sync')
