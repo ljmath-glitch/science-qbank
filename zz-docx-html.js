@@ -206,6 +206,8 @@
     const P = pprOf(p, ctx.S);
     const baseR = mergeR(ctx.S.def, P.styleR);
     const div = document.createElement('div'); div.className = 'zzp';
+    const _bm = [...p.children].find((c) => c.localName === 'bookmarkStart' && /^zzq_/.test(c.getAttribute('w:name') || ''));
+    if (_bm) div.dataset.qid = _bm.getAttribute('w:name').slice(4);
     const markR = mergeR(baseR, P.mark);
     // 編號（大題「一、」、題號「N.(　　)」）
     let lblHtml = null, left = P.left, hang = P.hang, numInline = null;

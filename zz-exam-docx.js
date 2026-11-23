@@ -424,12 +424,20 @@
 
   // 題目出處：自成一行、靠右、小灰字（匯出視窗勾「顯示題目出處」才有）
   const srcLine = (src, o) => P(R('［' + src + '］', { font: F.body, s: 8, c: '#808080' }), { jc: 'right', sb: 0, sa: 3, ...(o || {}) });
+  // 不可見書籤：標出這一段屬於題庫哪一題（Word 不顯示；網頁預覽點擊編輯時用）
+  let BM_SEQ = 0;
+  const bmWrap = (id, runs) => {
+    if (!id) return runs;
+    const n = ++BM_SEQ, name = 'zzq_' + String(id).replace(/[^A-Za-z0-9_]/g, '').slice(0, 34);
+    return `<w:bookmarkStart w:id="${n}" w:name="${name}"/>${runs}<w:bookmarkEnd w:id="${n}"/>`;
+  };
   function choiceQuestion(it, ctx) {
     const lay = it.options && it.options.length >= 2 ? optionLines(it.options, ctx.textW, it.layout && it.layout.optionMode) : { cols: 0, lines: [] };
     let runs = RT(it.stem, qfont());
     const own = lay.cols === 1;   // 一行一個：每個選項自成一段，長選項換行時對齊在「(A)」後面
     if (!own) lay.lines.forEach((ln) => { runs += '<w:r><w:br/></w:r>' + RT(ln, qfont()); });
     if (ctx.teacher && it.ans) runs = answerBox(it.ans, it.no) + runs;
+    runs = bmWrap(it.id, runs);
     const more = own || !!(it.imgs && it.imgs.length) || !!it.src;
     const two = lay.cols === 2 && lay.mid === Q_TABS[1] ? { tabs: [{ v: 'clear', tw: Q_TABS[0] }, { v: 'clear', tw: Q_TABS[2] }] } : {};
     let x = P(runs, { style: 'ZXQ', kl: true, kn: more || !!(it.layout && it.layout.keepTogether), pb: !!(it.layout && it.layout.breakBefore), ...two, ...(own ? { sb: 3.6, sa: 0 } : {}) });
@@ -445,7 +453,7 @@
   // 非選擇題：題號「N.」＋題幹；「＿＿」作答處改成【　　　　】；教用版在下面加一行隱藏的紅字答案
   function openQuestion(it, ctx) {
     const stem = String(it.stem).replace(/[＿_]{2,}/g, '【　　　　】');
-    let x = P([R(it.no + '.', qfont()), R('\t', qfont()), RT(stem, qfont())], { indTw: { l: Q_LEFT, h: Q_LEFT - 60 }, tabs: [{ tw: Q_LEFT }], sb: 3.6, sa: 3.6, kl: true, kn: true });
+    let x = P([bmWrap(it.id, R(it.no + '.', qfont()) + R('\t', qfont()) + RT(stem, qfont()))], { indTw: { l: Q_LEFT, h: Q_LEFT - 60 }, tabs: [{ tw: Q_LEFT }], sb: 3.6, sa: 3.6, kl: true, kn: true });
     if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3, kn: true });
     if (it.src) x += srcLine(it.src, { kn: true });
     if (ctx.teacher && it.ans) x += P([R('答：', qfont({ c: ANS, b: true, vanish: true })), RT(it.ans, qfont({ c: ANS, vanish: true }))], { indTw: { l: Q_LEFT }, sa: 3 });

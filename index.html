@@ -10768,7 +10768,7 @@ async function _zzExamSpec(kind,opts){
       const sp0=_zzSplitChoice(raw);
       const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
       const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
-      items.push({no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),layout:PAPER_LAYOUT_DRAFT[it.id]||{},
+      items.push({id:it.id,no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),layout:PAPER_LAYOUT_DRAFT[it.id]||{},
         ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
     }
     const sc=kind!=='golden'?wzKindScore(k,items.length):null;
@@ -10850,9 +10850,40 @@ async function _pvRenderWord(){
     const docs=await _zzPreviewDocs();if(my!==_pvWordToken)return;
     const pages=_zzRenderDocs(docs);
     host.innerHTML='';pages.forEach(o=>host.appendChild(o.el));
+    _pvMarkEditable(host);
     const pg=pages[0]&&pages[0].el,w=pg?parseFloat(pg.style.width):794,avail=(host.parentElement?host.parentElement.clientWidth:w)-24;
     if(avail>0&&avail<w)host.style.zoom=(avail/w).toFixed(4);
   }catch(e){console.error(e);if(my===_pvWordToken)host.innerHTML='<div class="pv-word-msg">版面預覽失敗：'+esc(e.message||String(e))+'<br><small>可改按「編輯題目」使用舊的編輯預覽。</small></div>';}
+}
+// ===== Word 預覽上直接點題目編輯（存回題庫：這題改一次，所有用到這題的卷子都跟著改）=====
+(function(){const st=document.createElement('style');st.textContent='.pv-wordhost .zz-editable{cursor:pointer}.pv-wordhost .zz-editable:hover{outline:2px solid rgba(62,99,221,.45);outline-offset:1px;background:rgba(62,99,221,.06)}#pvQE{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit}#pvQE .qe-box{background:#fff;border-radius:12px;width:min(720px,94vw);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3)}#pvQE h3{margin:0 0 6px;font-size:16px}#pvQE .qe-warn{font-size:12px;color:#a14736;background:#fdf1ee;border-radius:6px;padding:6px 10px;margin:6px 0 10px}#pvQE textarea{width:100%;min-height:220px;box-sizing:border-box;font:14px/1.6 inherit;padding:8px;border:1px solid #ccc;border-radius:8px}#pvQE label{font-size:13px;font-weight:700;display:block;margin:8px 0 4px}#pvQE input{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ccc;border-radius:8px}#pvQE .qe-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}#pvQE button{padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:14px}#pvQE button.qe-save{background:#850103;color:#fff;border-color:#850103;font-weight:700}';document.head.appendChild(st);})();
+function _pvMarkEditable(host){host.querySelectorAll('.zzp[data-qid]').forEach(el=>{el.classList.add('zz-editable');el.title='點一下編輯這題（會存回題庫）';});}
+document.addEventListener('click',function(e){const el=e.target&&e.target.closest?e.target.closest('.pv-wordhost .zzp[data-qid]'):null;if(el)pvQuickEdit(el.dataset.qid);});
+function pvQuickEdit(id){
+  const it=DB.find(x=>x.id===id);if(!it){alert('找不到這一題（可能已被刪除）');return;}
+  let box=document.getElementById('pvQE');if(box)box.remove();
+  box=document.createElement('div');box.id='pvQE';
+  box.innerHTML='<div class="qe-box"><h3>編輯題目</h3><div style="font-size:12px;color:#666">'+esc((it.exam||'')+'　第 '+(it.no||'')+' 題')+'</div><div class="qe-warn">⚠ 這裡的修改會直接存回題庫，之後所有用到這一題的考卷都會跟著改。請確認內容正確再按儲存。</div><label>題目（題幹與選項，公式用 $…$）</label><textarea id="pvQEq"></textarea><label>答案</label><input id="pvQEa"><div class="qe-btns"><button type="button" id="pvQEcancel">取消</button><button type="button" class="qe-save" id="pvQEsave">儲存到題庫</button></div></div>';
+  document.body.appendChild(box);
+  document.getElementById('pvQEq').value=it.q||'';document.getElementById('pvQEa').value=it.ans||'';
+  document.getElementById('pvQEcancel').onclick=()=>box.remove();
+  box.addEventListener('mousedown',e=>{if(e.target===box)box.remove();});
+  document.getElementById('pvQEsave').onclick=()=>pvQuickSave(id);
+}
+async function pvQuickSave(id){
+  const it=DB.find(x=>x.id===id);if(!it)return;
+  const q=fixControlCharEatenLatex((document.getElementById('pvQEq').value||'').trim());
+  const ans=(document.getElementById('pvQEa').value||'').trim();
+  if(!q){alert('題目不能是空的');return;}
+  if(!requireCloud())return;
+  if(q===(it.q||'').trim()&&ans===(it.ans||'').trim()){document.getElementById('pvQE').remove();return;}
+  const btn=document.getElementById('pvQEsave');btn.disabled=true;btn.textContent='儲存中…';
+  const data={...it,q,ans,updatedAt:new Date().toISOString()};
+  const {error}=await sb.from('questions').upsert(toRow(data));
+  if(error){alert('儲存失敗：'+error.message);btn.disabled=false;btn.textContent='儲存到題庫';return;}
+  precompute(data);const idx=DB.findIndex(x=>x.id===id);if(idx>=0)DB[idx]=data;
+  document.getElementById('pvQE').remove();
+  _pvRenderPaged();
 }
 // 版面預覽（同 Word）／編輯題目 兩種模式；預設版面預覽，記在這個瀏覽器。
 let PV_WORD_VIEW=(function(){try{return localStorage.getItem('pvWordView')!=='0';}catch(e){return true;}})();
