@@ -140,13 +140,13 @@ th.sort-header:hover{background:#e5ddd0}
             <th>題數</th>
             <th style="min-width:240px">審核</th>
             <th>AI 修正</th>
-            <th title="照原卷逐題對過：文字、標點、單位、上下標、公式">① 題幹與公式<small>對照原卷</small></th>
-            <th title="答案已對照原廠答案卷，不是只看 AI 的結果">② 答案<small>對照答案卷</small></th>
-            <th title="每張圖都已切完整、放在對的題號與選項，圖號與題目文字相符">③ 圖片與圖號<small>切對、綁對題號</small></th>
-            <th title="詳解已完成，並核對過結論與答案一致">④ 詳解</th>
-            <th title="章節（冊／單元）與難度三項已確認">⑤ 章節與難度</th>
-            <th title="最後階段才做；不影響「可出卷」判斷">⑥ 圖片高清化<small>最後階段</small></th>
-            <th title="選填，不影響完成判斷">其他<small>選填</small></th>
+            <th title="題幹與公式：照原卷逐題對過文字、單位、上下標、公式">題幹</th>
+            <th title="答案：已對照原廠答案卷">答案</th>
+            <th title="圖片：切完整、綁對題號與選項、圖號與題目文字相符">圖片</th>
+            <th title="詳解已完成，並核對過結論與答案一致">詳解</th>
+            <th title="分類難度：冊／單元與難度三項已確認">分類難度</th>
+            <th title="高清化：最後階段才做，不影響可出卷">高清化</th>
+            <th title="選填">其他</th>
             <th style="min-width:160px">備註</th>
             <th>最後更新</th>
           </tr>
@@ -494,13 +494,13 @@ function render(){
       <td class="center" data-label="題數">${countCell}</td>
       <td class="audit-cell" data-label="審核">${auditCell}</td>
       <td class="center" data-label="AI 修正"><button class="review-btn" onclick="toggleReview('${esc(id)}')">${state.open?'收合清單':'展開清單'}</button><br><a class="ai-link" target="_blank" href="${aiHref}">AI 助手視圖</a></td>
-      <td class="chk-cell" data-label="① 題幹與公式"><input type="checkbox" title="① 題幹與公式" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
-      <td class="chk-cell" data-label="② 答案"><input type="checkbox" title="② 答案" ${p.ans_ok?'checked':''} onchange="toggle('${esc(id)}','ans_ok',this.checked)"></td>
-      <td class="chk-cell" data-label="③ 圖片與圖號"><input type="checkbox" title="③ 圖片與圖號" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
-      <td class="chk-cell" data-label="④ 詳解"><input type="checkbox" title="④ 詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
-      <td class="chk-cell" data-label="⑤ 章節與難度"><input type="checkbox" title="⑤ 章節與難度" ${p.class_ok?'checked':''} onchange="toggle('${esc(id)}','class_ok',this.checked)"></td>
-      <td class="chk-cell" data-label="⑥ 圖片高清化（最後階段）"><input type="checkbox" title="⑥ 圖片高清化（最後階段）" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
-      <td class="chk-cell" data-label="其他（選填）"><input type="checkbox" title="其他（選填）" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="題幹"><input type="checkbox" title="題幹" ${p.verified_questions?'checked':''} onchange="toggle('${esc(id)}','verified_questions',this.checked)"></td>
+      <td class="chk-cell" data-label="答案"><input type="checkbox" title="答案" ${p.ans_ok?'checked':''} onchange="toggle('${esc(id)}','ans_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="圖片"><input type="checkbox" title="圖片" ${p.has_images?'checked':''} onchange="toggle('${esc(id)}','has_images',this.checked)"></td>
+      <td class="chk-cell" data-label="詳解"><input type="checkbox" title="詳解" ${p.has_sol?'checked':''} onchange="toggle('${esc(id)}','has_sol',this.checked)"></td>
+      <td class="chk-cell" data-label="分類難度"><input type="checkbox" title="分類難度" ${p.class_ok?'checked':''} onchange="toggle('${esc(id)}','class_ok',this.checked)"></td>
+      <td class="chk-cell" data-label="高清化"><input type="checkbox" title="高清化" ${p.hires_images?'checked':''} onchange="toggle('${esc(id)}','hires_images',this.checked)"></td>
+      <td class="chk-cell" data-label="其他"><input type="checkbox" title="其他" ${p.other_ok?'checked':''} onchange="toggle('${esc(id)}','other_ok',this.checked)"></td>
       <td data-label="備註"><input class="note-inp" value="${esc(p.notes||'')}" placeholder="備註…" onblur="updateNote('${esc(id)}',this.value)"></td>
       <td class="ts-cell" data-label="最後更新">${p.updated_by ? '<b>'+esc(p.updated_by)+'</b><br>' : ''}${fmtTime(p.updated_at)}</td>
     </tr>${state.open?`<tr class="review-row"><td colspan="14">${renderReviewPanel(id,shownName)}</td></tr>`:''}`;
@@ -591,9 +591,11 @@ async function deleteManual(name){
 }
 
 function renderAudit(a){
-  const parts=[['缺圖',a.missingImage,'#c0392b'],['選項不全',a.incompleteOptions,'#e67e22'],['答案缺',a.missingAnswer,'#d35400'],['分類未填',a.missingCategory,'#8e44ad'],['難度未填',a.missingDifficulty,'#2980b9'],['待確認',a.flagged,'#7f8c8d']];
+  const parts=[['缺圖',a.missingImage,'#c0392b'],['選項',a.incompleteOptions,'#e67e22'],['缺答案',a.missingAnswer,'#d35400'],['分類',a.missingCategory,'#8e44ad'],['難度',a.missingDifficulty,'#2980b9'],['待確認',a.flagged,'#7f8c8d']].filter(x=>x[1]);
   const bad=parts.reduce((n,x)=>n+x[1],0), total=Math.max(a.total,1);
-  return `<div class="audit-bar" aria-label="審核問題共 ${bad} 項">${parts.filter(x=>x[1]).map(x=>`<span style="width:${x[1]/Math.max(bad,1)*100}%;background:${x[2]}" title="${x[0]} ${x[1]} 題"></span>`).join('')}</div><div class="audit-copy">${parts.map(x=>`${x[0]} <b>${x[1]}</b>`).join('／')}<br><b>可出卷 ${a.ready} / ${total} 題</b></div>`;
+  const bar=bad?`<div class="audit-bar" aria-label="問題共 ${bad} 項">${parts.map(x=>`<span style="width:${x[1]/bad*100}%;background:${x[2]}" title="${x[0]} ${x[1]} 題"></span>`).join('')}</div>`:'';
+  const txt=bad?parts.map(x=>`${x[0]} <b>${x[1]}</b>`).join('　'):'<span style="color:#2e7d32">✓ 無問題</span>';
+  return `${bar}<div class="audit-copy">${txt}<br><b>可出卷 ${a.ready}/${total}</b></div>`;
 }
 function qaFlagsFor(q){
   const flags=QAGate.checkFields({題目:q.q||'',答案:q.ans||'',題型:q.type||'',圖表類型:q.chart||''},{hasImage:Array.isArray(q.imgs)&&q.imgs.length>0})||[];
