@@ -18,7 +18,7 @@ const context = {
   structuredClone: value => JSON.parse(JSON.stringify(value)),
   alert: () => {}, Blob: class {}, URL: {createObjectURL: () => '', revokeObjectURL: () => {}},
   console,
-  QAGate: {checkFields: () => [], options: () => ({}), paperFlags: () => []},
+  QAGate: {checkFields: question => question.flags || [], options: () => ({}), paperFlags: () => []},
 };
 context.window.supabase = null;
 vm.createContext(context);
@@ -37,12 +37,29 @@ vm.runInContext("persist('storage fallback', {'題號':'1'})", context);
 assert.equal(vm.runInContext('state.log[0].action', context), 'storage fallback');
 
 const dangerousName = 'second" onclick="throw new SyntaxError()';
-vm.runInContext(`papers={first:[{'題號':'1','題目':'題','答案':'A'}],${JSON.stringify(dangerousName)}:[{'題號':'1','題目':'題','答案':'A'}]};selected={exam:${JSON.stringify(dangerousName)},index:0};render()`, context);
+vm.runInContext(`papers={first:[{'題號':'1','題目':'題','答案':'A',flags:[['warn','x','x']]}],${JSON.stringify(dangerousName)}:[{'題號':'1','題目':'題','答案':'A',flags:[['warn','x','x']]}]};selected={exam:${JSON.stringify(dangerousName)},index:0};render()`, context);
 const buttons = elements.get('exams').innerHTML;
 assert.ok(!buttons.includes('onclick="pick('));
 assert.ok(buttons.includes('data-exam="second&quot; onclick=&quot;throw new SyntaxError()"'));
 elements.get('exams').listener({target: {closest: () => ({dataset: {exam: dangerousName}})}});
 assert.equal(vm.runInContext('selected.exam', context), dangerousName);
+
+vm.runInContext(`state={reviews:{},log:[]};showAll=false;papers={clean:[{'題號':'1','題目':'題','答案':'A'}],small:[{'題號':'1','題目':'題','答案':'A',flags:[['warn','x','x']]}],big:[{'題號':'1','題目':'題','答案':'A',flags:[['block','x','x']]},{'題號':'2','題目':'題','答案':'A',flags:[['warn','x','x']]},{'題號':'3','題目':'題','答案':'A'}]};selected={exam:'clean',index:0};render()`, context);
+const problemExams = elements.get('exams').innerHTML;
+assert.ok(problemExams.includes('big'));
+assert.ok(problemExams.includes('small'));
+assert.ok(!problemExams.includes('clean'));
+assert.ok(problemExams.indexOf('big') < problemExams.indexOf('small'));
+assert.match(problemExams, /2 題待看 \/ 共 3 題/);
+assert.deepEqual([...vm.runInContext("visibleIndexes('big')", context)], [0, 1]);
+assert.equal(vm.runInContext('selected.exam', context), 'big');
+vm.runInContext('move(1)', context);
+assert.equal(vm.runInContext('selected.index', context), 1);
+vm.runInContext('defer()', context);
+assert.equal(vm.runInContext('selected.index', context), 1);
+vm.runInContext('setShowAll(true)', context);
+assert.ok(elements.get('exams').innerHTML.includes('clean'));
+assert.deepEqual([...vm.runInContext("visibleIndexes('big')", context)], [0, 1, 2]);
 
 let imageContext;
 context.QAGate.checkFields = (_question, ctx) => { imageContext = ctx; return []; };
