@@ -566,7 +566,7 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     const pg = { w: ACTIVE_LAYOUT.paper.widthCm, h: ACTIVE_LAYOUT.paper.heightCm, margin: ACTIVE_LAYOUT.marginCm };
     const W = pg.w - pg.margin.left - pg.margin.right;
     const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : 1;
-    const legacyAbk = kind === 'abk' && spec.legacyAbk !== false;
+    const legacyAbk = kind === 'abk' && spec.legacyAbk === true;
     const colW = cols === 2 ? (W - ACTIVE_LAYOUT.columns.gapCm) / 2 : W;
     const media = [];
     const ctx = { pg, textW: TW(colW), teacher: !!spec.teacher, showSol: !!spec.showSol,
