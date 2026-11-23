@@ -1847,10 +1847,10 @@ const PROGRESS_FIELDS=[
   {key:'verified_questions',label:'題幹'},
   {key:'ans_ok',label:'答案'},
   {key:'has_images',label:'圖片'},
-  {key:'has_sol',label:'詳解'},
   {key:'class_ok',label:'分類難度'},
-  {key:'hires_images',label:'高清化'},
-  {key:'other_ok',label:'其他'},
+  {key:'has_sol',label:'詳解（選填）'},
+  {key:'hires_images',label:'高清化（選填）'},
+  {key:'other_ok',label:'其他（選填）'},
 ];
 function _pgBookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function _pgGradeFromExam(exam,book){
