@@ -6319,6 +6319,13 @@ function paperSectionLabel(kind,sections){
 function paperSectionTitle(kind,sections){return paperSectionLabel(kind,sections);}
 // 預覽「上一步／重做」：記錄排序與刪題等結構性動作的快照，供工具列 ↶/↷ 復原（文字編輯本身用瀏覽器原生 Ctrl+Z）
 let _pvUndoStack=[],_pvRedoStack=[];
+// Per-paper layout overrides deliberately live with the draft, not the shared
+// question bank. A teacher changing option rows must not alter source content.
+let PAPER_LAYOUT_DRAFT=(function(){try{return JSON.parse(localStorage.getItem('tzutzu.paper-layout-draft.v1')||'{}')}catch(_){return {}}})();
+function _pvPaperLayout(id){return PAPER_LAYOUT_DRAFT[id]||(PAPER_LAYOUT_DRAFT[id]={});}
+function _pvSavePaperLayout(){try{localStorage.setItem('tzutzu.paper-layout-draft.v1',JSON.stringify(PAPER_LAYOUT_DRAFT));}catch(_){}}
+function pvSetQuestionLayout(id,key,value){_pvPushHist();_pvPaperLayout(id)[key]=value;_pvSavePaperLayout();_pvRebuild();_rebuildLastPaperHTML();}
+function pvRestoreQuestionLayout(id){_pvPushHist();delete PAPER_LAYOUT_DRAFT[id];_pvSavePaperLayout();_pvRebuild();_rebuildLastPaperHTML();}
 function _pvSnapshot(){return {picks:[...PICKS],order:PV_ORDER?[...PV_ORDER]:null};}
 function _pvResetHist(){_pvUndoStack=[];_pvRedoStack=[];}
 function _pvPushHist(){_pvUndoStack.push(_pvSnapshot());if(_pvUndoStack.length>50)_pvUndoStack.shift();_pvRedoStack=[];}
@@ -6576,7 +6583,7 @@ function buildPaperInner(forcedMode,forPreview=false,asParts=false){const items=
     let qTextInner=packPre?_prePackPreviewHtml(rawQuestion,(it.imgs||[]).some(im=>im&&im.src),paperKind,_previewBlockHtml):applyRichMarks(hlNames(hlKw(plainQuestion)));
     if(_besideHtml&&!qTextInner.includes('pvimg-beside'))qTextInner+=_besideHtml; // 選項不足以排版時，圖仍要顯示
     const qText=forPreview?`<span class="pvq-text" contenteditable="true" data-rtype="q" data-rid="${it.id}" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${qTextInner}</span>`:qTextInner;
-    const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
+    const ctrl=forPreview?`<div class="pvq-ctrl noprint"><span class="pvq-drag" draggable="true" ondragstart="pvRowDragStart(event,'${it.id}')" title="拖曳調整題目順序">⋮⋮</span><button type="button" onclick="pvSetQuestionLayout('${it.id}','optionMode','four')" title="選項一行四欄">4</button><button type="button" onclick="pvSetQuestionLayout('${it.id}','optionMode','two')" title="選項兩欄兩列">2</button><button type="button" onclick="pvSetQuestionLayout('${it.id}','optionMode','one')" title="選項直列">1</button><button type="button" onclick="pvSetQuestionLayout('${it.id}','breakBefore',true)" title="在此題前分頁">↵</button><button type="button" onclick="pvSetQuestionLayout('${it.id}','keepTogether',true)" title="題目不跨頁">⧉</button><button type="button" onclick="pvRestoreQuestionLayout('${it.id}')" title="還原這題版面設定">↺</button><button type="button" class="pvq-del" onclick="pvRemoveQuestion('${it.id}')" title="從考卷移除此題">✕</button></div>`:'';
     const qAttr=forPreview?` data-qid="${it.id}" ondragover="pvRowDragOver(event)" ondrop="pvRowDrop(event,'${it.id}')"`:'';
     const answerInNumber=forPreview&&(PV_SHOW_ANS||ansMode==='inline'||ansMode==='full');
     const answerSlot=answerInBracket?`<span style="color:#c0392b;font-weight:700;display:inline-block;min-width:3em;text-align:center">${esc(it.ans||'')}</span>`:answerInNumber?`<span class="pvq-text pvq-answer-slot" contenteditable="true" data-rtype="ans" data-rid="${it.id}" title="點擊修改答案" onfocus="_pvTextFocus(this)" onblur="_pvTextBlur(this)">${applyRichMarks(esc(fixLatex(it.ans||'')).replace(/\n/g,'<br>'))}</span>`:'　　';
@@ -10755,7 +10762,7 @@ async function _zzExamSpec(kind,opts){
       const sp0=_zzSplitChoice(raw);
       const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
       const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
-      items.push({no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),
+      items.push({no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),layout:PAPER_LAYOUT_DRAFT[it.id]||{},
         ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
     }
     const sc=kind!=='golden'?wzKindScore(k,items.length):null;
@@ -11000,6 +11007,7 @@ async function downloadWordDoc(){
   window.alert=appAlert;
 })();
 </script>
+  <script src="paper-layouts.js"></script>
   <script src="paper-metadata.js"></script>
   <script src="paper-output.js"></script>
   <script src="zz-exam-docx.js"></script>
