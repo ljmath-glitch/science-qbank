@@ -49,9 +49,27 @@ _RE_ZY = [(re.compile(r"(?<=[由至從為在])勺"), "ㄅ"), (re.compile(r"(?<=[
           (re.compile(r"(?<![一-鿿])勺(?![一-鿿])"), "ㄅ")]
 
 
+_PHRASES = None
+
+
+def _phrases():
+    """整詞修正表（phrase_fixes.json）：人工確認過、不可能是正確寫法的錯詞。缺檔時什麼都不做。"""
+    global _PHRASES
+    if _PHRASES is None:
+        p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrase_fixes.json")
+        try:
+            _PHRASES = [(x["wrong"], x["right"]) for x in json.load(open(p, encoding="utf-8")).get("fixes", [])
+                        if x.get("wrong") and x.get("right") and x["wrong"] != x["right"]]
+        except (OSError, ValueError, KeyError):
+            _PHRASES = []
+    return _PHRASES
+
+
 def fix_text(text):
     if os.environ.get("TERMFIX", "1") == "0":
         return text
+    for wrong, right in _phrases():
+        text = text.replace(wrong, right)
     text = text.replace("辦瓣", "瓣")
     for rx, to in _RE_ZY:
         text = rx.sub(to, text)
