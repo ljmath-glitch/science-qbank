@@ -37,10 +37,10 @@
       ...common, id: 'abk', paper: { widthCm: 25.7, heightCm: 36.4 },
       marginCm: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 },
       bodyPt: 10, headerPt: 12, columns: { first: 1, body: 2, gapCm: 1.25, separator: true },
-      line: 1.2, watermark: { enabled: true, position: 'right-bottom' }, header: 'abk',
+      line: 1, question: { ...common.question, beforePt: 0, afterPt: 3 }, watermark: { enabled: true, position: 'right-bottom' }, header: 'abk',
       variants: {
         A: { marginCm: { top: 1.27, right: 1.27, bottom: 1.27, left: 1.27 }, bodyFont: { eastAsia: '華康中圓體(P)', latin: 'Times New Roman' } },
-        B: { marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyFont: { eastAsia: 'DFPYuanMedium-B5', latin: 'Times New Roman' }, headerPt: 12 },
+        B: { marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyFont: { eastAsia: '華康中圓體(P)', latin: 'Times New Roman' }, headerPt: 12 },
         K: { marginCm: { top: 1, right: 1, bottom: 1, left: 1 } }
       }
     },

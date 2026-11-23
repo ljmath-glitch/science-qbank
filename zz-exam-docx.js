@@ -17,11 +17,13 @@
 
   // 字型：jf金萱那提 2.0（Windows、Mac 都有）。OOXML 一律寫英文字族名，Windows Word 才找得到；
   // 每個字重是獨立字族，粗體＝換成 Bold 字族，不加 <w:b/>（避免假粗體）。
-  const JF = { reg: 'jf-jinxuanlatte-2.0 Regular', bold: 'jf-jinxuanlatte-2.0 Bold', semi: 'jf-jinxuanlatte-2.0 SemiBold', heavy: 'jf-jinxuanlatte-2.0 Heavy' };
+  // 使用者的 Word 是中文版（Mac），字體清單用中文名（例如「jf金萱那提2.0 七分糖」），英文字族名不會自動對應，所以這裡寫中文名：
+  // Regular=四分糖、SemiBold=六分糖、Bold=七分糖、Heavy=九分糖（對照本機已安裝字型）。
+  const JF = { reg: 'jf金萱那提2.0 四分糖', bold: 'jf金萱那提2.0 七分糖', semi: 'jf金萱那提2.0 六分糖', heavy: 'jf金萱那提2.0 九分糖' };
   const FT = JF.reg;
   const HK = '華康中圓體(P)';   // 內文（題目、選項、詳解）維持華康中圓體＋Times New Roman；金萱只用在卷頭、大題等非內文
   const F = { title: JF.bold, head: JF.bold, body: ['Times New Roman', HK], code: JF.semi, codeB: JF.semi, heavy: JF.heavy };
-  const isJF = (f) => String(f || '').startsWith('jf-');
+  const isJF = (f) => /^jf[-金]/.test(String(f || ''));
   // 金萱那提沒有的字（² ³ ⁻ ₂ ≤ ≥ ≈ ✓ ✗ ⚠ ▶ 等）：這些字一律改用 Times New Roman／系統字
   const NOJF = /[\u00B2\u00B3\u00B9\u2070-\u209F\u2264\u2265\u2248\u2713\u2717\u26A0\u270E\u25B6\u25A2]/;
   const INK = '#1A1A1A', G1 = '#595959', G2 = '#8C8C8C', GOLD = '#AF9A6B', RED = '#850103', ANS = '#C00000';
@@ -533,7 +535,7 @@
 <w:style w:type="table" w:default="1" w:styleId="a1"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>
 ${st('ZXSec', '茲茲大題', 'ZXQ', `<w:keepNext/><w:numPr><w:numId w:val="1"/></w:numPr>${secBorder()}<w:tabs><w:tab w:val="right" w:pos="${TW(W - 0.2)}"/></w:tabs><w:snapToGrid w:val="0"/><w:spacing w:before="200" w:after="160" w:line="240" w:lineRule="auto"/>`,
       `<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="${JF.bold}" w:cs="Times New Roman"/><w:color w:val="1A1A1A"/><w:sz w:val="26"/><w:szCs w:val="26"/>`)}
-${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:tabs>${q4}</w:tabs><w:adjustRightInd w:val="0"/><w:snapToGrid w:val="0"/><w:spacing w:before="72" w:after="72" w:line="${Math.round((ACTIVE_LAYOUT.line || 1) * 240)}" w:lineRule="auto"/>`, `${rf}<w:color w:val="1A1A1A"/><w:sz w:val="${Math.round(bodyPt * 2)}"/><w:szCs w:val="${Math.round(bodyPt * 2)}"/>`)}
+${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:tabs>${q4}</w:tabs><w:adjustRightInd w:val="0"/><w:snapToGrid w:val="0"/><w:spacing w:before="${Math.round((((ACTIVE_LAYOUT.question || {}).beforePt) ?? 3.6) * 20)}" w:after="${Math.round((((ACTIVE_LAYOUT.question || {}).afterPt) ?? 3.6) * 20)}" w:line="${Math.round((ACTIVE_LAYOUT.line || 1) * 240)}" w:lineRule="auto"/>`, `${rf}<w:color w:val="1A1A1A"/><w:sz w:val="${Math.round(bodyPt * 2)}"/><w:szCs w:val="${Math.round(bodyPt * 2)}"/>`)}
 </w:styles>`;
   }
   const NUMBERING = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
