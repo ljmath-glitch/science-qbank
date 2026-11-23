@@ -18,5 +18,33 @@
   function toQualityFields(q,ctx){ctx=ctx||{};const ps=ctx.passage||{};return {'題號':q.no,'題目':q.q,'答案':q.ans,'題型':q.type,'圖表類型':q.chart,'題組文章':ps.q||ctx.passageText||'','題組ID':q.groupId,'大題':q.section,'詳解':q.sol};}
   function checkQuestion(q,ctx){return checkFields(toQualityFields(q,ctx),ctx);}
   function paperFlags(qs){let f=[],sections=[[]];qs.forEach((q,i)=>{let n=/^[1-9]\d*$/.test(text(q['題號']).trim())?+q['題號']:null;if(n===null){f.push(['block','invalid_question_number',`第 ${i+1} 筆題號不是正整數。`]);return}if(sections.at(-1).length&&n===1&&(norm(q['大題']).trim()||sections.at(-1).at(-1)[1]>1))sections.push([]);sections.at(-1).push([i,n])});sections.filter(x=>x.length).forEach(s=>{let v=s.map(x=>x[1]),seen=new Set;if(v[0]!==1)f.push(['block','missing_first_question_number',`此大題從 ${v[0]} 開始，缺第 1 題。`]);v.forEach(n=>{if(seen.has(n))f.push(['block','duplicate_question_number',`題號 ${n} 重複。`]);seen.add(n)});v.slice(1).forEach((n,i)=>{if(n<v[i])f.push(['warn','out_of_order_question_number',`題號由 ${v[i]} 倒退為 ${n}，可能是大題重編號。`])});for(let n=1;n<=Math.max(...v);n++)if(!seen.has(n))f.push(['block','missing_question_number',`題號缺 ${n}。`])});let g={};qs.forEach(q=>{let id=text(q['題組ID']).trim();if(id)(g[id]??=[]).push(q)});Object.entries(g).forEach(([id,x])=>{if(!x.some(q=>text(q['題組文章']).trim()))f.push(['block','missing_group_article',`題組 ${id} 的所有子題皆無題組文章。`])});return f;}
-  root.QAGate=Object.freeze({checkQuestion,toQualityFields,checkFields,paperFlags,options});
-})(window);
+  function displayIssues(q,ctx){
+    const fields=toQualityFields(q,ctx), issues=[], flags=checkQuestion(q,ctx);
+    const add=(key,text)=>{if(!issues.some(x=>x.key===key&&x.text===text))issues.push({key,text});};
+    flags.forEach(([,key,message])=>{
+      if(key==='missing_image')add(key,'題目提到圖/表但沒有圖：請上傳圖片，或確認不需圖後取消');
+      else if(key==='incomplete_options'){
+        const p=options(fields['題目']), need=p.E?'ABCDE':'ABCD', missing=[...need].filter(x=>!text(p[x]).trim());
+        add(key,missing.length?`缺選項 ${missing.join('、')} 或內容空白`:'選項內容空白：請補齊各選項內容');
+      }else if(key==='missing_answer')add(key,'缺答案：請填入正確答案');
+      else if(key==='flattened_exponent'||key==='flattened_square_unit'||key==='flattened_subscript'){
+        const find=key==='flattened_exponent' ? /(?:\\times|×|x)\s*10[1-9]\d+/i : key==='flattened_square_unit' ? /(?<![A-Za-z0-9])(?:cm|m)(?:2|3)|m\/s2(?![A-Za-z0-9])/i : /(?<![A-Za-z0-9])(?:MnO2|H2O|CO2|SO4)(?![A-Za-z0-9])|(?<![A-Za-z0-9])(?:I|R|V|Q|x|y|z)\d+(?![A-Za-z0-9])/i;
+        for(const [field,value] of [['題目',fields['題目']],['題組文章',fields['題組文章']],['詳解',fields['詳解']]]){const m=text(value).match(find);if(m)add(key,`${field}第 ${(m.index||0)+1} 字附近「${m[0]}」疑似上下標被壓平：請改成 LaTeX 上／下標格式`);}
+      }else if(/noise|trailing_figure_labels/.test(key)){
+        const find=key==='exam_end_noise'?/試題結束|本卷結束|背面尚有試題|請翻頁|第\s*\d+\s*頁/:key==='page_number_noise'?/^\s*-\s*\d+\s*-\s*$/m:key==='page_label_noise'?/(?:^|\n)\s*\(\s*\d+\s*-\s*\d+\s*\)(?=\s|$)|(?:^|\s)\(\s*\d+\s*-\s*\d+\s*\)\s*(?:$|\n)/m:/圖[一二三四五六七八九十]+(?:圖[一二三四五六七八九十]+)+\s*[。．]?$/;
+        for(const [field,value] of [['題目',fields['題目']],['題組文章',fields['題組文章']],['詳解',fields['詳解']]]){const m=text(value).match(find);if(m)add(key,`${field}含雜訊「${m[0].trim()}」：請刪除這段文字`);}
+      }else add(key,`${message}請確認並修正。`);
+    });
+    const basis=text(q.basis);if(basis.startsWith('[回報]'))add('report',basis.slice(4).trim()||'有回報內容：請確認並處理');
+    if(q.flag&&!issues.length)add('manual_flag','被人工標為待確認（無原因）');
+    return issues;
+  }
+  function paperSummaries(items,ctxFor){
+    const groups=new Map;
+    (items||[]).forEach(q=>{const issues=displayIssues(q,ctxFor?ctxFor(q):undefined),qa=checkQuestion(q,ctxFor?ctxFor(q):undefined),needs=!!q.flag||qa.some(x=>x[0]==='block');if(!needs)return;const name=text(q.exam).trim()||'未命名考卷',g=groups.get(name)||{exam:name,count:0,reasons:{},firstId:q.id};g.count++;issues.forEach(x=>g.reasons[x.text]=(g.reasons[x.text]||0)+1);if(!issues.length)g.reasons['品質關卡阻擋：請開啟題目查看']=1;groups.set(name,g);});
+    return [...groups.values()].map(g=>({...g,primary:Object.entries(g.reasons).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'zh-Hant')).slice(0,2)})).sort((a,b)=>b.count-a.count||a.exam.localeCompare(b.exam,'zh-Hant'));
+  }
+  const api=Object.freeze({checkQuestion,toQualityFields,checkFields,paperFlags,options,displayIssues,paperSummaries});
+  root.QAGate=api;
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+})(typeof window!=='undefined'?window:globalThis);

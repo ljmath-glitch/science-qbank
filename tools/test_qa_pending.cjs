@@ -1,0 +1,13 @@
+const assert=require('assert');
+const QA=require('../qa-gate.js');
+const base={id:'1',exam:'甲卷',q:'如圖，下列何者正確？\n(A)甲\n(B)乙\n(C)丙\n(D)丁',ans:'A',type:'選擇',chart:'無'};
+let issues=QA.displayIssues(base,{hasImage:false});
+assert(issues.some(x=>x.key==='missing_image'&&x.text.includes('請上傳圖片')),'缺圖須有可執行說明');
+issues=QA.displayIssues({...base,q:'下列何者正確？\n(A)甲\n(B)乙\n(D)丁',chart:'無'});
+assert(issues.some(x=>x.key==='incomplete_options'&&x.text.includes('C')),'選項不全須指出 C');
+issues=QA.displayIssues({...base,flag:true,q:'普通題目',type:'填充',ans:'答案'});
+assert.deepStrictEqual(issues.map(x=>x.text),['被人工標為待確認（無原因）'],'人工待確認無原因');
+let papers=QA.paperSummaries([{...base,id:'a',exam:'少題卷',flag:true},{...base,id:'b',exam:'多題卷',flag:true},{...base,id:'c',exam:'多題卷',flag:true}]);
+assert.deepStrictEqual(papers.map(x=>[x.exam,x.count]),[['多題卷',2],['少題卷',1]],'考卷須按待修題數排序');
+assert.deepStrictEqual(QA.paperSummaries([]),[],'空資料');
+console.log('qa pending tests passed');

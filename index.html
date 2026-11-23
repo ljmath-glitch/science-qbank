@@ -173,7 +173,7 @@
   .tag.d2{background:#f8f1dc;color:#957512;border-color:#ecdfba}
   .tag.d3{background:#f9ecdf;color:#b5641a;border-color:#f0dbc4}
   .tag.d4{background:#f9e8e7;color:#b3392f;border-color:#f0d3cf}
-  .tag.flagtag{background:#f9ebd4;color:#9a6910;border-color:#efdbb5}
+  .tag.flagtag{background:#f9ebd4;color:#9a6910;border-color:#efdbb5}.tag.reason-chip{max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#fff7eb;color:#8a5c16;border-color:#f0d8a8}
   .qa-marker{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;line-height:1.4;cursor:help}.qa-marker.block{color:#a92118;background:#fff0ee;border:1px solid #efc2bd}.qa-marker.warn{color:#8a6200;background:#fff7d8;border:1px solid #eed997}
   .qbody{font-size:15px;margin:5px 0 4px;font-style:normal;font-family:inherit;font-weight:400}
   .qbody .opts{margin-top:7px;font-size:14px;color:#33384a}
@@ -431,6 +431,7 @@
   .pv-sheet .ans{margin-top:34px;padding-top:13px;border-top:1px dashed #999;color:#c0392b;font-size:14px}
   .pv-sheet .sol{color:#1f6f5c;margin:3px 0 0 1.5em;font-size:14px}
   .edit-report-box{margin:12px 0;padding:13px 14px;border:1px solid #e3b0aa;border-left:5px solid var(--red);border-radius:10px;background:#fff7f5}.edit-report-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}.edit-report-head b{font-size:14px;color:var(--red)}.edit-report-head span{font-size:11.5px;color:var(--muted)}.edit-report-controls{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:7px;align-items:start}.edit-report-controls select,.edit-report-controls textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-family:inherit;font-size:13px;background:#fff}.edit-report-controls textarea{min-height:58px;resize:vertical}@media(max-width:700px){.edit-report-controls{grid-template-columns:1fr}.edit-report-controls .btn{width:100%}}
+  .pending-items{margin:10px 0 12px;padding:12px 14px;border:1px solid #efd49c;border-left:5px solid #c68b1d;border-radius:10px;background:#fffaf0}.pending-items h4{margin:0 0 7px;font-size:14px;color:#805710}.pending-item{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid #f1e5c8;font-size:13px;line-height:1.55}.pending-item:first-of-type{border-top:0}.pending-item.done{color:#777;text-decoration:line-through}.pending-item button{margin-left:auto;flex:0 0 auto}.pending-ready{margin-top:7px;font-size:12px;color:#287154;font-weight:700}
   .edit-rich-toolbar{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:8px 11px;margin:4px 0 12px;border:1px solid var(--line);border-radius:10px;background:#fffefb;box-shadow:0 1px 2px rgba(43,32,28,.05)}.edit-rich-toolbar button{height:31px;min-width:31px;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--ink);padding:0 8px;font:700 16px var(--ui-font);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}.edit-rich-toolbar button:hover{background:#fbece7;color:var(--red);border-color:#eccfca}.edit-rich-toolbar button:active{background:#f6ddd8}.edit-rich-toolbar .edit-math{font-size:13px;min-width:auto}.edit-rich-toolbar select{height:31px;width:auto;flex:0 0 auto;min-width:64px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);padding:0 8px;font:600 14px var(--ui-font);cursor:pointer}.edit-rich-toolbar .edit-sep{width:1px;height:22px;background:var(--line);margin:0 5px}.edit-rich-toolbar .edit-break{flex-basis:100%;height:0}.edit-rich-toolbar .edit-target{font-size:11px;color:var(--muted);margin-left:auto}.edit-latex-help{margin:-4px 0 12px;padding:8px 10px;border:1px solid #e1d7c7;border-radius:8px;background:#fffdf9;font-size:12px;color:var(--muted)}.edit-latex-help summary{cursor:pointer;font-weight:700;color:#850103}.edit-latex-help code{display:inline-block;margin:5px 5px 0 0;padding:2px 6px;border-radius:5px;background:#fff;border:1px solid var(--line);color:var(--red)}
   .statbar{height:14px;background:var(--phy);border-radius:3px}
   table.report{width:100%;border-collapse:collapse;font-family:inherit;font-size:13px}
@@ -570,7 +571,7 @@
   .bell-panel-hdr>button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
   .bell-panel-hdr>button:hover{color:var(--red)}
   .bell-list{overflow-y:auto;max-height:380px}
-  .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:inherit}
+  .bell-item{padding:10px 16px;border-bottom:1px solid #f2f2f2;font-family:inherit}.bell-item:hover{background:#fffaf2}.bell-paper-count{font-weight:800;color:#a45a10}.bell-more{width:calc(100% - 24px);margin:10px 12px}
   .bell-item:last-child{border-bottom:none}
   .bell-item-title{font-size:13px;color:#222;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bell-item-meta{font-size:11px;color:#888;margin-bottom:4px}
@@ -844,6 +845,7 @@
     </div>
     <div class="field"><label>判斷依據（分類有疑問時填）</label><input type="text" id="eBasis" placeholder="讀圖後需推一步結論"></div>
     <label class="chk"><input type="checkbox" id="eFlag"> 待確認（Y）— 先標記，之後集中審查</label>
+    <div class="pending-items" id="pendingItems" aria-live="polite"></div>
     <div class="edit-report-box" id="editReportBox">
       <div class="edit-report-head"><b>🚩 回報題目錯誤</b><span>填寫後儲存，會自動標成待確認並出現在右上角鈴鐺清單</span></div>
       <div class="edit-report-controls"><select id="eReportType" aria-label="錯誤類型"><option>題目文字</option><option>答案</option><option>圖片</option><option>題組</option><option>詳解</option><option>分類</option><option>AI健檢</option><option>其他</option></select><textarea id="eReportDetail" placeholder="請說明哪裡有錯，例如：第 B 選項少了負號" oninput="syncEditReportFlag()"></textarea><button type="button" class="btn sm" onclick="clearEditReport()">清除回報</button></div>
@@ -3639,9 +3641,17 @@ function fillEditReport(basis){const r=parseEditReport(basis);eBasis.value=r?'':
 function getEditReportState(){const detail=eReportDetail.value.trim();if(detail)return{basis:'[回報] '+eReportType.value+'：'+detail,flag:true};let basis=eBasis.value.trim();if(eFlag.checked&&basis&&!basis.startsWith('[回報]'))basis='[回報] '+basis;return{basis,flag:eFlag.checked}}
 function syncEditReportFlag(){if(eReportDetail.value.trim())eFlag.checked=true}
 function clearEditReport(){eReportDetail.value='';eReportType.value='題目文字';if(eBasis.value.trim().startsWith('[回報]'))eBasis.value='';eFlag.checked=false}
+let _pendingEditIssues=[],_pendingDone=new Set;
+function renderPendingItems(it){
+  const box=document.getElementById('pendingItems');if(!box)return;
+  _pendingEditIssues=it?QAGate.displayIssues(it,bellQaContext(it)):[];_pendingDone=new Set;
+  if(!_pendingEditIssues.length){box.innerHTML='<h4>待修項目</h4><div style="font-size:13px;color:#777">目前沒有系統或回報項目。</div>';return;}
+  box.innerHTML='<h4>待修項目</h4>'+_pendingEditIssues.map((x,i)=>`<div class="pending-item" data-pending="${i}"><span>${esc(x.text)}</span><button type="button" class="btn sm" onclick="togglePendingItem(${i})">已處理</button></div>`).join('')+'<div class="pending-ready" style="display:none">全部項目已暫時勾選；確認內容後，可取消「待確認」並儲存。</div>';
+}
+function togglePendingItem(i){const row=document.querySelector(`[data-pending="${i}"]`);if(!row)return;if(_pendingDone.has(i))_pendingDone.delete(i);else _pendingDone.add(i);row.classList.toggle('done',_pendingDone.has(i));row.querySelector('button').textContent=_pendingDone.has(i)?'已處理 ✓':'已處理';const ready=document.querySelector('#pendingItems .pending-ready');if(ready)ready.style.display=_pendingDone.size===_pendingEditIssues.length?'block':'none';}
 function clearForm(){['eYear','eSchool','eExam','eExamRound','eNo','eAns','eGroupId','eKp','eSummary','eChart','eBasis','eReportDetail','eQ','eSol','eGrade'].forEach(id=>document.getElementById(id).value='');eReportType.value='題目文字';eFlag.checked=false;diff={step:0,mem:0,con:0};paintSeg();showDiffResult();document.getElementById('ePassage').value='';curPassageImgs=[];renderPassageImgPrev();document.getElementById('passageSection').style.display='none';document.getElementById('imgTargetWrap').style.display='none';document.getElementById('imgTarget').value='q';}
 function openAdd(){editingId=null;editTitle.firstChild.textContent='單題手動新增';curImgs=[];
-  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();renderExamPdfBar();loadAIProvider();editDlg.showModal()}
+  fillBook('');syncByBook();fillTypeSelect(eType);clearForm();renderImgPrev();renderExamPdfBar();renderPendingItems(null);loadAIProvider();editDlg.showModal()}
 function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;editTitle.firstChild.textContent='編輯題目';
   fillBook(it.book);syncByBook();eUnit.value=it.unit;syncBySub();eSub.value=it.sub;fillTypeSelect(eType);
   eYear.value=it.year;eSchool.value=it.school;eExam.value=it.exam||'';eExamRound.value=examRound(it.exam||'');eNo.value=it.no||'';eAns.value=it.ans||'';eGrade.value=gradeFromExam(it.exam,it.book);
@@ -3656,7 +3666,7 @@ function openEdit(id){const it=DB.find(x=>x.id===id);if(!it)return;editingId=id;
   const wrap=document.getElementById('imgTargetWrap');
   if(gid){sec.style.display='';wrap.style.display='';const ps=PASSAGES[gid];document.getElementById('ePassage').value=ps?ps.q||'':'';curPassageImgs=ps?JSON.parse(JSON.stringify(ps.imgs||[])):[];}
   else{sec.style.display='none';wrap.style.display='none';document.getElementById('imgTarget').value='q';document.getElementById('ePassage').value='';curPassageImgs=[];}
-  renderImgPrev();renderPassageImgPrev();renderExamPdfBar();
+  renderImgPrev();renderPassageImgPrev();renderExamPdfBar();renderPendingItems(it);
   loadAIProvider();editDlg.showModal()}
 async function saveEdit(){
   const report=getEditReportState();
@@ -3696,7 +3706,7 @@ async function saveEdit(){
   const idx=DB.findIndex(x=>x.id===id);
   if(idx>=0)DB[idx]=data; else DB.push(data);
   sortDB();
-  editDlg.close();buildFiltersKeep();render({keep:true,anchorId:id});
+  editDlg.close();buildFiltersKeep();render({keep:true,anchorId:id});updateBell();
   // 若組卷精靈開著，同步刷新精靈題目清單（編輯後內容更新）
   try{const cp=document.getElementById('composer');if(cp&&!cp.hidden&&WZ_STEP===2){wzRenderList();}}catch(_){}}
 async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!requireCloud())return;
@@ -3704,40 +3714,25 @@ async function delItem(id){if(!confirm('確定刪除這一題？'))return;if(!re
   if(error){alert('刪除失敗：'+error.message);return}
   PICKS.delete(id);
   const idx=DB.findIndex(x=>x.id===id);if(idx>=0)DB.splice(idx,1);
-  buildFiltersKeep();render({keep:true})}
+  buildFiltersKeep();render({keep:true});updateBell()}
 /* deletePickedItems & selectFiltered moved to separate script */
 async function toggleFlag(id){const it=DB.find(x=>x.id===id);if(!it)return;if(!requireCloud())return;
-  it.flag=!it.flag;render({keep:true,anchorId:id});
+  it.flag=!it.flag;render({keep:true,anchorId:id});updateBell();
   // 只送 flag 本身，不要整列 upsert（整列會把圖片等大欄位一起送一次，圖多時很容易逾時同步失敗）
   const {error}=await sb.from('questions').update({flag:it.flag,updated_at:new Date().toISOString()}).eq('id',id);
-  if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render({keep:true,anchorId:id})}}
+  if(error){alert('標記同步失敗：'+error.message);it.flag=!it.flag;render({keep:true,anchorId:id});updateBell()}}
 
 /* ===== 鈴噹通知 ===== */
 let _bellOpen=false;
 setInterval(()=>{ if(typeof updateBell==='function') updateBell(); }, 60000);
 async function updateBell(){
-  if(!CLOUD_READY)return;
-  try{
-    // Use direct REST fetch instead of SDK to avoid silent SDK errors
-    const hdr={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY};
-    const res=await fetch(
-      `${SUPABASE_URL}/rest/v1/questions?select=id,summary,kp,year,school,exam,no,basis,updated_at&flag=eq.true&order=updated_at.desc.nullslast&limit=100`,
-      {headers:hdr}
-    );
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    const items=Array.isArray(data)?data:[];
-    const reported=items.filter(x=>x.basis&&x.basis.startsWith('[回報]'));
-    const badgeTxt=reported.length>99?'99+':String(reported.length);
-    ['bellBadge','bellBadgeFloat'].forEach(id=>{
-      const badge=document.getElementById(id);
-      if(!badge)return;
-      if(reported.length){badge.textContent=badgeTxt;badge.style.display='inline-block';}
-      else{badge.style.display='none';}
-    });
-    if(_bellOpen)renderBellList(items);
-  }catch(e){console.warn('bell error',e);}
+  ['bellBtn','bellBtnFloat'].forEach(id=>{const b=document.getElementById(id);if(b)b.title='需要繼續修改的考卷';});
+  const title=document.querySelector('#bellPanel .bell-panel-hdr span');if(title)title.textContent='需要繼續修改的考卷';
+  const papers=QAGate.paperSummaries(DB,bellQaContext),n=papers.length,badgeTxt=n>99?'99+':String(n);
+  ['bellBadge','bellBadgeFloat'].forEach(id=>{const badge=document.getElementById(id);if(!badge)return;if(n){badge.textContent=badgeTxt;badge.style.display='inline-block';}else badge.style.display='none';});
+  if(_bellOpen)renderBellList(papers);
 }
+function bellQaContext(it){const ps=PASSAGES[it.groupId];return{passage:ps,hasImage:!!((it.imgs&&it.imgs.length)||(ps&&ps.imgs&&ps.imgs.length))};}
 function toggleBellPanel(btnEl){
   _bellOpen=!_bellOpen;
   const panel=document.getElementById('bellPanel');
@@ -3840,28 +3835,17 @@ async function resolveAllWithSol(){
 ⚠️ ${fail} 題更新失敗（網路錯誤）`;
   alert(msg);
 }
+let _bellExpanded=false,_bellPapers=[];
 function renderBellList(items){
   const el=document.getElementById('bellList');
   if(!items||!items.length){
-    el.innerHTML='<div style="padding:24px;text-align:center;color:#999;font-family:inherit;font-size:13px">目前沒有待確認的題目 ✓</div>';
+    el.innerHTML='<div style="padding:24px;text-align:center;color:#999;font-family:inherit;font-size:13px">目前沒有需要繼續修改的考卷 ✓</div>';
     return;
   }
-  el.innerHTML=items.map(it=>{
-    const isReport=it.basis&&it.basis.startsWith('[回報]');
-    const reason=isReport?it.basis.replace('[回報]','').trim():'';
-    const timeStr=it.updated_at?new Date(it.updated_at).toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-    return `<div class="bell-item" onclick="bellFilter('${it.id}')" style="cursor:pointer">
-    <div class="bell-item-title">${esc(it.summary||it.kp||'（無摘要）')}</div>
-    <div class="bell-item-meta">${esc([it.year,it.school,it.exam,it.no?'No.'+it.no:''].filter(Boolean).join(' · '))}</div>
-    ${reason?`<div class="bell-item-reason">💬 ${esc(reason)}</div>`:'<div class="bell-item-reason" style="color:#999;background:#f7f4ee;border-color:#ccc">（未填寫回報說明）</div>'}
-    ${timeStr?`<div class="bell-item-time">🕐 回報時間：${timeStr}</div>`:''}
-    <div style="display:flex;gap:6px;margin-top:4px" onclick="event.stopPropagation()">
-      <button class="btn sm" onclick="bellEdit('${it.id}')">✏️ 前往編輯</button>
-      <button class="btn sm green" onclick="bellResolve('${it.id}')">✓ 確認已解決</button>
-    </div>
-  </div>`;
-  }).join('');
+  _bellPapers=items;const shown=_bellExpanded?items:items.slice(0,30);
+  el.innerHTML=shown.map((p,i)=>`<div class="bell-item" onclick="bellPaperFilter(_bellPapers[${i}].exam)" style="cursor:pointer"><div class="bell-item-title">${esc(p.exam)}</div><div class="bell-paper-count">待修 ${p.count} 題</div><div class="bell-item-meta">主要原因：${esc(p.primary.map(x=>`${x[0]}（${x[1]}）`).join('；'))}</div></div>`).join('')+(items.length>30?`<button class="btn sm bell-more" onclick="_bellExpanded=!_bellExpanded;renderBellList(_bellPapers)">${_bellExpanded?'收合':'展開全部 '+items.length+' 份'}</button>`:'');
 }
+function bellPaperFilter(exam){_pinId=null;_pinGroupId=null;_pinExam=[exam==='未命名考卷'?'':exam];const first=DB.find(it=>(it.exam||'')===_pinExam[0]&&(it.flag||qaGateFor(it).severity==='block'));render({keep:true,anchorId:first&&first.id});}
 
 
 /* ===== 篩選 ===== */
@@ -4711,6 +4695,8 @@ function renderPage(list,shown,start){
     const ansHtml=it.ans?`<div class="opts" style="color:#c0392b;margin-top:5px">答案：${esc(it.ans)}</div>`:'';
     const solHtml=(it.sol&&!HIDE_SOL)?`<div class="opts" style="color:#1f6f5c;margin-top:3px;white-space:pre-line">詳解：${esc(it.sol)}</div>`:'';
     const kps=it.kp?`<span class="tag kp" style="white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis" title="${esc(it.kp)}">${esc(it.kp)}</span>`:'';
+    const pendingIssues=it.flag?QAGate.displayIssues(it,bellQaContext(it)):[];
+    const pendingChips=pendingIssues.slice(0,2).map(x=>`<span class="tag reason-chip" title="${esc(pendingIssues.map(y=>y.text).join('\n'))}">${esc(x.text)}</span>`).join('');
     return passageHtml+`<div class="card ${fieldClass(it.field)} ${PICKS.has(it.id)?'picked':''} ${it.flag?'flag':''}" data-id="${it.id}">
       <div class="pickbox"><input type="checkbox" ${PICKS.has(it.id)?'checked':''} onchange="togglePick('${it.id}')"></div>
       <div class="tags">
@@ -4724,7 +4710,7 @@ function renderPage(list,shown,start){
         ${it.chart&&it.chart!=='無'?`<span class="tag meta">📊${esc(it.chart)}</span>`:''}
         ${it.year?`<span class="tag meta">${esc(it.year)}</span>`:''}
         ${it.school?`<span class="tag meta">${esc(it.school)}</span>`:''}
-        ${it.flag?`<span class="tag flagtag">待確認</span>`:''}
+        ${it.flag?`<span class="tag flagtag" title="${esc(pendingIssues.map(x=>x.text).join('\n'))}">待確認</span>${pendingChips}`:''}
         ${qaMarker(it)}
       </div>
       <div class="qbody">${it.summary?`<b>${esc(it.summary)}</b><br>`:''}${optEsc}${imgs}${ansHtml}${solHtml}</div>
