@@ -1,6 +1,6 @@
 const assert=require('assert');
 const R=require('../progress-review.js');
-const q={id:'1',year:'115',school:'甲中',exam:'115上段考',no:'2',ans:'A',book:'B1',book_name:'七上',domain:'生物',unit:'C1',sub:'1-1',kp:'細胞',summary:'摘要',type:'A1',step:1,mem:1,con:1,chart:'無',basis:'依課本',flag:false,q:'題幹',sol:'詳解',group_id:'g',imgs:['https://x/a.png']};
+const q={id:'1',year:'115',school:'甲中',exam:'115上段考',no:'2',ans:'A',book:'B1',book_name:'七上',field:'生物',unit:'C1',sub:'1-1',kp:'細胞',summary:'摘要',type:'A1',step:1,mem:1,con:1,chart:'無',basis:'依課本',flag:false,q:'題幹',sol:'詳解',group_id:'g',imgs:['https://x/a.png']};
 assert.strictEqual(R.FIELD_NAMES.length,23);
 const fields=R.questionFields(q,{g:'題組文章'});
 assert.deepStrictEqual(Object.keys(fields),R.FIELD_NAMES);

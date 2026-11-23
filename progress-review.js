@@ -1,7 +1,7 @@
 /* 考卷進度頁的純函式：瀏覽器與 Node 測試共用。 */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;root.ProgressReview=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
   const EDITABLE=['book','book_name','unit','step','mem','con'];
-  const FIELD_MAP=[['年度','year'],['來源學校','school'],['考試名稱','exam'],['題號','no'],['答案','ans'],['冊數','book'],['冊名','book_name'],['領域','domain'],['大單元','unit'],['子單元','sub'],['知識點','kp'],['題目摘要','summary'],['題型','type'],['步驟分','step'],['記憶分','mem'],['概念分','con'],['圖表類型','chart'],['判斷依據','basis'],['待確認','flag'],['題目','q'],['詳解','sol'],['題組文章','passage'],['題組ID','group_id']];
+  const FIELD_MAP=[['年度','year'],['來源學校','school'],['考試名稱','exam'],['題號','no'],['答案','ans'],['冊數','book'],['冊名','book_name'],['領域','field'],['大單元','unit'],['子單元','sub'],['知識點','kp'],['題目摘要','summary'],['題型','type'],['步驟分','step'],['記憶分','mem'],['概念分','con'],['圖表類型','chart'],['判斷依據','basis'],['待確認','flag'],['題目','q'],['詳解','sol'],['題組文章','passage'],['題組ID','group_id']];
   const FIELD_NAMES=FIELD_MAP.map(x=>x[0]); const text=v=>v==null?'':String(v).trim(); const same=(a,b)=>String(a??'')===String(b??''); const shown=v=>text(v)||'（空）';
   function difficulty(q){const n=['step','mem','con'].map(k=>Number(q[k])||0);if(n.some(x=>!x))return '';const s=n[0]+n[1]+n[2];return s<=4?'簡單':s<=6?'中等':s<=8?'困難':'極難';}
   function stableQuestions(questions){return [...(questions||[])].sort((a,b)=>{const an=Number(a.no),bn=Number(b.no);if(Number.isFinite(an)&&Number.isFinite(bn)&&an!==bn)return an-bn;return text(a.no).localeCompare(text(b.no),'zh-Hant',{numeric:true})||text(a.id).localeCompare(text(b.id));});}
