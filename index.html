@@ -10928,6 +10928,31 @@ document.addEventListener('click',function(ev){
 window.addEventListener('scroll',_pvImgPlace,true);window.addEventListener('resize',_pvImgPlace);
 document.addEventListener('keydown',e=>{if(e.key==='Escape')_pvImgClose();});
 (function(){const st=document.createElement('style');st.textContent='.pv-wordhost img.zzpic[data-zzimg]{cursor:pointer}.pv-wordhost img.zzpic[data-zzimg]:hover{outline:2px dashed rgba(62,99,221,.6)}#pvImgBox{position:fixed;z-index:99999;border:2px solid #3e63dd;pointer-events:none;box-sizing:border-box}#pvImgBox .pvib-bar{position:absolute;left:0;top:-38px;display:flex;gap:2px;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);pointer-events:auto;white-space:nowrap}#pvImgBox .pvib-bar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px}#pvImgBox .pvib-bar button:hover{background:#dfe5fb}#pvImgBox .pvib-h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3e63dd;border-radius:3px;pointer-events:auto;touch-action:none}.pvib-nw{left:-8px;top:-8px;cursor:nwse-resize}.pvib-ne{right:-8px;top:-8px;cursor:nesw-resize}.pvib-sw{left:-8px;bottom:-8px;cursor:nesw-resize}.pvib-se{right:-8px;bottom:-8px;cursor:nwse-resize}';document.head.appendChild(st);})();
+// ── Word 預覽：拖曳／上下移調整題序（沿用 pvReorderQuestion 與復原堆疊）──
+let _pvWDrag=null;
+function _pvRidOf(qid){const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===String(qid).replace(/^zzq_/,''))||DB.find(x=>x.id===qid);return it?it.id:null;}
+function _pvDropClear(){document.querySelectorAll('.pv-drop-before,.pv-drop-after').forEach(el=>el.classList.remove('pv-drop-before','pv-drop-after'));}
+function _pvMoveTo(dragId,targetId,after){
+  const ids=orderPaperItems(pickedItems()).map(it=>it.id),f=ids.indexOf(dragId),t=ids.indexOf(targetId);
+  if(f<0||t<0||dragId===targetId)return;
+  const rest=ids.filter(x=>x!==dragId),ti=rest.indexOf(targetId)+(after?1:0);
+  if(ti===f)return;
+  const nxt=rest[ti];pvReorderQuestion(dragId,nxt===undefined?'__end__':nxt);
+}
+function pvNudgeQuestion(id,dir){
+  const ids=orderPaperItems(pickedItems()).map(it=>it.id),i=ids.indexOf(id),j=i+dir;
+  if(i<0||j<0||j>=ids.length)return;_pvMoveTo(id,ids[j],dir>0);_pvQBarHide();
+}
+document.addEventListener('dragover',function(e){
+  if(!_pvWDrag)return;const par=e.target.closest&&e.target.closest('.pv-wordhost .zzp[data-qid]');if(!par)return;
+  e.preventDefault();_pvDropClear();const r=par.getBoundingClientRect();par.classList.add(e.clientY>r.top+r.height/2?'pv-drop-after':'pv-drop-before');
+});
+document.addEventListener('drop',function(e){
+  if(!_pvWDrag)return;const par=e.target.closest&&e.target.closest('.pv-wordhost .zzp[data-qid]');if(!par)return;
+  e.preventDefault();const r=par.getBoundingClientRect(),after=e.clientY>r.top+r.height/2,tid=_pvRidOf(par.dataset.qid),d=_pvWDrag;_pvWDrag=null;_pvDropClear();_pvQBarHide();
+  if(tid)_pvMoveTo(d,tid,after);
+});
+(function(){const st=document.createElement('style');st.textContent='.pvq-grip{cursor:grab;padding:3px 6px;color:#667;font-size:13px;user-select:none}.pv-wordhost .pv-drop-before{box-shadow:0 -3px 0 #3e63dd}.pv-wordhost .pv-drop-after{box-shadow:0 3px 0 #3e63dd}';document.head.appendChild(st);})();
 // ── 預覽上每題的懸浮小工具列：選項排法(4/2/1)、此題前換頁、不跨頁、還原、復原/重做（沿用原本題目版面設定，匯出 Word 會照做）──
 let _PVQBAR=null,_pvQBarTimer=null;
 function _pvQBarHide(){if(_PVQBAR){_PVQBAR.remove();_PVQBAR=null;}}
@@ -10938,7 +10963,10 @@ function _pvQBarShow(par){
   const lay=PAPER_LAYOUT_DRAFT[rid]||{},b=document.createElement('div');b.id='pvQBar';b.dataset.rid=rid;b._par=par;
   const on=(k,v)=>lay[k]===v?' class="on"':'';
   const q=JSON.stringify(rid).replace(/"/g,'&quot;');
-  b.innerHTML=`<button${on('optionMode','four')} title="選項一行四欄" onclick="pvSetQuestionLayout(${q},'optionMode','four')">四欄</button><button${on('optionMode','two')} title="選項兩欄兩列" onclick="pvSetQuestionLayout(${q},'optionMode','two')">兩欄</button><button${on('optionMode','one')} title="選項直列" onclick="pvSetQuestionLayout(${q},'optionMode','one')">直列</button><span class="sp"></span><button${on('breakBefore',true)} title="這題前面換頁" onclick="pvSetQuestionLayout(${q},'breakBefore',${lay.breakBefore?'false':'true'})">↵ 換頁</button><button${on('keepTogether',true)} title="這題不要跨頁" onclick="pvSetQuestionLayout(${q},'keepTogether',${lay.keepTogether?'false':'true'})">⧉ 不跨頁</button><button title="還原這題版面" onclick="pvRestoreQuestionLayout(${q})">↺</button>`;
+  b.innerHTML=`<span class="pvq-grip" draggable="true" title="按住拖到別題上方／下方即可調整順序">⋮⋮</span><button title="上移一題" onclick="pvNudgeQuestion(${q},-1)">▲</button><button title="下移一題" onclick="pvNudgeQuestion(${q},1)">▼</button><span class="sp"></span><button${on('optionMode','four')} title="選項一行四欄" onclick="pvSetQuestionLayout(${q},'optionMode','four')">四欄</button><button${on('optionMode','two')} title="選項兩欄兩列" onclick="pvSetQuestionLayout(${q},'optionMode','two')">兩欄</button><button${on('optionMode','one')} title="選項直列" onclick="pvSetQuestionLayout(${q},'optionMode','one')">直列</button><span class="sp"></span><button${on('breakBefore',true)} title="這題前面換頁" onclick="pvSetQuestionLayout(${q},'breakBefore',${lay.breakBefore?'false':'true'})">↵ 換頁</button><button${on('keepTogether',true)} title="這題不要跨頁" onclick="pvSetQuestionLayout(${q},'keepTogether',${lay.keepTogether?'false':'true'})">⧉ 不跨頁</button><button title="還原這題版面" onclick="pvRestoreQuestionLayout(${q})">↺</button><span class="sp"></span><button title="復原上一步" onclick="_pvHistUndo()">↶</button><button title="重做" onclick="_pvHistRedo()">↷</button>`;
+  const grip=b.querySelector('.pvq-grip');
+  grip.ondragstart=e=>{_pvWDrag=rid;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',rid);}catch(_){}document.body.classList.add('pv-dragging');};
+  grip.ondragend=()=>{_pvWDrag=null;_pvDropClear();document.body.classList.remove('pv-dragging');};
   b.onmouseenter=()=>clearTimeout(_pvQBarTimer);b.onmouseleave=()=>{_pvQBarTimer=setTimeout(_pvQBarHide,300);};
   document.body.appendChild(b);_PVQBAR=b;_pvQBarPlace();
 }
