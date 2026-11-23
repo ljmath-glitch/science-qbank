@@ -58,8 +58,12 @@ def _phrases():
     if _PHRASES is None:
         p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "phrase_fixes.json")
         try:
-            _PHRASES = [(x["wrong"], x["right"]) for x in json.load(open(p, encoding="utf-8")).get("fixes", [])
+            with open(p, encoding="utf-8") as f:
+                fixes = json.load(f).get("fixes", [])
+            _PHRASES = [(x["wrong"], x["right"]) for x in fixes
                         if x.get("wrong") and x.get("right") and x["wrong"] != x["right"]]
+            # 先處理較長的詞，避免短詞先命中而破壞較具體的術語。
+            _PHRASES.sort(key=lambda pair: len(pair[0]), reverse=True)
         except (OSError, ValueError, KeyError):
             _PHRASES = []
     return _PHRASES
