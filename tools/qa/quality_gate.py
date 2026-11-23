@@ -16,7 +16,10 @@ TRAILING_FIGURES = re.compile(r"圖[一二三四五六七八九十]+(?:圖[一�
 # A plain product such as 2×1000 has zeroes immediately after 10.  A flattened
 # exponent has consecutive, non-zero-leading digits immediately after 10 (3×1020).
 FLATTENED_POWER = re.compile(r"(?:\\times|×|x)\s*10[1-9]\d+", re.I)
-FLATTENED_UNIT = re.compile(r"(?<![A-Za-z0-9])(?:cm|m)(?:2|3)|m/s2(?![A-Za-z0-9])", re.I)
+FLATTENED_UNIT = re.compile(r"(?<![A-Za-z0-9])(?:cm|m)(?:2|3)(?!\d)|m\s*/\s*s\s*2(?!\d)", re.I)
+GARBLED_TEXT = re.compile(r"[\ufffd\ue000-\uf8ff]")
+ISOLATED_SYMBOL = re.compile(r"(?<![A-Za-z0-9])[@#](?![A-Za-z0-9])")   # $ 是 LaTeX 界線、~ 是範圍符號，不算
+REPEATED_PUNCTUATION = re.compile(r"[!?！？]{2,}|[,，;；:：]{2,}|[。．]{2,}")
 LATEX_OPTION = re.compile(r"\\mathrm\s*\{\s*\([A-EＡ-Ｅ]\)")
 CHEMICAL_SUBSCRIPT = re.compile(r"(?<![A-Za-z0-9])(?:MnO2|H2O|CO2|SO4)(?![A-Za-z0-9])", re.I)
 VARIABLE_SUBSCRIPT = re.compile(r"(?<![A-Za-z0-9])(?:I|R|V|Q|x|y|z)\d+(?![A-Za-z0-9])")
@@ -78,6 +81,23 @@ def check_notation(value, field):
     if FLATTENED_POWER.search(raw): add_flag(flags, "warn", "flattened_exponent", f"{field}疑似次方壓平。")
     if FLATTENED_UNIT.search(raw): add_flag(flags, "warn", "flattened_square_unit", f"{field}疑似單位上標遺失。")
     if CHEMICAL_SUBSCRIPT.search(raw) or VARIABLE_SUBSCRIPT.search(raw): add_flag(flags, "warn", "flattened_subscript", f"{field}疑似化學式或變數下標壓平。")
+    if GARBLED_TEXT.search(raw): add_flag(flags, "warn", "garbled_text", f"{field}含無法辨識的亂碼。")
+    if ISOLATED_SYMBOL.search(raw): add_flag(flags, "warn", "isolated_symbol", f"{field}含孤立符號。")
+    if REPEATED_PUNCTUATION.search(raw): add_flag(flags, "warn", "repeated_punctuation", f"{field}含重複標點。")
+    return flags
+
+def is_passage(question):
+    return "passage" in normalize(question.get("題型")).lower()
+
+def compact(value):
+    return re.sub(r"\s+", "", normalize(value))
+
+def passage_flags(question):
+    if is_passage(question): return []
+    body, article = compact(question.get("題目")), compact(question.get("題組文章"))
+    flags = []
+    if article and len(article) >= 40 and article in body:
+        add_flag(flags, "warn", "passage_content_in_stem", "一般題題幹重複包含題組文章。")
     return flags
 
 def image_flags(question):
@@ -98,6 +118,7 @@ def check_question(question):
         elif any(label not in allowed for label in answer) or (kind != "multiple" and len(answer)!=1): add_flag(flags,"block","answer_out_of_range",f"答案「{answer}」不在選項範圍 {allowed}。")
     elif not answer: add_flag(flags,"block","missing_answer","答案為空。")
     for field in ("題目","題組文章","詳解"): flags.extend(check_notation(question.get(field),field))
+    flags.extend(passage_flags(question))
     if LATEX_OPTION.search(body): add_flag(flags,"warn","latex_option_label","LaTeX 的 \\mathrm 內含選項標號。")
     return flags
 
@@ -134,8 +155,14 @@ def check_group_articles(questions):
 
 def check_paper(name, questions):
     paper_flags=check_numbering(questions)+check_group_articles(questions); counts=Counter(f["rule"] for f in paper_flags); entries=[]; block=warn=passed=0
+    passage_articles = [compact(q.get("題組文章") or q.get("題目")) for q in questions if is_passage(q)]
     for q in questions:
         flags=check_question(q); counts.update(f["rule"] for f in flags); severity="block" if any(f["severity"]=="block" for f in flags) else "warn" if flags else "pass"
+        if not is_passage(q):
+            body = compact(q.get("題目"))
+            if any(len(article) >= 40 and article in body for article in passage_articles) and not any(f["rule"] == "passage_content_in_stem" for f in flags):
+                add_flag(flags, "warn", "passage_content_in_stem", "一般題題幹重複包含題組文章。")
+                counts.update(["passage_content_in_stem"]); severity="warn" if severity == "pass" else severity
         block += severity=="block"; warn += severity=="warn"; passed += severity=="pass"; entries.append({"題號":q.get("題號"),"flags":flags,"severity":severity})
     return {"考卷名":name,"summary":{"題數":len(questions),"通過數":passed,"block數":block,"warn數":warn,"依規則統計":dict(sorted(counts.items()))},"paper_flags":paper_flags,"questions":entries}
 

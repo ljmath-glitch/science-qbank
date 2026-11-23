@@ -10,4 +10,16 @@ assert.deepStrictEqual(issues.map(x=>x.text),['被人工標為待確認（無原
 let papers=QA.paperSummaries([{...base,id:'a',exam:'少題卷',flag:true},{...base,id:'b',exam:'多題卷',flag:true},{...base,id:'c',exam:'多題卷',flag:true}]);
 assert.deepStrictEqual(papers.map(x=>[x.exam,x.count]),[['多題卷',2],['少題卷',1]],'考卷須按待修題數排序');
 assert.deepStrictEqual(QA.paperSummaries([]),[],'空資料');
+for(const q of ['m/s2','cm3','m/s 2'])assert(QA.checkFields({'題目':q,'答案':'1'},{}).some(x=>x[1]==='flattened_square_unit'),`${q} 須抓到單位上標遺失`);
+for(const q of ['m/s²','cm³','m/s 20'])assert(!QA.checkFields({'題目':q,'答案':'1'},{}).some(x=>x[1]==='flattened_square_unit'),`${q} 不可誤報`);
+let flags=QA.checkFields({'題目':'量測結果� @ ！！','答案':'1'},{}).map(x=>x[1]);
+assert(['garbled_text','isolated_symbol','repeated_punctuation'].every(x=>flags.includes(x)),'須抓到亂碼、孤立符號與重複標點');
+flags=QA.checkFields({'題目':'量測結果為 3.0 cm，是否正確？','答案':'1'},{}).map(x=>x[1]);
+assert(!['garbled_text','isolated_symbol','repeated_punctuation'].some(x=>flags.includes(x)),'乾淨題不可誤報文字雜訊');
+const article='小明觀察植物在陽光下進行光合作用。實驗持續三天，每天記錄葉片顏色與氣泡數量。第三天改變光照強度後，再比較各組結果。';
+flags=QA.checkFields({'題型':'選擇題','題組文章':article,'題目':article+'\n(A)甲\n(B)乙\n(C)丙\n(D)丁','答案':'A'},{}).map(x=>x[1]);
+assert(flags.includes('passage_content_in_stem'),'一般題重複題組文章須抓到');
+const longStem='甲同學先準備三組相同植株，並控制水量與溫度。研究開始前，所有植株均放置在相同大小的容器中。'+article+'研究人員也記錄環境濕度與二氧化碳濃度，避免其他條件影響結果。最後將每日資料整理成表格，再請依上述資料判斷何者正確。\n(A)甲\n(B)乙\n(C)丙\n(D)丁';
+flags=QA.checkFields({'題型':'選擇題','題目':longStem,'答案':'A'},{}).map(x=>x[1]);
+flags=QA.checkFields({'題型':'選擇題','題目':'小明量測水溫後，何者正確？\n(A)甲\n(B)乙\n(C)丙\n(D)丁','答案':'A'},{}).map(x=>x[1]);
 console.log('qa pending tests passed');
