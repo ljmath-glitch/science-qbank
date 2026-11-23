@@ -1844,12 +1844,14 @@ function requireCloud(){if(!CLOUD_READY){alert('尚未設定 Supabase 連線。\
 /* ===== 考卷整理進度卡片（跟 progress.html 共編進度表同一份資料，即時雙向同步） ===== */
 const PROGRESS_ROW_ID=2;
 const PROGRESS_FIELDS=[
-  {key:'verified_formula',label:'確認公式'},
-  {key:'has_images',label:'上傳圖片'},
-  {key:'has_sol',label:'製作詳解'},
-  {key:'verified_questions',label:'題幹敘述確認'},
-  {key:'verified_groups',label:'題組/承上題確認'},
-  {key:'other_ok',label:'其他確認'},
+  {key:'verified_questions',label:'① 題幹與公式（對照原卷）'},
+  {key:'ans_ok',label:'② 答案（對照答案卷）'},
+  {key:'has_images',label:'③ 圖片與圖號（切對、綁對題號）'},
+  {key:'verified_groups',label:'④ 題組／承上題'},
+  {key:'has_sol',label:'⑤ 詳解'},
+  {key:'class_ok',label:'⑥ 章節與難度'},
+  {key:'hires_images',label:'⑦ 圖片高清化（最後階段）'},
+  {key:'other_ok',label:'其他（選填）'},
 ];
 function _pgBookToGrade(book){return book==='B1'||book==='B2'?'七年級':book==='B3'||book==='B4'?'八年級':book==='B5'||book==='B6'?'九年級':'';}
 function _pgGradeFromExam(exam,book){
