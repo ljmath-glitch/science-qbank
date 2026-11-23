@@ -10865,10 +10865,17 @@ async function _pvRenderWord(){
 }
 // ===== Word 預覽上直接點題目編輯（存回題庫：這題改一次，所有用到這題的卷子都跟著改）=====
 (function(){const st=document.createElement('style');st.textContent='.pv-wordhost .zz-editable{cursor:pointer}.pv-wordhost .zz-editable:hover{outline:2px solid rgba(62,99,221,.45);outline-offset:1px;background:rgba(62,99,221,.06)}#pvQE{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit}#pvQE .qe-box{background:#fff;border-radius:12px;width:min(720px,94vw);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3)}#pvQE h3{margin:0 0 6px;font-size:16px}#pvQE .qe-warn{font-size:12px;color:#a14736;background:#fdf1ee;border-radius:6px;padding:6px 10px;margin:6px 0 10px}#pvQE textarea{width:100%;min-height:220px;box-sizing:border-box;font:14px/1.6 inherit;padding:8px;border:1px solid #ccc;border-radius:8px}#pvQE label{font-size:13px;font-weight:700;display:block;margin:8px 0 4px}#pvQE input{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ccc;border-radius:8px}#pvQE .qe-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}#pvQE button{padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:14px}#pvQE button.qe-save{background:#850103;color:#fff;border-color:#850103;font-weight:700}';document.head.appendChild(st);})();
+// 預覽 DOM 上的題目代號（data-qid）是匯出時把 id 去掉特殊字元（保留英數與底線、最多 34 字）後的結果；
+// 題庫 id 含 - . 空白等字元時不能直接用 === 比對，統一用這個找回題庫裡的那一題。
+function _pvDbByQid(qid){
+  qid=String(qid||'').replace(/^zzq_/,'');
+  const k=x=>String(x).replace(/[^A-Za-z0-9_]/g,'').slice(0,34);
+  return DB.find(x=>x.id===qid)||DB.find(x=>k(x.id)===qid)||DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid)||null;
+}
 function _pvMarkEditable(host){host.querySelectorAll('.zzp[data-qid]').forEach(el=>{el.classList.add('zz-editable');el.title='點一下編輯這題（會存回題庫）';});}
 document.addEventListener('click',function(e){const el=e.target&&e.target.closest?e.target.closest('.pv-wordhost .zzp[data-qid]'):null;if(el)pvQuickEdit(el.dataset.qid);});
 function pvQuickEdit(id){
-  const it=DB.find(x=>x.id===id);if(!it){alert('找不到這一題（可能已被刪除）');return;}
+  const it=_pvDbByQid(id);if(!it){alert('找不到這一題（可能已被刪除）');return;}
   let box=document.getElementById('pvQE');if(box)box.remove();
   box=document.createElement('div');box.id='pvQE';
   box.innerHTML='<div class="qe-box"><h3>編輯題目</h3><div style="font-size:12px;color:#666">'+esc((it.exam||'')+'　第 '+(it.no||'')+' 題')+'</div><div class="qe-warn">⚠ 這裡的修改會直接存回題庫，之後所有用到這一題的考卷都會跟著改。請確認內容正確再按儲存。</div><label>題目（題幹與選項，公式用 $…$）</label><textarea id="pvQEq"></textarea><label>答案</label><input id="pvQEa"><div class="qe-btns"><button type="button" id="pvQEcancel">取消</button><button type="button" class="qe-save" id="pvQEsave">儲存到題庫</button></div></div>';
@@ -10876,7 +10883,7 @@ function pvQuickEdit(id){
   document.getElementById('pvQEq').value=it.q||'';document.getElementById('pvQEa').value=it.ans||'';
   document.getElementById('pvQEcancel').onclick=()=>box.remove();
   box.addEventListener('mousedown',e=>{if(e.target===box)box.remove();});
-  document.getElementById('pvQEsave').onclick=()=>pvQuickSave(id);
+  document.getElementById('pvQEsave').onclick=()=>pvQuickSave(it.id);
 }
 async function pvQuickSave(id){
   const it=DB.find(x=>x.id===id);if(!it)return;
@@ -10906,8 +10913,8 @@ function _pvImgSelect(el){
   box.querySelectorAll('.pvib-bar button').forEach(btn=>btn.onclick=ev=>{ev.stopPropagation();const a=btn.dataset.a;_pvImgSave(a==='reset'?{zzw:null,zzalign:null}:{zzalign:a});});
   box.querySelectorAll('.pvib-h').forEach(h=>h.onpointerdown=ev=>{
     ev.preventDefault();ev.stopPropagation();h.setPointerCapture(ev.pointerId);
-    const r0=el.getBoundingClientRect(),w0=r0.width,x0=ev.clientX,sign=/w$/.test(h.dataset.c)?-1:1;
-    h.onpointermove=e=>{const nw=Math.max(24,w0+sign*(e.clientX-x0));el.style.width=nw+'px';el.style.height=(nw*r0.height/w0)+'px';_pvImgPlace();};
+    const r0=el.getBoundingClientRect(),w0=r0.width,x0=ev.clientX,sign=/w$/.test(h.dataset.c)?-1:1,z=el.offsetWidth?r0.width/el.offsetWidth:1;   // z：預覽縮放（窄螢幕時 host 有 zoom），滑鼠位移是螢幕像素，要除掉才會貼著游標
+    h.onpointermove=e=>{const nw=Math.max(24,w0+sign*(e.clientX-x0));el.style.width=(nw/z)+'px';el.style.height=(nw*r0.height/w0/z)+'px';_pvImgPlace();};
     h.onpointerup=e=>{h.onpointermove=h.onpointerup=null;const rw=el.getBoundingClientRect().width,base=+el.dataset.w0||w0;_pvImgSave({zzw:Math.round(base*rw/w0)});};
   });
 }
@@ -10930,17 +10937,20 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')_pvImgClose();});
 (function(){const st=document.createElement('style');st.textContent='.pv-wordhost img.zzpic[data-zzimg]{cursor:pointer}.pv-wordhost img.zzpic[data-zzimg]:hover{outline:2px dashed rgba(62,99,221,.6)}#pvImgBox{position:fixed;z-index:99999;border:2px solid #3e63dd;pointer-events:none;box-sizing:border-box}#pvImgBox .pvib-bar{position:absolute;left:0;top:-38px;display:flex;gap:2px;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);pointer-events:auto;white-space:nowrap}#pvImgBox .pvib-bar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px}#pvImgBox .pvib-bar button:hover{background:#dfe5fb}#pvImgBox .pvib-h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3e63dd;border-radius:3px;pointer-events:auto;touch-action:none}.pvib-nw{left:-8px;top:-8px;cursor:nwse-resize}.pvib-ne{right:-8px;top:-8px;cursor:nesw-resize}.pvib-sw{left:-8px;bottom:-8px;cursor:nesw-resize}.pvib-se{right:-8px;bottom:-8px;cursor:nwse-resize}';document.head.appendChild(st);})();
 // ── Word 預覽：拖曳／上下移調整題序（沿用 pvReorderQuestion 與復原堆疊）──
 let _pvWDrag=null;
-function _pvRidOf(qid){const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===String(qid).replace(/^zzq_/,''))||DB.find(x=>x.id===qid);return it?it.id:null;}
+function _pvRidOf(qid){const it=_pvDbByQid(qid);return it?it.id:null;}
 function _pvDropClear(){document.querySelectorAll('.pv-drop-before,.pv-drop-after').forEach(el=>el.classList.remove('pv-drop-before','pv-drop-after'));}
 function _pvMoveTo(dragId,targetId,after){
-  const ids=orderPaperItems(pickedItems()).map(it=>it.id),f=ids.indexOf(dragId),t=ids.indexOf(targetId);
+  const sec=paperQuestionSections(pickedItems()),ids=orderPaperItems(pickedItems()).map(it=>it.id),f=ids.indexOf(dragId),t=ids.indexOf(targetId);
   if(f<0||t<0||dragId===targetId)return;
+  // 預覽依題型分區（單選／多選／題組／非選擇），跨區移動看不出效果，直接忽略，避免白白多一筆復原紀錄
+  const kd=sec.ordered.find(it=>it.id===dragId),kt=sec.ordered.find(it=>it.id===targetId);
+  if(!kd||!kt||sec.kindOf(kd)!==sec.kindOf(kt))return;
   const rest=ids.filter(x=>x!==dragId),ti=rest.indexOf(targetId)+(after?1:0);
   if(ti===f)return;
   const nxt=rest[ti];pvReorderQuestion(dragId,nxt===undefined?'__end__':nxt);
 }
 function pvNudgeQuestion(id,dir){
-  const ids=orderPaperItems(pickedItems()).map(it=>it.id),i=ids.indexOf(id),j=i+dir;
+  const sec=paperQuestionSections(pickedItems()),ids=sec.ordered.map(it=>it.id),i=ids.indexOf(id),j=i+dir;   // 依預覽實際顯示順序（分區後）找上一題／下一題
   if(i<0||j<0||j>=ids.length)return;_pvMoveTo(id,ids[j],dir>0);_pvQBarHide();
 }
 document.addEventListener('dragover',function(e){
@@ -10957,7 +10967,7 @@ document.addEventListener('drop',function(e){
 let _PVQBAR=null,_pvQBarTimer=null;
 function _pvQBarHide(){if(_PVQBAR){_PVQBAR.remove();_PVQBAR=null;}}
 function _pvQBarShow(par){
-  const id=par.dataset.qid;if(!id)return;const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===id.replace(/^zzq_/,''))||DB.find(x=>x.id===id);const rid=it?it.id:id;
+  const id=par.dataset.qid;if(!id)return;const it=_pvDbByQid(id);const rid=it?it.id:id;
   if(_PVQBAR&&_PVQBAR.dataset.rid===rid){_PVQBAR._par=par;_pvQBarPlace();return;}
   _pvQBarHide();
   const lay=PAPER_LAYOUT_DRAFT[rid]||{},b=document.createElement('div');b.id='pvQBar';b.dataset.rid=rid;b._par=par;
