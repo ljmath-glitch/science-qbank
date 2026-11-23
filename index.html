@@ -380,6 +380,51 @@
   .pv-wordhost{background:transparent!important;box-shadow:none!important;padding:0!important;width:auto!important;min-height:0!important;margin:16px auto!important;border:0!important}
   .pv-word-msg{padding:60px 20px;text-align:center;color:#777;font-size:14px;background:#fff;border-radius:10px;max-width:640px;margin:20px auto;line-height:1.8}
   html.pv-wordview .pv-fmt-bar .pv-editonly{opacity:.35;pointer-events:none}
+  /* ── Word 預覽：Docs 風格（淺藍灰背景＋置中白紙＋膠囊功能區＋底部狀態列）── */
+  html.pv-wordview .paperview{background:#f0f4f9;font-family:-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  html.pv-wordview .pv-bar{background:#f8fafd;border-bottom:1px solid #e0e4e9;box-shadow:none}
+  html.pv-wordview .pv-bar .btn.primary{border-radius:20px!important;background:#2b7de9!important;border-color:#2b7de9!important;color:#fff!important}
+  html.pv-wordview .pv-bar .btn{border-radius:20px!important}
+  html.pv-wordview #pvFmtBar,html.pv-wordview #pvPaperMetadata{position:relative;top:auto;margin:8px 16px 0;border:0;border-radius:24px;background:#edf2fa;box-shadow:0 1px 3px rgba(0,0,0,.12);padding:6px 14px}
+  html .pv-fmt-bar .pv-editonly{display:none!important}
+  html.pv-wordview #pvFmtBar .pv-edit-label{display:none}
+  .pv-ribbon{display:none;position:sticky;top:50px;z-index:26;align-items:center;gap:4px;margin:8px 16px;padding:5px 12px;background:#edf2fa;border-radius:24px;box-shadow:0 1px 4px rgba(0,0,0,.16);overflow-x:auto;scrollbar-width:thin;font-family:-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  html.pv-wordview .pv-ribbon{display:flex}
+  .pv-ribbon .rb-g{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+  .pv-ribbon .rb-sep{width:1px;height:20px;background:#c7c7c7;margin:0 6px;flex:0 0 auto}
+  .pv-ribbon .rb{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:#1f2937;font-size:12.5px;cursor:pointer;white-space:nowrap}
+  .pv-ribbon .rb b{font-size:15px;font-weight:700;min-width:16px;text-align:center}
+  .pv-ribbon .rb span{font-size:12px;color:#44546a}
+  .pv-ribbon .rb:hover:not(:disabled){background:#dce3ed}
+  .pv-ribbon .rb.on{background:#c2d7f5;color:#0b57d0}.pv-ribbon .rb.on span{color:#0b57d0}
+  .pv-ribbon .rb:disabled{opacity:.38;cursor:default}
+  .pv-ribbon .rb-sel{height:28px;border:1px solid #c7c7c7;border-radius:6px;background:#fff;font-size:12px;margin:0 2px}.pv-ribbon .rb-col{position:relative}.pv-ribbon .rb-col input{width:22px;height:22px;border:0;padding:0;background:none;cursor:pointer}
+  #pvCharPanel{position:sticky;top:98px;z-index:25;margin:0 16px}
+  .pv-ribbon .rb-w{display:inline-flex;align-items:center;gap:2px;margin:0 4px}.pv-ribbon .rb-w input{width:56px;height:26px;border:1px solid #c7c7c7;border-radius:6px;padding:0 4px;font-size:12px;background:#fff}.pv-ribbon .rb-w em{font-style:normal;font-size:11px;color:#667}
+  #pvStatus{position:sticky;bottom:0;z-index:26;display:none;align-items:center;gap:14px;padding:5px 16px;background:#f8fafd;border-top:1px solid #e0e4e9;font-size:12px;color:#5f6368;font-family:-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+  html.pv-wordview #pvStatus{display:flex}
+  #pvStatus .pv-st-hint{flex:1;text-align:center;color:#80868b}
+  #pvStatusSave[data-state=ok]::before{content:"● ";color:#34a853}#pvStatusSave[data-state=saving]::before{content:"● ";color:#f9ab00}#pvStatusSave[data-state=dirty]::before,#pvStatusSave[data-state=err]::before{content:"● ";color:#d93025}
+  html.pv-wordview .pv-wordhost{margin:18px auto 30px!important}
+  html.pv-wordview .pv-wordhost .zzpg{box-shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24)}
+  .pv-wordhost .zz-editable{cursor:text}.pv-wordhost .zz-editable:hover{outline:1px solid rgba(43,125,233,.35);outline-offset:2px;background:rgba(43,125,233,.04)}
+  .pv-wordhost .zz-cur{outline:1px dashed rgba(43,125,233,.35);outline-offset:2px}
+  .pv-wordhost .zzp.zz-editing,.pv-wordhost .zzp.zz-editing:hover{outline:0;background:transparent}
+  .zz-ed-hid,.zz-ed-hidp{display:none!important}
+  .zz-ed{box-shadow:-4px 0 0 rgba(43,125,233,.55);background:rgba(43,125,233,.035);cursor:text}
+  .zz-ed-f{outline:none;min-height:1.2em;white-space:pre-wrap;overflow-wrap:break-word;caret-color:#1a73e8}
+  .zz-ed-x{display:flex;gap:6px;margin-top:3px;color:#c0392b}.zz-ed-xl{flex:0 0 auto;font-weight:700;user-select:none}.zz-ed-fx{flex:1}
+  .zz-ed-lab{user-select:none}
+  .zz-eq{display:inline-block;padding:0 2px;border-radius:3px;background:rgba(43,125,233,.10);cursor:pointer;user-select:all}.zz-eq:hover{background:rgba(43,125,233,.22)}
+  #pvImgBox{position:fixed;z-index:99999;border:2px solid #2b7de9;pointer-events:none;box-sizing:border-box}
+  #pvImgBox .pvib-h{position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;background:#fff;border:2px solid #2b7de9;border-radius:3px;pointer-events:auto;touch-action:none;box-sizing:border-box}
+  .pvib-nw{left:0;top:0;cursor:nwse-resize}.pvib-n{left:50%;top:0;cursor:ns-resize}.pvib-ne{left:100%;top:0;cursor:nesw-resize}.pvib-e{left:100%;top:50%;cursor:ew-resize}.pvib-se{left:100%;top:100%;cursor:nwse-resize}.pvib-s{left:50%;top:100%;cursor:ns-resize}.pvib-sw{left:0;top:100%;cursor:nesw-resize}.pvib-w{left:0;top:50%;cursor:ew-resize}
+  #pvImgBox .pvib-badge{position:absolute;left:0;bottom:-26px;background:#202124;color:#fff;font-size:11px;padding:2px 7px;border-radius:10px;white-space:nowrap}
+  #pvGrip{position:fixed;z-index:99998;display:none;align-items:center;justify-content:center;width:20px;height:26px;border-radius:5px;background:#fff;border:1px solid #cfd5e6;color:#667;font-size:13px;cursor:grab;user-select:none;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  .pv-wordhost .pv-drop-before{box-shadow:0 -3px 0 #2b7de9}.pv-wordhost .pv-drop-after{box-shadow:0 3px 0 #2b7de9}
+  .zz-prompt{position:fixed;z-index:100000;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #cfd5e6;border-radius:10px;padding:7px 10px;box-shadow:0 4px 14px rgba(0,0,0,.2);font-size:13px}.zz-prompt button{border:0;border-radius:14px;padding:4px 12px;cursor:pointer;background:#eef1f6}.zz-prompt .ok{background:#d93025;color:#fff}
+  #pvToast{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);z-index:100001;background:#202124;color:#fff;padding:8px 16px;border-radius:20px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}#pvToast.show{opacity:1}
+  @media print{.pv-ribbon,#pvStatus{display:none!important}}
   .pv-sheet{font-family:'HuaKangTNR',"Times New Roman",serif;width:972px;min-height:1375px;margin:24px auto 60px;padding:58px;background:#fff;box-shadow:0 4px 24px rgba(0,0,0,.25);line-height:1.75;color:#1a2238;font-size:10pt;box-sizing:border-box;}
   @media(max-width:1080px){.pv-sheet{width:calc(100vw - 28px);min-height:0;padding:32px 28px}}
   /* 分頁預覽：pvSheet 變成頁面容器，每個 .pv-page 同時掛 .pv-sheet 以沿用字型/浮水印，並固定成一張 B4/A4 紙，內容超過頁高就換下一張（像 Word）。 */
@@ -1391,18 +1436,19 @@
     </span>
   </div>
   <div class="pv-fmt-bar noprint" id="pvFmtBar">
-<span class="pv-tool-group pv-keep"><button type="button" class="math-btn" id="pvWordToggle" onmousedown="event.preventDefault()" onclick="pvSetWordView(!PV_WORD_VIEW)" title="切換：版面預覽（與 Word 輸出完全一致）／編輯題目">✎ 編輯題目</button></span>
         <span class="pv-tool-group pv-editonly"><button type="button" onmousedown="event.preventDefault()" onclick="_pvUndo()" title="復原文字、排序或刪題">↶</button><button type="button" onmousedown="event.preventDefault()" onclick="_pvRedo()" title="重做文字、排序或刪題">↷</button></span>
     <span class="pv-tool-group pv-editonly"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
     <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
     <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select><select id="pvZZStyle" aria-label="考卷風格" onchange="pvSetZZStyle(this.value)"><option value="formal">正式版・黑白灰</option><option value="redgold">紅金版</option><option value="subject">科目彩色</option><option value="simple">簡潔省墨</option><option value="exam">會考仿真</option></select></span>
     <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
-    <span class="pv-edit-label" id="pvEditLabel">點擊題目、答案或詳解即可編輯</span>
+    <span class="pv-edit-label" id="pvEditLabel"></span>
   </div>
+<div id="pvRibbon" class="pv-ribbon noprint" role="toolbar" aria-label="編輯功能區"><div class="rb-g"><button type="button" class="rb" data-act="undo" title="復原（Ctrl/Cmd+Z）：文字、圖片、排序、版面都能復原"><b>↶</b><span>復原</span></button><button type="button" class="rb" data-act="redo" title="重做（Ctrl+Y／Shift+Ctrl+Z）"><b>↷</b><span>重做</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="bold" data-need="ed" title="粗體（Ctrl+B）"><b>B</b><span>粗體</span></button><button type="button" class="rb" data-act="italic" data-need="ed" title="斜體（Ctrl+I）"><b>I</b><span>斜體</span></button><button type="button" class="rb" data-act="underline" data-need="ed" title="底線（Ctrl+U）"><b>U</b><span>底線</span></button><button type="button" class="rb" data-act="sup" data-need="ed" title="選取文字後變上標"><b>x²</b><span>上標</span></button><button type="button" class="rb" data-act="sub" data-need="ed" title="選取文字後變下標"><b>x₂</b><span>下標</span></button><select id="rbSize" class="rb-sel" data-need="ed" title="字級（選取文字後套用）"><option value="">字級</option><option value="9">9pt</option><option value="10">10pt</option><option value="11">11pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" class="rb" data-act="strike" data-need="ed" title="刪除線"><b>S</b><span>刪除線</span></button><label class="rb rb-col" title="文字顏色（選取文字後套用）"><b style="color:#c0392b">A</b><input id="rbColor" type="color" value="#c0392b"></label><button type="button" class="rb" data-act="clear" data-need="ed" title="清除選取文字的格式"><b>Tx</b><span>清除格式</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="eq" data-need="ed" title="在游標處插入公式（開啟茲茲數學工具）；游標選到公式則是編輯公式"><b>ƒ(x)</b><span>公式</span></button><button type="button" class="rb" data-act="chars" data-need="ed" title="公式與符號面板（選項、單位、箭頭、℃ 等）"><b>Ω</b><span>符號</span></button><button type="button" class="rb" data-act="mtfig" data-need="q" title="用茲茲數學工具畫圖，加到目前題目／題組（直接存回題庫）"><b>✎</b><span>插入繪圖</span></button><button type="button" class="rb" data-act="mtedit" data-need="q" title="回編目前題目／題組裡用數學工具畫的圖"><b>✐</b><span>編輯繪圖</span></button><button type="button" class="rb" data-act="imgadd" data-need="q" title="在目前題目加入圖片檔"><b>🖼</b><span>插入圖檔</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="img-left" data-need="img" title="圖片靠左"><b>⬅</b><span>靠左</span></button><button type="button" class="rb" data-act="img-center" data-need="img" title="圖片置中"><b>⬌</b><span>置中</span></button><button type="button" class="rb" data-act="img-right" data-need="img" title="圖片靠右"><b>➡</b><span>靠右</span></button><label class="rb-w" title="圖片寬度（px）"><input id="rbImgW" type="number" min="20" max="600" step="1" data-need="img" disabled><em>px</em></label><button type="button" class="rb" data-act="img-reset" data-need="img" title="還原圖片預設大小與置中"><b>↺</b><span>還原</span></button><button type="button" class="rb" data-act="img-del" data-need="img" title="刪除選取的圖片（Delete）"><b>🗑</b><span>刪除</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="opt-four" data-need="q" title="選項一行四欄"><b>▥</b><span>四欄</span></button><button type="button" class="rb" data-act="opt-two" data-need="q" title="選項兩欄兩列"><b>▤</b><span>兩欄</span></button><button type="button" class="rb" data-act="opt-one" data-need="q" title="選項直列"><b>☰</b><span>直列</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="break" data-need="q" title="這題前面換頁"><b>↵</b><span>此題前換頁</span></button><button type="button" class="rb" data-act="keep" data-need="q" title="這題不要跨頁"><b>⧉</b><span>不跨頁</span></button><button type="button" class="rb" data-act="layout-reset" data-need="q" title="還原這題版面設定"><b>⟲</b><span>還原版面</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="up" data-need="q" title="上移一題"><b>▲</b><span>上移</span></button><button type="button" class="rb" data-act="down" data-need="q" title="下移一題"><b>▼</b><span>下移</span></button></div><i class="rb-sep"></i><div class="rb-g"><button type="button" class="rb" data-act="ans" title="顯示／隱藏答案（可就地編輯）"><b>答</b><span>答案</span></button><button type="button" class="rb" data-act="sol" title="顯示／隱藏詳解（可就地編輯）"><b>解</b><span>詳解</span></button></div></div>
   <div class="pv-latex-help noprint" id="pvLatexHelp"><div class="pv-latex-card"><div class="pv-latex-head"><b>公式／Word 輸入小抄</b><button class="pv-latex-close" onclick="togglePvLatexHelp(false)" title="收合">×</button></div><p>題庫儲存與網頁顯示請用 LaTeX，公式外面加單個錢號，例如 <code>$v=\\frac{d}{t}$</code>。若要在 Word 本身編輯公式：先按 <code>Alt</code>＋<code>=</code> 建立公式框，再貼上錢號內的 LaTeX 內容。</p><div class="pv-latex-grid"><b>分數</b><code>$\\frac{分子}{分母}$</code><b>上／下標</b><code>$x^{2}$、$H_2O$</code><b>單位與文字</b><code>$30\\text{ m/s}$</code><b>化學式</b><code>$\\mathrm{Cu^{2+}}$</code><b>反應箭頭</b><code>$A\\rightarrow B$</code><b>箭頭條件</b><code>$A\\xrightarrow[下方]{\\text{上方}}B$</code><b>希臘字母</b><code>$\\alpha$、$\\Delta$</code><b>溫度</b><code>$25\\,{}^\\circ\\mathrm{C}$、$95\\,{}^\\circ\\mathrm{F}$</code></div></div></div>
   <div class="pv-char-panel noprint" id="pvCharPanel"></div>
   <div class="pv-sheet" id="pvSheet"></div>
+  <div id="pvStatus" class="noprint"><span id="pvStatusSave" data-state="ok">已儲存到題庫</span><span class="pv-st-hint">點題目直接打字；離開本題後依 Word 版面重排</span><span id="pvStatusCount"></span></div>
   <input id="pvInlineImage" type="file" accept="image/*" hidden onchange="pvInlineImageChange(this)">
 </div>
 
@@ -3537,7 +3583,10 @@ async function mtEditFig(scope,i){
 function _mtPvRec(type,id){return type==='p'?PASSAGES[id]:DB.find(x=>x.id===id);}
 function _mtPvTarget(what){
   const el=_pvActiveEdit;
-  if(!el){alert('請先點一下要'+what+'的題目或題組文章文字（選取該題）。');return null;}
+  if(!el){
+    if(typeof _edCur!=='undefined'&&_edCur){const rec=_edRecOf(_edCur),p=_edCur.kind==='p';if(rec)return {type:p?'p':'q',field:p?'p':'q',id:p?rec.groupId:rec.id};}
+    alert('請先點一下要'+what+'的題目或題組文章文字（選取該題）。');return null;
+  }
   return {type:el.dataset.rtype==='p'?'p':'q',field:el.dataset.rtype,id:el.dataset.rid};
 }
 async function _mtPvPersist(type,id,rec,rollback){
@@ -4125,6 +4174,8 @@ function serializeRichText(container){
       if(child.nodeType===Node.TEXT_NODE){out+=child.textContent;return;}
       if(child.nodeType!==Node.ELEMENT_NODE)return;
       if(child.classList&&child.classList.contains('pvimg-beside'))return; // 選項旁的圖是預覽裝飾，不屬於文字
+      if(child.classList&&(child.classList.contains('zz-ed-lab')||child.classList.contains('zz-ed-xl')))return; // 就地編輯的題號／欄位標籤不屬於文字
+      if(child.classList&&child.classList.contains('zz-eq')){const dl=(child.dataset&&child.dataset.d)||'$';out+=dl+((child.dataset&&child.dataset.latex)||'')+dl;return;} // 公式 chip（不可編輯）還原成 $…$
       const tag=child.tagName;
       if(tag==='BR'){out+='\n';return;}
       if(tag==='DIV'||tag==='P'){const t=walk(child);out+=(out?'\n':'')+t;return;}
@@ -6331,18 +6382,19 @@ function _pvPaperLayout(id){return PAPER_LAYOUT_DRAFT[id]||(PAPER_LAYOUT_DRAFT[i
 function _pvSavePaperLayout(){try{localStorage.setItem('tzutzu.paper-layout-draft.v1',JSON.stringify(PAPER_LAYOUT_DRAFT));}catch(_){}}
 function pvSetQuestionLayout(id,key,value){_pvPushHist();_pvPaperLayout(id)[key]=value;_pvSavePaperLayout();_pvRebuild();_rebuildLastPaperHTML();}
 function pvRestoreQuestionLayout(id){_pvPushHist();delete PAPER_LAYOUT_DRAFT[id];_pvSavePaperLayout();_pvRebuild();_rebuildLastPaperHTML();}
-function _pvSnapshot(){return {picks:[...PICKS],order:PV_ORDER?[...PV_ORDER]:null};}
+function _pvSnapshot(){return {picks:[...PICKS],order:PV_ORDER?[...PV_ORDER]:null,layout:JSON.stringify(PAPER_LAYOUT_DRAFT)};}
 function _pvResetHist(){_pvUndoStack=[];_pvRedoStack=[];}
 function _pvPushHist(){_pvUndoStack.push(_pvSnapshot());if(_pvUndoStack.length>50)_pvUndoStack.shift();_pvRedoStack=[];}
 function _pvRestoreSnap(s){
   PICKS.clear();s.picks.forEach(id=>PICKS.add(id));
+  if(s.layout!=null){try{PAPER_LAYOUT_DRAFT=JSON.parse(s.layout);_pvSavePaperLayout();}catch(_){}}
   PV_ORDER=s.order?[...s.order]:null;
   try{render();}catch(_){}
   if(!PICKS.size){closePaper();return;}
   _pvRebuild();_rebuildLastPaperHTML();
 }
-function _pvHistUndo(){if(!_pvUndoStack.length){return;}_pvRedoStack.push(_pvSnapshot());_pvRestoreSnap(_pvUndoStack.pop());}
-function _pvHistRedo(){if(!_pvRedoStack.length){return;}_pvUndoStack.push(_pvSnapshot());_pvRestoreSnap(_pvRedoStack.pop());}
+function _pvHistUndo(){if(!_pvUndoStack.length){return;}const top=_pvUndoStack[_pvUndoStack.length-1];if(top&&top.edit){_pvUndoStack.pop();_pvRedoStack.push(top);return _edApplyHist(top.edit,'undo');}_pvRedoStack.push(_pvSnapshot());_pvRestoreSnap(_pvUndoStack.pop());}
+function _pvHistRedo(){if(!_pvRedoStack.length){return;}const top=_pvRedoStack[_pvRedoStack.length-1];if(top&&top.edit){_pvRedoStack.pop();_pvUndoStack.push(top);return _edApplyHist(top.edit,'redo');}_pvUndoStack.push(_pvSnapshot());_pvRestoreSnap(_pvRedoStack.pop());}
 // 拖曳題目卡片調整順序（HTML5 DnD，只從左側把手 ⋮⋮ 觸發，避免干擾內文編輯／圖片拖曳）
 let _pvRowDrag=null;
 function pvRowDragStart(e,id){_pvRowDrag=id;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',id);}catch(_){}}
@@ -10768,7 +10820,7 @@ async function _zzExamSpec(kind,opts){
         if(ps&&(ps.q||(ps.imgs||[]).length)){
           const r=groupRanges.get(it.groupId);
           const text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'').replace(/^閱讀下文[，,]?回答第.{0,12}題[：:]?\s*/,'');
-          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind,'P'+String(it.groupId).replace(/[^A-Za-z0-9]/g,'')),src:srcOf(it)};
+          passage={gid:it.groupId,range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind,'P'+String(it.groupId).replace(/[^A-Za-z0-9]/g,'')),src:srcOf(it)};
         }
       }
       // 非選擇題，或題組裡沒有選項的填充／計算小題：用「N.」題號、不印「(　　)」
@@ -10777,13 +10829,13 @@ async function _zzExamSpec(kind,opts){
       const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
       const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
       items.push({id:it.id,no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),layout:PAPER_LAYOUT_DRAFT[it.id]||{},
-        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind,String(it.id).replace(/[^A-Za-z0-9]/g,'')),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
+        ans:normalizeWordLatex(String(it.ans||'').trim()),sol:normalizeWordLatex(String(it.sol||'').trim()),imgs:await _zzImages(it.imgs,kind,String(it.id).replace(/[^A-Za-z0-9]/g,'')),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
     }
     const sc=kind!=='golden'?wzKindScore(k,items.length):null;
     sections.push({title:_PAPER_SECTION_LABEL[k],score:sc?sc.text:'',items});
   }
   const paper=val('pPaperSize')==='B4'?'B4':'A4';
-  const base={kind,paper,teacher:opts.teacher!==false,sections,title,style:val('pZZStyle')||'formal',field:_zzMainField()};
+  const base={kind,paper,teacher:opts.teacher!==false,sections,title,style:val('pZZStyle')||'formal',field:_zzMainField(),twoCol:!!(document.getElementById('pTwoCol')||{}).checked};
   if(kind==='formal')return {...base,meta:{subject,book:bookName,label:examName||range},running:{left:subject+'　正式版考卷',right:[bookName,range].filter(Boolean).join('　')},footer:[subject,bookName].filter(Boolean).join('·')};
   if(kind==='pre')return {...base,meta:{subject,book:bookName,label:examName||range},running:{left:subject+' 課前考',right:[bookName,range].filter(Boolean).join('　')},footer:[subject,bookName].filter(Boolean).join('·')};
   if(kind==='abk')return {...base,meta:{variant:metadata.variant,chapter:examName||metadata.title||title,code:metadata.code},running:{left:'輔導課 '+metadata.variant+' 卷',right:metadata.code},footer:[subject,bookName].filter(Boolean).join('·')+(examName?'　'+examName:'')};
@@ -10834,7 +10886,13 @@ async function downloadZZSolutionWord(){
 async function _zzPreviewDocs(){
   const mode=paperAnsMode(),kind=paperPreviewKind(),dk=kind;
   const docs=[];
-  if(mode!=='full')docs.push({label:'題目卷',parts:ZZExam.buildParts(await _zzExamSpec(dk,{teacher:true}))});
+  if(mode!=='full'){
+    const spec=await _zzExamSpec(dk,{teacher:true});
+    // 預覽專用：功能區的「答案／詳解」開關決定要不要畫出紅字答案與詳解（匯出的 .docx 不受影響，仍是隱藏文字）
+    spec.showSol=!!PV_SHOW_SOL;
+    spec.sections.forEach(sc=>sc.items.forEach(it=>{if(!PV_SHOW_ANS)it.ans='';if(!PV_SHOW_SOL)delete it.sol;}));
+    docs.push({label:'題目卷',parts:ZZExam.buildParts(spec)});
+  }
   if(mode==='full'||mode==='both_full')docs.push({label:'解析卷',parts:ZZExam.buildParts(_zzSolutionSpec().spec)});
   return docs;
 }
@@ -10843,13 +10901,14 @@ function _zzRenderDocs(docs){
   const off=document.createElement('div');off.style.cssText='position:absolute;left:-99999px;top:0;visibility:hidden;width:1200px;';document.body.appendChild(off);
   const out=[];
   try{
-    docs.forEach(d=>{const sub=document.createElement('div');off.appendChild(sub);const r=ZZDocHtml.render(d.parts,sub,{});(r.pageEls||[]).forEach((el,i)=>out.push({el,label:d.label,idx:i+1,of:r.pages}));});
+    docs.forEach(d=>{const sub=document.createElement('div');off.appendChild(sub);const r=ZZDocHtml.render(d.parts,sub,{showHidden:!!(PV_SHOW_ANS||PV_SHOW_SOL)});(r.pageEls||[]).forEach((el,i)=>out.push({el,label:d.label,idx:i+1,of:r.pages}));});
     out.forEach(o=>o.el.parentNode&&o.el.parentNode.removeChild(o.el));
   }finally{document.body.removeChild(off);}
   return out;
 }
 let _pvWordToken=0;
-async function _pvRenderWord(){
+function _pvRenderWord(){const p=_pvRenderWord0();_edRender=p.then(()=>{},()=>{});return p;}
+async function _pvRenderWord0(){
   const host=document.getElementById('pvSheet');if(!host)return;
   const my=++_pvWordToken;host.className='pv-wordhost';host.style.zoom='';
   if(!PICKS.size){host.innerHTML='<div class="pv-word-msg">尚未選題</div>';return;}
@@ -10861,7 +10920,7 @@ async function _pvRenderWord(){
     _pvMarkEditable(host);
     const pg=pages[0]&&pages[0].el,w=pg?parseFloat(pg.style.width):794,avail=(host.parentElement?host.parentElement.clientWidth:w)-24;
     if(avail>0&&avail<w)host.style.zoom=(avail/w).toFixed(4);
-  }catch(e){console.error(e);if(my===_pvWordToken)host.innerHTML='<div class="pv-word-msg">版面預覽失敗：'+esc(e.message||String(e))+'<br><small>可改按「編輯題目」使用舊的編輯預覽。</small></div>';}
+  }catch(e){console.error(e);if(my===_pvWordToken)host.innerHTML='<div class="pv-word-msg">版面預覽失敗：'+esc(e.message||String(e))+'<br><small>請依提示補齊上方欄位後會自動重新排版。</small></div>';}
 }
 // ===== Word 預覽上直接點題目編輯（存回題庫：這題改一次，所有用到這題的卷子都跟著改）=====
 (function(){const st=document.createElement('style');st.textContent='.pv-wordhost .zz-editable{cursor:pointer}.pv-wordhost .zz-editable:hover{outline:2px solid rgba(62,99,221,.45);outline-offset:1px;background:rgba(62,99,221,.06)}#pvQE{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit}#pvQE .qe-box{background:#fff;border-radius:12px;width:min(720px,94vw);max-height:92vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 40px rgba(0,0,0,.3)}#pvQE h3{margin:0 0 6px;font-size:16px}#pvQE .qe-warn{font-size:12px;color:#a14736;background:#fdf1ee;border-radius:6px;padding:6px 10px;margin:6px 0 10px}#pvQE textarea{width:100%;min-height:220px;box-sizing:border-box;font:14px/1.6 inherit;padding:8px;border:1px solid #ccc;border-radius:8px}#pvQE label{font-size:13px;font-weight:700;display:block;margin:8px 0 4px}#pvQE input{width:100%;box-sizing:border-box;padding:6px 8px;border:1px solid #ccc;border-radius:8px}#pvQE .qe-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}#pvQE button{padding:8px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;cursor:pointer;font-size:14px}#pvQE button.qe-save{background:#850103;color:#fff;border-color:#850103;font-weight:700}';document.head.appendChild(st);})();
@@ -10872,8 +10931,7 @@ function _pvDbByQid(qid){
   const k=x=>String(x).replace(/[^A-Za-z0-9_]/g,'').slice(0,34);
   return DB.find(x=>x.id===qid)||DB.find(x=>k(x.id)===qid)||DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid)||null;
 }
-function _pvMarkEditable(host){host.querySelectorAll('.zzp[data-qid]').forEach(el=>{el.classList.add('zz-editable');el.title='點一下編輯這題（會存回題庫）';});}
-document.addEventListener('click',function(e){const el=e.target&&e.target.closest?e.target.closest('.pv-wordhost .zzp[data-qid]'):null;if(el)pvQuickEdit(el.dataset.qid);});
+function _pvMarkEditable(host){host.querySelectorAll('.zzp[data-qid],.zzp[data-pid]').forEach(el=>el.classList.add('zz-editable'));_edAfterRender(host);}
 function pvQuickEdit(id){
   const it=_pvDbByQid(id);if(!it){alert('找不到這一題（可能已被刪除）');return;}
   let box=document.getElementById('pvQE');if(box)box.remove();
@@ -10900,42 +10958,469 @@ async function pvQuickSave(id){
   document.getElementById('pvQE').remove();
   _pvRenderPaged();
 }
-// ── 預覽上直接調圖片：點圖出現框與四角把手，拖角縮放；上方小工具列選靠左／置中／靠右、還原。存回題庫（圖片的 zzw/zzalign）──
+// ===== Word 預覽：像 Word / Google Docs 的就地編輯（點題目就在紙上改，沒有彈窗；只有數學公式會開茲茲數學工具）=====
+// 存回題庫：這題改一次，所有用到這題的卷子都跟著改。流程：點題 → 就地可編輯 → 離開（點別處／Esc／Tab）→ 序列化存檔 → 重新排版。
+// ── 純函式（tests/pv-inline-edit.test.js 會抽出來測）──
+function _edQidOf(id){return String(id).replace(/[^A-Za-z0-9_]/g,'').slice(0,34);}   // 與 zz-exam-docx.js bmWrap 的 data-qid 同規則
+function _edEscAttr(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+// 編輯框內的文字 → 存回題庫的標記文字：NBSP 變一般空白、去零寬字元、去頭尾的空行／空白
+function _edNormText(s){return String(s==null?'':s).replace(/ /g,' ').replace(/[​﻿]/g,'').replace(/\r/g,'').replace(/^\n+/,'').replace(/[ \t\n]+$/,'');}
+// 題庫標記文字 → 編輯框 HTML：$…$ 公式換成 mathFn(latex,display) 產生的不可編輯 chip；**粗體** ##斜體## __底線__ {{字級}} 照 applyRichMarks 轉；\n → <br>
+function _edRawToHtml(raw,mathFn){
+  const text=String(raw==null?'':raw).replace(/\r/g,'');
+  const chips=[];let src='',pos=0;
+  _mtMathSpans(text).forEach(sp=>{
+    const w=sp.display?2:1;
+    src+=text.slice(pos,sp.a)+''+chips.length+'';
+    chips.push({latex:text.slice(sp.a+w,sp.b-w),display:!!sp.display});pos=sp.b;
+  });
+  src+=text.slice(pos);
+  const h=applyRichMarks(esc(src)).replace(/\n/g,'<br>');
+  return h.replace(/(\d+)/g,(m,i)=>mathFn(chips[+i].latex,chips[+i].display));
+}
+function _edSerialize(el){return _edNormText(serializeRichText(el));}
+// 上標／下標：選取的文字包成行內公式 $^{…}$／$_{…}$（匯出 Word 時簡單的數字、正負號會轉成 ² ₂ 純文字）；選取不合格回 null
+function _edSupSubLatex(sel,kind){
+  sel=String(sel==null?'':sel);
+  if(!sel||/[\n\r$]/.test(sel)||(kind!=='^'&&kind!=='_'))return null;
+  return kind+'{'+sel+'}';
+}
+// Tab／Shift+Tab 到下一題：回傳 keys 中 cur 的下一個（dir=1）或上一個（dir=-1）；到頭回 null
+function _edNextKey(keys,cur,dir){const i=keys.indexOf(cur);if(i<0)return null;const j=i+dir;return j>=0&&j<keys.length?keys[j]:null;}
+// 圖片陣列的不可變更新：patch 值為 null 代表刪掉該欄位；回傳新陣列（原陣列不動）
+function _edImgsPatch(imgs,idx,patch){
+  return (imgs||[]).map((im,i)=>{if(i!==idx)return im;const n={...im};for(const k of Object.keys(patch)){if(patch[k]==null)delete n[k];else n[k]=patch[k];}return n;});
+}
+function _edImgsRemove(imgs,idx){return (imgs||[]).filter((_,i)=>i!==idx);}
+// 八向把手拖曳後的新寬度（螢幕 px）：左右把手用水平位移，上下把手用垂直位移換算（等比），角落取位移較大的那個方向；最小 min
+function _edResizeW(c,w0,h0,dx,dy,min){
+  const sx=/e/.test(c)?1:/w/.test(c)?-1:0,sy=/s/.test(c)?1:/n/.test(c)?-1:0,k=h0>0?w0/h0:1;
+  let d=0;
+  if(sx&&sy)d=Math.abs(sx*dx)>=Math.abs(sy*dy*k)?sx*dx:sy*dy*k;
+  else if(sx)d=sx*dx;else d=sy*dy*k;
+  return Math.max(min||24,w0+d);
+}
+function _edClampZzw(w){return Math.max(20,Math.min(600,Math.round(Number(w)||0)));}
+
+// ── 公式 chip（KaTeX 渲染、不可編輯，點了開茲茲數學工具 eq）──
+function _edChipHtml(latex,display){
+  let inner;
+  try{
+    const l=typeof fixTexTypos==='function'?fixTexTypos(String(latex).replace(/[\r\n]+/g,' ').trim()):latex;
+    inner=window.katex?katex.renderToString(l,{throwOnError:false,displayMode:false}):null;
+  }catch(e){inner=null;}
+  if(!inner)inner=esc((display?'$$':'$')+latex+(display?'$$':'$'));
+  return '<span class="zz-eq" contenteditable="false" data-latex="'+_edEscAttr(latex)+'"'+(display?' data-d="$$"':'')+' title="點一下用數學工具編輯公式">'+inner+'</span>';
+}
+
+// ── 就地編輯：狀態 ──
+let _ED=null,_edCur=null,_edRender=Promise.resolve(),_edReveal=false,_edToastT=0;
+function _edHost(){return document.getElementById('pvSheet');}
+function _edActive(){const pv=document.getElementById('paperView');return !!(PV_WORD_VIEW&&pv&&pv.classList.contains('show')&&document.querySelector('.pv-wordhost'));}
+function _edToast(msg){
+  let t=document.getElementById('pvToast');
+  if(!t){t=document.createElement('div');t.id='pvToast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');clearTimeout(_edToastT);_edToastT=setTimeout(()=>t.classList.remove('show'),2200);
+}
+// 預覽段落 → 題庫目標：{kind:'q',qid,rid,key} 或 {kind:'p',pid,key}
+function _edTarget(par){
+  const d=par.dataset;
+  if(d.pid)return {kind:'p',pid:d.pid,key:'p:'+d.pid};
+  const it=d.oid?DB.find(x=>_edQidOf(x.id).slice(0,28)===d.oid):_pvDbByQid(d.qid||d.sid);
+  return it?{kind:'q',qid:_edQidOf(it.id),rid:it.id,key:'q:'+it.id}:null;
+}
+function _edPassageKey(pid){return Object.keys(PASSAGES).find(k=>String(k).replace(/[^A-Za-z0-9_]/g,'').slice(0,28)===pid)||null;}
+function _edRecOf(tg){if(!tg)return null;if(tg.kind==='p'){const g=_edPassageKey(tg.pid);return g?PASSAGES[g]:null;}return DB.find(x=>x.id===tg.rid)||null;}
+function _edFindPar(host,tg){
+  if(!host||!tg)return null;
+  if(tg.kind==='p')return host.querySelector('.zzp[data-pid="'+CSS.escape(tg.pid)+'"][data-seq="0"]')||host.querySelector('.zzp[data-pid="'+CSS.escape(tg.pid)+'"]');
+  return host.querySelector('.zzp[data-qid="'+CSS.escape(tg.qid)+'"]');
+}
+// 存回題庫（與 pvQuickSave 同一條路：requireCloud + sb.from('questions').upsert(toRow(...))）
+async function _edSaveRec(kind,rec,fields){
+  if(!requireCloud()){_edStatus('err','未儲存（尚未連線題庫）');return false;}
+  _edStatus('saving','儲存中…');
+  const data={...rec,...fields,updatedAt:new Date().toISOString()};
+  let error=null;
+  try{({error}=await sb.from('questions').upsert(toRow(data)));}catch(e){error=e;}
+  if(error){_edStatus('err','儲存失敗，題庫資料未變更');alert('儲存失敗：'+(error.message||error)+'\n（題庫資料未變更）');return false;}
+  _edStatus('ok','已儲存到題庫');
+  if(kind==='p'){PASSAGES[rec.groupId]=data;}
+  else{precompute(data);const i=DB.findIndex(x=>x.id===rec.id);if(i>=0)DB[i]=data;}
+  return true;
+}
+function _edRerender(){
+  let p;
+  _pvKeepScroll(()=>{p=_pvRenderPaged();});
+  try{_rebuildLastPaperHTML();}catch(_){}
+  return Promise.resolve(p).then(()=>_edRender,()=>{});
+}
+// 歷程：內容修改（文字、圖片）與排序／版面共用 _pvUndoStack，Ctrl+Z／Ctrl+Y 依發生順序復原
+function _edHistPush(entry){_pvUndoStack.push({edit:entry});if(_pvUndoStack.length>50)_pvUndoStack.shift();_pvRedoStack=[];}
+async function _edApplyHist(e,dir){
+  const rec=e.kind==='p'?PASSAGES[e.id]:DB.find(x=>x.id===e.id);
+  if(!rec){_edToast('找不到這一題，無法復原');return;}
+  const fields={};
+  Object.keys(e.patch).forEach(k=>{fields[k]=JSON.parse(JSON.stringify(dir==='undo'?e.patch[k].b:e.patch[k].a));});
+  if(await _edSaveRec(e.kind,rec,fields))await _edRerender();
+}
+
+// ── 開始就地編輯 ──
+function _edField(S,key){return S.fields.find(f=>f.key===key);}
+function _edMakeField(S,key,raw,cls){
+  const el=document.createElement('div');
+  el.className='zz-ed-f'+(cls?' '+cls:'');el.contentEditable='true';el.spellcheck=false;el.dataset.f=key;
+  el.innerHTML=_edRawToHtml(raw,_edChipHtml);
+  const f={key,el,dirty:false,orig:String(raw==null?'':raw)};S.fields.push(f);return f;
+}
+async function _edOpen(tg,pt,where){
+  if(!tg)return;
+  if(_ED&&_ED.tg.key===tg.key){_edPlaceCaret(pt,where);return;}
+  if(_ED)await _edCommit();
+  await _edRender;
+  const host=_edHost(),par=_edFindPar(host,tg),rec=_edRecOf(tg);
+  if(!par||!rec)return;
+  if(_ED)return;   // 等待期間別的點擊已經開了另一題
+  const hasLbl=!!par.querySelector(':scope>.zlbl');
+  const S={tg,par,rec,fields:[],hidden:[],wrap:null,range:null,field:null};
+  const wrap=document.createElement('div');wrap.className='zz-ed';
+  if(hasLbl)wrap.style.textIndent='0';
+  const stem=_edMakeField(S,'q',tg.kind==='p'?(rec.q||''):(rec.q||rec.summary||''));
+  // 非選擇題的題號「N.」是段落文字的一部分（沒有 .zlbl）：留一個不可編輯的標籤，內文才會對齊在原位置
+  if(!hasLbl&&tg.kind==='q'){
+    const m=/^\s*(\d+\.)/.exec((par.querySelector('.zseg')||{}).textContent||'');
+    if(m){const lab=document.createElement('span');lab.className='zz-ed-lab';lab.contentEditable='false';lab.textContent=m[1];lab.style.cssText='display:inline-block;width:'+Math.max(12,(par._zz&&par._zz.hang)||24)+'px;';stem.el.insertBefore(lab,stem.el.firstChild);}
+  }
+  wrap.appendChild(stem.el);
+  if(tg.kind==='q'){
+    const addX=(key,label,cls,multi)=>{
+      const row=document.createElement('div');row.className='zz-ed-x '+cls;
+      const lb=document.createElement('span');lb.className='zz-ed-xl';lb.contentEditable='false';lb.textContent=label;
+      const f=_edMakeField(S,key,rec[key]||'','zz-ed-fx');if(!multi)f.el.dataset.single='1';
+      row.appendChild(lb);row.appendChild(f.el);wrap.appendChild(row);
+    };
+    if(PV_SHOW_ANS)addX('ans','答案','zz-ed-ans',false);
+    if(PV_SHOW_SOL)addX('sol','詳解','zz-ed-sol',true);
+  }
+  // 原段落內容全部藏起來（編輯框在同一個位置、同樣的縮排／字型／行高，沿用段落本身的樣式）
+  [...par.children].forEach(c=>{if(!c.classList.contains('zlbl')){c.classList.add('zz-ed-hid');S.hidden.push(c);}});
+  const others=[];
+  if(tg.kind==='q'){
+    host.querySelectorAll('.zzp[data-oid]').forEach(p=>{if(p.dataset.oid===tg.qid.slice(0,28))others.push(p);});
+    if(PV_SHOW_SOL)host.querySelectorAll('.zzp[data-sid="'+CSS.escape(tg.qid)+'"]').forEach(p=>others.push(p));
+  }else host.querySelectorAll('.zzp[data-pid="'+CSS.escape(tg.pid)+'"]').forEach(p=>{if(p!==par)others.push(p);});
+  others.forEach(p=>{p.classList.add('zz-ed-hidp');S.hidden.push(p);});
+  par.appendChild(wrap);par.classList.add('zz-editing');S.wrap=wrap;S.others=others;
+  _ED=S;_edCur=tg;
+  wrap.addEventListener('input',e=>{const el=e.target.closest&&e.target.closest('.zz-ed-f');const f=el&&S.fields.find(x=>x.el===el);if(f)f.dirty=true;_edStatus('dirty','未儲存・離開本題後存回題庫，並依 Word 版面重排');_edRibbonSync();});
+  wrap.addEventListener('focusin',e=>{const el=e.target.closest&&e.target.closest('.zz-ed-f');if(el)S.field=el;});
+  wrap.addEventListener('beforeinput',e=>{
+    const el=e.target.closest&&e.target.closest('.zz-ed-f');
+    if(e.inputType==='insertParagraph'){e.preventDefault();if(el&&el.dataset.single)return;document.execCommand('insertLineBreak');}   // Enter＝換行（選項一行一個）；Shift+Enter 同為軟換行
+  });
+  wrap.addEventListener('paste',e=>{e.preventDefault();const t=(e.clipboardData||window.clipboardData).getData('text/plain');_edInsertPlain(t,e.target.closest&&e.target.closest('.zz-ed-f'));});   // 貼上一律純文字，去除外部格式
+  wrap.addEventListener('drop',e=>{e.preventDefault();const t=e.dataTransfer&&e.dataTransfer.getData('text/plain');if(t)_edInsertPlain(t,e.target.closest&&e.target.closest('.zz-ed-f'));});
+  wrap.addEventListener('click',e=>{const chip=e.target.closest&&e.target.closest('.zz-eq');if(chip){e.preventDefault();_edEditChip(chip);}});
+  wrap.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){e.preventDefault();_edCommit();return;}
+    if((e.key==='ArrowUp'||e.key==='ArrowDown')&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&_edAtEdge(S,e.key==='ArrowUp'?-1:1)){
+      const keys=[...host.querySelectorAll('.zzp[data-qid]')].map(p=>_edTarget(p)).filter(Boolean),i=keys.findIndex(t=>t.key===S.tg.key),n=keys[i+(e.key==='ArrowUp'?-1:1)];
+      if(n){e.preventDefault();_edOpen(n,null,e.key==='ArrowUp'?'end':'start');}
+      return;
+    }
+    if(e.key==='Tab'){
+      e.preventDefault();
+      const keys=[...host.querySelectorAll('.zzp[data-qid]')].map(p=>_edTarget(p)).filter(Boolean).map(t=>t.key),nk=_edNextKey(keys,S.tg.key,e.shiftKey?-1:1);
+      if(nk){const p=[...host.querySelectorAll('.zzp[data-qid]')].find(x=>{const t=_edTarget(x);return t&&t.key===nk;});const t=p&&_edTarget(p);if(t)_edOpen(t,null,'start');}
+      else _edCommit();
+    }
+  });
+  _edPlaceCaret(pt,where);
+  _edRibbonSync();
+}
+// 游標是否在這題編輯框的最前面（dir=-1）／最後面（dir=1）：此時方向鍵上下就移到前一題／後一題，像 Google Docs 一整份文件
+function _edAtEdge(S,dir){
+  const sel=window.getSelection();if(!sel.rangeCount||!sel.isCollapsed)return false;
+  const field=S.fields[dir<0?0:S.fields.length-1].el;if(!field.contains(sel.anchorNode))return false;
+  const r=document.createRange();r.selectNodeContents(field);
+  if(dir<0)r.setEnd(sel.anchorNode,sel.anchorOffset);else r.setStart(sel.anchorNode,sel.anchorOffset);
+  const fr=r.cloneContents();
+  return !(fr.textContent.replace(/\u200b/g,'')||fr.querySelector('.zz-eq,br'));
+}
+function _edInsertPlain(t,field){
+  t=String(t==null?'':t).replace(/\r\n?/g,'\n');
+  if(field&&field.dataset.single)t=t.replace(/\n+/g,' ');
+  t.split('\n').forEach((p,i)=>{if(i)document.execCommand('insertLineBreak');if(p)document.execCommand('insertText',false,p);});
+}
+function _edPlaceCaret(pt,where){
+  const S=_ED;if(!S)return;
+  let field=S.fields[0],r=null;
+  if(pt&&pt.x!=null){
+    try{
+      if(document.caretRangeFromPoint)r=document.caretRangeFromPoint(pt.x,pt.y);
+      else if(document.caretPositionFromPoint){const cp=document.caretPositionFromPoint(pt.x,pt.y);if(cp){r=document.createRange();r.setStart(cp.offsetNode,cp.offset);r.collapse(true);}}
+    }catch(_){r=null;}
+  }
+  const inField=r&&S.fields.find(f=>f.el.contains(r.startContainer));
+  if(where==='sol'&&_edField(S,'sol'))field=_edField(S,'sol');
+  field.el.focus({preventScroll:true});
+  const sel=window.getSelection();
+  if(inField&&where!=='sol'&&where!=='start'){field=inField;field.el.focus({preventScroll:true});sel.removeAllRanges();sel.addRange(r);}
+  else{const rg=document.createRange();rg.selectNodeContents(field.el);rg.collapse(where==='start');sel.removeAllRanges();sel.addRange(rg);}
+  S.field=field.el;
+}
+function _edRefocus(){
+  const S=_ED;if(!S)return;
+  const el=S.field||S.fields[0].el;el.focus({preventScroll:true});
+  if(S.range&&el.contains(S.range.commonAncestorContainer)){const sel=window.getSelection();sel.removeAllRanges();sel.addRange(S.range);}
+}
+// ── 離開：序列化 → 有變動才存回題庫 → 重新排版（保持捲動位置）；沒變動就不存、不重畫 ──
+function _edTeardown(S){
+  S.hidden.forEach(c=>c.classList.remove('zz-ed-hid','zz-ed-hidp'));
+  if(S.wrap&&S.wrap.parentNode)S.wrap.remove();
+  S.par.classList.remove('zz-editing');
+}
+async function _edCommit(){
+  const S=_ED;if(!S)return true;
+  _ED=null;
+  const patch={};
+  S.fields.forEach(f=>{
+    if(!f.dirty)return;
+    const nv=fixControlCharEatenLatex(_edSerialize(f.el)),ov=_edNormText(f.orig);   // 存前沿用既有清洗（Tab 吃掉的反斜線等）
+    if(nv!==ov)patch[f.key]=nv;
+  });
+  _edTeardown(S);
+  if(!Object.keys(patch).length){_edRibbonSync();return true;}
+  if(('q' in patch)&&!patch.q.trim()){alert('題目不能是空的，已還原。');delete patch.q;}
+  if(!Object.keys(patch).length){_edRibbonSync();return true;}
+  const rec=_edRecOf(S.tg);if(!rec){return false;}
+  const before={};Object.keys(patch).forEach(k=>{before[k]=rec[k]==null?'':rec[k];});
+  const ok=await _edSaveRec(S.tg.kind,rec,patch);
+  if(ok){
+    const e={kind:S.tg.kind,id:S.tg.kind==='p'?rec.groupId:rec.id,patch:{}};
+    Object.keys(patch).forEach(k=>{e.patch[k]={b:before[k],a:patch[k]};});
+    _edHistPush(e);
+  }
+  await _edRerender();
+  return ok;
+}
+// ── 公式：點 chip＝編輯；功能區 ƒ(x)＝在游標處插入（選取文字可帶入）。只有這裡會開茲茲數學工具 ──
+function _edSetChip(chip,latex){
+  const tmp=document.createElement('div');tmp.innerHTML=_edChipHtml(latex,chip.dataset.d==='$$');
+  const n=tmp.firstChild;chip.dataset.latex=latex;chip.innerHTML=n.innerHTML;
+}
+async function _edEditChip(chip){
+  const S=_ED;if(!S||!_mtReady())return;
+  const el=chip.closest('.zz-ed-f'),f=S.fields.find(x=>x.el===el);
+  const r=await MTEmbed.open('eq',{latex:chip.dataset.latex||''});
+  if(r.status!=='done'){_mtNotify(r);if(_ED===S)_edRefocus();return;}
+  if(_ED!==S||!chip.isConnected){alert('文字在數學工具開啟期間有變動，未更新公式。');return;}
+  _edSetChip(chip,r.latex);if(f)f.dirty=true;
+  _edRefocus();_edRibbonSync();
+}
+async function edInsertEq(){
+  const S=_ED;
+  if(!S){_edToast('先點一下要插入公式的題目文字');return;}
+  if(!_mtReady())return;
+  // 游標剛好選到一個公式 chip＝編輯公式
+  const rg=S.range;
+  if(rg&&rg.startContainer===rg.endContainer&&rg.endOffset-rg.startOffset===1){const nd=rg.startContainer.childNodes[rg.startOffset];if(nd&&nd.classList&&nd.classList.contains('zz-eq')){_edEditChip(nd);return;}}
+  const selText=rg?rg.toString():'';
+  const latex=selText&&!/[\n$]/.test(selText)?selText:'';
+  const r=await MTEmbed.open('eq',latex?{latex}:{});
+  if(r.status!=='done'){_mtNotify(r);if(_ED===S)_edRefocus();return;}
+  if(_ED!==S){alert('文字在數學工具開啟期間有變動，未插入公式。');return;}
+  _edRefocus();
+  document.execCommand('insertHTML',false,_edChipHtml(r.latex,false));
+}
+// ── 功能區：文字格式（作用於就地編輯中的選取文字；沿用 applyRichMarks / serializeRichText 標記）──
+function edFmt(cmd){
+  if(!_ED){_edToast('先點一下要編輯的題目文字');return;}
+  _edRefocus();document.execCommand(cmd,false,null);_edRibbonSync();
+}
+function edSupSub(kind){
+  if(!_ED){_edToast('先點一下要編輯的題目文字');return;}
+  _edRefocus();
+  const sel=window.getSelection(),t=sel.rangeCount?sel.toString():'';
+  const l=_edSupSubLatex(t,kind);
+  if(!l){_edToast('請先選取要變成'+(kind==='^'?'上標':'下標')+'的文字（不含換行或公式）');return;}
+  document.execCommand('insertHTML',false,_edChipHtml(l,false));
+}
+// ── 功能區：字級／文字顏色／清除格式／符號／繪圖／插入圖檔（舊「編輯題目」工具列的功能都搬到這裡）──
+function edApplyStyle(prop,val){
+  if(!_ED){_edToast('先點一下要編輯的題目文字');return;}
+  _edRefocus();
+  const sel=window.getSelection();
+  if(!sel.rangeCount||sel.isCollapsed){_edToast('請先選取要套用的文字');return;}
+  const range=sel.getRangeAt(0),span=document.createElement('span');span.style[prop]=val;
+  try{range.surroundContents(span);}catch(e){span.appendChild(range.extractContents());range.insertNode(span);}
+  const r2=document.createRange();r2.selectNodeContents(span);sel.removeAllRanges();sel.addRange(r2);
+  const el=span.closest('.zz-ed-f');if(el)el.dispatchEvent(new Event('input',{bubbles:true}));   // 標記該欄已修改
+}
+function edClearFmt(){
+  if(!_ED){_edToast('先點一下要編輯的題目文字');return;}
+  _edRefocus();document.execCommand('removeFormat',false,null);document.execCommand('backColor',false,'transparent');_edRibbonSync();
+}
+function edInsertText(str){if(!_ED)return;_edRefocus();document.execCommand('insertText',false,str);}
+function edInsertChipLatex(l){if(!_ED)return;_edRefocus();document.execCommand('insertHTML',false,_edChipHtml(l,false));}
+function edToggleChars(){
+  const box=document.getElementById('pvCharPanel');if(!box)return;
+  if(!_ED&&!box.classList.contains('show')){_edToast('先點一下要插入符號的題目文字');return;}
+  if(!box.dataset.edBuilt){
+    box.innerHTML=PV_CHARS.map(c=>'<button type="button" data-ins="'+c+'">'+c+'</button>').join('')
+      +'<button type="button" data-chip="\\,{}^\\circ\\mathrm{C}" title="攝氏度">℃</button><button type="button" data-chip="\\,{}^\\circ\\mathrm{F}" title="華氏度">℉</button><button type="button" data-chip="\\rightarrow" title="方程式反應箭頭">方程式 →</button><button type="button" data-chip="\\frac{分子}{分母}" title="分數">分數</button><button type="button" data-chip="\\mathrm{化學式}" title="化學式">化學式</button><button type="button" class="math-btn" data-help="1">公式小抄</button>';
+    box.addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault();});
+    box.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.ins!=null)edInsertText(b.dataset.ins);else if(b.dataset.chip!=null)edInsertChipLatex(b.dataset.chip);else if(b.dataset.help)togglePvLatexHelp();});
+    box.dataset.edBuilt='1';
+  }
+  box.classList.toggle('show');
+}
+async function edMt(which){
+  if(_ED)await _edCommit();
+  await _edRender;
+  if(which==='fig')await pvMtInsertFig();else await pvMtEditFig();
+}
+async function edAddImage(){
+  if(!_edCur){_edToast('先點一下要加入圖片的題目');return;}
+  if(_ED)await _edCommit();
+  const rec=_edRecOf(_edCur);if(!rec)return;
+  const input=document.getElementById('pvInlineImage');
+  input.dataset.rtype=_edCur.kind==='p'?'p':'q';input.dataset.rid=_edCur.kind==='p'?rec.groupId:rec.id;input.click();
+}
+// ── 功能區：復原／重做（文字層級用瀏覽器原生；沒有文字可復原時退到結構／內容歷程）──
+async function edUndo(){
+  if(_ED){_edRefocus();if(document.queryCommandEnabled('undo')){document.execCommand('undo');return;}await _edCommit();}
+  await _edRender;_pvHistUndo();
+}
+async function edRedo(){
+  if(_ED){_edRefocus();if(document.queryCommandEnabled('redo')){document.execCommand('redo');return;}await _edCommit();}
+  await _edRender;_pvHistRedo();
+}
+// ── 功能區：版面（作用於游標所在題目）──
+function _edCurRid(){return _edCur&&_edCur.kind==='q'?_edCur.rid:null;}
+async function edLayout(key,val){
+  const rid=_edCurRid();if(!rid){_edToast('先點一下要調整的題目');return;}
+  if(_ED)await _edCommit();await _edRender;
+  const lay=PAPER_LAYOUT_DRAFT[rid]||{};
+  if(typeof val==='string'&&val==='toggle'){val=!lay[key];}
+  _edReveal=true;pvSetQuestionLayout(rid,key,val);   // 即時重排；同步存 localStorage 草稿
+}
+async function edNudge(dir){
+  const rid=_edCurRid();if(!rid){_edToast('先點一下要移動的題目');return;}
+  if(_ED)await _edCommit();await _edRender;_edReveal=true;pvNudgeQuestion(rid,dir);
+}
+async function edRestoreLayout(){const rid=_edCurRid();if(!rid)return;if(_ED)await _edCommit();await _edRender;pvRestoreQuestionLayout(rid);}
+async function edToggleShow(which){if(_ED)await _edCommit();await _edRender;if(which==='ans')await togglePvAnswers();else await togglePvSolutions();}
+function _edRibbonSync(){
+  const rb=document.getElementById('pvRibbon');if(!rb)return;
+  const rid=_edCurRid(),lay=rid?(PAPER_LAYOUT_DRAFT[rid]||{}):{};
+  const on=(act,v)=>{const b=rb.querySelector('[data-act="'+act+'"]');if(b)b.classList.toggle('on',!!v);};
+  const dis=(sel,v)=>rb.querySelectorAll(sel).forEach(b=>{b.disabled=!!v;});
+  on('opt-four',lay.optionMode==='four');on('opt-two',lay.optionMode==='two');on('opt-one',lay.optionMode==='one');
+  on('break',lay.breakBefore);on('keep',lay.keepTogether);on('ans',PV_SHOW_ANS);on('sol',PV_SHOW_SOL);
+  dis('[data-need="q"]',!rid);dis('[data-need="ed"]',!_ED);dis('[data-need="img"]',!_PVIMG);
+  let st={bold:false,italic:false,underline:false};
+  if(_ED&&_ED.wrap.contains(document.activeElement)){try{st={bold:document.queryCommandState('bold'),italic:document.queryCommandState('italic'),underline:document.queryCommandState('underline')};}catch(_){}}
+  on('bold',st.bold);on('italic',st.italic);on('underline',st.underline);
+  const w=rb.querySelector('#rbImgW');if(w&&document.activeElement!==w)w.value=_PVIMG?Math.round(+_PVIMG.el.dataset.w0||_PVIMG.el.offsetWidth||0):'';
+  on('img-left',_PVIMG&&_PVIMG.al==='left');on('img-center',_PVIMG&&_PVIMG.al==='center');on('img-right',_PVIMG&&_PVIMG.al==='right');
+  const cur=_edCur&&_edHost()&&_edFindPar(_edHost(),_edCur);
+  _edHost()&&_edHost().querySelectorAll('.zz-cur').forEach(p=>{if(p!==cur)p.classList.remove('zz-cur');});
+  if(cur)cur.classList.add('zz-cur');
+}
+document.addEventListener('selectionchange',()=>{
+  const S=_ED;if(S){const sel=window.getSelection();if(sel&&sel.rangeCount){const r=sel.getRangeAt(0);if(S.wrap.contains(r.commonAncestorContainer)){S.range=r.cloneRange();const el=(r.commonAncestorContainer.nodeType===1?r.commonAncestorContainer:r.commonAncestorContainer.parentNode).closest('.zz-ed-f');if(el)S.field=el;}}}
+  if(_edActive())_edRibbonSync();
+});
+// 重排完成後：重新標記可編輯段落、還原游標題目標示、圖片選取框、必要時把題目捲進視野
+function _edAfterRender(host){
+  if(_ED&&!_ED.par.isConnected)_ED=null;   // 整頁重畫後舊的編輯框已不在（正常流程都先 commit，這裡只是保險）
+  _pvImgRebind(host);_edStatusCount();
+  if(_edReveal){_edReveal=false;const p=_edCur&&_edFindPar(host,_edCur);if(p){const r=p.getBoundingClientRect(),pv=document.getElementById('paperView'),b=pv.getBoundingClientRect();if(r.top<b.top+110||r.bottom>b.bottom-20)pv.scrollTop+=r.top-b.top-140;}}
+  _edRibbonSync();
+}
+// ── 滑鼠：點題＝就地編輯；點圖＝選取圖片；點別處＝離開編輯 ──
+document.addEventListener('mousedown',function(e){
+  if(!_edActive()||e.button!==0)return;
+  const t=e.target;if(!t||!t.closest)return;
+  if(t.closest('#pvRibbon,#pvImgBox,#pvGrip,.zz-prompt,dialog,#mtEmbedDlg'))return;
+  if(t.closest('.zz-ed'))return;
+  const img=t.closest('.pv-wordhost img.zzpic[data-zzimg]');
+  if(img){e.preventDefault();_edPickImg(img.dataset.zzimg);return;}
+  const par=t.closest('.pv-wordhost .zzp[data-qid],.pv-wordhost .zzp[data-sid],.pv-wordhost .zzp[data-oid],.pv-wordhost .zzp[data-pid]');
+  if(par){
+    const tg=_edTarget(par);
+    if(tg){e.preventDefault();_pvImgClose();_edOpen(tg,{x:e.clientX,y:e.clientY},par.dataset.sid?'sol':null);return;}
+  }
+  _pvImgClose();_edRibbonSync();
+  if(_ED)_edCommit();
+},true);
+async function _edPickImg(tag){
+  if(_ED)await _edCommit();
+  await _edRender;
+  const img=_edHost().querySelector('img.zzpic[data-zzimg="'+CSS.escape(tag)+'"]');
+  if(img)_pvImgSelect(img);
+}
+function _pvImgRebind(host){
+  if(!_PVIMG)return;
+  const tag=_PVIMG.keep?_PVIMG.tag:null;_pvImgClose();
+  if(tag){const el=host.querySelector('img.zzpic[data-zzimg="'+CSS.escape(tag)+'"]');if(el)_pvImgSelect(el);}
+}
+// ── 預覽上直接調圖片（Word 式）：點圖出現八向把手，拖曳等比縮放並顯示 px 浮標；對齊／px／還原／刪除在功能區。存回題庫（圖片的 zzw/zzalign）──
 let _PVIMG=null;
 function _pvImgFind(tag){const k=tag.lastIndexOf('_');if(k<0)return null;const qid=tag.slice(0,k),idx=+tag.slice(k+1);if(/^P[A-Za-z0-9]/.test(qid)&&!DB.some(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid)){const g=Object.keys(PASSAGES).find(x=>'P'+String(x).replace(/[^A-Za-z0-9]/g,'')===qid),ps=g&&PASSAGES[g];return ps&&ps.imgs&&ps.imgs[idx]?{it:ps,idx,passage:true}:null;}const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid);return it&&it.imgs&&it.imgs[idx]?{it,idx}:null;}
-function _pvImgClose(){if(_PVIMG){_PVIMG.box.remove();_PVIMG=null;}}
-function _pvImgPlace(){if(!_PVIMG)return;const r=_PVIMG.el.getBoundingClientRect(),b=_PVIMG.box;b.style.left=r.left+'px';b.style.top=r.top+'px';b.style.width=r.width+'px';b.style.height=r.height+'px';}
+function _pvImgClose(){if(_PVIMG){_PVIMG.box.remove();_PVIMG=null;}const p=document.querySelector('.zz-prompt');if(p)p.remove();_edRibbonSync();}
+function _pvImgPlace(){if(!_PVIMG)return;if(!_PVIMG.el.isConnected){_PVIMG.box.style.display='none';return;}_PVIMG.box.style.display='';const r=_PVIMG.el.getBoundingClientRect(),b=_PVIMG.box;b.style.left=r.left+'px';b.style.top=r.top+'px';b.style.width=r.width+'px';b.style.height=r.height+'px';}
 function _pvImgSelect(el){
   _pvImgClose();const f=_pvImgFind(el.dataset.zzimg||'');if(!f)return;
   const box=document.createElement('div');box.id='pvImgBox';
-  box.innerHTML='<div class="pvib-bar"><button data-a="left" title="靠左">⬅</button><button data-a="center" title="置中">⬌</button><button data-a="right" title="靠右">➡</button><button data-a="reset" title="還原預設大小與置中">↺ 還原</button></div>'+['nw','ne','sw','se'].map(c=>'<i class="pvib-h pvib-'+c+'" data-c="'+c+'"></i>').join('');
-  document.body.appendChild(box);_PVIMG={el,box,tag:el.dataset.zzimg};_pvImgPlace();
-  box.querySelectorAll('.pvib-bar button').forEach(btn=>btn.onclick=ev=>{ev.stopPropagation();const a=btn.dataset.a;_pvImgSave(a==='reset'?{zzw:null,zzalign:null}:{zzalign:a});});
+  box.innerHTML=['nw','n','ne','e','se','s','sw','w'].map(c=>'<i class="pvib-h pvib-'+c+'" data-c="'+c+'"></i>').join('')+'<span class="pvib-badge"></span>';
+  document.body.appendChild(box);
+  const al=f.it.imgs[f.idx].zzalign||'center';
+  _PVIMG={el,box,tag:el.dataset.zzimg,al,keep:true};_pvImgPlace();
+  const badge=box.querySelector('.pvib-badge'),base0=+el.dataset.w0||el.offsetWidth;
+  const showB=(w,h)=>{badge.textContent=Math.round(w)+' × '+Math.round(h)+' px';};
+  showB(base0,base0*el.offsetHeight/(el.offsetWidth||1));
   box.querySelectorAll('.pvib-h').forEach(h=>h.onpointerdown=ev=>{
     ev.preventDefault();ev.stopPropagation();h.setPointerCapture(ev.pointerId);
-    const r0=el.getBoundingClientRect(),w0=r0.width,x0=ev.clientX,sign=/w$/.test(h.dataset.c)?-1:1,z=el.offsetWidth?r0.width/el.offsetWidth:1;   // z：預覽縮放（窄螢幕時 host 有 zoom），滑鼠位移是螢幕像素，要除掉才會貼著游標
-    h.onpointermove=e=>{const nw=Math.max(24,w0+sign*(e.clientX-x0));el.style.width=(nw/z)+'px';el.style.height=(nw*r0.height/w0/z)+'px';_pvImgPlace();};
-    h.onpointerup=e=>{h.onpointermove=h.onpointerup=null;const rw=el.getBoundingClientRect().width,base=+el.dataset.w0||w0;_pvImgSave({zzw:Math.round(base*rw/w0)});};
+    const r0=el.getBoundingClientRect(),w0=r0.width,h0=r0.height,x0=ev.clientX,y0=ev.clientY,z=el.offsetWidth?r0.width/el.offsetWidth:1,base=+el.dataset.w0||w0;   // z：預覽縮放（窄螢幕時 host 有 zoom），滑鼠位移是螢幕像素，要除掉才會貼著游標
+    h.onpointermove=e=>{const nw=_edResizeW(h.dataset.c,w0,h0,e.clientX-x0,e.clientY-y0,24);el.style.width=(nw/z)+'px';el.style.height=(nw*h0/w0/z)+'px';_pvImgPlace();showB(base*nw/w0,base*nw/w0*h0/w0);};
+    h.onpointerup=e=>{h.onpointermove=h.onpointerup=null;const rw=el.getBoundingClientRect().width;_pvImgSave({zzw:_edClampZzw(base*rw/w0)});};
   });
+  _edRibbonSync();
 }
-async function _pvImgSave(patch){
-  if(!_PVIMG)return;const f=_pvImgFind(_PVIMG.tag);if(!f)return;if(!requireCloud())return;
-  const imgs=f.it.imgs.map((im,i)=>{if(i!==f.idx)return im;const n={...im};for(const k of Object.keys(patch)){if(patch[k]==null)delete n[k];else n[k]=patch[k];}return n;});
-  const data={...f.it,imgs,updatedAt:new Date().toISOString()};
-  const {error}=await sb.from('questions').upsert(toRow(data));
-  if(error){alert('儲存失敗：'+error.message);_pvRenderPaged();return;}
-  if(f.passage){PASSAGES[f.it.groupId]=data;}else{precompute(data);const i=DB.findIndex(x=>x.id===f.it.id);if(i>=0)DB[i]=data;}
-  _pvImgClose();_pvRenderPaged();
+// 圖片修改一律走這裡：存回題庫＋記入復原歷程＋重排後保持選取
+async function _edImgMutate(fn,keep){
+  if(!_PVIMG)return false;const f=_pvImgFind(_PVIMG.tag);if(!f)return false;
+  const before=f.it.imgs,after=fn(before,f.idx),kind=f.passage?'p':'q';
+  _PVIMG.keep=keep!==false;
+  const ok=await _edSaveRec(kind,f.it,{imgs:after});
+  if(ok)_edHistPush({kind,id:f.passage?f.it.groupId:f.it.id,patch:{imgs:{b:before,a:after}}});
+  await _edRerender();return ok;
 }
-document.addEventListener('click',function(ev){
-  const img=ev.target.closest&&ev.target.closest('.pv-wordhost img.zzpic[data-zzimg]');
-  if(img){ev.stopPropagation();ev.preventDefault();_pvImgSelect(img);return;}
-  if(_PVIMG&&!ev.target.closest('#pvImgBox'))_pvImgClose();
-},true);
+function _pvImgSave(patch){return _edImgMutate((imgs,i)=>_edImgsPatch(imgs,i,patch));}
+function edImgAlign(a){if(_PVIMG)_pvImgSave({zzalign:a});}
+function edImgReset(){if(_PVIMG)_pvImgSave({zzw:null,zzalign:null});}
+function edImgWidth(v){const n=Math.round(Number(v));if(_PVIMG&&n>0)_pvImgSave({zzw:_edClampZzw(n)});}
+// Word 式小提示（不用 alert／confirm）：Enter＝刪除、Esc＝取消
+function _edAsk(anchor,text,okLabel,onOk){
+  const old=document.querySelector('.zz-prompt');if(old)old.remove();
+  const p=document.createElement('div');p.className='zz-prompt';tabIndex=-1;
+  p.innerHTML='<span></span><button type="button" class="ok"></button><button type="button" class="no">取消</button>';
+  p.firstChild.textContent=text;p.querySelector('.ok').textContent=okLabel;
+  document.body.appendChild(p);
+  const r=anchor.getBoundingClientRect();p.style.left=Math.max(8,Math.min(innerWidth-p.offsetWidth-8,r.left))+'px';p.style.top=Math.max(8,r.top-p.offsetHeight-8)+'px';
+  const close=()=>{p.remove();document.removeEventListener('keydown',kd,true);};
+  const kd=e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();close();onOk();}else if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close();}};
+  document.addEventListener('keydown',kd,true);
+  p.querySelector('.ok').onclick=()=>{close();onOk();};p.querySelector('.no').onclick=close;p.querySelector('.ok').focus();
+}
+function edImgDelete(){
+  if(!_PVIMG)return;
+  _edAsk(_PVIMG.box,'刪除這張圖？','刪除',()=>{if(_PVIMG)_edImgMutate((imgs,i)=>_edImgsRemove(imgs,i),false);});
+}
 window.addEventListener('scroll',_pvImgPlace,true);window.addEventListener('resize',_pvImgPlace);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')_pvImgClose();});
-(function(){const st=document.createElement('style');st.textContent='.pv-wordhost img.zzpic[data-zzimg]{cursor:pointer}.pv-wordhost img.zzpic[data-zzimg]:hover{outline:2px dashed rgba(62,99,221,.6)}#pvImgBox{position:fixed;z-index:99999;border:2px solid #3e63dd;pointer-events:none;box-sizing:border-box}#pvImgBox .pvib-bar{position:absolute;left:0;top:-38px;display:flex;gap:2px;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);pointer-events:auto;white-space:nowrap}#pvImgBox .pvib-bar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px}#pvImgBox .pvib-bar button:hover{background:#dfe5fb}#pvImgBox .pvib-h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3e63dd;border-radius:3px;pointer-events:auto;touch-action:none}.pvib-nw{left:-8px;top:-8px;cursor:nwse-resize}.pvib-ne{right:-8px;top:-8px;cursor:nesw-resize}.pvib-sw{left:-8px;bottom:-8px;cursor:nesw-resize}.pvib-se{right:-8px;bottom:-8px;cursor:nwse-resize}';document.head.appendChild(st);})();
-// ── Word 預覽：拖曳／上下移調整題序（沿用 pvReorderQuestion 與復原堆疊）──
+// ── Word 預覽：拖曳／上下移調整題序（沿用 pvReorderQuestion 與復原堆疊）。拖曳把手＝題目左側紙張外的 ⋮⋮（像 Google Docs 段落把手）──
 let _pvWDrag=null;
 function _pvRidOf(qid){const it=_pvDbByQid(qid);return it?it.id:null;}
 function _pvDropClear(){document.querySelectorAll('.pv-drop-before,.pv-drop-after').forEach(el=>el.classList.remove('pv-drop-before','pv-drop-after'));}
@@ -10959,45 +11444,77 @@ document.addEventListener('dragover',function(e){
 });
 document.addEventListener('drop',function(e){
   if(!_pvWDrag)return;const par=e.target.closest&&e.target.closest('.pv-wordhost .zzp[data-qid]');if(!par)return;
-  e.preventDefault();const r=par.getBoundingClientRect(),after=e.clientY>r.top+r.height/2,tid=_pvRidOf(par.dataset.qid),d=_pvWDrag;_pvWDrag=null;_pvDropClear();_pvQBarHide();
-  if(tid)_pvMoveTo(d,tid,after);
+  e.preventDefault();const r=par.getBoundingClientRect(),after=e.clientY>r.top+r.height/2,tid=_pvRidOf(par.dataset.qid),d=_pvWDrag;_pvWDrag=null;_pvDropClear();_pvQBarHide();_pvGripHide();
+  if(tid)_edReveal=true,_pvMoveTo(d,tid,after);
 });
-(function(){const st=document.createElement('style');st.textContent='.pvq-grip{cursor:grab;padding:3px 6px;color:#667;font-size:13px;user-select:none}.pv-wordhost .pv-drop-before{box-shadow:0 -3px 0 #3e63dd}.pv-wordhost .pv-drop-after{box-shadow:0 3px 0 #3e63dd}';document.head.appendChild(st);})();
-// ── 預覽上每題的懸浮小工具列：選項排法(4/2/1)、此題前換頁、不跨頁、還原、復原/重做（沿用原本題目版面設定，匯出 Word 會照做）──
-let _PVQBAR=null,_pvQBarTimer=null;
-function _pvQBarHide(){if(_PVQBAR){_PVQBAR.remove();_PVQBAR=null;}}
-function _pvQBarShow(par){
-  const id=par.dataset.qid;if(!id)return;const it=_pvDbByQid(id);const rid=it?it.id:id;
-  if(_PVQBAR&&_PVQBAR.dataset.rid===rid){_PVQBAR._par=par;_pvQBarPlace();return;}
-  _pvQBarHide();
-  const lay=PAPER_LAYOUT_DRAFT[rid]||{},b=document.createElement('div');b.id='pvQBar';b.dataset.rid=rid;b._par=par;
-  const on=(k,v)=>lay[k]===v?' class="on"':'';
-  const q=JSON.stringify(rid).replace(/"/g,'&quot;');
-  b.innerHTML=`<span class="pvq-grip" draggable="true" title="按住拖到別題上方／下方即可調整順序">⋮⋮</span><button title="上移一題" onclick="pvNudgeQuestion(${q},-1)">▲</button><button title="下移一題" onclick="pvNudgeQuestion(${q},1)">▼</button><span class="sp"></span><button${on('optionMode','four')} title="選項一行四欄" onclick="pvSetQuestionLayout(${q},'optionMode','four')">四欄</button><button${on('optionMode','two')} title="選項兩欄兩列" onclick="pvSetQuestionLayout(${q},'optionMode','two')">兩欄</button><button${on('optionMode','one')} title="選項直列" onclick="pvSetQuestionLayout(${q},'optionMode','one')">直列</button><span class="sp"></span><button${on('breakBefore',true)} title="這題前面換頁" onclick="pvSetQuestionLayout(${q},'breakBefore',${lay.breakBefore?'false':'true'})">↵ 換頁</button><button${on('keepTogether',true)} title="這題不要跨頁" onclick="pvSetQuestionLayout(${q},'keepTogether',${lay.keepTogether?'false':'true'})">⧉ 不跨頁</button><button title="還原這題版面" onclick="pvRestoreQuestionLayout(${q})">↺</button><span class="sp"></span><button title="復原上一步" onclick="_pvHistUndo()">↶</button><button title="重做" onclick="_pvHistRedo()">↷</button>`;
-  const grip=b.querySelector('.pvq-grip');
-  grip.ondragstart=e=>{_pvWDrag=rid;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',rid);}catch(_){}document.body.classList.add('pv-dragging');};
-  grip.ondragend=()=>{_pvWDrag=null;_pvDropClear();document.body.classList.remove('pv-dragging');};
-  b.onmouseenter=()=>clearTimeout(_pvQBarTimer);b.onmouseleave=()=>{_pvQBarTimer=setTimeout(_pvQBarHide,300);};
-  document.body.appendChild(b);_PVQBAR=b;_pvQBarPlace();
+let _PVQBAR=null;
+function _pvQBarHide(){if(_PVQBAR){_PVQBAR.remove();_PVQBAR=null;}}   // 舊的懸浮小工具列已由固定功能區取代；保留空殼供 pvNudgeQuestion 等舊呼叫使用
+let _pvGripT=0,_pvGripPar=null;
+function _pvGripEl(){
+  let g=document.getElementById('pvGrip');
+  if(!g){
+    g=document.createElement('div');g.id='pvGrip';g.draggable=true;g.textContent='⋮⋮';g.title='按住拖到別題上方／下方即可調整順序';document.body.appendChild(g);
+    g.onmouseenter=()=>clearTimeout(_pvGripT);g.onmouseleave=()=>{_pvGripT=setTimeout(_pvGripHide,300);};
+    g.ondragstart=e=>{const t=_pvGripPar&&_edTarget(_pvGripPar);if(!t||t.kind!=='q'){e.preventDefault();return;}if(_ED)_edCommit();_pvWDrag=t.rid;try{e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',t.rid);}catch(_){}document.body.classList.add('pv-dragging');};
+    g.ondragend=()=>{_pvWDrag=null;_pvDropClear();document.body.classList.remove('pv-dragging');};
+  }
+  return g;
 }
-function _pvQBarPlace(){if(!_PVQBAR||!_PVQBAR._par||!_PVQBAR._par.isConnected){_pvQBarHide();return;}const r=_PVQBAR._par.getBoundingClientRect(),b=_PVQBAR;b.style.top=Math.max(4,r.top-30)+'px';b.style.left=Math.max(4,Math.min(innerWidth-b.offsetWidth-4,r.right-b.offsetWidth))+'px';}
+function _pvGripHide(){const g=document.getElementById('pvGrip');if(g)g.style.display='none';_pvGripPar=null;}
+function _pvGripShow(par){
+  const pg=par.closest('.zzpg');if(!pg)return;
+  const g=_pvGripEl(),r=par.getBoundingClientRect(),pr=pg.getBoundingClientRect();
+  _pvGripPar=par;g.style.display='flex';g.style.left=Math.max(2,pr.left-26)+'px';g.style.top=Math.max(4,r.top)+'px';
+}
 document.addEventListener('mouseover',function(ev){
+  if(!_edActive())return;
   const par=ev.target.closest&&ev.target.closest('.pv-wordhost .zzp[data-qid]');
-  if(par){clearTimeout(_pvQBarTimer);_pvQBarShow(par);}
-  else if(_PVQBAR&&!ev.target.closest('#pvQBar')){clearTimeout(_pvQBarTimer);_pvQBarTimer=setTimeout(_pvQBarHide,300);}
+  if(par){clearTimeout(_pvGripT);_pvGripShow(par);}
+  else if(_pvGripPar&&!ev.target.closest('#pvGrip')){clearTimeout(_pvGripT);_pvGripT=setTimeout(_pvGripHide,300);}
 });
-window.addEventListener('scroll',_pvQBarPlace,true);
+window.addEventListener('scroll',_pvGripHide,true);
+// ── 鍵盤：Ctrl/Cmd+Z、Ctrl+Y／Shift+Ctrl+Z（文字層級用原生，沒有文字可復原時退到結構與內容歷程）；Delete 刪除選取的圖片；Esc ──
 document.addEventListener('keydown',function(e){
-  const t=e.target,typing=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);
-  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&document.getElementById('pvQE')){e.preventDefault();const b=document.getElementById('pvQEsave');if(b&&!b.disabled)b.click();return;}
-  if(!(e.ctrlKey||e.metaKey)||typing||!PV_WORD_VIEW||!document.querySelector('.pv-wordhost'))return;
-  const k=e.key.toLowerCase();
-  if(k==='z'&&!e.shiftKey){e.preventDefault();_pvHistUndo();}
-  else if(k==='y'||(k==='z'&&e.shiftKey)){e.preventDefault();_pvHistRedo();}
+  if(!_edActive())return;
+  const t=e.target,mod=e.ctrlKey||e.metaKey,k=(e.key||'').toLowerCase();
+  const inEd=!!(t&&t.closest&&t.closest('.zz-ed'));
+  const inInput=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT')&&!(t.closest&&t.closest('#pvRibbon'));
+  if(mod&&!e.altKey&&(k==='z'||k==='y')){
+    if(inInput)return;
+    const redo=k==='y'||e.shiftKey;
+    if(inEd&&document.queryCommandEnabled(redo?'redo':'undo'))return;   // 原生處理文字層級
+    e.preventDefault();redo?edRedo():edUndo();return;
+  }
+  if(e.key==='Escape'){_pvImgClose();return;}
+  if((e.key==='Delete'||e.key==='Backspace')&&_PVIMG&&!inEd&&!inInput&&!document.querySelector('.zz-prompt')){e.preventDefault();edImgDelete();}
 });
-(function(){const st=document.createElement('style');st.textContent='#pvQBar{position:fixed;z-index:99998;display:flex;gap:2px;align-items:center;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18)}#pvQBar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:12.5px}#pvQBar button:hover{background:#dfe5fb}#pvQBar button.on{background:#3e63dd;color:#fff}#pvQBar .sp{width:6px}';document.head.appendChild(st);})();
+
+// ── 底部狀態列（像簡易 Docs 編輯器）：儲存狀態＋題數／頁數 ──
+function _edStatus(state,msg){
+  const s=document.getElementById('pvStatusSave');if(!s)return;
+  s.dataset.state=state;s.textContent=msg;
+}
+function _edStatusCount(){
+  const h=_edHost(),c=document.getElementById('pvStatusCount');if(!h||!c)return;
+  c.textContent=h.querySelectorAll('.zzp[data-qid]').length+' 題 · '+h.querySelectorAll('.zzpg').length+' 頁';
+}
+
+// ── 功能區按鈕對應 ──
+(function(){
+  const A={undo:()=>edUndo(),redo:()=>edRedo(),bold:()=>edFmt('bold'),italic:()=>edFmt('italic'),underline:()=>edFmt('underline'),sup:()=>edSupSub('^'),sub:()=>edSupSub('_'),eq:()=>edInsertEq(),
+    'img-left':()=>edImgAlign('left'),'img-center':()=>edImgAlign('center'),'img-right':()=>edImgAlign('right'),'img-reset':()=>edImgReset(),'img-del':()=>edImgDelete(),strike:()=>edFmt('strikeThrough'),clear:()=>edClearFmt(),chars:()=>edToggleChars(),mtfig:()=>edMt('fig'),mtedit:()=>edMt('edit'),imgadd:()=>edAddImage(),
+    'opt-four':()=>edLayout('optionMode','four'),'opt-two':()=>edLayout('optionMode','two'),'opt-one':()=>edLayout('optionMode','one'),
+    'break':()=>edLayout('breakBefore','toggle'),keep:()=>edLayout('keepTogether','toggle'),'layout-reset':()=>edRestoreLayout(),up:()=>edNudge(-1),down:()=>edNudge(1),ans:()=>edToggleShow('ans'),sol:()=>edToggleShow('sol')};
+  const rb=document.getElementById('pvRibbon');if(!rb)return;
+  rb.addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault();});   // 按功能區不要搶走編輯框的選取
+  rb.addEventListener('click',e=>{const b=e.target.closest('button[data-act]');if(b&&!b.disabled&&A[b.dataset.act])A[b.dataset.act]();});
+  const w=rb.querySelector('#rbImgW');if(w)w.addEventListener('change',()=>edImgWidth(w.value));
+  const sz=rb.querySelector('#rbSize');if(sz)sz.addEventListener('change',()=>{if(sz.value)edApplyStyle('fontSize',Math.round(Number(sz.value)*4/3)+'px');sz.value='';});
+  const co=rb.querySelector('#rbColor');if(co)co.addEventListener('change',()=>edApplyStyle('color',co.value));
+})();
 // 版面預覽（同 Word）／編輯題目 兩種模式；預設版面預覽，記在這個瀏覽器。
-let PV_WORD_VIEW=(function(){try{return localStorage.getItem('pvWordView')!=='0';}catch(e){return true;}})();
+// 只剩一種模式：Word 版面（同 Word 匯出）本身就是可就地編輯的頁面。舊的「編輯題目」模式程式保留但不再有任何入口。
+let PV_WORD_VIEW=true;
 setTimeout(function(){document.documentElement.classList.toggle('pv-wordview',PV_WORD_VIEW);const b=document.getElementById('pvWordToggle');if(b)b.textContent=PV_WORD_VIEW?'✎ 編輯題目':'👁 版面預覽（同 Word）';const l=document.getElementById('pvEditLabel');if(l&&PV_WORD_VIEW)l.textContent='版面預覽：與 Word 輸出完全一致，要修改題目請按「編輯題目」';},0);
 function pvSetWordView(on){
   PV_WORD_VIEW=!!on;try{localStorage.setItem('pvWordView',on?'1':'0');}catch(e){}
