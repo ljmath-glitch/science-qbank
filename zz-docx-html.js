@@ -38,6 +38,21 @@
   }
 
   // ---------------- 字型與文字屬性 ----------------
+  // Word 預設「中文與英文／數字之間自動加間距」（autoSpaceDE/DN）：實測 12pt 時每個交界約 3pt（1/4 字）。瀏覽器不會加，
+  // 一行少算幾 pt，結尾的字會多塞進同一行（例如「…的比為？」Word 折到下一行、預覽沒折）→ 題目高度與換頁都跟 Word 對不上。這裡手動補空隙（空的 inline-block，不影響文字內容）。
+  const AS_CJK = /[\u3400-\u4dbf\u4e00-\u9fff]/, AS_ALN = /[A-Za-z0-9]/;
+  function fillAutoSpace(el, t, prev) {
+    const gap = () => { const g = document.createElement('span'); g.className = 'zsp'; g.style.cssText = 'display:inline-block;width:.25em;'; return g; };
+    let buf = '', last = prev || '';
+    const flush = () => { if (buf) { el.appendChild(document.createTextNode(buf)); buf = ''; } };
+    for (const ch of t) {
+      if ((AS_CJK.test(last) && AS_ALN.test(ch)) || (AS_ALN.test(last) && AS_CJK.test(ch))) { flush(); el.appendChild(gap()); }
+      buf += ch; last = ch;
+    }
+    flush();
+  }
+  const HK_LH = 1.3;   
+  const isHK = (r) => /華康|DFP/.test((r && r.east) || '') || /華康|DFP/.test((r && r.ascii) || '') || (/jf|金萱/.test((r && r.east) || '') && (r.sz || 10) <= 11);   // 華康中圓體、內文大小的 jf金萱：Word 單行高約為字級×1.3（實測 12pt 華康＝15.6pt、8pt 金萱≈10.4pt）；卷頭／大題的大字金萱維持瀏覽器量測值（已與 Word 對齊）
   const FALLBACK = "'HuaKangTNR','DFPYuanMedium-B5','PingFang TC','Microsoft JhengHei','Noto Sans TC','WenQuanYi Zen Hei',sans-serif";
   function famCss(ascii, east) {
     const q = (n) => (n ? `'${String(n).replace(/'/g, '')}'` : '');
@@ -211,11 +226,11 @@
     if (_bm) div.dataset.qid = _bm.getAttribute('w:name').slice(4);
     const markR = mergeR(baseR, P.mark);
     // 編號（大題「一、」、題號「N.(　　)」）
-    let lblHtml = null, left = P.left, hang = P.hang, numInline = null;
+    let lblHtml = null, left = P.left, hang = P.hang, numInline = null, lr0 = null;
     if (P.numId && ctx.nums[P.numId]) {
       const nd = ctx.nums[P.numId], n = ctx.counters[P.numId] = (ctx.counters[P.numId] || 0) + 1;
       const num = nd.fmt === 'taiwaneseCountingThousand' ? cnNum(n) : String(n), txt = nd.text.replace('%1', num);
-      const lr = mergeR(baseR, nd.r), sp = document.createElement('span'); sp.style.cssText = rStyle(lr); sp.textContent = txt;
+      const lr = mergeR(baseR, nd.r), sp = document.createElement('span'); sp.style.cssText = rStyle(lr); sp.textContent = txt; lr0 = lr;
       if (nd.jc === 'right') { lblHtml = sp; if (P.left === 0 && nd.left) left = nd.left; if (!P.hang && nd.hang) hang = nd.hang; }
       else { numInline = sp; if (!P.left) left = nd.left; }
       if (nd.jc === 'right') { left = left || nd.left; }
@@ -247,6 +262,8 @@
       lblHtml.className = 'zlbl'; lblHtml.style.left = (-(mlpx + bl)) + 'px'; lblHtml.style.width = (tw(left) - tw(hang)) + 'px';
       div.appendChild(lblHtml);
       if (hang) { const sp = document.createElement('span'); sp.style.cssText = `display:inline-block;width:${tw(hang)}px;`; div.appendChild(sp); }
+      // 題號標籤（12pt Times New Roman＋華康空格）在 Word 裡會撐高第一行；預覽的標籤是絕對定位、不佔行高。內文小於標籤字級（黃金／課前考 8、10pt）時，每題第一行會比 Word 矮 2～3pt，補一個同字級的隱形字撐出來
+      { const st = document.createElement('span'); st.style.cssText = rStyle(lr0); st.textContent = '\u200b'; div.appendChild(st); }
     }
     if (numInline) div.appendChild(numInline);
     // 內容
@@ -254,6 +271,7 @@
     let seg = null, anchorsHere = [], any = false;
     const newSeg = () => { seg = document.createElement('span'); seg.className = 'zseg'; div.appendChild(seg); };
     newSeg();
+    let lastCh = '';
     const doRuns = (nodes, extraR) => nodes.forEach((n) => {
       if (n.localName === 'fldSimple') { doRuns([...n.children], extraR); return; }
       if (n.localName !== 'r') return;
@@ -264,12 +282,13 @@
         if (c.localName === 't') {
           const t = c.textContent;
           if (n.parentNode && n.parentNode.localName === 'fldSimple' && /PAGE/.test(n.parentNode.getAttribute('w:instr') || '')) { const s = document.createElement('span'); s.style.cssText = rStyle(rr); s.textContent = String(ctx.pageNo || 1); seg.appendChild(s); return; }
-          const s = document.createElement('span'); s.style.cssText = rStyle(rr);
-          s.textContent = t === '' ? '​' : t; seg.appendChild(s); any = true;
+          const s = document.createElement('span'); s.style.cssText = rStyle(rr) + (isHK(rr) && /[\u3000-\u9fff\uff00-\uffef]/.test(t) ? `line-height:${HK_LH};` : '');   // 華康中圓體：Word 單行高＝字級×1.3，瀏覽器依 hhea 算只有約 1.0～1.16，行距會偏小、一頁多塞題；寫死跟 Word 一樣
+          if (t === '') s.textContent = '​'; else { fillAutoSpace(s, t, lastCh); lastCh = t.replace(/\s+$/, '').slice(-1) || lastCh; if (/\s$/.test(t)) lastCh = ' '; }
+          seg.appendChild(s); any = true;
         } else if (c.localName === 'tab') {
-          const tb = document.createElement('span'); tb.className = 'ztab'; tb.style.cssText = `font-size:${(rr.sz || 10) * PX_PT}px;`; div.appendChild(tb); div._zz.hasTabs = true; newSeg();
+          const tb = document.createElement('span'); tb.className = 'ztab'; tb.style.cssText = `font-size:${(rr.sz || 10) * PX_PT}px;`; div.appendChild(tb); div._zz.hasTabs = true; lastCh = ''; newSeg();
         } else if (c.localName === 'br') {
-          div.appendChild(document.createElement('br')); newSeg();
+          div.appendChild(document.createElement('br')); lastCh = ''; newSeg();
         } else if (c.localName === 'drawing') {
           const d = drawingEl(c, ctx);
           if (d.anchored) { if (d.relH === 'page') (ctx.pageAnchors = ctx.pageAnchors || []).push(d); else div.appendChild(d.el); }
@@ -280,6 +299,8 @@
     });
     doRuns(kidsEl, null);
     // 空段落：給一個零寬字元撐出行高（行高由段落標記字級決定）
+    // 只放圖片的段落：Word 的行高＝圖高；瀏覽器預設圖片貼基線，下面還會多留一截字體下伸部（約 3pt），每張圖都比 Word 高一點
+    if (div.querySelector('img.zzpic') && !div.textContent.replace(/[\u200b\s\u3000]/g, '')) div.querySelectorAll('img.zzpic').forEach((im) => { im.style.verticalAlign = 'bottom'; });
     if (!any && !div.querySelector('.zlbl,.zzgrp,.zzinl')) { const s = document.createElement('span'); s.textContent = '​'; seg.appendChild(s); }
     return div;
   }
@@ -365,7 +386,7 @@
     host.innerHTML = ''; host.classList.add('zzdoc');
     const measure = document.createElement('div'); measure.className = 'zzmeasure'; host.appendChild(measure);
     const ratioCache = {};
-    const ratio = (r) => { const f = famCss(r.ascii, r.east); if (ratioCache[f]) return ratioCache[f]; const s = document.createElement('span'); s.style.cssText = `font-family:${f};font-size:100px;line-height:normal;position:absolute;white-space:nowrap`; s.textContent = '國Ag'; measure.appendChild(s); const v = s.getBoundingClientRect().height / 100 || 1.3; measure.removeChild(s); return (ratioCache[f] = v) / 1; };
+    const ratio = (r) => { const f = famCss(r.ascii, r.east); if (ratioCache[f]) return ratioCache[f]; const s = document.createElement('span'); s.style.cssText = `font-family:${f};font-size:100px;line-height:normal;position:absolute;white-space:nowrap`; s.textContent = '國Ag'; measure.appendChild(s); let v = s.getBoundingClientRect().height / 100 || 1.3; if (isHK(r)) v = Math.max(v, HK_LH); measure.removeChild(s); return (ratioCache[f] = v) / 1; };
     const ctx = { S, nums, media: mediaUrl, counters: {}, showHidden: !!opts.showHidden, ratio: (r) => 1 / 1 * (1), colW: bodyW };
     // line-height 倍數：Word 的「多行 N」＝ N × 字型自然行高；CSS 的 unitless 是 N × 字級，所以乘上自然行高比
     ctx.ratio = ratio;
@@ -411,7 +432,7 @@
     const fix = (b) => { fixAll(b); fitShapes(b); };
     const atTop = () => !curCol().children.length;
     const add = (b) => {
-      if (atTop() && (page.idx > 1 || colIdx > 0) && b._zz && b._zz.P && !b._zz.P.pb) b.style.marginTop = '0px';   // 頁頂不留段前距離
+      if (atTop() && (page.idx > 1 || colIdx > 0) && b._zz && b._zz.P && !b._zz.P.pb && !(page.keepTop && colIdx === 0)) b.style.marginTop = '0px';   // 頁頂不留段前距離（自然換頁才不留；「下一頁」分節符開出來的新頁，Word 會保留第一段的段前距離）
       curCol().appendChild(b); fix(b);
     };
     function placeBlocks(blocks) {
@@ -457,7 +478,7 @@
         // 連續分節（例如 ABK：卷頭單欄 → 題目兩欄）：新的欄從目前內容底下開始
         const last = curCol().lastElementChild, top = (last ? bottomOf(last) + (parseFloat(getComputedStyle(last).marginBottom) || 0) : 0) + curCol()._top;
         colInfo = newColInfo; colIdx = 0; page.cols = []; mkCol(page, 0, top);
-      } else { colInfo = newColInfo; startPage(); }
+      } else { colInfo = newColInfo; startPage(); page.keepTop = true; }
       // 轉換區塊
       const blocks = [];
       sec.nodes.forEach((n) => {
