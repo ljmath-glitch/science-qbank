@@ -23,8 +23,8 @@ for (const kind of ['formal', 'pre', 'abk', 'golden', 'mock']) {
   if (kind === 'abk') {
     assert.equal(p.cols, 2);
     assert.match(p.body, /w:cols w:num="2"[^>]*w:sep="1"/);
-    assert.doesNotMatch(p.body, /ABK 卷頭|浮水印/);
-    assert.match(p.body, /茲茲正式版卷頭/);
+    assert.match(p.body, /ABK 卷頭/);
+    assert.doesNotMatch(p.body, /茲茲正式版卷頭/);
   }
 }
 const solution = Z.buildParts({ kind: 'solution', style: 'formal', field: '自然', title: '驗證詳解', meta: { title: '驗證詳解', scope: '第一章', answers: ['A'] }, running: { left: '詳解', right: '' }, footer: '自然', solutions: [{ no: 1, answer: 'A', detail: '說明', options: [] }] });
