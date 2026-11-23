@@ -17,14 +17,20 @@
 
   // 字型：jf金萱那提 2.0（Windows、Mac 都有）。OOXML 一律寫英文字族名，Windows Word 才找得到；
   // 每個字重是獨立字族，粗體＝換成 Bold 字族，不加 <w:b/>（避免假粗體）。
-  const JF = { reg: 'jf-jinxuanlatte-2.0 Regular', bold: 'jf-jinxuanlatte-2.0 Bold', semi: 'jf-jinxuanlatte-2.0 SemiBold', heavy: 'jf-jinxuanlatte-2.0 Heavy' };
+  // 使用者的 Word 是中文版（Mac），字體清單用中文名（例如「jf金萱那提2.0 七分糖」），英文字族名不會自動對應，所以這裡寫中文名：
+  // Regular=四分糖、SemiBold=六分糖、Bold=七分糖、Heavy=九分糖（對照本機已安裝字型）。
+  const JF = { reg: 'jf金萱那提2.0 四分糖', bold: 'jf金萱那提2.0 七分糖', semi: 'jf金萱那提2.0 六分糖', heavy: 'jf金萱那提2.0 九分糖' };
   const FT = JF.reg;
   const HK = '華康中圓體(P)';   // 內文（題目、選項、詳解）維持華康中圓體＋Times New Roman；金萱只用在卷頭、大題等非內文
   const F = { title: JF.bold, head: JF.bold, body: ['Times New Roman', HK], code: JF.semi, codeB: JF.semi, heavy: JF.heavy };
-  const isJF = (f) => String(f || '').startsWith('jf-');
+  const isJF = (f) => /^jf[-金]/.test(String(f || ''));
   // 金萱那提沒有的字（² ³ ⁻ ₂ ≤ ≥ ≈ ✓ ✗ ⚠ ▶ 等）：這些字一律改用 Times New Roman／系統字
   const NOJF = /[\u00B2\u00B3\u00B9\u2070-\u209F\u2264\u2265\u2248\u2713\u2717\u26A0\u270E\u25B6\u25A2]/;
   const INK = '#1A1A1A', G1 = '#595959', G2 = '#8C8C8C', GOLD = '#AF9A6B', RED = '#850103', ANS = '#C00000';
+  // Browser preview and DOCX must consume the same physical layout definition.
+  // Fallback keeps standalone export callers working during a cached deploy.
+  const fallbackLayout = { paper:{widthCm:21,heightCm:29.7}, marginCm:{top:1,right:1,bottom:1,left:1}, bodyPt:12, line:1, columns:{first:1,body:1,gapCm:1.25,separator:false}, bodyFont:{eastAsia:HK,latin:'Times New Roman'}, options:{tabsTwips:[3000,5280,7560],labelLeftTwips:960} };
+  let ACTIVE_LAYOUT = fallbackLayout;
 
   // ---------------- 整套風格（老師在匯出視窗選一套；內文字型、題目排版每套都一樣） ----------------
   // ac＝主色（卷頭色塊、雙線、大題左條、題組框）；tint＝淡底色；head＝卷頭樣式；sec＝大題樣式；box＝題組框樣式；wm＝ABK 浮水印
@@ -274,6 +280,7 @@
   // ---------------- 其他整套風格的卷頭：色帶（科目彩色）、細線（簡潔省墨）、置中（會考仿真） ----------------
   // 五種卷別共用一份卷頭資料：英文小字、主標、標籤、副標、填寫欄、要不要得分欄
   function headInfo(kind, m) {
+    if (kind === 'formal') return { en: 'OFFICIAL EXAM', title: [m.subject, m.book].filter(Boolean).join('　') || m.title || '', tag: '茲茲正式版', sub: m.label || '', fields: ['班級', '座號', '姓名'], score: true };
     if (kind === 'pre') return { en: 'PRE-CLASS QUIZ', title: [m.subject, m.book].filter(Boolean).join('　'), tag: '課前考', sub: m.label || '', fields: ['班級', '座號', '姓名'], score: true };
     if (kind === 'abk') return { en: 'TUTORING · ' + (m.variant || 'A'), title: m.chapter || '', tag: (m.variant || 'A') + ' 卷', sub: m.code || '', fields: ['姓名'], score: true };
     if (kind === 'golden') return { en: 'GOLDEN MOCK EXAM', title: (m.subject || '') + '　黃金模擬考', tag: m.examTitle || '', sub: [`${m.year} 學年度第 ${m.semester} 學期`, m.version ? '版本 ' + m.version : '', m.scope ? '範圍 ' + m.scope : ''].filter(Boolean).join('　'), fields: ['班級', '座號', '姓名'], score: true };
@@ -283,6 +290,20 @@
   const fieldRuns = (h, c) => [...h.fields, ...(h.score ? ['得分'] : [])].map((f, i) => [i ? R('　', { s: 10.5 }) : '', R(f, { font: F.head, s: 10.5, c }), R(' '.repeat(13), { font: 'Times New Roman', s: 10.5, c, u: 'single' })].join(''));   // 不斷行空白：放在行尾 Word 也不會吃掉底線
   function genericHead(kind, W, m) {
     const h = headInfo(kind, m), s = [];
+    // Formal ABK is intentionally *not* the historical ABK artwork.  The ABK
+    // kind still supplies B4/two-column/separator geometry; its identity is
+    // rendered with the formal family just like the other formal papers.
+    if (TH.head === 'zz') {
+      const tw = W - (h.score ? 3.1 : .3);
+      s.push(slab(0, 0, 3.35, 2.45));
+      s.push(...logo(.95, .28, 1.35));
+      s.push({ name: '卷種英文', x: 3.65, y: .12, w: tw - 3.4, h: .42, ins: [0,0,0,0], txt: P(R('TZU TZU · ' + h.en, { font:F.code, s:8, c:G1, sp:2 })) });
+      s.push({ name: '卷名', x: 3.65, y: .52, w: tw - 3.4, h: 1.0, ins: [0,0,0,0], va:'ctr', txt: P(R(h.title, { font:F.title, s:fitPt(h.title, tw - 3.4, 20, 12), c:INK })) });
+      s.push({ name: '標籤', x: 3.65, y: 1.58, w: tw - 3.4, h: .52, ins:[0,0,0,0], txt:P([R(h.tag, {font:F.head,s:10,c:'#FFFFFF',hl:TH.ac}), h.sub ? R('　'+h.sub,{font:F.head,s:9,c:G1,b:false}) : '']) });
+      if (h.score) s.push(...scoreBox(W - 2.6, .12));
+      s.push(...rule2(2.62, W));
+      return P(groupInline('茲茲正式版卷頭', W, 2.82, s), { sa: 8 });
+    }
     if (TH.head === 'band') {
       const tw = W - (h.score ? 5.2 : 2.4);
       const BH = 2.5;
@@ -335,7 +356,8 @@
   function sect(pg, o) {
     o = o || {};
     const ref = (t, k, id) => (id ? `<w:${k}Reference w:type="${t}" r:id="rId_${id}"/>` : '');
-    return `<w:sectPr>${ref('default', 'header', o.hdr)}${ref('first', 'header', o.hdrFirst)}${ref('default', 'footer', o.ftr)}${ref('first', 'footer', o.ftrFirst)}${o.cont ? '<w:type w:val="continuous"/>' : ''}<w:pgSz w:w="${TW(pg.w)}" w:h="${TW(pg.h)}"/><w:pgMar w:top="567" w:right="567" w:bottom="567" w:left="567" w:header="284" w:footer="284" w:gutter="0"/><w:cols w:num="${o.cols || 1}" w:space="709"${(o.cols || 1) > 1 ? ' w:sep="1"' : ''}/>${o.hdrFirst ? '<w:titlePg/>' : ''}</w:sectPr>`;
+    const m = pg.margin || fallbackLayout.marginCm, gap = o.gapCm == null ? 1.25 : o.gapCm;
+    return `<w:sectPr>${ref('default', 'header', o.hdr)}${ref('first', 'header', o.hdrFirst)}${ref('default', 'footer', o.ftr)}${ref('first', 'footer', o.ftrFirst)}${o.cont ? '<w:type w:val="continuous"/>' : ''}<w:pgSz w:w="${TW(pg.w)}" w:h="${TW(pg.h)}"/><w:pgMar w:top="${TW(m.top)}" w:right="${TW(m.right)}" w:bottom="${TW(m.bottom)}" w:left="${TW(m.left)}" w:header="284" w:footer="284" w:gutter="0"/><w:cols w:num="${o.cols || 1}" w:space="${TW(gap)}"${o.separator ? ' w:sep="1"' : ''}/>${o.hdrFirst ? '<w:titlePg/>' : ''}</w:sectPr>`;
   }
 
   // ---------------- 題目區：大題、選擇題、非選、題組框、圖片 ----------------
@@ -351,7 +373,13 @@
     return n + extra * 240;
   }
   const Q_LEFT = 960, Q_TABS = [3000, 5280, 7560];
-  function optionLines(opts, textW) {
+  function optionLines(opts, textW, override) {
+    if (window.PaperLayouts) {
+      const cm = textW / 567, chosen = window.PaperLayouts.optionLayout(opts, cm, override);
+      const cols = chosen.cols, lines = [];
+      for (let i = 0; i < opts.length; i += cols) lines.push(opts.slice(i, i + cols).join('\t'));
+      return { cols, lines, mid: cols === 2 && cm >= 15.5 ? Q_TABS[1] : Q_TABS[0] };
+    }
     const ws = opts.map((o) => visLen(o) + 120);    // 每個選項後面至少留半個字的間隔
     const max = Math.max.apply(null, ws);
     const can4 = textW >= 15.5 * 567 && opts.length !== 2 && opts.length !== 5 && max <= Q_TABS[0] - Q_LEFT + 60 && max <= textW - Q_TABS[2];
@@ -392,19 +420,19 @@
     const id = ID++, cx = Math.round(img.cx), cy = Math.round(img.cy);
     return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${id}" name="圖片 ${id}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="圖片 ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
   }
-  const qfont = (o) => ({ font: F.body, s: 12, c: INK, ...(o || {}) });
+  const qfont = (o) => ({ font: [ACTIVE_LAYOUT.bodyFont.latin, ACTIVE_LAYOUT.bodyFont.eastAsia], s: ACTIVE_LAYOUT.bodyPt, c: INK, ...(o || {}) });
 
   // 題目出處：自成一行、靠右、小灰字（匯出視窗勾「顯示題目出處」才有）
   const srcLine = (src, o) => P(R('［' + src + '］', { font: F.body, s: 8, c: '#808080' }), { jc: 'right', sb: 0, sa: 3, ...(o || {}) });
   function choiceQuestion(it, ctx) {
-    const lay = it.options && it.options.length >= 2 ? optionLines(it.options, ctx.textW) : { cols: 0, lines: [] };
+    const lay = it.options && it.options.length >= 2 ? optionLines(it.options, ctx.textW, it.layout && it.layout.optionMode) : { cols: 0, lines: [] };
     let runs = RT(it.stem, qfont());
     const own = lay.cols === 1;   // 一行一個：每個選項自成一段，長選項換行時對齊在「(A)」後面
     if (!own) lay.lines.forEach((ln) => { runs += '<w:r><w:br/></w:r>' + RT(ln, qfont()); });
     if (ctx.teacher && it.ans) runs = answerBox(it.ans, it.no) + runs;
     const more = own || !!(it.imgs && it.imgs.length) || !!it.src;
     const two = lay.cols === 2 && lay.mid === Q_TABS[1] ? { tabs: [{ v: 'clear', tw: Q_TABS[0] }, { v: 'clear', tw: Q_TABS[2] }] } : {};
-    let x = P(runs, { style: 'ZXQ', kl: true, kn: more, ...two, ...(own ? { sb: 3.6, sa: 0 } : {}) });
+    let x = P(runs, { style: 'ZXQ', kl: true, kn: more || !!(it.layout && it.layout.keepTogether), pb: !!(it.layout && it.layout.breakBefore), ...two, ...(own ? { sb: 3.6, sa: 0 } : {}) });
     if (own) lay.lines.forEach((ln, i) => {
       x += P(RT(ln, qfont()), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) || !!it.src });
     });
@@ -496,7 +524,8 @@
     return `<w:pBdr><w:left w:val="single" w:sz="36" w:space="6" w:color="${a}"/>${bottom}</w:pBdr><w:shd w:val="clear" w:color="auto" w:fill="${hex(TH.tint)}"/>`;
   }
   function stylesXml(W) {
-    const rf = `<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="${HK}" w:cs="Times New Roman"/>`;
+    const bodyPt = ACTIVE_LAYOUT.bodyPt || 12, bodyEast = ACTIVE_LAYOUT.bodyFont.eastAsia || HK, bodyLatin = ACTIVE_LAYOUT.bodyFont.latin || 'Times New Roman';
+    const rf = `<w:rFonts w:ascii="${bodyLatin}" w:hAnsi="${bodyLatin}" w:eastAsia="${bodyEast}" w:cs="${bodyLatin}"/>`;
     const st = (id, name, next, ppr, rpr) => `<w:style w:type="paragraph" w:customStyle="1" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="a"/><w:next w:val="${next}"/><w:qFormat/><w:pPr>${ppr}</w:pPr><w:rPr>${rpr}</w:rPr></w:style>`;
     const q4 = Q_TABS.map((k) => `<w:tab w:val="left" w:pos="${k}"/>`).join('');
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -506,7 +535,7 @@
 <w:style w:type="table" w:default="1" w:styleId="a1"><w:name w:val="Normal Table"/><w:uiPriority w:val="99"/><w:semiHidden/><w:unhideWhenUsed/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>
 ${st('ZXSec', '茲茲大題', 'ZXQ', `<w:keepNext/><w:numPr><w:numId w:val="1"/></w:numPr>${secBorder()}<w:tabs><w:tab w:val="right" w:pos="${TW(W - 0.2)}"/></w:tabs><w:snapToGrid w:val="0"/><w:spacing w:before="200" w:after="160" w:line="240" w:lineRule="auto"/>`,
       `<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:eastAsia="${JF.bold}" w:cs="Times New Roman"/><w:color w:val="1A1A1A"/><w:sz w:val="26"/><w:szCs w:val="26"/>`)}
-${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:tabs>${q4}</w:tabs><w:adjustRightInd w:val="0"/><w:snapToGrid w:val="0"/><w:spacing w:before="72" w:after="72" w:line="240" w:lineRule="auto"/>`, `${rf}<w:color w:val="1A1A1A"/><w:sz w:val="24"/><w:szCs w:val="24"/>`)}
+${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:tabs>${q4}</w:tabs><w:adjustRightInd w:val="0"/><w:snapToGrid w:val="0"/><w:spacing w:before="${Math.round((((ACTIVE_LAYOUT.question || {}).beforePt) ?? 3.6) * 20)}" w:after="${Math.round((((ACTIVE_LAYOUT.question || {}).afterPt) ?? 3.6) * 20)}" w:line="${Math.round((ACTIVE_LAYOUT.line || 1) * 240)}" w:lineRule="auto"/>`, `${rf}<w:color w:val="1A1A1A"/><w:sz w:val="${Math.round(bodyPt * 2)}"/><w:szCs w:val="${Math.round(bodyPt * 2)}"/>`)}
 </w:styles>`;
   }
   const NUMBERING = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -528,11 +557,17 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
   function buildParts(spec) {
     ID = 2000; Z = 251660000;
     TH = pickStyle(spec.style, spec.field);
-    const pg = spec.paper === 'B4' ? { w: 25.7, h: 36.4 } : { w: 21.0, h: 29.7 };
-    const W = pg.w - 2;
     const kind = spec.kind;
-    const cols = kind === 'abk' ? 2 : 1;
-    const colW = cols === 2 ? (W - 1.25) / 2 : W;
+    ACTIVE_LAYOUT = (window.PaperLayouts && window.PaperLayouts.get)
+      ? window.PaperLayouts.get(kind, spec.meta && spec.meta.variant) : fallbackLayout;
+    // `paper` remains an explicit opt-in for legacy callers, but ABK/golden use
+    // their measured layout by default.
+    if (spec.paper && kind !== 'abk' && kind !== 'golden') ACTIVE_LAYOUT = { ...ACTIVE_LAYOUT, paper: spec.paper === 'B4' ? {widthCm:25.7,heightCm:36.4} : {widthCm:21,heightCm:29.7} };
+    const pg = { w: ACTIVE_LAYOUT.paper.widthCm, h: ACTIVE_LAYOUT.paper.heightCm, margin: ACTIVE_LAYOUT.marginCm };
+    const W = pg.w - pg.margin.left - pg.margin.right;
+    const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : 1;
+    const legacyAbk = kind === 'abk' && spec.legacyAbk !== false;
+    const colW = cols === 2 ? (W - ACTIVE_LAYOUT.columns.gapCm) / 2 : W;
     const media = [];
     const ctx = { pg, textW: TW(colW), teacher: !!spec.teacher, showSol: !!spec.showSol,
       addMedia(img) { const n = media.length + 1; media.push({ name: `image${n}.${img.ext === 'jpeg' ? 'jpeg' : 'png'}`, bytes: img.bytes }); return 'rIdImg' + n; } };
@@ -541,8 +576,10 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
     const m = spec.meta || {};
     const HF = { hdr: 'header1', hdrFirst: 'header2', ftr: 'footer1', ftrFirst: 'footer1' };
     const headers = {
-      header1: (kind === 'abk' && TH.wm ? abkWatermark(pg) : '') + runHead(spec.running.left, spec.running.right, W),
-      header2: kind === 'abk' && TH.wm ? abkWatermark(pg) : P(''),
+      // The old ABK watermark/head are retained only for explicit legacy
+      // exports.  New ABK uses the selected style (normally formal).
+      header1: (legacyAbk && TH.wm ? abkWatermark(pg) : '') + runHead(spec.running.left, spec.running.right, W),
+      header2: legacyAbk && TH.wm ? abkWatermark(pg) : P(''),
       footer1: foot(spec.footer || '', W),
     };
     let body = '';
@@ -558,14 +595,15 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
         }
       }
     }
-    const gh = TH.head === 'zz' ? '' : genericHead(kind, W, m);   // 茲茲正式版／紅金用各卷別原本的閃電卷頭
-    if (kind === 'pre') body = (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
+    const gh = (TH.head === 'zz' && kind !== 'formal' && !(kind === 'abk' && !legacyAbk)) ? '' : genericHead(kind, W, m);
+    if (kind === 'formal') body = (gh || genericHead(kind, W, m)) + qbody + sect(pg, HF);
+    else if (kind === 'pre') body = (gh || prequizHead(W, m)) + qbody + sect(pg, HF);
     else if (kind === 'golden') body = (gh || goldenHead(W, m)) + qbody + sect(pg, HF);
-    else if (kind === 'abk') body = (gh || abkHead(W, m)) + P('', { sect: sect(pg, HF), sa: 0 }) + qbody + sect(pg, { cols: 2, cont: true, ...HF });
+    else if (kind === 'abk') body = (gh || abkHead(W, m)) + P('', { sect: sect(pg, HF), sa: 0 }) + qbody + sect(pg, { cols, gapCm: ACTIVE_LAYOUT.columns.gapCm, separator: ACTIVE_LAYOUT.columns.separator, cont: true, ...HF });
     else if (kind === 'mock') body = (gh || mockCover(W, m)) + mockInstructions(W, m) + P('', { sect: sect(pg, {}), sa: 0 }) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
     else body = (gh ? gh + answerKey(W, m.answers || []) : answerHead(W, m)) + qbody + sect(pg, { hdr: 'header1', ftr: 'footer1' });
 
-    return { spec, kind, pg, W, colW, cols, body, headers, media, stylesXml: stylesXml(colW), numberingXml: NUMBERING(), NS, theme: TH };
+    return { spec, kind, pg, layout: ACTIVE_LAYOUT, W, colW, cols, body, headers, media, stylesXml: stylesXml(colW), numberingXml: NUMBERING(), NS, theme: TH };
   }
   async function buildDocx(spec) {
     const JSZip = window.JSZip;

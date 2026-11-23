@@ -353,7 +353,12 @@
     const S = loadStyles(parts.stylesXml), nums = loadNumbering(parts.numberingXml);
     const mediaUrl = {};
     (parts.media || []).forEach((m, i) => { mediaUrl['rIdImg' + (i + 1)] = URL.createObjectURL(new Blob([m.bytes], { type: /jpe?g$/.test(m.name) ? 'image/jpeg' : 'image/png' })); });
-    const pg = parts.pg, pgW = pg.w * PX_CM, pgH = pg.h * PX_CM, M = 567 * PX_TW, bodyH = pgH - 2 * M, bodyW = pgW - 2 * M;
+    const pg = parts.pg, pgW = pg.w * PX_CM, pgH = pg.h * PX_CM;
+    // Do not re-introduce a browser-only 1 cm assumption here. `parts.pg`
+    // originated in paper-layouts.js and is also written to w:pgMar.
+    const pm = pg.margin || { top: 1, right: 1, bottom: 1, left: 1 };
+    const MT = pm.top * PX_CM, MR = pm.right * PX_CM, MB = pm.bottom * PX_CM, ML = pm.left * PX_CM;
+    const bodyH = pgH - MT - MB, bodyW = pgW - ML - MR;
     host.innerHTML = ''; host.classList.add('zzdoc');
     const measure = document.createElement('div'); measure.className = 'zzmeasure'; host.appendChild(measure);
     const ratioCache = {};
@@ -380,8 +385,8 @@
     const newPage = () => { const d = document.createElement('div'); d.className = 'zzpg'; d.style.cssText = `width:${pgW}px;height:${pgH}px;`; host.appendChild(d); const pgo = { el: d, cols: [], idx: pages.length + 1, sec: null }; pages.push(pgo); return pgo; };
     let page = null, colIdx = 0, curSec = null, colInfo = { cols: 1, colW: bodyW, gap: 0 };
     const mkCol = (pgo, ci, top) => {
-      const c = document.createElement('div'); c.className = 'zzcol'; const x = M + ci * (colInfo.colW + colInfo.gap);
-      c.style.cssText = `left:${x}px;top:${M + top}px;width:${colInfo.colW}px;`; c._top = top; pgo.el.appendChild(c); pgo.cols[ci] = c; pgo.colInfo = colInfo; return c;
+      const c = document.createElement('div'); c.className = 'zzcol'; const x = ML + ci * (colInfo.colW + colInfo.gap);
+      c.style.cssText = `left:${x}px;top:${MT + top}px;width:${colInfo.colW}px;`; c._top = top; pgo.el.appendChild(c); pgo.cols[ci] = c; pgo.colInfo = colInfo; return c;
     };
     const startPage = () => { page = newPage(); page.sec = curSec; colIdx = 0; mkCol(page, 0, 0); };
     const advance = () => { // 換欄或換頁
@@ -469,7 +474,7 @@
       const frefs = (sc && sc.ftr.find((h) => h.type === 'default')) || firstSec.ftr.find((h) => h.type === 'default');
       const pc = Object.assign({}, ctx, { pageNo: pi + 1, colW: bodyW, pageAnchors: [], counters: {} });
       const place = (xml, top, bottom) => {
-        const wrap = document.createElement('div'); wrap.className = 'zzcol'; wrap.style.cssText = `left:${M}px;width:${bodyW}px;${top != null ? 'top:' + top + 'px;' : 'bottom:' + bottom + 'px;'}`;
+        const wrap = document.createElement('div'); wrap.className = 'zzcol'; wrap.style.cssText = `left:${ML}px;width:${bodyW}px;${top != null ? 'top:' + top + 'px;' : 'bottom:' + bottom + 'px;'}`;
         const els = hfBlocks(xml, pc); els.forEach((e) => wrap.appendChild(e)); pgo.el.appendChild(wrap); els.forEach((e) => fixAll(e));
       };
       if (refs && hfXml[refs.id.replace('rId_', '')]) place(hfXml[refs.id.replace('rId_', '')], 284 * PX_TW, null);
@@ -483,7 +488,7 @@
       const ci = pgo.colInfo;
       if (ci && ci.cols > 1 && ci.sep) {   // Word 的欄線不論第二欄有沒有內容都會畫
         const c0 = pgo.cols[0], top = parseFloat(c0.style.top), colW = parseFloat(c0.style.width);
-        const ln = document.createElement('div'); ln.style.cssText = `position:absolute;left:${M + colW + ci.gap / 2}px;top:${top}px;height:${pgH - M - top}px;border-left:1px solid #777;`; pgo.el.appendChild(ln);
+        const ln = document.createElement('div'); ln.style.cssText = `position:absolute;left:${ML + colW + ci.gap / 2}px;top:${top}px;height:${pgH - MB - top}px;border-left:1px solid #777;`; pgo.el.appendChild(ln);
       }
     });
     measure.remove();
