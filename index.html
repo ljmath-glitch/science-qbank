@@ -3040,6 +3040,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
       ordered.forEach(i=>{next++;const old=noOf(rows[i]);if(String(old)!==String(next)){_renumLog.push({ri:i,old:String(old),newNo:String(next)});rows[i][3]=String(next);}});
     });
   })();
+  const _badExamRows=[];
   for(let i=start;i<rows.length;i++){const r=rows[i];const g=n=>(r[n]||'').trim();
     const rawExam=g(2),school=normalizeSchool(g(1)),year=g(0),book=g(5),_field=g(7);
     const grade=gradeFromExam(rawExam,book);
@@ -3053,6 +3054,8 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const fmtBase=round==='會考'?(yr||'')+'會考':round==='學測'?(yr||'')+'學測':round==='分科測驗'?(yr||'')+'分科測驗':[school,grade,yr,semStr,round].filter(Boolean).join('-')||rawExam;
     const fmtExam=(round==='會考'||round==='學測'||round==='分科測驗')?fmtBase:[fmtBase,namedSubject].filter(Boolean).join('-');
     const key=round==='會考'?'會考|||'+(yr||''):round==='學測'?'學測|||'+(yr||''):round==='分科測驗'?'分科測驗|||'+(yr||''):[school||'',grade||'',yr||'',semStr||'',round||'',namedSubject||''].join('|||');
+    // 防呆：考卷名稱空白、或段考缺學校／學年，會讓題目變成孤兒（找不到考卷、重複匯入無法比對），一律在寫入前擋下
+    if(!fmtExam||((round!=='會考'&&round!=='學測'&&round!=='分科測驗')&&(!school||!yr)))_badExamRows.push('第 '+(g(3)||('#'+(i+1)))+' 題（學校「'+(school||'空白')+'」、學年「'+(yr||'空白')+'」、考試名稱「'+(rawExam||'空白')+'」）');
     if(!examKeys.has(key))examKeys.set(key,{school,grade,year,round,name:fmtExam});
     const is23=r.length>=23;
     // 往回找舊格式（如「113上」嵌在年度欄的舊 exam 名稱）以避免重複匯入
@@ -3134,6 +3137,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
     const go=confirm(msg);
     if(!go)return;
   }
+  if(_badExamRows.length){const e=new Error('匯入已停止，沒有寫入任何資料：'+_badExamRows.length+' 筆缺少學校／學年／考試名稱，例如 '+_badExamRows.slice(0,3).join('、')+'。請到「確認考卷名稱」補上完整名稱（學校-年級-學年-學期-第幾次段考-科目）後再匯入。');e.badExamRows=_badExamRows;throw e;}
   if(passageAdds.length){const {error:pe}=await sb.from('questions').upsert(passageAdds.map(toRow));if(pe)console.error('題組文章儲存失敗',pe.message);}
   const {error}=await sb.from('questions').upsert(adds.map(toRow));
   if(error){alert('匯入雲端失敗：'+error.message);return}
