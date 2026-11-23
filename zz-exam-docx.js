@@ -479,13 +479,13 @@
       const tag = TH.box === 'thin' ? R('【題組】', { font: F.head, s: 9.5, c: TH.ac }) : R('題組', { font: F.head, s: 9.5, c: '#FFFFFF', hl: TH.ac });
       let x = P([tag, R('　'), ...head], { ...o, sb: 10 });
       paras.forEach((p) => { x += P(RT(p, { font: F.body, s: 10, c: INK }), o); });
-      if ((ps.imgs || []).length) x += P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { ...o, jc: 'center' });
+      if ((ps.imgs || []).length) x += P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { ...o, jc: (ps.imgs[0].align || 'center') });
       if (ps.src) x += P(R('［' + ps.src + '］', { font: F.body, s: 8, c: '#808080' }), { ...o, jc: 'right' });
       return x + P('', { sa: 4 });
     }
     const txt = [P(head, { sa: 3 })];
     paras.forEach((p) => txt.push(P(RT(p, { font: F.body, s: 10, c: INK }), { ls: 1.3, sa: 3 })));
-    if ((ps.imgs || []).length) txt.push(P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', sa: 3 }));
+    if ((ps.imgs || []).length) txt.push(P((ps.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (ps.imgs[0].align || 'center'), sa: 3 }));
     if (ps.src) { txt.push(srcLine(ps.src, { sa: 0 })); estH += 0.45; }
     const spacer = P(R('', { s: 14 }), { sb: 0, sa: 0, kn: true });
     const bx = TH.box;

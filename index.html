@@ -10768,7 +10768,7 @@ async function _zzExamSpec(kind,opts){
         if(ps&&(ps.q||(ps.imgs||[]).length)){
           const r=groupRanges.get(it.groupId);
           const text=_tplQuestionText(ps,false).replace(/^\s*◎\s*/,'').replace(/^閱讀下文[，,]?回答第.{0,12}題[：:]?\s*/,'');
-          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind),src:srcOf(it)};
+          passage={range:r?(r.first===r.last?String(r.first):r.first+'～'+r.last):'',text:_markUnderlineKeywords(text),imgs:await _zzImages(ps.imgs,kind,'P'+String(it.groupId).replace(/[^A-Za-z0-9]/g,'')),src:srcOf(it)};
         }
       }
       // 非選擇題，或題組裡沒有選項的填充／計算小題：用「N.」題號、不印「(　　)」
@@ -10895,7 +10895,7 @@ async function pvQuickSave(id){
 }
 // ── 預覽上直接調圖片：點圖出現框與四角把手，拖角縮放；上方小工具列選靠左／置中／靠右、還原。存回題庫（圖片的 zzw/zzalign）──
 let _PVIMG=null;
-function _pvImgFind(tag){const k=tag.lastIndexOf('_');if(k<0)return null;const qid=tag.slice(0,k),idx=+tag.slice(k+1);const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid);return it&&it.imgs&&it.imgs[idx]?{it,idx}:null;}
+function _pvImgFind(tag){const k=tag.lastIndexOf('_');if(k<0)return null;const qid=tag.slice(0,k),idx=+tag.slice(k+1);if(/^P[A-Za-z0-9]/.test(qid)&&!DB.some(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid)){const g=Object.keys(PASSAGES).find(x=>'P'+String(x).replace(/[^A-Za-z0-9]/g,'')===qid),ps=g&&PASSAGES[g];return ps&&ps.imgs&&ps.imgs[idx]?{it:ps,idx,passage:true}:null;}const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid);return it&&it.imgs&&it.imgs[idx]?{it,idx}:null;}
 function _pvImgClose(){if(_PVIMG){_PVIMG.box.remove();_PVIMG=null;}}
 function _pvImgPlace(){if(!_PVIMG)return;const r=_PVIMG.el.getBoundingClientRect(),b=_PVIMG.box;b.style.left=r.left+'px';b.style.top=r.top+'px';b.style.width=r.width+'px';b.style.height=r.height+'px';}
 function _pvImgSelect(el){
@@ -10917,7 +10917,7 @@ async function _pvImgSave(patch){
   const data={...f.it,imgs,updatedAt:new Date().toISOString()};
   const {error}=await sb.from('questions').upsert(toRow(data));
   if(error){alert('儲存失敗：'+error.message);_pvRenderPaged();return;}
-  precompute(data);const i=DB.findIndex(x=>x.id===f.it.id);if(i>=0)DB[i]=data;
+  if(f.passage){PASSAGES[f.it.groupId]=data;}else{precompute(data);const i=DB.findIndex(x=>x.id===f.it.id);if(i>=0)DB[i]=data;}
   _pvImgClose();_pvRenderPaged();
 }
 document.addEventListener('click',function(ev){
