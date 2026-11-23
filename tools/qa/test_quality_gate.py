@@ -39,6 +39,10 @@ class QualityGateTest(unittest.TestCase):
   for notation in ("m/s²", "cm³", "10⁻⁹"):
    self.assertFalse({"flattened_exponent","flattened_square_unit","flattened_subscript"}&rules({"題目":notation,"答案":"1"}), notation)
   self.assertIn("flattened_square_unit",rules({"題目":"cm2","答案":"1"}))
+  for notation in ("m/s2", "cm3", "m/s 2"):
+   self.assertIn("flattened_square_unit",rules({"題目":notation,"答案":"1"}), notation)
+  for notation in ("m/s²", "cm³", "m/s 20"):
+   self.assertNotIn("flattened_square_unit",rules({"題目":notation,"答案":"1"}), notation)
   for notation in ("3×1020", "2.235 × 1010", "6×1023", "3\\times 1020"):
    self.assertIn("flattened_exponent",rules({"題目":notation,"答案":"1"}), notation)
   for notation in ("1000 × 1000", "2×1000", "3 × 10", "3 × 10+20", "3 × 10⁻²⁰"):
@@ -52,4 +56,15 @@ class QualityGateTest(unittest.TestCase):
   found={f["rule"] for f in check_numbering([{"題號":"1"},{"題號":"3"},{"題號":"3"},{"題號":"2a"}])}; self.assertTrue({"missing_question_number","duplicate_question_number","invalid_question_number"}<=found)
   flags=check_numbering([{"題號":"1"},{"題號":"2"},{"題號":"1","大題":"二"},{"題號":"2","大題":"二"}]); self.assertNotIn("duplicate_question_number",{f["rule"] for f in flags})
   p=check_data({"卷":[{"題號":"2","題目":"題","答案":"1"}]})["papers"][0]; self.assertEqual(p["questions"][0]["flags"],[]); self.assertIn("missing_first_question_number",{f["rule"] for f in p["paper_flags"]})
+ def test_garbled_symbols_and_repeated_punctuation(self):
+  self.assertTrue({"garbled_text","isolated_symbol","repeated_punctuation"} <= rules({"題目":"量測結果� @ ！！","答案":"1"}))
+  self.assertFalse({"garbled_text","isolated_symbol","repeated_punctuation"} & rules({"題目":"量測結果為 3.0 cm，是否正確？","答案":"1"}))
+ def test_passage_content_in_normal_stem(self):
+  article="小明觀察植物在陽光下進行光合作用。實驗持續三天，每天記錄葉片顏色與氣泡數量。第三天改變光照強度後，再比較各組結果。"
+  long_stem=("甲同學先準備三組相同植株，並控制水量與溫度。研究開始前，所有植株均放置在相同大小的容器中。"
+             +article+"研究人員也記錄環境濕度與二氧化碳濃度，避免其他條件影響結果。"
+             "最後將每日資料整理成表格，再請依上述資料判斷何者正確。")
+  self.assertIn("passage_content_in_stem",rules({"題型":"選擇題","題組文章":article,"題目":article+"\n(A)甲\n(B)乙\n(C)丙\n(D)丁","答案":"A"}))
+  data={"卷":[{"題號":"1","題型":"passage","題目":article,"答案":"文章"},{"題號":"2","題型":"選擇題","題目":article+"\n(A)甲\n(B)乙\n(C)丙\n(D)丁","答案":"A"}]}
+  self.assertIn("passage_content_in_stem",{f["rule"] for f in check_data(data)["papers"][0]["questions"][1]["flags"]})
 if __name__=="__main__": unittest.main()
