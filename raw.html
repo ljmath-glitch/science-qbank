@@ -2353,7 +2353,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if(imgs.length){setState('題目已匯入，正在貼入 '+imgs.length+' 張圖…');
           const importer=await waitForPromptBuilder('importBatchHandoffImages');
           const renumbered=new Map((importResult&&importResult.renumbered||[]).map(x=>[x.ri,Number(x.newNo)]));
-          const r=await importer({dialogDoc:document,exam:examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:renumbered.has(x._reviewRi)?renumbered.get(x._reviewRi):x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
+          const justImported=(importResult&&Array.isArray(importResult.exams)&&importResult.exams.length===1)?importResult.exams[0]:'';const r=await importer({dialogDoc:document,exam:justImported||examName.value,images:imgs.map(x=>({src:x.src,filename:x.filename,qno:renumbered.has(x._reviewRi)?renumbered.get(x._reviewRi):x.qno,scope:x.scope||'single',needs_review:x.verdict!=='pass'}))});
           const bits=[];if(r&&r.unmatchedQnos&&r.unmatchedQnos.length)bits.push('找不到第 '+r.unmatchedQnos.join('、')+' 題');if(r&&r.noPassageQnos&&r.noPassageQnos.length)bits.push('第 '+r.noPassageQnos.join('、')+' 題沒有題組文章可貼');if(r&&r.unknownQno)bits.push(r.unknownQno+' 張圖片沒有題號');if(r&&r.failed)bits.push((r.failedQnos&&r.failedQnos.length?'第 '+r.failedQnos.join('、')+' 題的 ':'')+r.failed+' 張圖片上傳或驗證失敗');
           if(r&&r.cancelled){setState('題目已匯入；有 '+r.existingCount+' 題已經有圖片，你選擇取消，圖片沒有貼入。');try{pipeFail(5,'已取消貼圖')}catch(e){}return}
         const complete=r&&r.done===imgs.length&&!r.failed&&!r.unmatched;

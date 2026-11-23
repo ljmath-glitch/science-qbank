@@ -3153,7 +3153,7 @@ async function doImport(){if(!requireCloud())return;const rows=parseCSV(csvArea.
   if(_flagN)_issues.push(`${_flagN} 題已標記「待確認」→ 點左側「只看待確認」集中處理`);
   if(_issues.length)_sumMsg+='\n\n⚠️ 需人工補充：\n• '+_issues.join('\n• ');
   if(_renumLog.length)_sumMsg+='\n\n🔢 題組題號已自動接續選擇題（避免重複題號）：共調整 '+_renumLog.length+' 題\n• '+_renumLog.slice(0,15).map(x=>x.old+'→'+x.newNo).join('、')+(_renumLog.length>15?' …等':'');
-  alert(_sumMsg);return {ok:true,renumbered:_renumLog};}
+  alert(_sumMsg);return {ok:true,renumbered:_renumLog,exams:[...examKeys.values()].map(v=>v.name).filter(Boolean)};}
 
 /* ===== 連動下拉 ===== */
 function optTags(arr,sel){return ['<option value="">—</option>'].concat([...new Set(arr)].map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`)).join('')}
