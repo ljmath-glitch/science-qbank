@@ -191,7 +191,7 @@
     .rv-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px}
     .rv-no{font-weight:800;color:var(--red);font-size:15px}
     .rv-tag{font-size:11.5px;padding:2px 8px;border-radius:999px;background:#f3efe8;color:#5b4a33}.rv-tag.grouped{background:#e9f5ec;color:#23653a;border:1px solid #9bcbaa;font-weight:700}.rv-tag.ungrouped{background:#f4f1ec;color:#786f63;border:1px dashed #c9c0b5}
-    .rv-tag.warn{background:#fff;color:#a31515;font-weight:700;border:1px solid #e7aaa4}
+    .rv-tag.warn{background:#fff;color:#a31515;font-weight:700;border:1px solid #e7aaa4}.rv-tag.block{background:#fff0f0;color:#a31515;font-weight:700;border:1px solid #e7aaa4}.rv-tag.gate-warn{background:#fff8db;color:#8a6100;font-weight:700;border:1px solid #e8c97a}
     .rv-flag{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;color:#9a6910;cursor:pointer;white-space:nowrap}
     .rv-q{font-size:14.5px;line-height:1.85;overflow-wrap:anywhere}
     .rv-ans{color:#c0392b;margin-top:5px;font-size:14px}
@@ -2030,6 +2030,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
   <script src="tools/ipad-download.js" defer></script>
   <script src="patchnotes.js" defer></script>
   <script src="refresh.js" defer></script>
+<script src="qa-gate.js"></script>
 <script id="importReviewScript">
   /* 人工檢驗（工作流第 6 步）：左＝清稿＋切圖框（就是切圖分頁那份，框上可直接改題號）或原卷；右＝全部題目卡片。
      切圖一有變動右側立刻同步；可改題目、答案、題組文章、待確認；最後一鍵匯入題目＋圖。 */
@@ -2043,8 +2044,12 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     function rvMath(el){try{if(window.renderMathInElement)renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false})}catch(e){}}
     function fmt(t){const w=(promptSource&&promptSource.contentWindow)||{};let x=t||'';try{if(typeof w.fixLatex==='function')x=w.fixLatex(x)}catch(e){}x=esc(x);try{if(typeof w.applyRichMarks==='function')x=w.applyRichMarks(x)}catch(e){}return x.replace(/\n/g,'<br>')}
     const FIG=/〔(?:含圖|表格)\s*\d*〕/;
+    // 〔含圖〕只用來判斷缺圖：審核區畫面與編輯框都不顯示，儲存時再補回，缺圖資訊只靠「缺圖」標籤呈現；補上圖後標籤自動消失。
+    const FIG_G=/〔(?:含圖|表格)\s*\d*〕/g;
+    const hideFig=t=>String(t||'').replace(FIG_G,'').replace(/[ \t]{2,}/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+    const keepFig=(orig,edited)=>{const m=String(orig||'').match(FIG_G);return m&&!FIG.test(edited)?String(edited).replace(/\s+$/,'')+m.join(''):edited};
     function idxOf(header){const f=(n,fb)=>{const i=header.findIndex(h=>(h||'').trim()===n);return i>=0?i:fb};const has23=header.some(h=>(h||'').trim()==='題組文章')||header.length>=23;
-      return {no:f('題號',3),ans:f('答案',4),type:f('題型',12),chart:f('圖表類型',16),basis:f('判斷依據',17),flag:f('待確認',18),q:f('題目',19),passage:has23?f('題組文章',21):-1,gid:f('題組ID',has23?22:21)}}
+      return {no:f('題號',3),ans:f('答案',4),type:f('題型',12),chart:f('圖表類型',16),basis:f('判斷依據',17),flag:f('待確認',18),q:f('題目',19),sol:f('詳解',-1),passage:has23?f('題組文章',21):-1,gid:f('題組ID',has23?22:21)}}
     function build(){
       const rows=parseCSV((questionCsv.value||'').trim());if(rows.length<2)return null;
       const header=rows[0],ix=idxOf(header);const cell=(r,k)=>ix[k]>=0?String(r[ix[k]]||'').trim():'';
@@ -2053,7 +2058,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const gid=cell(r,'gid'),ps=ix.passage>=0?String(r[ix.passage]||''):'';
         if(cell(r,'type')==='passage'){if(gid){passages[gid]=String(r[ix.q]||'');passageRow[gid]={ri:i,col:ix.q}}continue}
         if(gid&&ps.trim()&&!passages[gid]){passages[gid]=ps;passageRow[gid]={ri:i,col:ix.passage}}
-        items.push({ri:i,no:cell(r,'no'),ans:cell(r,'ans'),q:String(r[ix.q]||''),gid,chart:cell(r,'chart'),type:cell(r,'type'),flag:/^(y|yes|true|1|是)$/i.test(cell(r,'flag')),basis:cell(r,'basis'),imgs:[]})}
+        items.push({ri:i,no:cell(r,'no'),ans:cell(r,'ans'),q:String(r[ix.q]||''),sol:cell(r,'sol'),gid,chart:cell(r,'chart'),type:cell(r,'type'),flag:/^(y|yes|true|1|是)$/i.test(cell(r,'flag')),basis:cell(r,'basis'),imgs:[]})}
       const byNo={};items.forEach(it=>{if(it.no)(byNo[it.no]??=[]).push(it)});
       const gImgs={},loose=[];
       (typeof cropCandidates!=='undefined'?cropCandidates:[]).forEach((c,ci)=>{if(c.skip)return;const no=c.qno==null?'':String(c.qno).trim(),choices=byNo[no]||[];
@@ -2064,6 +2069,7 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         if((c.scope||'single')==='group'&&it.gid)(gImgs[it.gid]=gImgs[it.gid]||[]).push(im);else it.imgs.push(im)});
       const gidCounts={};items.forEach(it=>{if(it.gid)gidCounts[it.gid]=(gidCounts[it.gid]||0)+1});
       const seen={};
+      const gateLabel={missing_image:'缺圖',possible_missing_image:'疑似缺圖',incomplete_options:'選項不全',missing_answer:'沒有答案',answer_out_of_range:'答案不在選項範圍',exam_end_noise:'版面雜訊',page_number_noise:'版面雜訊',page_label_noise:'版面雜訊',trailing_figure_labels:'版面雜訊',flattened_exponent:'上下標疑似被壓平',flattened_square_unit:'上下標疑似被壓平',flattened_subscript:'上下標疑似被壓平',latex_option_label:'選項格式待確認'};
       items.forEach(it=>{const w=[];
         if(!it.q.trim())w.push('題目空白');
         if(it.no&&seen[it.no])w.push('題號重複');seen[it.no]=1;
@@ -2072,12 +2078,16 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
         const needFig=FIG.test(it.q)||(it.gid&&FIG.test(passages[it.gid]||''));
         if(needFig&&!it.imgs.length&&!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length))w.push('缺圖');
         if(it.flag)w.push('待確認');
+        const hasImage=it.imgs.length>0||!!(it.gid&&gImgs[it.gid]&&gImgs[it.gid].length);
+        const gate=window.QAGate&&typeof window.QAGate.checkQuestion==='function'?window.QAGate.checkQuestion({no:it.no,q:it.q,ans:it.ans,type:it.type,chart:it.chart,sol:it.sol,groupId:it.gid},{hasImage,passage:{q:passages[it.gid]||''}}):[];
+        it.gateIssues=[];it.issueKeys=new Set();
+        gate.forEach(([level,key,reason])=>{const label=gateLabel[key]||key;it.issueKeys.add(key);if(it.gateIssues.some(x=>x.label===label))return;it.gateIssues.push({level,key,label,reason});if(!w.includes(label))w.push(label)});
         it.warns=w;
         it.tone=w.includes('題目空白')||w.includes('題號重複')||w.includes('題組只有1題')?'err':w.includes('沒有答案')?'ans':w.includes('缺圖')?'img':it.flag?'flag':'ok'});
       const gids=[...new Set(items.map(it=>it.gid).filter(Boolean))];
       const groupIndex=Object.fromEntries(gids.map((gid,i)=>[gid,i+1]));
       return {rows,header,ix,items,passages,passageRow,gImgs,loose,gids,groupIndex}}
-    function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;return it.warns.includes(f)}
+    function filterOk(it){const f=RV.filter;if(f==='all')return true;if(f==='bad')return it.warns.length>0;if(f==='qa-answer')return it.issueKeys.has('missing_answer')||it.issueKeys.has('answer_out_of_range');return f==='incomplete_options'?it.issueKeys.has(f):it.warns.includes(f)}
     function rvParseRange(str){const nums=new Set();String(str||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(part=>{const m=part.match(/^(\d+)\s*-\s*(\d+)$/);if(m){const a=+m[1],b=+m[2];for(let n=Math.min(a,b);n<=Math.max(a,b);n++)nums.add(n)}else if(/^\d+$/.test(part))nums.add(+part)});return nums}
     function rvCompactNos(nums){const a=[...new Set(nums)].sort((x,y)=>x-y),out=[];for(let i=0;i<a.length;){let j=i;while(j+1<a.length&&a[j+1]===a[j]+1)j++;out.push(j>i?a[i]+'-'+a[j]:String(a[i]));i=j+1}return out.join(', ')}
     function rvGroupsFromData(D){if(!D)return[{range:''}];const map=new Map();D.items.forEach(it=>{if(it.gid){if(!map.has(it.gid))map.set(it.gid,[]);const n=parseInt(it.no,10);if(Number.isInteger(n))map.get(it.gid).push(n)}});const rows=[...map.entries()].map(([gid,nos])=>({range:rvCompactNos(nos),gid}));return rows.length?rows:[{range:''}]}
@@ -2093,19 +2103,20 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     function renderRight(keepY){
       const box=document.getElementById('rvRight');if(!box)return;const y=box.scrollTop;const D=RV.data;
       if(!D){box.innerHTML='<div class="status">還沒有題目資料。請等「題庫 Excel」產生後再回來。</div>';setSum('');return}
-      const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,bad=D.items.filter(it=>it.warns.length).length;
+      const cnt=k=>D.items.filter(it=>it.warns.includes(k)).length,gateCnt=k=>D.items.filter(it=>it.issueKeys.has(k)).length,answerCnt=D.items.filter(it=>it.issueKeys.has('missing_answer')||it.issueKeys.has('answer_out_of_range')).length,bad=D.items.filter(it=>it.warns.length).length;
       const chip=(k,l,n,t)=>`<button type="button" class="rv-chip${t?' t-'+t:''}${RV.filter===k?' on':''}" onclick="_rvFilter('${k}')">${l}<b>${n}</b></button>`;
-      let h=rvGroupTool(D)+'<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+(cnt('題號重複')+cnt('題目空白')+cnt('題組只有1題')?chip('題組只有1題','題組異常',cnt('題組只有1題'),'err'):'')+'</div>';
+      let h=rvGroupTool(D)+'<div class="rv-sum">'+chip('all','全部',D.items.length)+chip('bad','有問題',bad)+chip('待確認','待確認',cnt('待確認'),'flag')+chip('缺圖','缺圖',cnt('缺圖'),'img')+chip('沒有答案','沒有答案',cnt('沒有答案'),'ans')+chip('incomplete_options','選項不全',gateCnt('incomplete_options'),'err')+chip('qa-answer','答案異常',answerCnt,'ans')+(cnt('題號重複')+cnt('題目空白')+cnt('題組只有1題')?chip('題組只有1題','題組異常',cnt('題組只有1題'),'err'):'')+'</div>';
       if(D.loose.length)h+=`<div class="rv-card tone-err"><div class="rv-head"><span class="rv-no">對不到題號的圖</span><span class="rv-tag warn">${D.loose.length} 張</span></div><div class="help">在左邊清稿的框上把題號改對，就會自動放進對應題目。</div><div class="rv-imgs">${D.loose.map(im=>`<div class="rv-pg">框上的題號：${esc(im.no||'未填')}</div><img src="${im.src}" alt="">`).join('')}</div></div>`;
       const shownG=new Set();let n=0;
       D.items.forEach((it,k)=>{if(!filterOk(it))return;n++;
         if(it.gid&&!shownG.has(it.gid)&&(D.passages[it.gid]||D.gImgs[it.gid])){shownG.add(it.gid);
-          h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(D.passages[it.gid]||'')}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
-            :`<div class="rv-passage">${fmt(D.passages[it.gid]||'')}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
-        const tags=(it.gid?'<span class="rv-tag grouped">題組編號：題組'+(D.groupIndex[it.gid]||'')+'（'+esc(it.gid)+'）</span>':'<span class="rv-tag ungrouped">題組編號：未加入</span>')+it.warns.filter(w=>w!=='待確認').map(w=>`<span class="rv-tag warn">${w}</span>`).join('');
+          h+=RV.edit==='p:'+it.gid?`<div class="rv-card rv-edit"><div class="rv-head"><span class="rv-no">題組文章</span></div><textarea id="rvEditP">${esc(hideFig(D.passages[it.gid]||''))}</textarea><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" ${gattr(it.gid)} onclick="_rvSaveP(this.dataset.g)">儲存</button></div></div>`
+            :`<div class="rv-passage">${fmt(hideFig(D.passages[it.gid]||''))}<div class="rv-imgs">${(D.gImgs[it.gid]||[]).map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-actions"><button type="button" class="btn" ${gattr(it.gid)} onclick="_rvOpenEditG(this.dataset.g)">修改題組文章</button></div></div>`}
+        const gateLabels=new Set(it.gateIssues.map(x=>x.label));
+        const tags=(it.gid?'<span class="rv-tag grouped">題組編號：題組'+(D.groupIndex[it.gid]||'')+'（'+esc(it.gid)+'）</span>':'<span class="rv-tag ungrouped">題組編號：未加入</span>')+it.warns.filter(w=>w!=='待確認'&&!gateLabels.has(w)).map(w=>`<span class="rv-tag warn">${w}</span>`).join('')+it.gateIssues.map(x=>`<span class="rv-tag ${x.level==='block'?'block':'gate-warn'}" title="${esc(x.reason)}">${esc(x.label)}</span>`).join('');
         const flagBox=`<label class="rv-flag"><input type="checkbox" ${it.flag?'checked':''} onchange="_rvFlag(${k},this.checked)"> 待確認</label>`;
-        if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(it.q)}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
-        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(it.q)}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
+        if(RV.edit==='q:'+k){h+=`<div class="rv-card rv-edit tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis?`<div class="help">系統備註：${esc(it.basis)}</div>`:''}<label>題目（含選項；公式用 $…$）</label><textarea id="rvEditQ">${esc(hideFig(it.q))}</textarea><label>答案</label><input id="rvEditA" value="${esc(it.ans)}"><div class="rv-actions"><button type="button" class="btn" onclick="_rvEdit('')">取消</button><button type="button" class="btn primary" onclick="_rvSaveQ(${k})">儲存</button></div></div>`;return}
+        h+=`<div class="rv-card tone-${it.tone}"><div class="rv-head"><span class="rv-no">第 ${esc(it.no)} 題</span>${tags}${flagBox}</div>${it.basis&&it.warns.length?`<div class="help" style="margin-bottom:4px">系統備註：${esc(it.basis)}</div>`:''}<div class="rv-q">${fmt(hideFig(it.q))}</div><div class="rv-imgs">${it.imgs.map(im=>`<img src="${im.src}" alt="">`).join('')}</div><div class="rv-ans">答案：${it.ans?esc(it.ans):'（空白）'}</div><div class="rv-actions"><button type="button" class="btn" onclick="_rvOpenEdit(${k})">修改</button></div></div>`});
       if(!n)h+='<div class="status">這個分類目前沒有題目。</div>';
       box.innerHTML=h;rvMath(box);if(keepY)box.scrollTop=y;
       setSum(`共 ${D.items.length} 題・${bad?bad+' 題要注意':'沒有發現問題'}・圖 ${(typeof cropCandidates!=='undefined'?cropCandidates.filter(c=>!c.skip).length:0)} 張`);
@@ -2116,8 +2127,8 @@ main .btn-even .btn{width:100%;min-width:0;white-space:nowrap;padding:0 4px;min-
     window._ivSync=function(){clearTimeout(_tmr);_tmr=setTimeout(refresh,120)};
     window._rvFilter=f=>{RV.filter=f;RV.edit='';renderRight(false);document.getElementById('rvRight').scrollTop=0};
     window._rvEdit=k=>{RV.edit=k;renderRight(true);const t=document.querySelector('#rvRight textarea');if(t)t.focus()};
-    window._rvSaveQ=k=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;r[ix.q]=document.getElementById('rvEditQ').value;r[ix.ans]=document.getElementById('rvEditA').value.trim();saveRows()};
-    window._rvSaveP=gid=>{const pr=RV.data.passageRow[gid];if(!pr)return;RV.data.rows[pr.ri][pr.col]=document.getElementById('rvEditP').value;saveRows()};
+    window._rvSaveQ=k=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;r[ix.q]=keepFig(r[ix.q],document.getElementById('rvEditQ').value);r[ix.ans]=document.getElementById('rvEditA').value.trim();saveRows()};
+    window._rvSaveP=gid=>{const pr=RV.data.passageRow[gid];if(!pr)return;RV.data.rows[pr.ri][pr.col]=keepFig(RV.data.rows[pr.ri][pr.col],document.getElementById('rvEditP').value);saveRows()};
     window._rvFlag=(k,on)=>{const it=RV.data.items[k];if(!it)return;const r=RV.data.rows[it.ri],ix=RV.data.ix;while(r.length<=ix.flag)r.push('');r[ix.flag]=on?'Y':'';const keep=RV.edit;
       if(keep){const q=document.getElementById('rvEditQ'),a=document.getElementById('rvEditA');if(q)r[ix.q]=q.value;if(a)r[ix.ans]=a.value.trim()}
       questionCsv.value=_rowsToCsv(RV.data.rows);try{inspectCsv()}catch(e){}RV.data=build();RV.edit=keep;renderRight(true)};
