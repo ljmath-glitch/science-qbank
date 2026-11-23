@@ -570,7 +570,7 @@ ${st('ZXQ', '茲茲題目', 'ZXQ', `<w:numPr><w:numId w:val="2"/></w:numPr><w:ta
       ? window.PaperLayouts.get(kind, spec.meta && spec.meta.variant) : fallbackLayout;
     // `paper` remains an explicit opt-in for legacy callers, but ABK/golden use
     // their measured layout by default.
-    if (spec.paper && kind !== 'abk' && kind !== 'golden') ACTIVE_LAYOUT = { ...ACTIVE_LAYOUT, paper: spec.paper === 'B4' ? {widthCm:25.7,heightCm:36.4} : {widthCm:21,heightCm:29.7} };
+    if (spec.paper && kind !== 'abk' && kind !== 'golden') ACTIVE_LAYOUT = { ...ACTIVE_LAYOUT, paper: spec.paper === 'B4' ? {widthCm:25.7,heightCm:36.4} : {widthCm:21,heightCm:29.7}, bodyPt: spec.paper === 'B4' ? 10 : 12 };   // A4 內文 12 級、B4 內文 10 級
     const pg = { w: ACTIVE_LAYOUT.paper.widthCm, h: ACTIVE_LAYOUT.paper.heightCm, margin: ACTIVE_LAYOUT.marginCm };
     const W = pg.w - pg.margin.left - pg.margin.right;
     const cols = kind === 'abk' ? ACTIVE_LAYOUT.columns.body : 1;

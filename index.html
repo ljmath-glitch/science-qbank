@@ -986,7 +986,7 @@
           <label class="chk"><input type="radio" name="pPaperKind" value="mock" onchange="pvSetPaperKind(this.value)"><span>模考題本<small>封面＋單欄題本</small></span></label>
         </div></div>
         <div class="field"><label for="pZZStyle">Word 考卷風格</label><select id="pZZStyle" onchange="paperSetZZStyle(this.value)"><option value="formal" selected>茲茲正式版（黑白灰・閃電卷頭）</option><option value="redgold">茲茲紅金（品牌紅・閃電卷頭）</option><option value="subject">科目彩色講義（依科目換色）</option><option value="simple">簡潔省墨（細線、不印色塊）</option><option value="exam">會考仿真（置中標題）</option></select></div><script>try{const v=localStorage.getItem('zzExamStyle');if(v)document.getElementById('pZZStyle').value=v;}catch(e){}</script>
-        <div class="field"><label for="pPaperSize">Word 紙張</label><select id="pPaperSize"><option value="A4" selected>A4（四邊 1 公分）</option><option value="B4">B4（四邊 1 公分）</option></select></div>
+        <div class="field"><label for="pPaperSize">Word 紙張</label><select id="pPaperSize" onchange="try{_pvRebuild()}catch(e){}"><option value="A4" selected>A4（內文 12 級字）</option><option value="B4">B4（內文 10 級字）</option></select></div>
         <div class="field"><label>考卷標題</label><input type="text" id="pTitle" value="自然科測驗卷"></div>
         <div id="paperGoldenFields" class="grid4" hidden>
           <div class="field"><label for="pGoldenYear">學年度</label><input id="pGoldenYear" placeholder="例如 115" maxlength="6"></div>

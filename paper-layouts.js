@@ -49,7 +49,7 @@
       marginCm: { top: 1, right: 1, bottom: 1, left: 1 }, bodyPt: 8, headerPt: 12,
       columns: { first: 1, body: 1, gapCm: 0, separator: false }, line: 1,
       watermark: { enabled: false }, header: 'golden',
-      bodyFont: { eastAsia: 'jf金萱那提2.0 四分糖', latin: 'Times New Roman' }
+      bodyFont: { eastAsia: '華康中圓體(P)', latin: 'Times New Roman' }
     },
     pre: {
       ...common, id: 'pre', paper: { widthCm: 21, heightCm: 29.7 },

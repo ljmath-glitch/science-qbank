@@ -48,3 +48,16 @@ const alignParts = Z.buildParts(alignSpec);
 assert.match(alignParts.body, /name="zzimg:abc_0"/, 'image carries its question tag for the preview editor');
 assert.match(alignParts.body, /<w:jc w:val="right"\/>[\s\S]{0,400}<wp:inline/, 'image paragraph follows the chosen alignment');
 console.log('zz-exam-docx: ok');
+
+// A4 內文 12 級、B4 內文 10 級（使用者規定），內文字型為華康中圓體；金萱只留在標頭。
+for (const kind of ['formal', 'pre', 'mock']) {
+  for (const [paper, sz] of [['A4', 24], ['B4', 20]]) {
+    const p = Z.buildParts({ ...base(kind), paper });
+    const m = p.stylesXml.match(/w:styleId="ZXQ"[\s\S]*?<\/w:style>/);
+    assert.ok(m, kind + ' has ZXQ style');
+    assert.ok(m[0].includes('<w:sz w:val="' + sz + '"'), kind + ' ' + paper + ' body ' + sz / 2 + 'pt');
+    assert.ok(m[0].includes('華康中圓體'), kind + ' body font 華康中圓體');
+    assert.ok(!/金萱/.test(m[0]), kind + ' body has no 金萱');
+  }
+}
+assert.equal(L.get('golden').bodyFont.eastAsia, '華康中圓體(P)');
