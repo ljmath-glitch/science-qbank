@@ -349,13 +349,14 @@ async function loadAll(){
   let allQs = [], from = 0;
   if(demoMode){
     allQs=demoQuestions();
-  } else while(true){
-    const {data, error} = await sb.from('questions').select('id,year,school,exam,book,book_name,field,unit,sub,kp,step,mem,con,flag,basis,no,summary,q,ans,sol,type,chart,imgs,group_id').range(from, from + 999);
-    if(error){document.getElementById('tbody').innerHTML='<tr><td colspan="14" class="loading">讀取題庫失敗：'+esc(error.message||String(error))+'</td></tr>';return;}
-    if(!data || !data.length) break;
-    allQs = allQs.concat(data);
-    if(data.length < 1000) break;
-    from += 1000;
+  } else {
+    const COLS='id,year,school,exam,book,book_name,field,unit,sub,kp,step,mem,con,flag,basis,no,summary,q,ans,sol,type,chart,imgs,group_id';
+    const fail=e=>{document.getElementById('tbody').innerHTML='<tr><td colspan="14" class="loading">讀取題庫失敗：'+esc(e.message||String(e))+'</td></tr>';};
+    const cnt=await sb.from('questions').select('id',{count:'exact',head:true});
+    if(cnt.error){fail(cnt.error);return;}
+    const pages=Math.max(1,Math.ceil((cnt.count||0)/1000));
+    const rs=await Promise.all(Array.from({length:pages},(_,k)=>sb.from('questions').select(COLS).order('id').range(k*1000,k*1000+999)));
+    for(const r of rs){ if(r.error){fail(r.error);return;} allQs=allQs.concat(r.data||[]); }
   }
 
   // 依語意 key 分組：school + grade + year + examRound（＋考卷名稱本身有寫科目才加科目，見 parseSubject）
