@@ -10721,12 +10721,20 @@ function _zzSplitChoice(text){
   for(const p of parts){if(/^\([A-Ea-e]\)/.test(p))options.push(p.replace(/\n+/g,' ').trim());else if(options.length)options[options.length-1]+=' '+p.trim();}
   return {stem:stem.trim(),options};
 }
-async function _zzImages(imgs,kind){
+async function _zzImages(imgs,kind,qid){
   const out=[];
-  for(const im of await _tplResolveImgs(imgs)){
-    // 題內圖與舊版相同上限（寬 270 px、高 135 px，96 dpi），避免把題目撐開。
-    const [w,h]=_tplFitImage(im.width,im.height,kind);
-    out.push({bytes:_b64ToBytes(im.src),ext:'png',cx:Math.round(w*9525),cy:Math.round(h*9525)});
+  const orig=(imgs||[]).map((im,i)=>({im,i})).filter(o=>o.im&&o.im.src);
+  const res=await _tplResolveImgs(imgs);
+  const mapped=res.length===orig.length;
+  let n=0;
+  for(const im of res){
+    const o=mapped?orig[n].im:null,idx=mapped?orig[n].i:-1;n++;
+    // 預設與舊版相同上限（寬 270 px、高 135 px，96 dpi），避免把題目撐開；
+    // 老師在預覽上拉過大小（zzw，px）或設過對齊（zzalign）就照那個輸出。
+    let w,h;const zw=o&&Number(o.zzw)>0?Number(o.zzw):0;
+    if(zw){const cap=kind==='abk'?400:600,ww=Math.max(20,Math.min(cap,zw));w=ww;h=im.height*ww/im.width;}
+    else [w,h]=_tplFitImage(im.width,im.height,kind);
+    out.push({bytes:_b64ToBytes(im.src),ext:'png',cx:Math.round(w*9525),cy:Math.round(h*9525),align:o&&['left','center','right'].includes(o.zzalign)?o.zzalign:'center',tag:qid&&idx>=0?qid+'_'+idx:''});
   }
   return out;
 }
@@ -10769,7 +10777,7 @@ async function _zzExamSpec(kind,opts){
       const open=k==='nonchoice'||(sp0.options.length<2&&/^[填計]$/.test(String(it.type||'')));
       const sp=open?{stem:_tplQuestionText(it,false),options:[]}:sp0;
       items.push({id:it.id,no:qno,kind:open?'open':'choice',stem:_markUnderlineKeywords(sp.stem),options:sp.options.map(_markUnderlineKeywords),layout:PAPER_LAYOUT_DRAFT[it.id]||{},
-        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
+        ans:normalizeWordLatex(String(it.ans||'').trim()),imgs:await _zzImages(it.imgs,kind,String(it.id).replace(/[^A-Za-z0-9]/g,'')),passage,lines:String(it.type)==='計'?4:0,src:k!=='group'?srcOf(it):''});
     }
     const sc=kind!=='golden'?wzKindScore(k,items.length):null;
     sections.push({title:_PAPER_SECTION_LABEL[k],score:sc?sc.text:'',items});
@@ -10885,6 +10893,41 @@ async function pvQuickSave(id){
   document.getElementById('pvQE').remove();
   _pvRenderPaged();
 }
+// ── 預覽上直接調圖片：點圖出現框與四角把手，拖角縮放；上方小工具列選靠左／置中／靠右、還原。存回題庫（圖片的 zzw/zzalign）──
+let _PVIMG=null;
+function _pvImgFind(tag){const k=tag.lastIndexOf('_');if(k<0)return null;const qid=tag.slice(0,k),idx=+tag.slice(k+1);const it=DB.find(x=>String(x.id).replace(/[^A-Za-z0-9]/g,'')===qid);return it&&it.imgs&&it.imgs[idx]?{it,idx}:null;}
+function _pvImgClose(){if(_PVIMG){_PVIMG.box.remove();_PVIMG=null;}}
+function _pvImgPlace(){if(!_PVIMG)return;const r=_PVIMG.el.getBoundingClientRect(),b=_PVIMG.box;b.style.left=r.left+'px';b.style.top=r.top+'px';b.style.width=r.width+'px';b.style.height=r.height+'px';}
+function _pvImgSelect(el){
+  _pvImgClose();const f=_pvImgFind(el.dataset.zzimg||'');if(!f)return;
+  const box=document.createElement('div');box.id='pvImgBox';
+  box.innerHTML='<div class="pvib-bar"><button data-a="left" title="靠左">⬅</button><button data-a="center" title="置中">⬌</button><button data-a="right" title="靠右">➡</button><button data-a="reset" title="還原預設大小與置中">↺ 還原</button></div>'+['nw','ne','sw','se'].map(c=>'<i class="pvib-h pvib-'+c+'" data-c="'+c+'"></i>').join('');
+  document.body.appendChild(box);_PVIMG={el,box,tag:el.dataset.zzimg};_pvImgPlace();
+  box.querySelectorAll('.pvib-bar button').forEach(btn=>btn.onclick=ev=>{ev.stopPropagation();const a=btn.dataset.a;_pvImgSave(a==='reset'?{zzw:null,zzalign:null}:{zzalign:a});});
+  box.querySelectorAll('.pvib-h').forEach(h=>h.onpointerdown=ev=>{
+    ev.preventDefault();ev.stopPropagation();h.setPointerCapture(ev.pointerId);
+    const r0=el.getBoundingClientRect(),w0=r0.width,x0=ev.clientX,sign=/w$/.test(h.dataset.c)?-1:1;
+    h.onpointermove=e=>{const nw=Math.max(24,w0+sign*(e.clientX-x0));el.style.width=nw+'px';el.style.height=(nw*r0.height/w0)+'px';_pvImgPlace();};
+    h.onpointerup=e=>{h.onpointermove=h.onpointerup=null;const rw=el.getBoundingClientRect().width,base=+el.dataset.w0||w0;_pvImgSave({zzw:Math.round(base*rw/w0)});};
+  });
+}
+async function _pvImgSave(patch){
+  if(!_PVIMG)return;const f=_pvImgFind(_PVIMG.tag);if(!f)return;if(!requireCloud())return;
+  const imgs=f.it.imgs.map((im,i)=>{if(i!==f.idx)return im;const n={...im};for(const k of Object.keys(patch)){if(patch[k]==null)delete n[k];else n[k]=patch[k];}return n;});
+  const data={...f.it,imgs,updatedAt:new Date().toISOString()};
+  const {error}=await sb.from('questions').upsert(toRow(data));
+  if(error){alert('儲存失敗：'+error.message);_pvRenderPaged();return;}
+  precompute(data);const i=DB.findIndex(x=>x.id===f.it.id);if(i>=0)DB[i]=data;
+  _pvImgClose();_pvRenderPaged();
+}
+document.addEventListener('click',function(ev){
+  const img=ev.target.closest&&ev.target.closest('.pv-wordhost img.zzpic[data-zzimg]');
+  if(img){ev.stopPropagation();ev.preventDefault();_pvImgSelect(img);return;}
+  if(_PVIMG&&!ev.target.closest('#pvImgBox'))_pvImgClose();
+},true);
+window.addEventListener('scroll',_pvImgPlace,true);window.addEventListener('resize',_pvImgPlace);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')_pvImgClose();});
+(function(){const st=document.createElement('style');st.textContent='.pv-wordhost img.zzpic[data-zzimg]{cursor:pointer}.pv-wordhost img.zzpic[data-zzimg]:hover{outline:2px dashed rgba(62,99,221,.6)}#pvImgBox{position:fixed;z-index:99999;border:2px solid #3e63dd;pointer-events:none;box-sizing:border-box}#pvImgBox .pvib-bar{position:absolute;left:0;top:-38px;display:flex;gap:2px;background:#fff;border:1px solid #cfd5e6;border-radius:8px;padding:3px;box-shadow:0 2px 8px rgba(0,0,0,.18);pointer-events:auto;white-space:nowrap}#pvImgBox .pvib-bar button{border:0;background:#f2f4fb;border-radius:5px;padding:3px 8px;cursor:pointer;font-size:13px}#pvImgBox .pvib-bar button:hover{background:#dfe5fb}#pvImgBox .pvib-h{position:absolute;width:12px;height:12px;background:#fff;border:2px solid #3e63dd;border-radius:3px;pointer-events:auto;touch-action:none}.pvib-nw{left:-8px;top:-8px;cursor:nwse-resize}.pvib-ne{right:-8px;top:-8px;cursor:nesw-resize}.pvib-sw{left:-8px;bottom:-8px;cursor:nesw-resize}.pvib-se{right:-8px;bottom:-8px;cursor:nwse-resize}';document.head.appendChild(st);})();
 // 版面預覽（同 Word）／編輯題目 兩種模式；預設版面預覽，記在這個瀏覽器。
 let PV_WORD_VIEW=(function(){try{return localStorage.getItem('pvWordView')!=='0';}catch(e){return true;}})();
 setTimeout(function(){document.documentElement.classList.toggle('pv-wordview',PV_WORD_VIEW);const b=document.getElementById('pvWordToggle');if(b)b.textContent=PV_WORD_VIEW?'✎ 編輯題目':'👁 版面預覽（同 Word）';const l=document.getElementById('pvEditLabel');if(l&&PV_WORD_VIEW)l.textContent='版面預覽：與 Word 輸出完全一致，要修改題目請按「編輯題目」';},0);

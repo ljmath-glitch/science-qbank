@@ -191,6 +191,7 @@
     } else {
       const blip = gd.getElementsByTagName('a:blip')[0], rid = blip && blip.getAttribute('r:embed'), m = ctx.media[rid];
       el = document.createElement('img'); el.className = 'zzpic'; el.style.cssText = `width:${w}px;height:${h}px;`;
+      { const dp = kid(box, 'docPr'), nm = dp && dp.getAttribute('name') || ''; if (/^zzimg:/.test(nm)) { el.dataset.zzimg = nm.slice(6); el.dataset.w0 = w; } }
       if (m) el.src = m;
     }
     if (inl) return { el, anchored: false };

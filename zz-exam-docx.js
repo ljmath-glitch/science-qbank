@@ -418,7 +418,7 @@
   function picRun(img, ctx) {
     const rid = ctx.addMedia(img);
     const id = ID++, cx = Math.round(img.cx), cy = Math.round(img.cy);
-    return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${id}" name="圖片 ${id}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="圖片 ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+    return `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${id}" name="${img.tag ? 'zzimg:' + String(img.tag).replace(/[^A-Za-z0-9_#:-]/g, '') : '圖片 ' + id}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="圖片 ${id}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rid}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
   }
   const qfont = (o) => ({ font: [ACTIVE_LAYOUT.bodyFont.latin, ACTIVE_LAYOUT.bodyFont.eastAsia], s: ACTIVE_LAYOUT.bodyPt, c: INK, ...(o || {}) });
 
@@ -445,7 +445,7 @@
       x += P(RT(ln, qfont()), { indTw: { l: Q_LEFT + 345, h: 345 }, tabs: Q_TABS.map((tw) => ({ tw })), sb: 0, sa: i === lay.lines.length - 1 ? 3.6 : 0, kl: true, kn: i < lay.lines.length - 1 || !!(it.imgs && it.imgs.length) || !!it.src });
     });
     // 同一題的圖排在同一行、置中（放不下 Word 會自動換行）
-    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3, kn: !!it.src });
+    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (it.imgs[0].align || 'center'), indTw: { l: Q_LEFT }, sa: 3, kn: !!it.src });
     if (it.src) x += srcLine(it.src);
     if (ctx.teacher && it.sol && ctx.showSol) x += solutionNote(it.sol);
     return x;
@@ -454,7 +454,7 @@
   function openQuestion(it, ctx) {
     const stem = String(it.stem).replace(/[＿_]{2,}/g, '【　　　　】');
     let x = P([bmWrap(it.id, R(it.no + '.', qfont()) + R('\t', qfont()) + RT(stem, qfont()))], { indTw: { l: Q_LEFT, h: Q_LEFT - 60 }, tabs: [{ tw: Q_LEFT }], sb: 3.6, sa: 3.6, kl: true, kn: true });
-    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: 'center', indTw: { l: Q_LEFT }, sa: 3, kn: true });
+    if ((it.imgs || []).length) x += P((it.imgs || []).map((img) => picRun(img, ctx)).join(R('　')), { jc: (it.imgs[0].align || 'center'), indTw: { l: Q_LEFT }, sa: 3, kn: true });
     if (it.src) x += srcLine(it.src, { kn: true });
     if (ctx.teacher && it.ans) x += P([R('答：', qfont({ c: ANS, b: true, vanish: true })), RT(it.ans, qfont({ c: ANS, vanish: true }))], { indTw: { l: Q_LEFT }, sa: 3 });
     x += P('', { sa: it.lines ? it.lines * 12 : 24 });   // 作答空間
