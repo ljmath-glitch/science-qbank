@@ -343,12 +343,7 @@ async function loadAll(){
   document.getElementById('emptyMsg').style.display = 'none';
 
   if(!demoMode){
-    let hasSession=false;
-    try{ const {data:{session}}=await sb.auth.getSession(); hasSession=!!session; }catch(e){}
-    if(!hasSession){
-      document.getElementById('tbody').innerHTML='<tr><td colspan="14" class="loading">尚未登入，無法讀取題庫資料。請先<a href="index.html">回題庫頁登入</a>後再開啟本頁（同一個網址下登入才會共用）。<br>只想看假資料示範：<a href="progress.html?demo=1">示範模式</a></td></tr>';
-      return;
-    }
+    // 本系統用匿名金鑰＋解鎖密碼，沒有 Supabase 登入，不需要檢查 session
   }
   document.getElementById('demoBanner').classList.toggle('show',demoMode);
   let allQs = [], from = 0;
