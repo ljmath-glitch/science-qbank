@@ -15,7 +15,7 @@ function fn(name) {
 }
 const ctx = { Node: { TEXT_NODE: 3, ELEMENT_NODE: 1 } };
 vm.createContext(ctx);
-vm.runInContext(['esc', 'applyRichMarks', '_rgbToHex', 'serializeRichText', '_mtMathSpans', '_edQidOf', '_edEscAttr', '_edNormText', '_edRawToHtml', '_edSerialize', '_edSupSubLatex', '_edNextKey', '_edImgsPatch', '_edImgsRemove', '_edResizeW', '_edClampZzw'].map(fn).join('\n'), ctx);
+vm.runInContext(['esc', 'applyRichMarks', '_rgbToHex', 'serializeRichText', '_mtMathSpans', '_edQidOf', '_edEscAttr', '_edNormText', '_edRawToHtml', '_edSerialize', '_edSupSubLatex', '_edNextKey','_edKeepOptionStyle', '_edImgsPatch', '_edImgsRemove', '_edResizeW', '_edClampZzw'].map(fn).join('\n'), ctx);
 
 // 迷你假 DOM（只夠 serializeRichText 用）
 const T = (s) => ({ nodeType: 3, textContent: s });
@@ -89,3 +89,9 @@ assert.ok(/id="pvRibbon"/.test(src) && /id="pvStatus"/.test(src));
 assert.ok(!/closest\('\.pv-wordhost \.zzp\[data-qid\]'\):null;if\(el\)pvQuickEdit/.test(src));
 assert.match(src, /el\.offsetWidth\?r0\.width\/el\.offsetWidth:1/);   // 圖片縮放要換算預覽 zoom
 console.log('pv-inline-edit: ok');
+
+// 存回時保留原選項寫法：同行選項不被拆成一行一個；一行一個的維持原樣；去行尾空白
+assert.equal(ctx._edKeepOptionStyle('題幹？(A)甲 (B)乙 (C)丙 (D)丁','題幹？【測】\n(A)甲 \n(B)乙 \n(C)丙 \n(D)丁'),'題幹？【測】(A)甲 (B)乙 (C)丙 (D)丁');
+assert.equal(ctx._edKeepOptionStyle('題幹？ (A)甲 (B)乙','題幹？\n(A)甲\n(B)乙'),'題幹？ (A)甲 (B)乙');
+assert.equal(ctx._edKeepOptionStyle('題幹\n(A)甲\n(B)乙','題幹改 \n(A)甲 \n(B)乙'),'題幹改\n(A)甲\n(B)乙');
+assert.equal(ctx._edKeepOptionStyle('沒有選項','沒有選項改'),'沒有選項改');

@@ -395,6 +395,11 @@
   .pv-ribbon .rb{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 8px;border:0;border-radius:6px;background:transparent;color:#1f2937;font-size:12.5px;cursor:pointer;white-space:nowrap}
   .pv-ribbon .rb b{font-size:15px;font-weight:700;min-width:16px;text-align:center}
   .pv-ribbon .rb span{font-size:12px;color:#6e6f74}
+  /* 工具列精簡：只顯示圖示（游標停上去有文字提示）；放不下就換行，不要橫向捲動 */
+  .pv-ribbon{flex-wrap:wrap;overflow:visible;row-gap:2px}
+  .pv-ribbon .rb span{display:none}
+  .pv-ribbon .rb{padding:0 7px;min-width:30px;justify-content:center}
+  .pv-ribbon .rb-sep{margin:0 3px}
   .pv-ribbon .rb:hover:not(:disabled){background:#fbece7}
   .pv-ribbon .rb.on{background:#f6ddd8;color:#850103}.pv-ribbon .rb.on span{color:#850103}
   .pv-ribbon .rb:disabled{opacity:.38;cursor:default}
@@ -10979,6 +10984,14 @@ function _edRawToHtml(raw,mathFn){
   return h.replace(/(\d+)/g,(m,i)=>mathFn(chips[+i].latex,chips[+i].display));
 }
 function _edSerialize(el){return _edNormText(serializeRichText(el));}
+// 存回題庫時保留原本的選項寫法：原本選項接在題幹同一行（(A)…(B)… 空白分隔）就不要被改成一行一個；行尾多餘空白一律去掉。
+function _edKeepOptionStyle(orig,nv){
+  orig=String(orig==null?'':orig);nv=String(nv==null?'':nv).replace(/[ \t]+\n/g,'\n');
+  const inline=/\(A\)/.test(orig)&&!/\n[ \t]*\(A\)/.test(orig)&&!/\n[ \t]*\(B\)/.test(orig);
+  if(!inline)return nv;
+  const gap=/\s\(A\)/.test(orig)?' ':'';
+  return nv.replace(/\n[ \t]*(?=\(A\))/,gap).replace(/\n[ \t]*(?=\([B-E]\))/g,' ');
+}
 // 上標／下標：選取的文字包成行內公式 $^{…}$／$_{…}$（匯出 Word 時簡單的數字、正負號會轉成 ² ₂ 純文字）；選取不合格回 null
 function _edSupSubLatex(sel,kind){
   sel=String(sel==null?'':sel);
@@ -11186,7 +11199,7 @@ async function _edCommit(){
   const patch={};
   S.fields.forEach(f=>{
     if(!f.dirty)return;
-    const nv=fixControlCharEatenLatex(_edSerialize(f.el)),ov=_edNormText(f.orig);   // 存前沿用既有清洗（Tab 吃掉的反斜線等）
+    const ov=_edNormText(f.orig),nv=fixControlCharEatenLatex(f.key==='q'?_edKeepOptionStyle(ov,_edSerialize(f.el)):_edSerialize(f.el));   // 存前沿用既有清洗（Tab 吃掉的反斜線等）
     if(nv!==ov)patch[f.key]=nv;
   });
   _edTeardown(S);
