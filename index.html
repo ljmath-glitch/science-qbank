@@ -416,7 +416,7 @@
   .pv-wordhost .zz-cur{outline:1px dashed rgba(133,1,3,.35);outline-offset:2px}
   .pv-wordhost .zzp.zz-editing,.pv-wordhost .zzp.zz-editing:hover{outline:0;background:transparent}
   .zz-ed-hid,.zz-ed-hidp{display:none!important}
-  .zz-ed{box-shadow:-4px 0 0 rgba(133,1,3,.55);background:rgba(133,1,3,.035);cursor:text}
+  .pv-wordhost .zzp.zz-editing{outline:2px solid rgba(133,1,3,.5)!important;outline-offset:4px;background:rgba(133,1,3,.03)!important;border-radius:2px}.zz-ed{cursor:text}
   .zz-ed-f{outline:none;display:inline;white-space:pre-wrap;overflow-wrap:break-word;caret-color:#850103}
   .zz-ed-x{display:flex;gap:6px;margin-top:3px;color:#c0392b}.zz-ed-xl{flex:0 0 auto;font-weight:700;user-select:none}.zz-ed-fx{flex:1}
   .zz-ed-lab{user-select:none}
@@ -1445,7 +1445,7 @@
     <span class="pv-tool-group pv-editonly"><select aria-label="字級" onmousedown="_pvToolbarHold()" onchange="_pvApplySizeAndCommit(this.value)"><option value="10" selected>10pt</option><option value="12">12pt</option><option value="14">14pt</option><option value="16">16pt</option><option value="18">18pt</option><option value="20">20pt</option></select><button type="button" style="font-weight:900" onmousedown="event.preventDefault()" onclick="_pvFmt('bold')" title="粗體">B</button><button type="button" style="font-style:italic" onmousedown="event.preventDefault()" onclick="_pvFmt('italic')" title="斜體">I</button><button type="button" style="text-decoration:underline" onmousedown="event.preventDefault()" onclick="_pvFmt('underline')" title="底線">U</button><button type="button" style="text-decoration:line-through" onmousedown="event.preventDefault()" onclick="_pvFmt('strikeThrough')" title="刪除線">S</button><label class="pv-colorbtn" title="文字顏色" onmousedown="event.preventDefault()"><span style="color:#c0392b;font-weight:900">A</span><input type="color" value="#850103" onchange="_pvApplyColor(this.value)"></label><button type="button" onmousedown="event.preventDefault()" onclick="_pvClearFmt()" title="清除格式">清除</button></span>
     <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="togglePvCharPanel()" title="開啟公式與符號">公式／符號</button><button type="button" class="math-btn" onmousedown="event.preventDefault()" onclick="pvAddPreviewImage()" title="在目前題目加入圖片">圖片</button><button type="button" class="math-btn" id="pvMtFigBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertFig()" title="用茲茲數學工具畫圖，加到目前點選的題目或題組文章（直接存回題庫原題）">插入繪圖</button><button type="button" class="math-btn" id="pvMtEditBtn" onmousedown="event.preventDefault()" onclick="pvMtEditFig()" title="回編目前點選的題目或題組文章裡的數學工具繪圖">編輯繪圖</button><button type="button" class="math-btn" id="pvMtEqBtn" onmousedown="event.preventDefault()" onclick="pvMtInsertEq()" title="用茲茲數學工具插入數學式；游標在既有的 $…$ 裡面可回編">插入數學式</button></span>
     <span class="pv-tool-group"><button type="button" class="math-btn" id="pvLayoutSingle" onmousedown="event.preventDefault()" onclick="pvSetColumns(false)">單欄</button><button type="button" class="math-btn" id="pvLayoutDouble" onmousedown="event.preventDefault()" onclick="pvSetColumns(true)">雙欄</button></span>
-    <span class="pv-tool-group"><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select><select id="pvZZStyle" aria-label="考卷風格" onchange="pvSetZZStyle(this.value)"><option value="formal">正式版・黑白灰</option><option value="redgold">紅金版</option><option value="subject">科目彩色</option><option value="simple">簡潔省墨</option><option value="exam">會考仿真</option></select></span>
+    <span class="pv-tool-group"><select id="pvPaperSel" aria-label="紙張大小" title="紙張大小：A4 用 12 級字、B4 用 10 級字" onchange="pvSetPaper(this.value)"><option value="A4">A4・12級字</option><option value="B4">B4・10級字</option></select><select id="pvPaperKind" aria-label="卷別" onchange="pvSetPaperKind(this.value)"><option value="formal">茲茲正式版</option><option value="pre">課前考</option><option value="abk">輔導課 ABK 卷</option><option value="golden">段考黃金模擬考</option><option value="mock">模考題本</option></select><select id="pvZZStyle" aria-label="考卷風格" onchange="pvSetZZStyle(this.value)"><option value="formal">正式版・黑白灰</option><option value="redgold">紅金版</option><option value="subject">科目彩色</option><option value="simple">簡潔省墨</option><option value="exam">會考仿真</option></select></span>
     <span class="pv-tool-group pv-editonly"><button type="button" class="math-btn" id="pvAnsToggle" onmousedown="event.preventDefault()" onclick="togglePvAnswers()">答案</button><button type="button" class="math-btn" id="pvSolToggle" onmousedown="event.preventDefault()" onclick="togglePvSolutions()">詳解</button></span>
     <span class="pv-edit-label" id="pvEditLabel"></span>
   </div>
@@ -4107,9 +4107,14 @@ function hlNames(s){
 // ── 題目/題組文章的粗體/斜體/底線/字級：存成純文字裡的輕量標記，相容既有 esc()/CSV/AI 流程 ──
 // **粗體** ##斜體## __底線__ {{18}}字級18px{{/}}；一律在 esc() 之後才轉成真正的 tag，避免逸出未跳脫的使用者輸入
 function applyRichMarks(s){
-  s=s.replace(/\{\{c(#[0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}/g,'<span style="color:$1">$2</span>');
-  s=s.replace(/\{\{h(#[0-9a-fA-F]{3,6})\}\}([\s\S]*?)\{\{\/\}\}/g,'<span style="background-color:$1">$2</span>');
-  s=s.replace(/\{\{(\d+)\}\}([\s\S]*?)\{\{\/\}\}/g,'<span style="font-size:$1px">$2</span>');
+  // 色彩／底色／字級標記用堆疊配對（可巢狀；多餘的 {{/}} 丟掉、沒關的自動補關），不會把標記原樣顯示出來
+  let out='',depth=0;
+  s=String(s).replace(/\{\{(?:(c)(#[0-9a-fA-F]{3,6})|(h)(#[0-9a-fA-F]{3,6})|(\d+)|(\/))\}\}/g,(m,c,cv,h,hv,n,end)=>{
+    if(end){if(depth>0){depth--;return '</span>';}return '';}
+    depth++;
+    return c?'<span style="color:'+cv+'">':h?'<span style="background-color:'+hv+'">':'<span style="font-size:'+n+'px">';
+  });
+  while(depth-->0)s+='</span>';
   s=s.replace(/\*\*([\s\S]+?)\*\*/g,'<b>$1</b>');
   s=s.replace(/##([\s\S]+?)##/g,'<i>$1</i>');
   s=s.replace(/__([\s\S]+?)__/g,'<u>$1</u>');
@@ -4417,7 +4422,9 @@ function pvInlineImageChange(input){
     await _pvSave(type,id,true);
   };reader.readAsDataURL(file);
 }
-function _pvRebuild(){const selectedKind=paperPreviewKind(),selectedStyle=paperZZStyle();_pvKeepScroll(()=>_pvRenderPaged());const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),style=document.getElementById('pvZZStyle'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;if(style)style.value=selectedStyle;}
+function pvSetPaper(v){const p=document.getElementById('pPaperSize');if(p)p.value=v==='B4'?'B4':'A4';try{_pvRebuild();}catch(e){}}
+function _pvSyncPaperSel(){const p=document.getElementById('pPaperSize'),q=document.getElementById('pvPaperSel');if(p&&q&&q.value!==p.value)q.value=p.value;}
+function _pvRebuild(){try{_pvSyncPaperSel();}catch(e){}const selectedKind=paperPreviewKind(),selectedStyle=paperZZStyle();_pvKeepScroll(()=>_pvRenderPaged());const a=document.getElementById('pvAnsToggle'),s=document.getElementById('pvSolToggle'),one=document.getElementById('pvLayoutSingle'),two=document.getElementById('pvLayoutDouble'),kind=document.getElementById('pvPaperKind'),style=document.getElementById('pvZZStyle'),twoOn=!!(document.getElementById('pTwoCol')||{}).checked;if(a)a.classList.toggle('toggle-on',PV_SHOW_ANS);if(s)s.classList.toggle('toggle-on',PV_SHOW_SOL);if(one)one.classList.toggle('toggle-on',!twoOn);if(two)two.classList.toggle('toggle-on',twoOn);if(kind)kind.value=selectedKind;if(style)style.value=selectedStyle;}
 function pvSetColumns(twoCol){_pvPushHist();paperSetLayout(!!twoCol);_pvRebuild();_rebuildLastPaperHTML();}
 async function _pvCommitActive(){if(_pvActiveEdit&&_pvActiveEdit.dataset.editing)await _pvTextBlur(_pvActiveEdit);}
 async function togglePvAnswers(){await _pvCommitActive();PV_SHOW_ANS=!PV_SHOW_ANS;_pvRebuild();}
@@ -11166,6 +11173,7 @@ function _edOptColumns(par,el,rec){
   const base=par.getBoundingClientRect().left,L=segs.map(x=>x.getBoundingClientRect().left-base);
   const w=L.map((x,i)=>i<L.length-1?L[i+1]-x:0);
   const html=el.innerHTML,parts=html.split(/(?=\(A\)|\([B-E]\))/);if(parts.length<3)return;
+  const tpl=document.createElement('template');if(!parts.every(p=>{tpl.innerHTML=p;return tpl.innerHTML===p;}))return;   // 標記跨選項時不分欄，避免弄壞巢狀標籤
   let out=parts[0]+'<span class="zz-ed-opts" style="display:block;white-space:nowrap;text-indent:0">';
   parts.slice(1).forEach((p,i)=>{out+='<span class="zz-ed-opt" style="display:inline-block;'+(w[i]?'min-width:'+w[i].toFixed(1)+'px;':'')+'">'+p+'</span>';});
   el.innerHTML=out+'</span>';
