@@ -417,7 +417,7 @@
   .pv-wordhost .zzp.zz-editing,.pv-wordhost .zzp.zz-editing:hover{outline:0;background:transparent}
   .zz-ed-hid,.zz-ed-hidp{display:none!important}
   .zz-ed{box-shadow:-4px 0 0 rgba(133,1,3,.55);background:rgba(133,1,3,.035);cursor:text}
-  .zz-ed-f{outline:none;min-height:1.2em;white-space:pre-wrap;overflow-wrap:break-word;caret-color:#850103}
+  .zz-ed-f{outline:none;display:inline;white-space:pre-wrap;overflow-wrap:break-word;caret-color:#850103}
   .zz-ed-x{display:flex;gap:6px;margin-top:3px;color:#c0392b}.zz-ed-xl{flex:0 0 auto;font-weight:700;user-select:none}.zz-ed-fx{flex:1}
   .zz-ed-lab{user-select:none}
   .zz-eq{display:inline-block;padding:0 2px;border-radius:3px;background:rgba(133,1,3,.10);cursor:pointer;user-select:all}.zz-eq:hover{background:rgba(133,1,3,.22)}
@@ -11097,13 +11097,14 @@ async function _edOpen(tg,pt,where){
   const hasLbl=!!par.querySelector(':scope>.zlbl');
   const S={tg,par,rec,fields:[],hidden:[],wrap:null,range:null,field:null};
   const wrap=document.createElement('div');wrap.className='zz-ed';
-  if(hasLbl)wrap.style.textIndent='0';
+  wrap.style.display='inline';   // 與預覽同一行流：題號、答案、縮排維持原樣，文字就在原位改
   const stem=_edMakeField(S,'q',tg.kind==='p'?(rec.q||''):(rec.q||rec.summary||''));
   // 非選擇題的題號「N.」是段落文字的一部分（沒有 .zlbl）：留一個不可編輯的標籤，內文才會對齊在原位置
   if(!hasLbl&&tg.kind==='q'){
     const m=/^\s*(\d+\.)/.exec((par.querySelector('.zseg')||{}).textContent||'');
     if(m){const lab=document.createElement('span');lab.className='zz-ed-lab';lab.contentEditable='false';lab.textContent=m[1];lab.style.cssText='display:inline-block;width:'+Math.max(12,(par._zz&&par._zz.hang)||24)+'px;';stem.el.insertBefore(lab,stem.el.firstChild);}
   }
+  try{_edOptColumns(par,stem.el,rec);}catch(_){}
   wrap.appendChild(stem.el);
   if(tg.kind==='q'){
     const addX=(key,label,cls,multi)=>{
@@ -11112,11 +11113,16 @@ async function _edOpen(tg,pt,where){
       const f=_edMakeField(S,key,rec[key]||'','zz-ed-fx');if(!multi)f.el.dataset.single='1';
       row.appendChild(lb);row.appendChild(f.el);wrap.appendChild(row);
     };
-    if(PV_SHOW_ANS)addX('ans','答案','zz-ed-ans',false);
-    if(PV_SHOW_SOL)addX('sol','詳解','zz-ed-sol',true);
+    // 預覽裡答案已顯示在題號括號內、詳解是獨立段落：編輯時不另加欄位，版面才會與預覽一致
+    if(PV_SHOW_SOL&&host.querySelector('.zzp[data-sid="'+CSS.escape(tg.qid)+'"]'))addX('sol','詳解','zz-ed-sol',true);
   }
   // 原段落內容全部藏起來（編輯框在同一個位置、同樣的縮排／字型／行高，沿用段落本身的樣式）
-  [...par.children].forEach(c=>{if(!c.classList.contains('zlbl')){c.classList.add('zz-ed-hid');S.hidden.push(c);}});
+  { // 只藏內文（.zzseg 起），題號／括號內答案／縮排留著
+    const kids=[...par.children],fi=kids.findIndex(c=>c.classList.contains('zzseg')||c.classList.contains('zseg'));
+    const seg0=par.querySelector('.zseg span'),cs=seg0&&getComputedStyle(seg0);
+    kids.forEach((c,i)=>{if(c.classList.contains('zzinl'))return;if(fi>=0?i>=fi:!c.classList.contains('zlbl')){c.classList.add('zz-ed-hid');S.hidden.push(c);}});
+    if(cs){wrap.style.fontFamily=cs.fontFamily;wrap.style.fontSize=cs.fontSize;wrap.style.lineHeight=cs.lineHeight;wrap.style.letterSpacing=cs.letterSpacing;wrap.style.color=cs.color;wrap.style.fontWeight=cs.fontWeight;}
+  }
   const others=[];
   if(tg.kind==='q'){
     host.querySelectorAll('.zzp[data-oid]').forEach(p=>{if(p.dataset.oid===tg.qid.slice(0,28))others.push(p);});
@@ -11150,6 +11156,19 @@ async function _edOpen(tg,pt,where){
   });
   _edPlaceCaret(pt,where);
   _edRibbonSync();
+}
+// 預覽的選項是「題幹 ↵ (A)⇥(B)⇥(C)⇥(D)」用 Tab 對齊成四欄：編輯框也照這個欄寬排（每個選項一個 inline-block 欄），看起來與預覽相同；存檔時這些外層標籤不影響文字
+function _edOptColumns(par,el,rec){
+  const tabs=par.querySelectorAll(':scope>.ztab');if(!tabs.length)return;
+  const q=String(rec.q||'');if(/\n[ \t]*\(A\)/.test(q)||!/\(A\)/.test(q))return;
+  const segs=[...par.querySelectorAll(':scope>.zseg')].filter(x=>/^\s*\([A-E]\)/.test(x.textContent));
+  if(segs.length<2)return;
+  const base=par.getBoundingClientRect().left,L=segs.map(x=>x.getBoundingClientRect().left-base);
+  const w=L.map((x,i)=>i<L.length-1?L[i+1]-x:0);
+  const html=el.innerHTML,parts=html.split(/(?=\(A\)|\([B-E]\))/);if(parts.length<3)return;
+  let out=parts[0]+'<span class="zz-ed-opts" style="display:block;white-space:nowrap;text-indent:0">';
+  parts.slice(1).forEach((p,i)=>{out+='<span class="zz-ed-opt" style="display:inline-block;'+(w[i]?'min-width:'+w[i].toFixed(1)+'px;':'')+'">'+p+'</span>';});
+  el.innerHTML=out+'</span>';
 }
 // 游標是否在這題編輯框的最前面（dir=-1）／最後面（dir=1）：此時方向鍵上下就移到前一題／後一題，像 Google Docs 一整份文件
 function _edAtEdge(S,dir){
